@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Notificação no admin
   await supabaseAdmin.from('notificacoes').insert({
-    titulo: acao === 'liberar' ? '✅ Acesso Liberado' : '🔴 Acesso Bloqueado',
+    titulo: acao === 'liberar' ? 'Acesso Liberado' : 'Acesso Bloqueado',
     mensagem: `Salão "${data.nome}" foi ${acao === 'liberar' ? 'liberado' : 'bloqueado'} manualmente pelo administrador.`,
     tipo: acao === 'liberar' ? 'success' : 'warning',
     para_todos: false,

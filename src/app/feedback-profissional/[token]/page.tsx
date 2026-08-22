@@ -166,7 +166,7 @@ export default function FeedbackProfissionalPublico() {
 
           {erroEnvio && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#dc2626' }}>
-              ️ {erroEnvio}
+              {erroEnvio}
             </div>
           )}
 

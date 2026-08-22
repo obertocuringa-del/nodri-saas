@@ -92,7 +92,7 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>📄 Carta de Abertura de Conta</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Carta de Abertura de Conta</h3>
           <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={20} /></button>
         </div>
 

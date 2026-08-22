@@ -56,7 +56,7 @@ export default function DescricaoCargo({ categorias }: { categorias: string[] })
             <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
           </div>
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#5b4fcf', margin: '0 0 12px' }}>📋 {sel}</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#5b4fcf', margin: '0 0 12px' }}>{sel}</h2>
         <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={18} placeholder={`Descreva o cargo de ${sel}: atribuições, responsabilidades, requisitos, competências, jornada…`} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1.5px solid #d0cdc7', fontSize: 14, lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit' }} />
       </div>
     )
@@ -65,7 +65,7 @@ export default function DescricaoCargo({ categorias }: { categorias: string[] })
   // Lista de cargos
   return (
     <div style={{ maxWidth: 900 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>📋 Descrição de Cargo</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Descrição de Cargo</h2>
       <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 16px' }}>Clique num cargo para ver/editar a descrição. Os cargos vêm do cadastro — ao criar uma <strong>nova categoria</strong>, ela aparece aqui automaticamente.</p>
       {categorias.length === 0 ? <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>Nenhum cargo/categoria ainda.</div> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>

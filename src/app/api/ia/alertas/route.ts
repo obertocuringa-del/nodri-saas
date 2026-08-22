@@ -44,11 +44,11 @@ export async function GET(req: NextRequest) {
         const projecaoPct = projecao / meta
 
         if (pct >= 1) {
-          alertas.push({ tipo: 'info', icone: '🏆', titulo: `${mp.nome} bateu a meta!`, mensagem: `Atingiu ${Math.round(pct * 100)}% (R$${realizado.toFixed(0)} de R$${meta.toFixed(0)}).`, pct: Math.round(pct * 100), diasRestantes })
+          alertas.push({ tipo: 'info', icone: '', titulo: `${mp.nome} bateu a meta!`, mensagem: `Atingiu ${Math.round(pct * 100)}% (R$${realizado.toFixed(0)} de R$${meta.toFixed(0)}).`, pct: Math.round(pct * 100), diasRestantes })
         } else if (projecaoPct < 0.7 && diasRestantes <= 10) {
-          alertas.push({ tipo: 'critico', icone: '🚨', titulo: `${mp.nome} não vai bater a meta`, mensagem: `Projeção: ${Math.round(projecaoPct * 100)}% da meta. Faltam ${diasRestantes} dias. Precisa de R$${(meta - realizado).toFixed(0)} ainda.`, pct: Math.round(pct * 100), diasRestantes })
+          alertas.push({ tipo: 'critico', icone: '', titulo: `${mp.nome} não vai bater a meta`, mensagem: `Projeção: ${Math.round(projecaoPct * 100)}% da meta. Faltam ${diasRestantes} dias. Precisa de R$${(meta - realizado).toFixed(0)} ainda.`, pct: Math.round(pct * 100), diasRestantes })
         } else if (projecaoPct < 0.85) {
-          alertas.push({ tipo: 'atencao', icone: '⚠️', titulo: `${mp.nome} em risco de não bater`, mensagem: `Atingiu ${Math.round(pct * 100)}% com ${diasRestantes} dias restantes. Precisa acelerar.`, pct: Math.round(pct * 100), diasRestantes })
+          alertas.push({ tipo: 'atencao', icone: '', titulo: `${mp.nome} em risco de não bater`, mensagem: `Atingiu ${Math.round(pct * 100)}% com ${diasRestantes} dias restantes. Precisa acelerar.`, pct: Math.round(pct * 100), diasRestantes })
         }
       }
     }
@@ -64,9 +64,9 @@ export async function GET(req: NextRequest) {
           const projecao = pctMesDecorrido > 0 ? fatAtual / pctMesDecorrido : fatAtual
           const variacaoPct = ((projecao - fatAnterior) / fatAnterior) * 100
           if (variacaoPct < -20) {
-            alertas.push({ tipo: 'critico', icone: '📉', titulo: 'Faturamento em queda acentuada', mensagem: `Projeção do mês ${Math.round(variacaoPct)}% abaixo do mês anterior. Ação urgente necessária.` })
+            alertas.push({ tipo: 'critico', icone: '', titulo: 'Faturamento em queda acentuada', mensagem: `Projeção do mês ${Math.round(variacaoPct)}% abaixo do mês anterior. Ação urgente necessária.` })
           } else if (variacaoPct < -10) {
-            alertas.push({ tipo: 'atencao', icone: '📊', titulo: 'Faturamento abaixo do mês anterior', mensagem: `Projeção ${Math.abs(Math.round(variacaoPct))}% menor que o mês passado.` })
+            alertas.push({ tipo: 'atencao', icone: '', titulo: 'Faturamento abaixo do mês anterior', mensagem: `Projeção ${Math.abs(Math.round(variacaoPct))}% menor que o mês passado.` })
           }
         }
       }
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       })
       const comMaisOcorrencias = Object.entries(contagem).filter(([, qtd]) => qtd >= 3)
       for (const [nome, qtd] of comMaisOcorrencias) {
-        alertas.push({ tipo: 'atencao', icone: '🔴', titulo: `${nome} com ocorrências frequentes`, mensagem: `${qtd} ocorrências negativas nos últimos 30 dias.` })
+        alertas.push({ tipo: 'atencao', icone: '', titulo: `${nome} com ocorrências frequentes`, mensagem: `${qtd} ocorrências negativas nos últimos 30 dias.` })
       }
     }
 
@@ -88,13 +88,13 @@ export async function GET(req: NextRequest) {
     if (pendencias && pendencias.length > 0) {
       const vencidas = pendencias.filter((p: any) => p.data_limite && new Date(p.data_limite) < agora)
       if (vencidas.length > 0) {
-        alertas.push({ tipo: 'atencao', icone: '📋', titulo: `${vencidas.length} pendência(s) vencida(s)`, mensagem: `Há pendências com prazo expirado aguardando resolução.` })
+        alertas.push({ tipo: 'atencao', icone: '', titulo: `${vencidas.length} pendência(s) vencida(s)`, mensagem: `Há pendências com prazo expirado aguardando resolução.` })
       }
     }
 
     // Alerta positivo se tudo vai bem
     if (alertas.length === 0) {
-      alertas.push({ tipo: 'info', icone: '✅', titulo: 'Tudo sob controle', mensagem: 'Nenhum alerta crítico identificado no momento.' })
+      alertas.push({ tipo: 'info', icone: '', titulo: 'Tudo sob controle', mensagem: 'Nenhum alerta crítico identificado no momento.' })
     }
 
     return NextResponse.json({ alertas, gerado_em: agora.toISOString() })

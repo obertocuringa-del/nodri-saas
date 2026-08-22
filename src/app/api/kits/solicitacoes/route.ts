@@ -136,7 +136,7 @@ export async function PATCH(req: NextRequest) {
     const { data: nd } = await supabaseAdmin.from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', 'notificacoes_prof').maybeSingle()
     const notifs = Array.isArray((nd as any)?.valor) ? (nd as any).valor : []
     const partes = [alvo.kitsMao ? `${alvo.kitsMao} kit(s) de mão` : '', alvo.kitsPe ? `${alvo.kitsPe} kit(s) de pé` : ''].filter(Boolean).join(' + ')
-    const texto = `✅ Seus kits estão separados! ${partes} — R$ ${alvo.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    const texto = `Seus kits estão separados! ${partes} — R$ ${alvo.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
     const nova = { id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, texto, alvo: alvo.profissionalId, em: Date.now(), de: 'Salão' }
     await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'notificacoes_prof', valor: [nova, ...notifs].slice(0, 100), atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
   } catch { /* notificação é um plus — não falha a separação por causa dela */ }

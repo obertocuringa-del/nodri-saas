@@ -140,7 +140,7 @@ function CadastroInner() {
             errado é pior do que fazer a pessoa esperar dois segundos. */}
         {planoErro && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '16px 20px', marginBottom: 22, color: '#dc2626', fontSize: 14 }}>
-            ⚠️ {planoErro}{' '}
+            {planoErro}{' '}
             <a href="/landing#planos" style={{ color: '#dc2626', fontWeight: 700 }}>Ver planos</a>
           </div>
         )}

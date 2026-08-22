@@ -117,7 +117,7 @@ export default function ImportarPage() {
                   placeholder="https://docs.google.com/spreadsheets/d/..."
                   className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2.5 text-[12px] text-nodri-t1 placeholder-nodri-t3 outline-none focus:border-nodri-cyan/40" />
                 <div className="mt-2 p-3 rounded-xl" style={{ background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.2)' }}>
-                  <p className="text-[10px] text-yellow-400 font-bold mb-1">️ A planilha precisa estar pública para importar:</p>
+                  <p className="text-[10px] text-yellow-400 font-bold mb-1">A planilha precisa estar pública para importar:</p>
                   <ol className="text-[10px] text-nodri-t2 space-y-0.5 list-decimal pl-4">
                     <li>Abra a planilha no Google Sheets</li>
                     <li>Clique em <strong>Arquivo → Compartilhar → Publicar na Web</strong></li>
@@ -212,7 +212,7 @@ export default function ImportarPage() {
 
             {result.erros.length > 0 && (
               <div>
-                <div className="text-[10px] font-bold text-yellow-400 mb-1.5">️ Linhas com problema</div>
+                <div className="text-[10px] font-bold text-yellow-400 mb-1.5">Linhas com problema</div>
                 <ul className="space-y-0.5">
                   {result.erros.map((e, i) => <li key={i} className="text-[10px] text-nodri-t2">• {e}</li>)}
                 </ul>

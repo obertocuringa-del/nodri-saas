@@ -58,7 +58,7 @@ export default function SenhasLista({ chave = 'senhas' }: { chave?: string }) {
   function abrirEditar(it: SenhaItem) { setModal({ ...it }) }
   function salvarModal() {
     if (!modal) return
-    if (!modal.descricao.trim()) { toast('Informe a descrição', { icon: '✍️' }); return }
+    if (!modal.descricao.trim()) { toast('Informe a descrição', { icon: '' }); return }
     setItems(prev => prev.some(x => x.id === modal.id) ? prev.map(x => x.id === modal.id ? modal : x) : [...prev, modal])
     setDirty(true); setModal(null)
   }
@@ -138,7 +138,7 @@ export default function SenhasLista({ chave = 'senhas' }: { chave?: string }) {
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{items.some(x => x.id === modal.id) ? '✏️ Editar' : '🔑 Adicionar'}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{items.some(x => x.id === modal.id) ? 'Editar' : 'Adicionar'}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 

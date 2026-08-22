@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       .update({ emprestimo: novoEmp, resolvido: true, resolvido_em: new Date().toISOString(), resposta: motivoNegado ? `Negado: ${motivoNegado}` : 'Negado' })
       .eq('id', id).eq('salao_id', salaoId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (alvo) await notificar(salaoId, alvo, `❌ Seu empréstimo foi negado${motivoNegado ? `: ${motivoNegado}` : ''}`)
+    if (alvo) await notificar(salaoId, alvo, `Seu empréstimo foi negado${motivoNegado ? `: ${motivoNegado}` : ''}`)
     return NextResponse.json({ ok: true })
   }
 
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       .update({ emprestimo: novoEmp, resolvido: true, resolvido_em: new Date().toISOString(), resposta: `Aprovado: R$ ${fmtR(total)} em ${N} ${unidade}` })
       .eq('id', id).eq('salao_id', salaoId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (alvo) await notificar(salaoId, alvo, `✅ Seu empréstimo de R$ ${fmtR(total)} foi aprovado em ${N} ${unidade}`)
+    if (alvo) await notificar(salaoId, alvo, `Seu empréstimo de R$ ${fmtR(total)} foi aprovado em ${N} ${unidade}`)
     return NextResponse.json({ ok: true })
   }
 

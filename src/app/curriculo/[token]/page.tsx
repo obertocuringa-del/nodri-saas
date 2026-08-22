@@ -112,8 +112,8 @@ export default function CurriculoPublicoPage() {
     <Fundo>
       <div className="max-w-md w-full rounded-[28px] p-9 text-center" style={{ background: '#fff', boxShadow: '0 24px 70px rgba(91,79,207,.2)' }}>
         <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: 'linear-gradient(135deg,#10b98120,#5b4fcf20)' }}><CheckCircle size={40} style={{ color: '#059669' }} /></div>
-        <h1 className="text-2xl font-extrabold text-[#1a1a1a] mb-2">Tudo certo! 🎉</h1>
-        <p className="text-[15px] text-[#767069] leading-relaxed">Recebemos {enviados.length === 1 ? 'sua candidatura' : `suas ${enviados.length} candidaturas`} para <strong style={{ color: COR }}>{enviados.join(', ')}</strong>.<br />Se o seu perfil combinar com a vaga, entraremos em contato pelo WhatsApp. Boa sorte! 💜</p>
+        <h1 className="text-2xl font-extrabold text-[#1a1a1a] mb-2">Tudo certo!</h1>
+        <p className="text-[15px] text-[#767069] leading-relaxed">Recebemos {enviados.length === 1 ? 'sua candidatura' : `suas ${enviados.length} candidaturas`} para <strong style={{ color: COR }}>{enviados.join(', ')}</strong>.<br />Se o seu perfil combinar com a vaga, entraremos em contato pelo WhatsApp. Boa sorte!</p>
       </div>
     </Fundo>
   )
@@ -144,7 +144,7 @@ export default function CurriculoPublicoPage() {
             </div>
             <h1 className="text-[26px] font-extrabold text-white leading-tight">Trabalhe Conosco</h1>
             <p className="text-[14px] mt-1.5" style={{ color: 'rgba(255,255,255,.9)' }}>
-              {modoOutra ? 'Escolha a nova vaga e sua experiência.' : 'Faça parte da nossa equipe ✨'}
+              {modoOutra ? 'Escolha a nova vaga e sua experiência.' : 'Faça parte da nossa equipe'}
             </p>
           </div>
 

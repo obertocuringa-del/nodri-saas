@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   // Aviso no painel master. É o ponto do fluxo: você não descobre o contato
   // olhando uma lista de vez em quando — ele chega até você.
   await supabaseAdmin.from('notificacoes').insert({
-    titulo: '📩 Novo contato pela vitrine',
+    titulo: 'Novo contato pela vitrine',
     mensagem: `${nome} (${email}${b?.celular ? ' · ' + b.celular : ''}) — usa hoje: ${sistema}.`
       + `${b?.tipo_estabelecimento ? ' Tipo: ' + b.tipo_estabelecimento + '.' : ''}`
       + `${b?.objetivo ? ' Quer: ' + b.objetivo + '.' : ''}`,

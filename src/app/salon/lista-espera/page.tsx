@@ -147,7 +147,7 @@ export default function ListaEsperaPage() {
     const fone = String(it.telefone || '').replace(/\D/g, '')
     if (!fone) { toast.error('Cliente sem telefone'); return }
     const numero = fone.startsWith('55') ? fone : '55' + fone
-    const msg = `Olá *${primeiroNome(it.cliente_nome)}*! 💛 Surgiu um horário disponível para você${it.servicos?.length ? ' (' + it.servicos.map(s => s.nome).join(', ') + ')' : ''}. Deseja confirmar?`
+    const msg = `Olá *${primeiroNome(it.cliente_nome)}*! Surgiu um horário disponível para você${it.servicos?.length ? ' (' + it.servicos.map(s => s.nome).join(', ') + ')' : ''}. Deseja confirmar?`
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank')
     if (it.status === 'aguardando') atualizar(it.id, { status: 'contatada' })
   }
@@ -191,7 +191,7 @@ export default function ListaEsperaPage() {
           <ArrowLeft size={16} /> Voltar
         </button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>📋 Lista de Espera</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>Lista de Espera</span>
         <button onClick={() => { limparForm(); setModal(true) }}
           style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#0891b2,#5b4fcf)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
           <Plus size={15} /> Nova
@@ -208,7 +208,7 @@ export default function ListaEsperaPage() {
 
         {/* Filtros */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-          {([['ativas', 'Ativas'], ['espera', '🟡 Lista de Espera'], ['nao_agendada', '🔴 Não Agendada'], ['finalizadas', 'Finalizadas']] as const).map(([id, lbl]) => (
+          {([['ativas', 'Ativas'], ['espera', 'Lista de Espera'], ['nao_agendada', 'Não Agendada'], ['finalizadas', 'Finalizadas']] as const).map(([id, lbl]) => (
             <button key={id} onClick={() => setFiltro(id)}
               style={{ padding: '7px 13px', borderRadius: 20, border: filtro === id ? '1.5px solid #0891b2' : '1.5px solid #e0ddd8', background: filtro === id ? '#ecfeff' : '#fff', color: filtro === id ? '#0891b2' : '#6b6860', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               {lbl}
@@ -239,15 +239,15 @@ export default function ListaEsperaPage() {
                         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>{it.cliente_nome}</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: si.cor, background: si.cor + '18', padding: '2px 8px', borderRadius: 20 }}>{si.label.toUpperCase()}</span>
                       </div>
-                      {it.telefone && <div style={{ fontSize: 12, color: '#0891b2', marginTop: 2 }}>📱 {it.telefone}</div>}
+                      {it.telefone && <div style={{ fontSize: 12, color: '#0891b2', marginTop: 2 }}>{it.telefone}</div>}
                       {it.servicos?.length > 0 && (
                         <div style={{ fontSize: 12, color: '#374151', marginTop: 5 }}>
-                          💅 {it.servicos.map(s => s.nome).join(' + ')}
+                          {it.servicos.map(s => s.nome).join(' + ')}
                           {totalServ(it.servicos) > 0 && <strong style={{ color: '#16a34a' }}> · {moeda(totalServ(it.servicos))}</strong>}
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 6, fontSize: 11, color: '#6b6860' }}>
-                        {it.data_desejada && <span>📅 {it.data_desejada.split('-').reverse().join('/')}{it.horario_desejado ? ' ' + it.horario_desejado : ''}</span>}
+                        {it.data_desejada && <span>{it.data_desejada.split('-').reverse().join('/')}{it.horario_desejado ? ' ' + it.horario_desejado : ''}</span>}
                         {ativa && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: u.cor, fontWeight: 700 }}><Clock size={11} /> {t.texto} · {u.label}</span>}
                         {!ativa && it.atendida_em && it.status === 'atendida' && <span style={{ color: '#16a34a', fontWeight: 700 }}>✓ baixada automaticamente</span>}
                       </div>
@@ -284,7 +284,7 @@ export default function ListaEsperaPage() {
         )}
 
         <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 18 }}>
-          💡 Quando você reimportar os atendimentos, quem já foi atendida sai da fila automaticamente.
+          Quando você reimportar os atendimentos, quem já foi atendida sai da fila automaticamente.
         </p>
       </div>
 
@@ -297,22 +297,22 @@ export default function ListaEsperaPage() {
               <button onClick={() => setModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>👤 Nome da cliente *</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Nome da cliente *</label>
             <input value={fNome} onChange={e => setFNome(e.target.value)} placeholder="Ex: Maria Silva"
               style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, marginBottom: 12 }} />
 
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>📱 Telefone (WhatsApp)</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Telefone (WhatsApp)</label>
             <input value={fTel} onChange={e => setFTel(e.target.value)} placeholder="(00) 00000-0000"
               style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, marginBottom: 12 }} />
 
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>💅 Serviços desejados</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Serviços desejados</label>
             {servicosCat.length === 0 ? (
               <div style={{ fontSize: 11, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
                 Nenhum serviço cadastrado. Cadastre na aba <strong>Serviços</strong> para escolher aqui.
               </div>
             ) : (
               <div style={{ position: 'relative', marginBottom: fServs.length ? 8 : 12 }}>
-                <input value={buscaServ} onChange={e => setBuscaServ(e.target.value)} placeholder="🔍 Digite para buscar o serviço…"
+                <input value={buscaServ} onChange={e => setBuscaServ(e.target.value)} placeholder="Digite para buscar o serviço…"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14 }} />
                 {buscaServ.trim() && (() => {
                   const achados = servicosCat.filter((s: any) => normTxt(s.nome).includes(normTxt(buscaServ)) && !fServs.some(x => x.nome === s.nome)).slice(0, 12)
@@ -338,12 +338,12 @@ export default function ListaEsperaPage() {
 
             <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>📅 Data desejada</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Data desejada</label>
                 <input type="date" value={fData} onChange={e => setFData(e.target.value)}
                   style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>⏰ Horário</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Horário</label>
                 <select value={fHora} onChange={e => setFHora(e.target.value)}
                   style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, background: '#fff' }}>
                   <option value="">Selecione...</option>
@@ -353,9 +353,9 @@ export default function ListaEsperaPage() {
               </div>
             </div>
 
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>🏷 Categoria</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Categoria</label>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              {([['espera', '🟡 Lista de Espera'], ['nao_agendada', '🔴 Não Agendada']] as const).map(([id, lbl]) => (
+              {([['espera', 'Lista de Espera'], ['nao_agendada', 'Não Agendada']] as const).map(([id, lbl]) => (
                 <button key={id} onClick={() => setFCat(id)}
                   style={{ flex: 1, padding: '9px', borderRadius: 8, border: fCat === id ? '2px solid #0891b2' : '1.5px solid #d0cdc7', background: fCat === id ? '#ecfeff' : '#fff', color: '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{lbl}</button>
               ))}

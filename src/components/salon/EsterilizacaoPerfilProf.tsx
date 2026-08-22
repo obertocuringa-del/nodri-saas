@@ -63,7 +63,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
   const critico = atendimentos > 0 && meusItems.length === 0
   const atencao = !critico && meusItems.length > 0 && esterilizacoes < atendimentos
   const cor = critico ? '#dc2626' : atencao ? '#b45309' : '#16a34a'
-  const situacao = critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'
+  const situacao = critico ? 'Nunca registrou' : atencao ? 'Abaixo do esperado' : '✓ Em dia'
 
   async function salvar() {
     setSalvando(true)
@@ -80,7 +80,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
   function abrirEditar(it: Item) { setModal({ ...it }) }
   function salvarModal() {
     if (!modal) return
-    if (!modal.profissional.trim()) { toast('Informe o profissional', { icon: '✍️' }); return }
+    if (!modal.profissional.trim()) { toast('Informe o profissional', { icon: '' }); return }
     setTodosItems(prev => prev.some(x => x.id === modal.id) ? prev.map(x => x.id === modal.id ? modal : x) : [...prev, modal])
     setDirty(true); setModal(null)
   }
@@ -114,7 +114,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
             <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '-10px 0 18px' }}>Serviços considerados: {servicos.join(', ')}</p>
           )}
 
-          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧽 Registros de esterilização do mês</h3>
+          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Registros de esterilização do mês</h3>
           {meusItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13.5, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
               Nenhum registro ainda. Clique em <strong style={{ color: COR }}>+ Registrar Esterilização</strong> para começar.
@@ -135,7 +135,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
                     <div style={{ fontSize: 12.5, color: '#374151' }}>Quantidade de material: <strong>{it.quantidade || '—'}</strong></div>
                     {it.observacao && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{it.observacao}</div>}
                     <div style={{ marginTop: 10, padding: '8px 10px', background: pendente ? '#fef2f2' : '#f0fdf4', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: pendente ? '#dc2626' : '#16a34a' }}>{pendente ? '🔴 PENDENTE' : `✓ DEVOLVIDO ${it.dataDevolucao}`}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: pendente ? '#dc2626' : '#16a34a' }}>{pendente ? 'PENDENTE' : `✓ DEVOLVIDO ${it.dataDevolucao}`}</span>
                       {pendente
                         ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Marcar devolvido</button>
                         : <button onClick={() => reabrir(it.id)} title="Reabrir" style={iconBtn('#6b6860')}><RotateCcw size={13} /></button>}
@@ -152,7 +152,7 @@ export default function EsterilizacaoPerfilProf({ chave = 'esterilizacao', nomeC
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{todosItems.some(x => x.id === modal.id) ? '✏️ Editar registro' : '🧽 Registrar esterilização'}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{todosItems.some(x => x.id === modal.id) ? 'Editar registro' : 'Registrar esterilização'}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 

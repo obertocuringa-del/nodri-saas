@@ -90,7 +90,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
   async function salvarEdicaoObs(id: string) {
     const o = obsList.find(x => x.id === id)
     if (!o || !o.feedback_id) return
-    if (!o.profissional_nome || !o.texto.trim()) { toast('Preencha o profissional e a descrição', { icon: '✍️' }); return }
+    if (!o.profissional_nome || !o.texto.trim()) { toast('Preencha o profissional e a descrição', { icon: '' }); return }
     setSalvandoObs(true)
     try {
       const res = await fetch('/api/feedback-prof/respostas', {
@@ -104,7 +104,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
       if (alvo) { alvo.editando = false; delete alvo.orig }
       setDoc(novoDoc)
       await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico, mes, doc: novoDoc }) })
-      toast.success('Observação atualizada no Feedback do Profissional! ✅')
+      toast.success('Observação atualizada no Feedback do Profissional!')
     } catch { toast.error('Erro de conexão') }
     setSalvandoObs(false)
   }
@@ -131,7 +131,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
 
   async function salvarObs() {
     const pendentes = obsList.filter(o => !o.enviado && o.profissional_nome && o.texto.trim())
-    if (pendentes.length === 0) { toast('Preencha o profissional e a descrição antes de salvar', { icon: '✍️' }); return }
+    if (pendentes.length === 0) { toast('Preencha o profissional e a descrição antes de salvar', { icon: '' }); return }
     setSalvandoObs(true)
     try {
       const res = await fetch('/api/salon/listas/observacoes', {
@@ -149,7 +149,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
         : o)
       setDoc(novoDoc)
       await fetch('/api/salon/listas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico, mes, doc: novoDoc }) })
-      toast.success(`${pendentes.length} observação(ões) enviada(s) para o Feedback do Profissional! ✅`)
+      toast.success(`${pendentes.length} observação(ões) enviada(s) para o Feedback do Profissional!`)
     } catch { toast.error('Erro de conexão') }
     setSalvandoObs(false)
   }
@@ -172,15 +172,15 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
     const diff = media - total
     const serv = label.toLowerCase()
     let txt: string
-    if (diff > 0) txt = `Olá *${c.nome}*! 👋\n\nNeste mês você atendeu *${total}* de ${serv}, enquanto a média do salão é *${media}*. Isso são *${diff}* a menos.\n\nSei que pode ser por conta da sua logística pessoal e de tempo. Quer que eu ajuste sua agenda, abrindo mais horários para clientes sem preferência de profissional? O que você acha que ajudaria?\n\nConte comigo! 💛`
-    else txt = `Olá *${c.nome}*! 👏\n\nNeste mês você atendeu *${total}* de ${serv}, ${total > media ? 'acima da' : 'na'} média do salão (*${media}*). Parabéns pelo empenho, continue assim! 💛`
+    if (diff > 0) txt = `Olá *${c.nome}*! \n\nNeste mês você atendeu *${total}* de ${serv}, enquanto a média do salão é *${media}*. Isso são *${diff}* a menos.\n\nSei que pode ser por conta da sua logística pessoal e de tempo. Quer que eu ajuste sua agenda, abrindo mais horários para clientes sem preferência de profissional? O que você acha que ajudaria?\n\nConte comigo!`
+    else txt = `Olá *${c.nome}*! \n\nNeste mês você atendeu *${total}* de ${serv}, ${total > media ? 'acima da' : 'na'} média do salão (*${media}*). Parabéns pelo empenho, continue assim!`
     setMsgTexto(txt); setMsgProf(c)
   }
   async function enviarMsg() {
     if (!msgProf) return
     const fone = telefoneDe(msgProf).replace(/\D/g, '')
     if (fone) { const numero = fone.startsWith('55') ? fone : '55' + fone; window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msgTexto)}`, '_blank') }
-    else toast('Sem telefone no cadastro — mensagem só será registrada.', { icon: '⚠️' })
+    else toast('Sem telefone no cadastro — mensagem só será registrada.', { icon: '' })
 
     const total = totalDe(msgProf.id)
     try {
@@ -251,7 +251,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
       </div>
 
       <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 10 }}>
-        Clique em <strong style={{ color: '#16a34a' }}>+</strong> para somar um atendimento. O <span style={{ color: '#ef4444', fontWeight: 800 }}>🔴 É A VEZ</span> aponta quem tem menos atendimentos (rodízio justo, da esquerda p/ direita). Média do salão: <strong>{media}</strong>.
+        Clique em <strong style={{ color: '#16a34a' }}>+</strong> para somar um atendimento. O <span style={{ color: '#ef4444', fontWeight: 800 }}>É A VEZ</span> aponta quem tem menos atendimentos (rodízio justo, da esquerda p/ direita). Média do salão: <strong>{media}</strong>.
       </div>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> :
@@ -268,7 +268,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
                   {doc.colunas.map((c, i) => (
                     <th key={c.id} style={{ ...thSt, background: proximoIdx === i ? '#fef2f2' : '#faf9f7', borderTop: proximoIdx === i ? '3px solid #ef4444' : undefined }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                        {proximoIdx === i && <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', background: '#ef4444', borderRadius: 10, padding: '1px 7px' }}>🔴 É A VEZ</span>}
+                        {proximoIdx === i && <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', background: '#ef4444', borderRadius: 10, padding: '1px 7px' }}>É A VEZ</span>}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ fontWeight: 800, fontSize: 13 }}>{c.nome}</span>
                           <button onClick={() => delProf(c.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#cbb', cursor: 'pointer', padding: 0 }}><X size={12} /></button>
@@ -312,7 +312,7 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
       {!loading && (
         <div style={{ marginTop: 18, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a' }}>📝 Observações</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a' }}>Observações</span>
             <span style={{ fontSize: 11, color: '#9ca3af' }}>— vão automaticamente para o Feedback do Profissional ao salvar</span>
           </div>
           <p style={{ fontSize: 11.5, color: '#6b6860', margin: '0 0 12px' }}>Escolha o profissional, descreva o ocorrido, marque Positivo ou Negativo e clique em salvar.</p>
@@ -334,11 +334,11 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button onClick={() => updObs(o.id, { tipo: 'positivo' })} disabled={travada}
                     style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'positivo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'positivo' ? '#16a34a' : '#fff', color: o.tipo === 'positivo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: travada ? 'default' : 'pointer' }}>
-                    👍 Positivo
+                    Positivo
                   </button>
                   <button onClick={() => updObs(o.id, { tipo: 'negativo' })} disabled={travada}
                     style={{ padding: '7px 12px', borderRadius: 8, border: o.tipo === 'negativo' ? 'none' : '1.5px solid #d0cdc7', background: o.tipo === 'negativo' ? '#ef4444' : '#fff', color: o.tipo === 'negativo' ? '#fff' : '#6b6860', fontSize: 12, fontWeight: 800, cursor: travada ? 'default' : 'pointer' }}>
-                    👎 Negativo
+                    Negativo
                   </button>
                 </div>
                 <div style={{ flex: 1 }} />
@@ -348,11 +348,11 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
                     <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a' }}>✓ Enviado {o.criado_em ? `· ${new Date(o.criado_em).toLocaleDateString('pt-BR')}` : ''}</span>
                     {o.feedback_id && (
                       <button onClick={() => editarObs(o.id)} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
-                        ✏️ Editar
+                        Editar
                       </button>
                     )}
                     <button onClick={() => excluirObs(o.id)} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
-                      🗑️ Excluir
+                      Excluir
                     </button>
                   </span>
                 )}
@@ -392,11 +392,11 @@ export default function ListaServico({ servico, label, profsSalao, onMensagem }:
         <div onClick={() => setMsgProf(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>💬 Mensagem para {msgProf.nome}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Mensagem para {msgProf.nome}</h3>
               <button onClick={() => setMsgProf(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
-            {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone — o WhatsApp não abre, mas o registro é feito do mesmo jeito.</p>}
+            {!telefoneDe(msgProf) && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>Sem telefone — o WhatsApp não abre, mas o registro é feito do mesmo jeito.</p>}
             <p style={{ fontSize: 11, color: '#6b6860', margin: '0 0 8px' }}>
               Entra no <b>Feedback do Profissional</b> como <b>acompanhamento</b>, com este mesmo texto — fica documentado que a gestão orientou, sem contar como elogio nem como ocorrência.
             </p>

@@ -103,7 +103,7 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
   function abrirEditar(it: Item) { setModal({ ...it }) }
   function salvarModal() {
     if (!modal) return
-    if (!modal.profissional.trim()) { toast('Informe o profissional', { icon: '✍️' }); return }
+    if (!modal.profissional.trim()) { toast('Informe o profissional', { icon: '' }); return }
     setItems(prev => prev.some(x => x.id === modal.id) ? prev.map(x => x.id === modal.id ? modal : x) : [...prev, modal])
     setDirty(true); setModal(null)
   }
@@ -122,14 +122,14 @@ export default function EsterilizacaoLista({ chave = 'esterilizacao', profsSalao
     const linhasPainel = linhas.map(l => {
       const critico = l.atendimentos > 0 && l.registros === 0
       const atencao = !critico && l.registros > 0 && l.esterilizacoes < l.atendimentos
-      const situacao = critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'
+      const situacao = critico ? 'Nunca registrou' : atencao ? 'Abaixo do esperado' : '✓ Em dia'
       const classe = critico ? 'crit' : atencao ? 'atn' : 'ok'
       return `<tr class="${classe}"><td>${esc(l.nome)}</td><td class="c">${l.atendimentos}</td><td class="c">${l.esterilizacoes}</td><td>${esc(l.servicos.join(', '))}</td><td class="c situacao">${situacao}</td></tr>`
     }).join('')
 
     const linhasRegistros = items.map(it => {
       const pendente = !it.dataDevolucao.trim()
-      return `<tr><td>${esc(it.profissional)}</td><td class="c">${esc(it.quantidade)}</td><td class="c">${esc(it.data)}</td><td class="c">${pendente ? '🔴 Pendente' : `✓ ${esc(it.dataDevolucao)}`}</td><td>${esc(it.observacao)}</td></tr>`
+      return `<tr><td>${esc(it.profissional)}</td><td class="c">${esc(it.quantidade)}</td><td class="c">${esc(it.data)}</td><td class="c">${pendente ? 'Pendente' : `✓ ${esc(it.dataDevolucao)}`}</td><td>${esc(it.observacao)}</td></tr>`
     }).join('')
 
     // Os alicates do fluxo de solicitações entram na mesma tabela — são
@@ -239,7 +239,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
           aviso evita que o número pareça errado. */}
       {fluxoForaDoMes > 0 && (
         <p style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px', margin: '0 0 16px' }}>
-          ⚠️ Existe(m) <strong>{fluxoForaDoMes}</strong> pedido(s) de alicate na aba Solicitações com data de <strong>outro mês</strong> — eles não entram nesta conta, que é só de {mes.split('-').reverse().join('/')}. A data de cada pedido aparece na aba Solicitações.
+          Existe(m) <strong>{fluxoForaDoMes}</strong> pedido(s) de alicate na aba Solicitações com data de <strong>outro mês</strong> — eles não entram nesta conta, que é só de {mes.split('-').reverse().join('/')}. A data de cada pedido aparece na aba Solicitações.
         </p>
       )}
 
@@ -253,7 +253,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
 
       {/* ── Painel comparativo ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>📊 Atendimentos x Esterilização — {mes.split('-').reverse().join('/')}</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Atendimentos x Esterilização — {mes.split('-').reverse().join('/')}</h3>
         {loadingCruzamento || loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 30 }}><Loader2 size={20} className="animate-spin" style={{ color: COR }} /></div> :
           linhas.length === 0 ? (
             <p style={{ fontSize: 13, color: '#9ca3af', padding: '16px 0' }}>Nenhum atendimento de manicure/pedicure/sobrancelha encontrado nos Relatórios para este mês.</p>
@@ -274,7 +274,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
                       <span style={{ fontSize: 12, color: '#374151' }}>{l.atendimentos} atendimento{l.atendimentos !== 1 ? 's' : ''}</span>
                       <span style={{ fontSize: 12, color: '#374151' }}>· {l.esterilizacoes} esterilizaç{l.esterilizacoes !== 1 ? 'ões' : 'ão'} registrada{l.esterilizacoes !== 1 ? 's' : ''}</span>
                       <div style={{ flex: 1 }} />
-                      <span style={{ fontSize: 11, fontWeight: 800, color: cor }}>{critico ? '🔴 Nunca registrou' : atencao ? '🟡 Abaixo do esperado' : '✓ Em dia'}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: cor }}>{critico ? 'Nunca registrou' : atencao ? 'Abaixo do esperado' : '✓ Em dia'}</span>
                       {expandido ? <ChevronUp size={14} color="#9ca3af" /> : <ChevronDown size={14} color="#9ca3af" />}
                     </div>
                     {expandido && (
@@ -295,7 +295,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
       {/* ── Alicates vindos do fluxo de solicitações (só leitura) ── */}
       {fluxoDoMes.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>🔁 Alicates pelo fluxo de solicitações — {mes.split('-').reverse().join('/')}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Alicates pelo fluxo de solicitações — {mes.split('-').reverse().join('/')}</h3>
           <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 10px' }}>Já contam no painel acima. Para receber, entregar ou excluir, use a aba <strong>Solicitações</strong>.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {fluxoDoMes.map(p => {
@@ -315,7 +315,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
       )}
 
       {/* ── Lista de registros ── */}
-      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧽 Registros de esterilização do mês</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Registros de esterilização do mês</h3>
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
@@ -338,7 +338,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
                   <div style={{ fontSize: 12.5, color: '#374151' }}>Quantidade de material: <strong>{it.quantidade || '—'}</strong></div>
                   {it.observacao && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{it.observacao}</div>}
                   <div style={{ marginTop: 10, padding: '8px 10px', background: pendente ? '#fef2f2' : '#f0fdf4', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: pendente ? '#dc2626' : '#16a34a' }}>{pendente ? '🔴 PENDENTE' : `✓ DEVOLVIDO ${it.dataDevolucao}`}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: pendente ? '#dc2626' : '#16a34a' }}>{pendente ? 'PENDENTE' : `✓ DEVOLVIDO ${it.dataDevolucao}`}</span>
                     {pendente
                       ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Marcar devolvido</button>
                       : <button onClick={() => reabrir(it.id)} title="Reabrir" style={iconBtn('#6b6860')}><RotateCcw size={13} /></button>}
@@ -367,7 +367,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
                       <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6b6860', fontSize: 12.5 }}>{it.data || '—'}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                         {pendente
-                          ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>🔴 Pendente — marcar devolvido</button>
+                          ? <button onClick={() => marcarDevolvido(it.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Pendente — marcar devolvido</button>
                           : <button onClick={() => reabrir(it.id)} title="Clique para reabrir" style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#f0fdf4', color: '#16a34a', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>✓ Devolvido {it.dataDevolucao}</button>}
                       </td>
                       <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 12.5 }}>{it.observacao || '—'}</td>
@@ -388,7 +388,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{items.some(x => x.id === modal.id) ? '✏️ Editar registro' : '🧽 Registrar esterilização'}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{items.some(x => x.id === modal.id) ? 'Editar registro' : 'Registrar esterilização'}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 

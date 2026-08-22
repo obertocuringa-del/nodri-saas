@@ -102,7 +102,7 @@ export default function PlanejamentoEstrategico() {
   // ── Edição da estrutura ──
   const mudarCards = (fn: (c: CardPlano[]) => CardPlano[]) => { setCards(c => fn(clone(c))); setDirtyEstrut(true) }
   const editCard = (cardId: string, campo: keyof CardPlano, v: any) => mudarCards(cs => cs.map(c => c.id === cardId ? { ...c, [campo]: v } : c))
-  const addCard = () => { const novo: CardPlano = { id: rid(), icone: '📌', titulo: 'Novo planejamento', responsavel: '', oque: '', itens: [] }; mudarCards(cs => [...cs, novo]); setCardAberto(novo.id) }
+  const addCard = () => { const novo: CardPlano = { id: rid(), icone: '', titulo: 'Novo planejamento', responsavel: '', oque: '', itens: [] }; mudarCards(cs => [...cs, novo]); setCardAberto(novo.id) }
   const delCard = (cardId: string) => { if (!confirm('Excluir este card inteiro, com os itens dele?')) return; mudarCards(cs => cs.filter(c => c.id !== cardId)); setCardAberto('') }
   const editItem = (cardId: string, itemId: string, campo: keyof ItemPlano, v: any) => mudarCards(cs => cs.map(c => c.id === cardId ? { ...c, itens: c.itens.map(i => i.id === itemId ? { ...i, [campo]: v } : i) } : c))
   const addItem = (cardId: string) => mudarCards(cs => cs.map(c => c.id === cardId ? { ...c, itens: [...c.itens, { id: rid(), nome: '', desc: '' }] } : c))
@@ -168,7 +168,7 @@ export default function PlanejamentoEstrategico() {
               <span style={{ fontSize: 24 }}>{card.icone}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', margin: 0 }}>{card.titulo}</h2>
-                <p style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700, margin: '1px 0 0' }}>👤 {card.responsavel} · {MESES[mes - 1]}/{ano}</p>
+                <p style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700, margin: '1px 0 0' }}>{card.responsavel} · {MESES[mes - 1]}/{ano}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: pct === 100 ? '#16a34a' : '#5b4fcf' }}>{pct}%</div>
@@ -293,7 +293,7 @@ export default function PlanejamentoEstrategico() {
                 <span style={{ fontSize: 22, lineHeight: 1 }}>{c.icone}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{c.titulo}</div>
-                  <div style={{ fontSize: 10.5, color: '#8a8680', fontWeight: 600, marginTop: 2 }}>👤 {c.responsavel || '—'}</div>
+                  <div style={{ fontSize: 10.5, color: '#8a8680', fontWeight: 600, marginTop: 2 }}>{c.responsavel || '—'}</div>
                 </div>
                 {editando
                   ? <Pencil size={13} color="#5b4fcf" style={{ flexShrink: 0 }} />

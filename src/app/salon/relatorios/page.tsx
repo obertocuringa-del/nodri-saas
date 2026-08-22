@@ -1132,7 +1132,7 @@ export default function RelatoriosPage() {
 
             {permCarregado && !algumaAbaRel && (
               <div style={{ padding: 50, textAlign: 'center', color: '#6b6860', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
-                🔒 Você não tem relatórios liberados no seu acesso.<br />Peça ao administrador do salão para liberar em <strong>Usuários &amp; Acessos</strong>.
+                Você não tem relatórios liberados no seu acesso.<br />Peça ao administrador do salão para liberar em <strong>Usuários &amp; Acessos</strong>.
               </div>
             )}
 
@@ -1140,7 +1140,7 @@ export default function RelatoriosPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
               <button onClick={imprimirTudoRel} title="Imprime a aba inteira em A4, com todos os dados"
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#5b4fcf', color: '#fff' }}>
-                🖨️ Imprimir tudo
+                Imprimir tudo
               </button>
             </div>
             )}
@@ -1158,7 +1158,7 @@ export default function RelatoriosPage() {
 ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r2.ticket],['Clientes Atendidos',r1.clientes,r2.clientes],['Clientes Novos',r1.novos,r2.novos],['Fat. Serviços',r1.fat_srv,r2.fat_srv],['Fat. Produtos',r1.fat_prd,r2.fat_prd]] as [string,number,number][]).map(([lbl,v1,v2])=>{const p=Number(v2)>0?((Number(v1)-Number(v2))/Number(v2)*100):0;const cor=p>=0?'#166534':'#991b1b';const isN=lbl.includes('Clientes');return `<tr><td>${lbl}</td><td style="text-align:right;font-weight:700">${isN?v1.toLocaleString('pt-BR'):moeda(v1)}</td><td style="text-align:right;color:#777">${isN?v2.toLocaleString('pt-BR'):moeda(v2)}</td><td style="text-align:right;font-weight:700;color:${cor}">${p>=0?'+':''}${p.toFixed(1)}%</td></tr>`}).join('')}
 </tbody></table></div>`
                     abrirImpressaoRel(wrapRel('Relatório Geral', corpo))
-                  }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
+                  }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">Imprimir</button>
                 </div>
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
@@ -1584,7 +1584,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       const vezes = (mediaNecessaria / mediaHistorica).toFixed(1)
                       return (
                         <div style={{ background: '#fff0f0', border: '1px solid #ef444460', borderLeft: '3px solid #ef4444', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
+
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', marginBottom: 3 }}>Meta do mês praticamente inalcançável</div>
                             <div style={{ fontSize: 11, color: '#767069', lineHeight: 1.6 }}>
@@ -2117,7 +2117,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                   onClick={() => salvarMetasProfsParaIA(p1Ano, p1Mes, metaEmComissoes, resultado, redistResultado)}
                   style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 16 }}
                 >
-                  💾 Salvar metas para a IA
+                  Salvar metas para a IA
                 </button>
               )
 
@@ -2134,7 +2134,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       }).join('')
                       const corpo = `<div class="cards"><div class="card"><div class="card-lbl">Surplus Redistribuído</div><div class="card-val" style="color:#5b4fcf">${moeda(surplus)}</div></div><div class="card"><div class="card-lbl">Profis. Ajustados</div><div class="card-val">${totalAjustados}</div></div><div class="card"><div class="card-lbl">Doadores / Receptores</div><div class="card-val">${redistResultado.filter(r=>r.tipo==='doador').length} / ${redistResultado.filter(r=>r.tipo==='receptor').length}</div></div></div><div class="sec"><div class="sec-title">Redistribuição de Metas — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta Original</th><th style="text-align:right">Meta Ajustada</th><th style="text-align:right">Diferença</th><th>Motivo</th></tr></thead><tbody>${rows}</tbody></table></div>`
                       abrirImpressaoRel(wrapRel('Redistribuição de Metas', corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">Imprimir</button>
                   </div>
                   {/* Card resumo */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 16 }}>
@@ -2300,7 +2300,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                       }).join('')
                       const corpo = `<div class="sec"><div class="sec-title">Meta por Profissional — ${periodoRefLabel}</div><table class="tbl"><thead><tr><th>Profissional</th><th>Cargo</th><th style="text-align:right">Meta</th><th style="text-align:right">%</th></tr></thead><tbody>${rows}</tbody></table></div>`
                       abrirImpressaoRel(wrapRel('Meta Prof. — ' + periodoRefLabel, corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">Imprimir</button>
                   </div>
 
                   {/* Tabela de metas por profissional */}
@@ -2429,7 +2429,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     { id: 'crosssell', label: 'Cross-sell' },
                     { id: 'frequencia', label: 'Frequência' },
                     { id: 'diasemana', label: 'Dia da Semana' },
-                    { id: 'recuperados', label: '💚 Recuperados' },
+                    { id: 'recuperados', label: 'Recuperados' },
                   ].filter(s => podePerm('rel_' + s.id)).map(s => (
                     <button key={s.id} onClick={() => { setSubAnalise(s.id as any); if (s.id !== 'recuperados') carregarAnalise(s.id) }}
                       style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#767069' }}>
@@ -2487,7 +2487,7 @@ ${lista.map((c:any,i:number)=>{
 </tbody></table></div>`
                       const labelsMap: Record<string,string> = {risco:'Em Risco',perdidos:'Perdidos',vip:'VIP',regular:'Regular',novo:'Novas',frequencia:'Frequência',diasemana:'Dia da Semana',crosssell:'Cross-sell'}
                       abrirImpressaoRel(wrapRel(labelsMap[subAnalise]||subAnalise, corpo))
-                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">🖨️ Imprimir</button>
+                    }} style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',border:'1px solid #e0ddd8',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',background:'#fff',color:'#767069' }} className="no-mobile">Imprimir</button>
                   </div>
                 </div>
 
@@ -2536,7 +2536,7 @@ ${lista.map((c:any,i:number)=>{
                             </h3>
                             {subAnalise === 'perdidos' && analiseResumo?.ltv_total_perdidos > 0 && podePerm('rel_valores') && (
                               <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 700, marginTop: 4 }}>
-                                💸 Dinheiro perdido: <span style={{ fontSize: 15 }}>{moeda(analiseResumo.ltv_total_perdidos)}</span>
+                                Dinheiro perdido: <span style={{ fontSize: 15 }}>{moeda(analiseResumo.ltv_total_perdidos)}</span>
                                 <span style={{ fontSize: 10, color: '#767069', marginLeft: 6 }}>soma do LTV de todos os clientes perdidos</span>
                               </div>
                             )}
@@ -2549,7 +2549,7 @@ ${lista.map((c:any,i:number)=>{
                             </button>
                             <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
                               style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                              ⬇ Exportar Excel
+                              Exportar Excel
                             </button>
                           </div>
                         </div>
@@ -2614,7 +2614,7 @@ ${lista.map((c:any,i:number)=>{
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'vip')}
-                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                            style={{ background: '#f59e0b', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exportar Excel</button>
                         </div>
                         <div style={{ background: '#ffffff', border: '1.5px solid #f59e0b30', borderRadius: 12, overflow: 'hidden' }}>
                           {(analiseDetalhe as any[]).slice(0, verQtd).map((c: any, i: number) => (
@@ -2642,7 +2642,7 @@ ${lista.map((c:any,i:number)=>{
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                           <span style={{ fontSize: 13, color: '#767069' }}><span style={{ color: '#059669', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes regulares</span>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'regular')}
-                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exportar Excel</button>
                         </div>
                         <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -2686,7 +2686,7 @@ ${lista.map((c:any,i:number)=>{
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                           <span style={{ fontSize: 13, color: '#767069' }}><span style={{ color: '#0891b2', fontWeight: 700 }}>{analiseDetalhe.length}</span> clientes novas — vieram apenas 1 vez</span>
                           <button onClick={() => exportarListaExcel(analiseDetalhe, 'novos')}
-                            style={{ background: '#06b6d4', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel</button>
+                            style={{ background: '#06b6d4', color: '#ffffff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exportar Excel</button>
                         </div>
                         <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -2772,7 +2772,7 @@ ${lista.map((c:any,i:number)=>{
                               {csClientes.length > 0 && (
                                 <button onClick={exportarCsExcel}
                                   style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                                  ⬇ Exportar Excel (nome + celular)
+                                  Exportar Excel (nome + celular)
                                 </button>
                               )}
                             </div>
@@ -2790,7 +2790,7 @@ ${lista.map((c:any,i:number)=>{
                                     <div key={i} style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>
                                       <div style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 13, marginBottom: 5 }}>{c.cliente}</div>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', color: '#6b6860' }}>
-                                        <span style={{ color: '#5b4fcf' }}>📱 {c.celular || '—'}</span>
+                                        <span style={{ color: '#5b4fcf' }}>{c.celular || '—'}</span>
                                         <span>Visitas: <strong>{c.total_visitas}x</strong></span>
                                         <span>Última: {c.ultima_visita || '—'}</span>
                                       </div>
@@ -2936,7 +2936,7 @@ ${lista.map((c:any,i:number)=>{
               <div style={{ display: 'flex', gap: 8 }}>
                 {freqClientes.length > 0 && (
                   <button onClick={() => exportarListaExcel(freqClientes, `frequencia-${freqModal.label.replace(/\s/g,'-')}`)}
-                    style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>⬇ Exportar Excel (nome + celular)</button>
+                    style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar Excel (nome + celular)</button>
                 )}
                 <button onClick={() => setFreqModal(null)} style={{ background: '#ffffff', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#767069', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
               </div>

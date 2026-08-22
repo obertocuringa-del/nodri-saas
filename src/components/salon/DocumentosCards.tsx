@@ -243,7 +243,7 @@ function ModalCompartilhar({ doc, onClose }: { doc: Doc; onClose: () => void }) 
       a.href = URL.createObjectURL(file); a.download = doc.filename || 'documento'
       a.click(); URL.revokeObjectURL(a.href)
       try { await navigator.clipboard?.writeText(texto) } catch { /* segue */ }
-      toast('Arquivo baixado e texto copiado — anexe na conversa.', { icon: '📎', duration: 6000 })
+      toast('Arquivo baixado e texto copiado — anexe na conversa.', { icon: '', duration: 6000 })
     } else {
       toast.error('Não foi possível baixar o arquivo. Use “Copiar link”.')
     }

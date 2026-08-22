@@ -81,7 +81,7 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: '#1a1a1a' }}>Acesso do Profissional</span>
           <span style={{ display: 'block', fontSize: 12, color: '#9ca3af' }}>
-            {liberado ? `✅ Liberado${login ? ` · login: ${login}` : ''}` : '🔒 Desligado'}{qtdOcultos > 0 ? ` · ${qtdOcultos} item(ns) oculto(s)` : ''}{oculto.autoavaliacao ? ' · autoavaliação ligada' : ''}
+            {liberado ? `Liberado${login ? ` · login: ${login}` : ''}` : 'Desligado'}{qtdOcultos > 0 ? ` · ${qtdOcultos} item(ns) oculto(s)` : ''}{oculto.autoavaliacao ? ' · autoavaliação ligada' : ''}
           </span>
         </span>
         <ChevronDown size={18} color="#5b4fcf" style={{ transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />
@@ -98,7 +98,7 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
       <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: liberado ? '#eafaf0' : '#faf9f7', border: `1.5px solid ${liberado ? '#16a34a' : '#e0ddd8'}`, cursor: 'pointer', marginBottom: 14 }}>
         <input type="checkbox" checked={liberado} onChange={e => setLiberado(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#16a34a' }} />
         <span style={{ fontSize: 14, fontWeight: 700, color: liberado ? '#15803d' : '#6b6860' }}>
-          {liberado ? '✅ Acesso LIBERADO — o profissional consegue entrar' : '🔒 Acesso DESLIGADO — o profissional não entra'}
+          {liberado ? 'Acesso LIBERADO — o profissional consegue entrar' : 'Acesso DESLIGADO — o profissional não entra'}
         </span>
       </label>
 

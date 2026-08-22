@@ -120,7 +120,7 @@ export default function CurriculosPage() {
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
         {/* Link público */}
         <div className="nodri-card p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">🔗 Link do formulário (envie para os candidatos)</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">Link do formulário (envie para os candidatos)</p>
           <div className="flex gap-2">
             <input readOnly value={link} className="flex-1 px-3 py-2 rounded-lg text-[12px] text-nodri-t1 bg-nodri-surface border border-nodri-border" />
             <button onClick={copiarLink} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff' }}>

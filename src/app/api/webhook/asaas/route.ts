@@ -277,7 +277,7 @@ async function tratarAfiliado(dados: {
   }
 
   await supabase.from('notificacoes').insert({
-    titulo: '💰 Comissão de afiliado a pagar',
+    titulo: 'Comissão de afiliado a pagar',
     mensagem: `${afiliado.nome} (${afiliado.cupom}) tem R$ ${Number(comissao.valor_comissao).toFixed(2)} a receber pela venda de ${dados.salaoNome}.`,
     tipo: 'info', para_todos: false, lida: false, salao_id: null,
     metadata: { tipo: 'comissao_afiliado', afiliado_id: afiliado.id, comissao_id: comissao.id },
@@ -394,7 +394,7 @@ async function criarSalaoDaCompra(assinaturaId: string): Promise<{ id: string; n
     // Mas sem a senha o cliente não entra, então o aviso vai para o painel
     // master com a senha — é o que permite você socorrer sem ter de resetar.
     await supabase.from('notificacoes').insert({
-      titulo: '⚠️ Cliente pagou e NÃO recebeu a senha',
+      titulo: 'Cliente pagou e NÃO recebeu a senha',
       mensagem: `${compra.nome_salao} assinou o plano ${compra.plano}, mas o e-mail não saiu. `
         + `Login: ${email} · Senha provisória: ${senha}. Repasse pelo WhatsApp (${compra.telefone || 'sem telefone'}).`,
       tipo: 'danger',

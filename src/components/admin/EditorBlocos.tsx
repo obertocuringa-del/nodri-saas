@@ -250,7 +250,7 @@ function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
   const [expandido, setExpandido] = useState(true)
 
   const TIPOS_LABEL: Record<BlocoTipo, string> = {
-    texto: ' Texto Rico', imagem: '️ Imagem', video: ' Vídeo YouTube',
+    texto: ' Texto Rico', imagem: 'Imagem', video: ' Vídeo YouTube',
     pdf: ' PDF', excel: ' Excel', tabela: ' Tabela', colunas: '⊞ Colunas',
     checklist: ' Checklist', faq: ' FAQ',
   }
@@ -334,7 +334,7 @@ function gerarId() { return Math.random().toString(36).slice(2) }
 
 const TIPOS_DISPONIVEIS: { tipo: BlocoTipo; label: string; icone: string }[] = [
   { tipo: 'texto', label: 'Texto Rico', icone: '' },
-  { tipo: 'imagem', label: 'Imagem', icone: '️' },
+  { tipo: 'imagem', label: 'Imagem', icone: '' },
   { tipo: 'video', label: 'Vídeo YouTube', icone: '' },
   { tipo: 'pdf', label: 'PDF', icone: '' },
   { tipo: 'excel', label: 'Excel/Planilha', icone: '' },

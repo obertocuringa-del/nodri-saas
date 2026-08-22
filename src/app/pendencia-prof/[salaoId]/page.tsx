@@ -75,7 +75,7 @@ export default function PendenciaPublicaPage() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '24px' }}>
-            📋
+
           </div>
           <h1 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: '0 0 4px' }}>Registrar Pendência</h1>
           <p style={{ color: '#767069', fontSize: '13px', margin: 0 }}>{salaoNome}</p>

@@ -19,7 +19,7 @@ function encontrarProfissional(nome: string, profissionais: any[]) {
 
 export async function executarFerramenta(nome: string, args: any, salaoId: string, profissionalId?: string): Promise<string> {
   try {
-    // 🔒 MODO PROFISSIONAL: ferramentas que expõem dados do salão ou de colegas
+    // MODO PROFISSIONAL: ferramentas que expõem dados do salão ou de colegas
     // são BLOQUEADAS no servidor (não confiar só no prompt). O profissional só
     // enxerga a si mesmo.
     if (profissionalId) {
@@ -39,7 +39,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
         const { data: profs } = await supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId)
         const prof = encontrarProfissional(args.nome || '', profs || [])
         if (!prof) return `Profissional "${args.nome}" não encontrado.`
-        // 🔒 MODO PROFISSIONAL: só pode consultar a si mesmo.
+        // MODO PROFISSIONAL: só pode consultar a si mesmo.
         if (profissionalId && prof.id !== profissionalId) {
           return 'Neste chat consigo mostrar apenas os seus próprios dados. Para ver dados de outros profissionais, o gestor pode acessar o painel principal.'
         }
@@ -461,7 +461,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
 
         const linhas = ['TABELA DE SERVIÇOS E PREÇOS DO SALÃO:\n']
         Object.entries(porCategoria).forEach(([cat, items]) => {
-          linhas.push(`📂 ${cat.toUpperCase()}`)
+          linhas.push(`${cat.toUpperCase()}`)
           linhas.push(...items)
           linhas.push('')
         })
@@ -513,7 +513,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
 
         for (const [dia, dados] of diasOrdenados) {
           const media = dados.ocorrencias > 0 ? dados.total / dados.ocorrencias : 0
-          linhas.push(`📅 ${dia.charAt(0).toUpperCase() + dia.slice(1)}`)
+          linhas.push(`${dia.charAt(0).toUpperCase() + dia.slice(1)}`)
           linhas.push(`  Total acumulado: ${fmtR(dados.total)}`)
           linhas.push(`  Quantidade de dias: ${dados.ocorrencias}`)
           linhas.push(`  Média por dia: ${fmtR(media)}`)

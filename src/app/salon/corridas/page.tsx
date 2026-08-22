@@ -10,7 +10,7 @@ export default function CorridasPage() {
         <a href="/salon" className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><ArrowLeft size={16} /> Voltar</a>
         <a href="/salon" className="flex items-center gap-1 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><Home size={15} /> Início</a>
         <span className="text-nodri-border">|</span>
-        <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">🏆 Corridas Internas</h1>
+        <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Corridas Internas</h1>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
         <CorridasInternas />

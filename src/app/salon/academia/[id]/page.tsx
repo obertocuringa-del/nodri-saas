@@ -109,10 +109,7 @@ export default function ArtigoPage() {
           </div>
 
           {/* Título */}
-          <div className="flex items-start gap-3 mb-4">
-            <span className="text-4xl">{artigo.emoji}</span>
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">{artigo.titulo}</h1>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-4">{artigo.titulo}</h1>
 
           {/* Resumo */}
           {artigo.resumo && (

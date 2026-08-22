@@ -62,7 +62,7 @@ function imprimirEstrategia(planoTexto: string, nomeProf: string) {
   ul, ol { padding-left: 18px; margin: 4px 0 8px; }
   li { margin-bottom: 3px; }
   .bullet-cyan::before { content: "●"; color: #5b4fcf; margin-right: 6px; font-size: 8pt; }
-  .bullet-red::before { content: "🔴"; margin-right: 4px; }
+  .bullet-red::before { content: ""; margin-right: 4px; }
   .bullet-check::before { content: "□"; margin-right: 6px; font-size: 11pt; color: #555; }
 
   /* Negrito e destaques */
@@ -187,20 +187,20 @@ function renderParaImpressao(texto: string): string {
       continue
     }
 
-    // Bullets 🔴
-    if (/^🔴/.test(linha)) {
-      out.push(`<div class="alert-box">${applyInline(linha.replace(/^🔴\s*/, ''))}</div>`)
+    // Bullets 
+    if (/^/.test(linha)) {
+      out.push(`<div class="alert-box">${applyInline(linha.replace(/^\s*/, ''))}</div>`)
       continue
     }
 
-    // ✅
-    if (/^✅/.test(linha)) {
-      out.push(`<div class="success-box">${applyInline(linha.replace(/^✅\s*/, ''))}</div>`)
+    // 
+    if (/^/.test(linha)) {
+      out.push(`<div class="success-box">${applyInline(linha.replace(/^\s*/, ''))}</div>`)
       continue
     }
 
     // Insight NODRI
-    if (/^🤖/.test(linha)) {
+    if (/^/.test(linha)) {
       out.push(`<div class="insight-box">${applyInline(linha)}</div>`)
       continue
     }
@@ -213,8 +213,8 @@ function renderParaImpressao(texto: string): string {
       continue
     }
 
-    // Linha emoji-título curta (⚠️, 📍, etc.)
-    if (/^(⚠️|📍|📌|📊|📅|💰|💎|🧠|⚡|🔮|🛒|👥|❤️|✂️|🎯|🏆|👔|💸|❤|📋|📱|🚀)/.test(linha) && linha.length < 80) {
+    // Linha emoji-título curta (,, etc.)
+    if (/^(|||||||||||||||||||||)/.test(linha) && linha.length < 80) {
       out.push(`<span class="emoji-title">${applyInline(linha)}</span>`)
       continue
     }
@@ -275,14 +275,14 @@ function renderPlanoHtml(texto: string): string {
       continue
     }
 
-    // Linhas com status (✅ / ⚠️ / 🔴 / 🟢) tratadas como mini-título
-    if (/^(✅|⚠️|🔴|🟢|🟡|🔵|🏆|💎|🧠|⚡|🔮|🚨|📌|📊|📅|📍|👔|🤖)\s*[A-ZÀ-Ú]/.test(linha) && linha.length < 60) {
+    // Linhas com status (/ / /) tratadas como mini-título
+    if (/^(|||||||||||||||||)\s*[A-ZÀ-Ú]/.test(linha) && linha.length < 60) {
       out.push(`<div style="font-weight:700;font-size:12px;color:#1a1a1a;margin:8px 0 4px">${l}</div>`)
       continue
     }
 
     // Linhas numeradas
-    const numMatch = linha.match(/^(\d+)[️⃣.]\s*(.+)$/) || linha.match(/^(\d+)\.\s+(.+)$/)
+    const numMatch = linha.match(/^(\d+)[⃣.]\s*(.+)$/) || linha.match(/^(\d+)\.\s+(.+)$/)
     if (numMatch) {
       out.push(`<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5b4fcf;font-weight:700;flex-shrink:0">${numMatch[1]}.</span><span>${numMatch[2].replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#3a3835">$1</strong>')}</span></div>`)
       continue
@@ -429,7 +429,7 @@ function BlocoFidelizacao({ f, comissaoMedia = 0 }: { f: Fidelizacao; comissaoMe
         </div>
         <p className="text-[10px] text-nodri-t3">
           De cada 100 novos, <strong className="text-nodri-t1">{Math.abs(Math.round(f.taxa_fidelizacao))}</strong> viram fiéis.
-          {isCrit && ' ️ Crie estratégia de pós-venda imediato!'}
+          {isCrit && ' Crie estratégia de pós-venda imediato!'}
         </p>
       </div>
     </div>
@@ -676,7 +676,7 @@ function gerarNarrativa(
 
   // 7. Checklist
   if (checkObrig.length>0)
-    partes.push(`️ Atenção: há item obrigatório pendente no checklist (${checkObrig.map((c:any)=>c.label).join(', ')}) — regularize o quanto antes.`)
+    partes.push(`Atenção: há item obrigatório pendente no checklist (${checkObrig.map((c:any)=>c.label).join(', ')}) — regularize o quanto antes.`)
 
   // 8. Projeção
   if (projecao) {
@@ -741,13 +741,13 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
 
   // Diagnóstico textual
   const textos: string[] = []
-  if (pctFat!==null) textos.push(pctFat>=10 ? ` Faturamento cresceu ${pctFat.toFixed(1)}% — excelente desempenho no período.` : pctFat>=0 ? `️ Faturamento cresceu apenas ${pctFat.toFixed(1)}% — há espaço para melhorar.` : ` Faturamento caiu ${Math.abs(pctFat).toFixed(1)}% — ação imediata necessária.`)
-  if (pctTicket!==null) textos.push(pctTicket>=5 ? ` Ticket médio subiu ${pctTicket.toFixed(1)}% — você está agregando mais valor por atendimento.` : pctTicket>=-5 ? `️ Ticket médio praticamente estável (${pctTicket.toFixed(1)}%) — considere serviços complementares.` : ` Ticket médio caiu ${Math.abs(pctTicket).toFixed(1)}% — você trabalhou mais e ganhou menos por atendimento. Revise preços ou ofereça serviços de maior valor.`)
-  if (p2?.taxa_ocupacao!==undefined) textos.push(p2.taxa_ocupacao>=60 ? ` Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — agenda bem preenchida.` : p2.taxa_ocupacao>=35 ? `️ Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — tente preencher mais horários disponíveis.` : ` Ocupação de apenas ${p2.taxa_ocupacao.toFixed(1)}% — agenda muito vazia. Invista em confirmação de agendamentos e divulgação.`)
-  if (fidel) textos.push(fidel.taxa_fidelizacao>=70 ? ` ${fidel.taxa_fidelizacao}% dos novos clientes voltaram — ótima fidelização!` : fidel.taxa_fidelizacao>=50 ? `️ Apenas ${fidel.taxa_fidelizacao}% dos novos voltaram. ${fidel.perdidos} clientes não retornaram.` : ` Fidelização crítica: ${fidel.taxa_fidelizacao}%. ${fidel.perdidos} clientes novos não voltaram (prejuízo estimado: ${fmt$(fidel.valor_perdido)}).`)
+  if (pctFat!==null) textos.push(pctFat>=10 ? ` Faturamento cresceu ${pctFat.toFixed(1)}% — excelente desempenho no período.` : pctFat>=0 ? `Faturamento cresceu apenas ${pctFat.toFixed(1)}% — há espaço para melhorar.` : ` Faturamento caiu ${Math.abs(pctFat).toFixed(1)}% — ação imediata necessária.`)
+  if (pctTicket!==null) textos.push(pctTicket>=5 ? ` Ticket médio subiu ${pctTicket.toFixed(1)}% — você está agregando mais valor por atendimento.` : pctTicket>=-5 ? `Ticket médio praticamente estável (${pctTicket.toFixed(1)}%) — considere serviços complementares.` : ` Ticket médio caiu ${Math.abs(pctTicket).toFixed(1)}% — você trabalhou mais e ganhou menos por atendimento. Revise preços ou ofereça serviços de maior valor.`)
+  if (p2?.taxa_ocupacao!==undefined) textos.push(p2.taxa_ocupacao>=60 ? ` Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — agenda bem preenchida.` : p2.taxa_ocupacao>=35 ? `Ocupação em ${p2.taxa_ocupacao.toFixed(1)}% — tente preencher mais horários disponíveis.` : ` Ocupação de apenas ${p2.taxa_ocupacao.toFixed(1)}% — agenda muito vazia. Invista em confirmação de agendamentos e divulgação.`)
+  if (fidel) textos.push(fidel.taxa_fidelizacao>=70 ? ` ${fidel.taxa_fidelizacao}% dos novos clientes voltaram — ótima fidelização!` : fidel.taxa_fidelizacao>=50 ? `Apenas ${fidel.taxa_fidelizacao}% dos novos voltaram. ${fidel.perdidos} clientes não retornaram.` : ` Fidelização crítica: ${fidel.taxa_fidelizacao}%. ${fidel.perdidos} clientes novos não voltaram (prejuízo estimado: ${fmt$(fidel.valor_perdido)}).`)
   if (checkObrig.length>0) textos.push(` ${checkObrig.length} item(s) obrigatório(s) do checklist pendente(s): ${checkObrig.map(c=>c.label).join(', ')}.`)
   if (!prof.cnpj) textos.push(' CNPJ não cadastrado — regularize a situação do profissional.')
-  if (ocNeg>0) textos.push(`️ ${ocNeg} ocorrência(s) negativa(s) registrada(s). ${ocPos>0?`${ocPos} positiva(s) compensam parcialmente.`:''}`)
+  if (ocNeg>0) textos.push(`${ocNeg} ocorrência(s) negativa(s) registrada(s). ${ocPos>0?`${ocPos} positiva(s) compensam parcialmente.`:''}`)
   if (metricas?.projecao?.tendencia==='alta') textos.push(` Tendência de crescimento projetada para o próximo mês.`)
   if (metricas?.projecao?.tendencia==='baixa') textos.push(` Tendência de queda projetada — planeje ações de recuperação.`)
 
@@ -777,7 +777,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
           <div>
             <h2 className="font-syne font-black text-[18px] text-nodri-t1"> Diagnóstico Geral</h2>
             <p className="text-[11px] text-nodri-t3 mt-1">Análise automática cruzando cadastro, faturamento e ocorrências</p>
-            {semDados && <p className="text-[11px] text-nodri-amber mt-2">️ Aplique um filtro na aba Faturamento para análise completa.</p>}
+            {semDados && <p className="text-[11px] text-nodri-amber mt-2">Aplique um filtro na aba Faturamento para análise completa.</p>}
           </div>
           <div className="text-right shrink-0 ml-4">
             <div className="font-syne font-black text-[48px] leading-none" style={{color:corGeral}}>{scoreGeral ?? '—'}</div>
@@ -797,11 +797,11 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {([
             {l:' Faturamento',  s:sFat,    v: pctFat!==null?`${pctFat>=0?'+':''}${pctFat.toFixed(1)}%`:'Sem dados'},
-            {l:'️ Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
-            {l:'️ Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
+            {l:'Ticket Médio', s:sTicket, v: pctTicket!==null?`${pctTicket>=0?'+':''}${pctTicket.toFixed(1)}%`:'Sem dados'},
+            {l:'Ocupação',     s:sOcup,   v: p2?.taxa_ocupacao!==undefined?`${p2.taxa_ocupacao.toFixed(1)}%`:'Sem dados'},
             {l:' Fidelização',  s:sFidel,  v: fidel?`${fidel.taxa_fidelizacao}%`:'Sem dados'},
             {l:' Checklist',    s:sCheck,  v:`${checkOk}/${checkTotal} itens`},
-            {l:'️ Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
+            {l:'Ocorrências',  s:sOc,    v: ocNeg===0?'Nenhuma negativa':`${ocNeg} negativa(s)`},
           ]).map(item=>(
             <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -869,7 +869,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
       {/* Ocorrências */}
       {metricas?.feedbacks && metricas.feedbacks.length > 0 && (
         <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-          <h3 className="font-syne font-bold text-[13px] mb-4">️ Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
+          <h3 className="font-syne font-bold text-[13px] mb-4">Ocorrências no Período <span className="text-[10px] text-nodri-t3 font-normal">{metricas.feedbacks.length} registros</span></h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {[{l:'Positivas',v:ocPos,c:'#22c55e'},{l:'Negativas',v:ocNeg,c:'#ef4444'},{l:'Total',v:metricas.feedbacks.length,c:'#5b4fcf'}].map(item=>(
               <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3 text-center">
@@ -1342,8 +1342,8 @@ function BlocoEficiencia({ p1, p2 }: { p1: MetricaBloco; p2: MetricaBloco }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
           {l:' Faturamento / Dia', a:fatDia2, b:fatDia1, f:(v:number)=>fmt$(v)},
-          {l:'️ Serviços / Dia',    a:sDia2,   b:sDia1,   f:(v:number)=>f(v)},
-          {l:'️ Ticket / Serviço',  a:ticketS2, b:ticketS1, f:(v:number)=>fmt$(v)},
+          {l:'Serviços / Dia',    a:sDia2,   b:sDia1,   f:(v:number)=>f(v)},
+          {l:'Ticket / Serviço',  a:ticketS2, b:ticketS1, f:(v:number)=>fmt$(v)},
         ].map(item=>(
           <div key={item.l} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
             <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
@@ -1429,7 +1429,7 @@ function BlocoProjecao({ p }: { p: ProjecaoData }) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-syne font-bold text-[13px]"> Projeção de Faturamento</h3>
         <span className="text-[10px] px-3 py-1 rounded-full font-bold border" style={{color:cor,borderColor:bd,background:bg}}>
-          {p.tendencia==='alta'?' CRESCENDO':p.tendencia==='baixa'?' QUEDA':'️ ESTÁVEL'}
+          {p.tendencia==='alta'?' CRESCENDO':p.tendencia==='baixa'?' QUEDA':'ESTÁVEL'}
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1467,7 +1467,7 @@ function BlocoSazonalidade({ s }: { s: SazonalidadeItem[] }) {
         <h3 className="font-syne font-bold text-[13px]"> Sazonalidade — Médias Históricas por Mês</h3>
         <div className="flex gap-3 text-[10px]">
           <span style={{color:'#15803d',fontWeight:700}}> {MESES[melhor.mes-1]} ({fmt$(melhor.media)})</span>
-          <span style={{color:'#ef4444',fontWeight:700}}>️ {MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
+          <span style={{color:'#ef4444',fontWeight:700}}>{MESES[pior.mes-1]} ({fmt$(pior.media)})</span>
         </div>
       </div>
       <div className="grid grid-cols-6 md:grid-cols-12 gap-1.5">
@@ -1510,12 +1510,12 @@ function BlocoComparativoMetrica({ p1, p2 }: { p1: MetricaBloco | null; p2: Metr
   }
   const metricas8 = [
     { l:' Faturamento',      a:p2?.faturamento||0,              b:p1?.faturamento||0,              f:fmt$loc },
-    { l:'️ Ticket Médio',     a:p2?.ticket_medio||0,             b:p1?.ticket_medio||0,             f:fmt$loc },
+    { l:'Ticket Médio',     a:p2?.ticket_medio||0,             b:p1?.ticket_medio||0,             f:fmt$loc },
     { l:' Preferência',      a:p2?.clientes_preferencia||0,     b:p1?.clientes_preferencia||0,     f:fmtN },
     { l:' Sem Pref.',        a:p2?.clientes_sem_preferencia||0, b:p1?.clientes_sem_preferencia||0, f:fmtN, inv:true },
     { l:' Dias Trabalhados', a:p2?.dias_trabalhados||0,         b:p1?.dias_trabalhados||0,         f:fmtN },
-    { l:'️ Ocupação',         a:p2?.taxa_ocupacao||0,            b:p1?.taxa_ocupacao||0,            f:fmtP },
-    { l:'️ Serviços',         a:p2?.total_servicos||0,           b:p1?.total_servicos||0,           f:fmtN },
+    { l:'Ocupação',         a:p2?.taxa_ocupacao||0,            b:p1?.taxa_ocupacao||0,            f:fmtP },
+    { l:'Serviços',         a:p2?.total_servicos||0,           b:p1?.total_servicos||0,           f:fmtN },
     { l:' Produtos',         a:p2?.total_produtos||0,           b:p1?.total_produtos||0,           f:fmtN },
   ]
   return (
@@ -1705,7 +1705,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
     <div className="rounded-2xl border sticky top-20 space-y-3 p-4 shadow-sm"
       style={{ background:'#ffffff', borderColor:'#e0ddd8' }}>
       <div className="flex items-center justify-between">
-        <h2 className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-1.5">📋 Pendências</h2>
+        <h2 className="font-syne font-bold text-[13px] text-nodri-cyan flex items-center gap-1.5">Pendências</h2>
         {todasAbertas.length > 0 && (
           <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
             {todasAbertas.length} aberta{todasAbertas.length !== 1 ? 's' : ''}
@@ -1750,7 +1750,7 @@ function PendenciasLateral({ profissionalId }: { profissionalId: string }) {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   {p.data_limite && (
                     <span className="text-[9.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: est.chip, color: est.chipTxt }}>
-                      {urg === 'atrasada' ? '⚠ Atrasada — ' : ''}Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      {urg === 'atrasada' ? 'Atrasada — ' : ''}Limite: {new Date(p.data_limite + 'T12:00:00').toLocaleDateString('pt-BR')}
                     </span>
                   )}
                   <div className="ml-auto flex items-center gap-2">
@@ -2175,7 +2175,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
       <p className="text-[12px] text-nodri-t3 mb-4">Configure sua API key da Anthropic para usar o chat de IA.</p>
       <a href="/salon/ia-config"
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[12px] font-bold hover:brightness-110">
-        ️ Configurar IA
+        Configurar IA
       </a>
     </div>
   )
@@ -2198,7 +2198,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
           onClick={novaConversa}
           className="ml-auto text-[10px] px-2.5 py-1 rounded-lg border border-nodri-border text-nodri-t3 hover:text-nodri-red hover:border-red-500/30 transition-colors"
           title="Nova conversa — recarrega dados atualizados">
-          ️ Nova conversa
+          Nova conversa
         </button>
       </div>
 
@@ -2287,7 +2287,7 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
                 onClick={() => imprimirEstrategia(m.content, nomeProfissional || 'Profissional')}
                 className="mt-1 flex items-center gap-1 px-2 py-1 rounded-lg text-nodri-t3 hover:text-nodri-cyan text-[10px] hover:bg-nodri-cyan/5 transition-colors"
               >
-                🖨️ Imprimir
+                Imprimir
               </button>
             )}
           </div>
@@ -2453,7 +2453,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
       {/* ── CHEGOU PRA VOCÊ: demandas recebidas em aberto, com Responder à vista ── */}
       <div>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-          📥 Chegou pra você
+          Chegou pra você
           {pendentes.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '2px 10px' }}>{pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}</span>}
         </div>
         {pendentes.length === 0 ? (
@@ -2461,7 +2461,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
         ) : pendentes.map(d => (
           <div key={d.id} style={{ background: '#fff', border: `1px solid ${d.prioridade === 'urgente' ? '#fecaca' : '#fde68a'}`, borderLeft: `5px solid ${d.prioridade === 'urgente' ? '#ef4444' : '#f59e0b'}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              {d.solicitante_nome && <span style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+              {d.solicitante_nome && <span style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>{d.solicitante_nome}</span>}
               {d.prioridade === 'urgente' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>URGENTE</span>}
               <span style={{ marginLeft: 'auto', fontSize: 10, color: '#9ca3af' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
             </div>
@@ -2517,7 +2517,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
             {depEhFinanceiro && (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setModoEmp(false)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (!modoEmp ? '#5b4fcf' : '#e0ddd8'), background: !modoEmp ? '#f0eefb' : '#fff', color: !modoEmp ? '#5b4fcf' : '#6b6860', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Solicitação normal</button>
-                <button onClick={() => setModoEmp(true)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (modoEmp ? '#16a34a' : '#e0ddd8'), background: modoEmp ? '#f0fdf4' : '#fff', color: modoEmp ? '#15803d' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>💰 Solicitar empréstimo</button>
+                <button onClick={() => setModoEmp(true)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (modoEmp ? '#16a34a' : '#e0ddd8'), background: modoEmp ? '#f0fdf4' : '#fff', color: modoEmp ? '#15803d' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>Solicitar empréstimo</button>
               </div>
             )}
 
@@ -2588,7 +2588,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                   {exp && (
                     <div style={{ padding: '0 12px 12px' }}>
                       <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-                      {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                      {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>{d.resposta}</p>}
 
                       {/* Conversa com o setor: ela le o que responderam e responde de volta */}
                       {Array.isArray(d.conversa) && d.conversa.length > 0 && (
@@ -2632,7 +2632,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                       ) : (
                         <button onClick={() => { setMsgId(d.id); setMsgTxt('') }}
                           style={{ marginTop: 9, background: '#fff', color: '#5b4fcf', border: '1px solid #c9c4f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                          💬 Responder ao setor
+                          Responder ao setor
                         </button>
                       )}
                     </div>
@@ -2651,7 +2651,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                 return (
                   <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
                     <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
-                      {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>👤 {d.solicitante_nome}</span>}
+                      {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>{d.solicitante_nome}</span>}
                       <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
                       {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}
                       <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: exp ? 'auto' : 0 }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
@@ -2660,7 +2660,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                     {exp && (
                       <div style={{ padding: '0 12px 12px' }}>
                         <p style={{ fontSize: 13, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap' }}>{d.mensagem}</p>
-                        {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+                        {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>{d.resposta}</p>}
                       </div>
                     )}
                   </div>
@@ -3156,14 +3156,14 @@ Profissional: ${nomeProf}
 ═══ DADOS DO CLIENTE ═══
 Nome: ${agend.cliente}
 Serviço agendado HOJE: ${agend.servico}
-${h?.primeira_visita_real ? '⭐⭐ PRIMEIRA VISITA NO SALÃO — trate como experiência de encantamento!' : ''}
+${h?.primeira_visita_real ? 'PRIMEIRA VISITA NO SALÃO — trate como experiência de encantamento!' : ''}
 Primeira visita no salão: ${h?.data_primeira_visita || 'desconhecida'}
 Última visita: ${h?.ultima_visita || 'desconhecida'}${h?.dias_desde_ultima != null ? ` (${h?.dias_desde_ultima} dias atrás)` : ''}
 Total de visitas: ${h?.total_visitas || 0}
 Frequência média: ${h?.freq_media_dias ? `a cada ${h?.freq_media_dias} dias` : 'desconhecida'}
 Faturamento acumulado: R$ ${(h?.faturamento_acumulado || 0).toFixed(2)}
 Ticket médio: R$ ${(h?.ticket_medio || 0).toFixed(2)}
-Cliente fiel: ${h?.cliente_fiel ? 'SIM ❤️' : 'NÃO'}
+Cliente fiel: ${h?.cliente_fiel ? 'SIM' : 'NÃO'}
 Profissionais que já atenderam: ${h?.profissionais_atendidos?.join(', ') || 'nenhum'}
 
 ═══ HISTÓRICO DE SERVIÇOS ═══
@@ -3452,7 +3452,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           <button onClick={() => setTab('inicio')} className="flex items-center gap-1.5 text-[13px] font-extrabold" style={{ color: '#5b4fcf' }}>
             <ArrowLeft size={16} /> Voltar ao Início
           </button>
-          <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>👁️ Somente leitura</span>
+          <span className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: '#eef2ff', color: '#4338ca' }}>Somente leitura</span>
         </div>
       )}
 
@@ -3498,12 +3498,12 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {/* Tabs */}
       {!souProf && (() => {
         const TABS_ALL: [typeof tab, string][] = [
-          ['inicio','📊 INÍCIO'],
+          ['inicio','INÍCIO'],
           ['cadastro','CADASTRO'],
-          ['demandas','📋 DEMANDAS'],
+          ['demandas','DEMANDAS'],
           ['avaliar','AVALIAR'],
-          ['pops','📘 POPS'],
-          ['carreira','🏆 CARREIRA'],
+          ['pops','POPS'],
+          ['carreira','CARREIRA'],
           ['faturamento','FATURAMENTO'],
           ['desempenho','OCORRÊNCIAS'],
           ['metas','METAS'],
@@ -3698,7 +3698,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               setTimeout(()=>{iframe.contentWindow?.print();setTimeout(()=>document.body.removeChild(iframe),2000)},600)
             }}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-              🖨️ Imprimir
+              Imprimir
             </button>
           </div>
           <div ref={refCadastro} className="space-y-6">
@@ -3706,7 +3706,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               {/* Banner de departamento */}
               {form.is_departamento && (
                 <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: (form.departamento_cor || '#5b4fcf') + '15', border: `1px solid ${form.departamento_cor || '#5b4fcf'}40` }}>
-                  <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : form.nome_completo === 'FINANCEIRO' ? '💰' : form.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'}</div>
+                  <div className="text-4xl">{form.nome_completo === 'ADMINISTRATIVO' ? '' : form.nome_completo === 'FINANCEIRO' ? '' : form.nome_completo === 'RECEPÇÃO' ? '' : ''}</div>
                   <div>
                     <p className="font-syne font-bold text-[14px] text-nodri-t1">{form.nome_completo}</p>
                     <p className="text-[11px] text-nodri-t3 mt-0.5">Departamento virtual — gerencie pendências pela aba Pendências ao lado</p>
@@ -3751,7 +3751,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                             <input value={endCep} maxLength={8} inputMode="numeric" placeholder="00000000"
                               onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setEndCep(v); if (v.length === 8) buscarCepPerfil(v) }}
                               className={inputCls + ' pr-7'} />
-                            {buscandoCep && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px]">⏳</span>}
+                            {buscandoCep && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-nodri-t3">buscando...</span>}
                           </div>
                         </div>
                         <div>
@@ -3767,7 +3767,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           <input value={endUf} placeholder="UF" maxLength={2} onChange={e => { const v = e.target.value.toUpperCase().slice(0,2); setEndUf(v); set('endereco', [endBairro, endCidade && v ? `${endCidade}-${v}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')) }} className={inputCls + ' text-center'} />
                         </div>
                       </div>
-                      {(endBairro || endCidade) && <p className="text-[10px] text-nodri-t3 mt-1">📍 {[endBairro, endCidade && endUf ? `${endCidade}-${endUf}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')}</p>}
+                      {(endBairro || endCidade) && <p className="text-[10px] text-nodri-t3 mt-1">{[endBairro, endCidade && endUf ? `${endCidade}-${endUf}` : endCidade, endCep ? `CEP: ${endCep}` : ''].filter(Boolean).join(', ')}</p>}
                     </div>
                     {/* Contato do Responsável — nome e telefone separados */}
                     <div><label className={labelCls}>Nome do Responsável</label>
@@ -3967,7 +3967,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 ))}
               </div>}
               {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
-                <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">️ Status</h2>
+                <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">Status</h2>
                 <label className="flex items-center gap-3 cursor-pointer" onClick={()=>set('ativo',!form.ativo)}>
                   <div className={`w-10 h-5 rounded-full relative transition-all ${form.ativo?'bg-nodri-green':'bg-nodri-border'}`}>
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.ativo?'left-5':'left-0.5'}`}/>
@@ -3986,7 +3986,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
           <div className="flex justify-end mb-4">
             <button onClick={imprimirFaturamento}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-              🖨️ Imprimir
+              Imprimir
             </button>
           </div>
           <div ref={refFaturamento} className="space-y-6">
@@ -4010,12 +4010,12 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                   }
                   const itens = [
                     {l:' Faturamento',      k:'faturamento',              a:a.faturamento||0,              med:m.faturamento||0,              f:fmt$},
-                    {l:'️ Ticket Médio',     k:'ticket_medio',             a:a.ticket_medio||0,             med:m.ticket_medio||0,             f:fmt$},
+                    {l:'Ticket Médio',     k:'ticket_medio',             a:a.ticket_medio||0,             med:m.ticket_medio||0,             f:fmt$},
                     {l:' Preferência',      k:'clientes_preferencia',     a:a.clientes_preferencia||0,     med:m.clientes_preferencia||0,     f:fmtN},
                     {l:' Sem Pref.',        k:'clientes_sem_preferencia', a:a.clientes_sem_preferencia||0, med:m.clientes_sem_preferencia||0, f:fmtN},
                     {l:' Dias Trabalhados', k:'dias_trabalhados',         a:a.dias_trabalhados||0,         med:m.dias_trabalhados||0,         f:fmtN},
-                    {l:'️ Ocupação',         k:'taxa_ocupacao',            a:a.taxa_ocupacao||0,            med:m.taxa_ocupacao||0,            f:fmtP},
-                    {l:'️ Serviços',         k:'total_servicos',           a:a.total_servicos||0,           med:m.total_servicos||0,           f:fmtN},
+                    {l:'Ocupação',         k:'taxa_ocupacao',            a:a.taxa_ocupacao||0,            med:m.taxa_ocupacao||0,            f:fmtP},
+                    {l:'Serviços',         k:'total_servicos',           a:a.total_servicos||0,           med:m.total_servicos||0,           f:fmtN},
                     {l:' Produtos',         k:'total_produtos',           a:a.total_produtos||0,           med:m.total_produtos||0,           f:fmtN},
                   ]
                   const nomeProprio = prof?.apelido || prof?.nome_completo || 'Você'
@@ -4065,7 +4065,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                                     <span className="text-[8px] text-nodri-t3">{acimaDaMed?'acima':'abaixo'} da média</span>
                                   </div>
                                 )}
-                                <div className="text-[8px] text-nodri-purple mt-1">🔎 {minhaPos}º de {linhas.length} · ver detalhamento</div>
+                                <div className="text-[8px] text-nodri-purple mt-1">{minhaPos}º de {linhas.length} · ver detalhamento</div>
                               </summary>
                               <div className="mt-2 rounded-lg border border-nodri-border overflow-hidden">
                                 {linhas.map((l, i) => {
@@ -4149,7 +4149,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
           <div className="space-y-5 max-w-3xl">
             {/* Seletor de data */}
             <div className="rounded-2xl p-5 border" style={{background:'#f9fafb',borderColor:'#e5e7eb'}}>
-              <h3 className="font-syne font-bold text-[13px] mb-3" style={{color:'#1a1a1a'}}>📅 Selecionar Data</h3>
+              <h3 className="font-syne font-bold text-[13px] mb-3" style={{color:'#1a1a1a'}}>Selecionar Data</h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <input type="date" value={agendData.split('/').reverse().join('-')}
                   onChange={e => {
@@ -4163,7 +4163,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 <button onClick={() => buscarAgendamentos(agendData)}
                   className="px-4 py-2 rounded-lg text-sm font-semibold"
                   style={{background:'#5b4fcf',color:'#fff'}}>
-                  🔍 Buscar
+                  Buscar
                 </button>
                 {datasDispon.length > 0 && (
                   <span className="text-[11px]" style={{color:'#6b7280'}}>
@@ -4248,11 +4248,11 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                           const h = agendHistorico
                           const fmt$ = (v:number) => v > 0 ? `R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'
                           const ALERTAS_CFG: Record<string,{icon:string;label:string;cor:string;bg:string}> = {
-                            'primeira_visita':  {icon:'⭐',label:'Primeira visita — encante!',    cor:'#92400e',bg:'#fef3c7'},
-                            'cliente_vip':      {icon:'💎',label:'Cliente VIP (10+ visitas)',      cor:'#5b21b6',bg:'#ede9fe'},
-                            'alto_ticket':      {icon:'💰',label:'Cliente de alto ticket',         cor:'#065f46',bg:'#d1fae5'},
-                            'risco_abandono':   {icon:'🚨',label:'Risco de abandono — atenção!',   cor:'#991b1b',bg:'#fee2e2'},
-                            'longo_ausente':    {icon:'⏰',label:'Sem visitar há mais de 90 dias',  cor:'#92400e',bg:'#ffedd5'},
+                            'primeira_visita':  {icon:'',label:'Primeira visita — encante!',    cor:'#92400e',bg:'#fef3c7'},
+                            'cliente_vip':      {icon:'',label:'Cliente VIP (10+ visitas)',      cor:'#5b21b6',bg:'#ede9fe'},
+                            'alto_ticket':      {icon:'',label:'Cliente de alto ticket',         cor:'#065f46',bg:'#d1fae5'},
+                            'risco_abandono':   {icon:'',label:'Risco de abandono — atenção!',   cor:'#991b1b',bg:'#fee2e2'},
+                            'longo_ausente':    {icon:'',label:'Sem visitar há mais de 90 dias',  cor:'#92400e',bg:'#ffedd5'},
                           }
                           return (
                             <div className="pt-4 space-y-4">
@@ -4276,10 +4276,10 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               {/* Cards resumo */}
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
-                                  {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'📅', k:'visitas'},
-                                  {label:'Última Visita',  val: h.dias_desde_ultima != null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'🕐', k:'visitas'},
-                                  {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'💵', k:'fat_acumulado'},
-                                  {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'🎯', k:'ticket_medio'},
+                                  {label:'Total Visitas',  val: h.total_visitas || '—',        icon:'', k:'visitas'},
+                                  {label:'Última Visita',  val: h.dias_desde_ultima != null ? `${h.dias_desde_ultima}d atrás` : h.ultima_visita || '—', icon:'', k:'visitas'},
+                                  {label:'Fat. Acumulado', val: fmt$(h.faturamento_acumulado),  icon:'', k:'fat_acumulado'},
+                                  {label:'Ticket Médio',   val: fmt$(h.ticket_medio),           icon:'', k:'ticket_medio'},
                                 ].filter(c=>podeVer(c.k)).map(c=>(
                                   <div key={c.label} className="rounded-xl p-3 text-center" style={{background:'#fff',border:'1px solid #e5e7eb'}}>
                                     <p className="text-[18px]">{c.icon}</p>
@@ -4291,10 +4291,10 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
 
                               {/* Fiel + Frequência + Profissionais */}
                               <div className="flex flex-wrap gap-2 text-[11px]">
-                                {h.cliente_fiel && <span className="px-3 py-1 rounded-full font-semibold" style={{background:'#fce7f3',color:'#be185d'}}>❤️ Cliente Fiel</span>}
-                                {h.freq_media_dias && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>🔄 Frequência média: a cada {h.freq_media_dias} dias</span>}
-                                {h.data_primeira_visita && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>📌 1ª visita: {h.data_primeira_visita}</span>}
-                                {h.profissionais_atendidos?.length > 0 && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>✂️ Já atendido por: {h.profissionais_atendidos.join(', ')}</span>}
+                                {h.cliente_fiel && <span className="px-3 py-1 rounded-full font-semibold" style={{background:'#fce7f3',color:'#be185d'}}>Cliente Fiel</span>}
+                                {h.freq_media_dias && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>Frequência média: a cada {h.freq_media_dias} dias</span>}
+                                {h.data_primeira_visita && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>1ª visita: {h.data_primeira_visita}</span>}
+                                {h.profissionais_atendidos?.length > 0 && <span className="px-3 py-1 rounded-full" style={{background:'#f3f4f6',color:'#374151'}}>Já atendido por: {h.profissionais_atendidos.join(', ')}</span>}
                               </div>
 
                               {/* Histórico serviços + Última visita + Hoje */}
@@ -4332,8 +4332,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                                 {/* Hoje */}
                                 <div className="rounded-xl p-4" style={{background:'#f0fdf4',border:'1px solid #86efac'}}>
                                   <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#166534'}}>Hoje — {agendData}</p>
-                                  <p className="text-[12px] font-semibold" style={{color:'#166534'}}>✂️ {ag.servico}</p>
-                                  <p className="text-[11px] mt-1" style={{color:'#166534'}}>⏰ {ag.hora}</p>
+                                  <p className="text-[12px] font-semibold" style={{color:'#166534'}}>{ag.servico}</p>
+                                  <p className="text-[11px] mt-1" style={{color:'#166534'}}>{ag.hora}</p>
                                 </div>
                               </div>
 
@@ -4343,7 +4343,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                                 disabled={agendLoadSug}
                                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
                                 style={{background:'#5b4fcf',color:'#fff',opacity:agendLoadSug?0.7:1,boxShadow:'0 2px 8px #5b4fcf40'}}>
-                                {agendLoadSug ? <Loader2 size={16} className="animate-spin"/> : '🧠'}
+                                {agendLoadSug ? <Loader2 size={16} className="animate-spin"/> : ''}
                                 {agendLoadSug ? 'Analisando dados e gerando estratégias...' : 'GERAR SUGESTÕES DE EXPERIÊNCIA E VENDA (IA)'}
                               </button>
 
@@ -4358,17 +4358,17 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
 
                                 if (isFallback) return (
                                   <div className="rounded-xl p-4" style={{background:'#faf9ff',border:'1.5px solid #c4bef0'}}>
-                                    <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#5b4fcf'}}>🎯 Sugestões da IA</p>
+                                    <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{color:'#5b4fcf'}}>Sugestões da IA</p>
                                     <div className="text-[12px] whitespace-pre-wrap" style={{color:'#1a1a1a',lineHeight:'1.7'}}>{agendSugestao}</div>
                                   </div>
                                 )
 
                                 const COR_BAR = (p: number) => p >= 70 ? '#16a34a' : p >= 40 ? '#d97706' : '#dc2626'
-                                const LABEL_P = (p: number) => p >= 70 ? '🟢 Alta' : p >= 40 ? '🟡 Média' : '🔴 Baixa'
+                                const LABEL_P = (p: number) => p >= 70 ? 'Alta' : p >= 40 ? 'Média' : 'Baixa'
 
                                 return (
                                   <div className="space-y-3">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{color:'#5b4fcf'}}>🎯 Oportunidades para hoje — escolha uma abordagem</p>
+                                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{color:'#5b4fcf'}}>Oportunidades para hoje — escolha uma abordagem</p>
                                     {sugestoes.map((s: any, i: number) => (
                                       <div key={i} className="rounded-xl overflow-hidden" style={{border:'1.5px solid #c4bef0'}}>
                                         {/* Header */}
@@ -4395,16 +4395,16 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                                           {s.beneficios && (
                                             <div>
                                               <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#6b7280'}}>Benefícios</p>
-                                              <p className="text-[12px]" style={{color:'#1a1a1a',lineHeight:'1.6'}}>✨ {s.beneficios}</p>
+                                              <p className="text-[12px]" style={{color:'#1a1a1a',lineHeight:'1.6'}}>{s.beneficios}</p>
                                             </div>
                                           )}
                                           <div className="rounded-lg p-3" style={{background:'#ede9fe'}}>
-                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#5b4fcf'}}>💬 {s.momento}</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#5b4fcf'}}>{s.momento}</p>
                                             <p className="text-[12px] italic" style={{color:'#3730a3'}}>"{s.abordagem}"</p>
                                           </div>
                                           {s.reversao && (
                                             <div className="rounded-lg p-3" style={{background:'#fef3c7'}}>
-                                              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#92400e'}}>🔄 Se recusar</p>
+                                              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:'#92400e'}}>Se recusar</p>
                                               <p className="text-[12px] italic" style={{color:'#78350f'}}>"{s.reversao}"</p>
                                             </div>
                                           )}
@@ -4432,7 +4432,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
             <div className="flex justify-end">
               <button onClick={imprimirMetas}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-                🖨️ Imprimir
+                Imprimir
               </button>
             </div>
             {loadMeta && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
@@ -4515,7 +4515,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                     )}
                     {metaInfo.principal_gargalo && metaInfo.principal_gargalo !== 'nenhum gargalo crítico identificado' && (
                       <p className="text-[11px] text-nodri-t3 mt-3 pt-3 border-t border-nodri-border">
-                        ⚠️ Principal gargalo: <span className="text-nodri-t2">{metaInfo.principal_gargalo}</span>
+                        Principal gargalo: <span className="text-nodri-t2">{metaInfo.principal_gargalo}</span>
                       </p>
                     )}
                   </div>
@@ -4527,7 +4527,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                       style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}
                       className="flex items-center gap-2 text-[#1a1a1a] px-4 py-2.5 rounded-xl text-[12px] font-bold disabled:opacity-50">
                       {gerandoEstrategia ? <Loader2 size={14} className="animate-spin"/> : null}
-                      {metaInfo.plano ? '🔄 Recalcular Estratégia' : '🚀 Criar Estratégia para Bater a Meta'}
+                      {metaInfo.plano ? 'Recalcular Estratégia' : 'Criar Estratégia para Bater a Meta'}
                     </button>
                   </div>
 
@@ -4539,12 +4539,12 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         <div className="flex gap-2">
                           <button onClick={() => imprimirEstrategia(rascunhoEstrategia.plano_texto, prof?.nome_completo || '')}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-nodri-cyan/40 text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10">
-                            🖨️ Imprimir
+                            Imprimir
                           </button>
                           <button onClick={salvarEstrategia} disabled={salvandoEstrategia}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
                             {salvandoEstrategia ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
-                            💾 Salvar
+                            Salvar
                           </button>
                         </div>
                       </div>
@@ -4559,7 +4559,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         <h3 className="font-syne font-bold text-[12px] text-nodri-cyan">Planejamento Estratégico (salvo)</h3>
                         <button onClick={() => imprimirEstrategia(metaInfo.plano!.plano_texto, prof?.nome_completo || '')}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-nodri-cyan/40 text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10">
-                          🖨️ Imprimir
+                          Imprimir
                         </button>
                       </div>
                       <div className="text-[12px] text-nodri-t2 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderPlanoHtml(metaInfo.plano.plano_texto) }}/>
@@ -4577,7 +4577,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
           <div className="flex justify-end mb-4">
             <button onClick={imprimirOcorrencias}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-              🖨️ Imprimir
+              Imprimir
             </button>
           </div>
           <div ref={refOcorrencias} className="space-y-6">
@@ -4722,7 +4722,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                 <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <h3 className="font-syne font-bold text-[13px] text-nodri-t1">🤖 O que esse comportamento gera?</h3>
+                      <h3 className="font-syne font-bold text-[13px] text-nodri-t1">O que esse comportamento gera?</h3>
                       <p className="text-[10px] text-nodri-t3 mt-0.5">A IA analisa as ocorrências e mostra o impacto real para o profissional, clientes, recepção e salão</p>
                     </div>
                     <button
@@ -4759,7 +4759,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                       }}
                       className="shrink-0 flex items-center gap-2 bg-red-600 text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                     >
-                      {loadOcorrImpacto ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🔍 Ver Impacto'}
+                      {loadOcorrImpacto ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : 'Ver Impacto'}
                     </button>
                   </div>
 
@@ -4778,10 +4778,10 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         <p className="text-[11px] text-red-800 font-medium leading-relaxed">{ocorrImpacto.resumo}</p>
                       </div>
                       {[
-                        {icon:'👤', label:'Para o Profissional', key:'impacto_profissional', color:'text-nodri-purple'},
-                        {icon:'💇', label:'Para o Cliente', key:'impacto_cliente', color:'text-nodri-cyan'},
-                        {icon:'📋', label:'Para a Recepção', key:'impacto_recepcao', color:'text-amber-600'},
-                        {icon:'🏠', label:'Para o Salão', key:'impacto_salao', color:'text-nodri-t1'},
+                        {icon:'', label:'Para o Profissional', key:'impacto_profissional', color:'text-nodri-purple'},
+                        {icon:'', label:'Para o Cliente', key:'impacto_cliente', color:'text-nodri-cyan'},
+                        {icon:'', label:'Para a Recepção', key:'impacto_recepcao', color:'text-amber-600'},
+                        {icon:'', label:'Para o Salão', key:'impacto_salao', color:'text-nodri-t1'},
                       ].map(item => (
                         <div key={item.key} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
                           <p className={`text-[10px] font-bold mb-1 ${item.color}`}>{item.icon} {item.label}</p>
@@ -4789,7 +4789,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         </div>
                       ))}
                       <div className="bg-nodri-purple/10 border border-nodri-purple/30 rounded-xl p-4">
-                        <p className="text-[10px] font-bold text-nodri-purple mb-1">💬 Mensagem Direta ao Profissional</p>
+                        <p className="text-[10px] font-bold text-nodri-purple mb-1">Mensagem Direta ao Profissional</p>
                         <p className="text-[11px] text-nodri-t1 leading-relaxed italic">&ldquo;{ocorrImpacto.mensagem_profissional}&rdquo;</p>
                       </div>
                       <button onClick={() => setOcorrImpacto(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2">↩ Limpar análise</button>
@@ -4842,7 +4842,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
           </div>
         )}
 
-        {/* 👑 DEPENDÊNCIA */}
+        {/* DEPENDÊNCIA */}
         {tab === 'dependencia' && (
           <div className="space-y-5 max-w-3xl">
             <div className="flex justify-end">
@@ -4863,23 +4863,23 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
   </div>
   <div style="flex:3;display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <div class="card"><div class="card-lbl">Faturamento Gerado (total histórico)</div><div class="card-val" style="color:#5b4fcf">R$ ${(d.fat_prof||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div class="card"><div class="card-lbl">Clientes Fiéis ❤️</div><div class="card-val" style="color:#f59e0b">${d.clientes_fieis||0}</div><div class="card-sub">≥4 visitas, ≥80% com este prof, últimos 90 dias</div></div>
+    <div class="card"><div class="card-lbl">Clientes Fiéis</div><div class="card-val" style="color:#f59e0b">${d.clientes_fieis||0}</div><div class="card-sub">≥4 visitas, ≥80% com este prof, últimos 90 dias</div></div>
     <div class="card"><div class="card-lbl">Média Mensal (histórico)</div><div class="card-val" style="color:#f43f8e">R$ ${(d.impacto_mensal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
     <div class="card"><div class="card-lbl">Faturamento Total Salão</div><div class="card-val">R$ ${(d.fat_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
   </div>
 </div></div>
 ${histRows?`<div class="sec"><div class="sec-title">Histórico Completo por Mês</div><table class="tbl"><thead><tr><th>Mês</th><th>% Fat.</th><th>Fat. Prof.</th><th>Fat. Salão</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
-${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d.clientes_fieis||0} clientes)</div><table class="tbl"><thead><tr><th>Cliente</th><th>Total Visitas</th><th>Com este Prof.</th><th>%</th><th>Última Visita</th></tr></thead><tbody>${fieisRows}</tbody></table></div>`:''}
+${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis (${d.clientes_fieis||0} clientes)</div><table class="tbl"><thead><tr><th>Cliente</th><th>Total Visitas</th><th>Com este Prof.</th><th>%</th><th>Última Visita</th></tr></thead><tbody>${fieisRows}</tbody></table></div>`:''}
 <div class="sec"><div class="sec-title">Recomendação</div><p style="font-size:10pt;line-height:1.6;padding:10px 0">${
-  d.nivel_risco==='critico'?'⚠️ Risco CRÍTICO. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.':
-  d.nivel_risco==='alto'?'🔶 Risco ALTO. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.':
-  d.nivel_risco==='medio'?'🟡 Risco MODERADO. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais.':
-  '✅ Baixo risco. O salão está bem distribuído — parabéns!'
+  d.nivel_risco==='critico'?'Risco CRÍTICO. Recomenda-se redistribuir clientes, treinar substituto e criar estratégia de retenção imediata.':
+  d.nivel_risco==='alto'?'Risco ALTO. Considere desenvolver outro profissional com habilidades similares e registrar os clientes preferenciais.':
+  d.nivel_risco==='medio'?'Risco MODERADO. Monitore a satisfação deste profissional e garanta que os clientes conheçam outros profissionais.':
+  'Baixo risco. O salão está bem distribuído — parabéns!'
 }</p></div>`
                 abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-                🖨️ Imprimir
+                Imprimir
               </button>
             </div>
             {loadAnalise.dependencia && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
@@ -4889,7 +4889,7 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
               return (
                 <>
                   <div className="px-1">
-                    <h2 className="font-syne font-black text-[18px] text-nodri-t1">👑 Relatório de Dependência</h2>
+                    <h2 className="font-syne font-black text-[18px] text-nodri-t1">Relatório de Dependência</h2>
                     <p className="text-[11px] text-nodri-t3 mt-1">Selecione os anos no gráfico para ver o impacto real no período</p>
                   </div>
 
@@ -4921,7 +4921,7 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     const cards = [
                       { id:'pct',   l:'% do Faturamento', v:`${pctFilt}%`,            c:corFilt    },
                       { id:'fat',   l:'Faturamento Gerado',v:fmt$(fatProfFilt),         c:'#5b4fcf'  },
-                      { id:'fieis', l:'❤️ Clientes Fiéis', v:String(clientesFieisFilt), c:'#f59e0b'  },
+                      { id:'fieis', l:'Clientes Fiéis', v:String(clientesFieisFilt), c:'#f59e0b'  },
                       { id:'media', l:'Média Mensal',      v:fmt$(mediaMensalFilt),     c:'#f43f8e'  },
                     ]
 
@@ -5004,14 +5004,14 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                         {/* Painel Clientes Fiéis */}
                         {depCardAberto==='fieis' && (
                           <div className="bg-nodri-surface border border-nodri-cyan/40 rounded-2xl p-4">
-                            <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">❤️ Clientes Fiéis — {clientesFieisFilt} clientes</h4>
+                            <h4 className="font-syne font-bold text-[12px] mb-1 text-nodri-cyan">Clientes Fiéis — {clientesFieisFilt} clientes</h4>
                             <div className="bg-nodri-card border border-nodri-border rounded-xl p-3 mb-3 text-[10px] text-nodri-t3 leading-relaxed">
                               <span className="font-semibold text-nodri-t2 block mb-1">Como esse número é calculado:</span>
                               São considerados fiéis os clientes que atendem os 3 critérios abaixo:
                               <ul className="mt-1 space-y-0.5">
-                                <li>✅ <span className="text-nodri-t2 font-semibold">Mínimo 4 visitas</span> ao salão no histórico total</li>
-                                <li>✅ <span className="text-nodri-t2 font-semibold">80% ou mais</span> dos atendimentos foram com este profissional</li>
-                                <li>✅ <span className="text-nodri-t2 font-semibold">Última visita nos últimos 12 meses</span> — clientes sumidos há mais de 1 ano não entram</li>
+                                <li><span className="text-nodri-t2 font-semibold">Mínimo 4 visitas</span> ao salão no histórico total</li>
+                                <li><span className="text-nodri-t2 font-semibold">80% ou mais</span> dos atendimentos foram com este profissional</li>
+                                <li><span className="text-nodri-t2 font-semibold">Última visita nos últimos 12 meses</span> — clientes sumidos há mais de 1 ano não entram</li>
                               </ul>
                               <span className="block mt-2 text-[9px]">Período filtrado pelo gráfico: {labelAnos}</span>
                             </div>
@@ -5078,12 +5078,12 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
 
                   {/* Glossário / O que fazer */}
                   <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5 space-y-3">
-                    <h3 className="font-syne font-bold text-[13px]">📖 Glossário e Parâmetros</h3>
+                    <h3 className="font-syne font-bold text-[13px]">Glossário e Parâmetros</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
                       {[
                         {label:'% de Dependência',       bom:'< 10%',  ok:'10–20%', ruim:'> 20%', critico:'> 30%', desc:'Quanto do faturamento bruto do salão vem deste profissional.'},
                         {label:'Faturamento Gerado',     bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Soma do campo "total" dos atendimentos brutos (atendimentos_raw) deste profissional no período.'},
-                        {label:'Clientes Fiéis ❤️',     bom:'> 20',   ok:'10–20',  ruim:'5–10',  critico:'< 5',   desc:'Clientes com ≥4 visitas no salão, ≥80% dos atendimentos com este profissional e que retornaram nos últimos 12 meses. Um cliente pode ir a cada 4 meses e ainda ser fiel — por isso usamos 12 meses e não 90 dias.'},
+                        {label:'Clientes Fiéis',     bom:'> 20',   ok:'10–20',  ruim:'5–10',  critico:'< 5',   desc:'Clientes com ≥4 visitas no salão, ≥80% dos atendimentos com este profissional e que retornaram nos últimos 12 meses. Um cliente pode ir a cada 4 meses e ainda ser fiel — por isso usamos 12 meses e não 90 dias.'},
                         {label:'Média Mensal',           bom:'—',      ok:'—',      ruim:'—',     critico:'—',     desc:'Faturamento gerado total ÷ meses com pelo menos 1 atendimento.'},
                       ].map(g=>(
                         <div key={g.label} className="bg-nodri-card border border-nodri-border rounded-xl p-3">
@@ -5091,10 +5091,10 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                           <div className="text-nodri-t3 text-[10px] mb-2 leading-relaxed">{g.desc}</div>
                           {g.bom!=='—' && (
                             <div className="flex gap-1 flex-wrap text-[9px] font-bold">
-                              <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600">✅ Bom: {g.bom}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600">⚠️ Ok: {g.ok}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600">🔶 Alto: {g.ruim}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600">🚨 Crítico: {g.critico}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600">Bom: {g.bom}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600">Ok: {g.ok}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600">Alto: {g.ruim}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600">Crítico: {g.critico}</span>
                             </div>
                           )}
                         </div>
@@ -5102,10 +5102,10 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                     </div>
                     <div className="mt-2 p-3 rounded-xl border" style={{borderColor:`${d.cor_risco||'#10b981'}40`, background:`${d.cor_risco||'#10b981'}08`}}>
                       <p className="text-[11px] font-semibold" style={{color:d.cor_risco||'#10b981'}}>
-                        {d.nivel_risco==='critico' && '🚨 Risco CRÍTICO: Redistribua clientes urgentemente, treine substituto e crie estratégia de retenção imediata.'}
-                        {d.nivel_risco==='alto'    && '🔶 Risco ALTO: Desenvolva outro profissional com habilidades similares e registre os clientes preferenciais.'}
-                        {d.nivel_risco==='medio'   && '⚠️ Risco MODERADO: Monitore a satisfação e garanta que clientes conheçam outros profissionais do salão.'}
-                        {d.nivel_risco==='baixo'   && '✅ Baixo risco: O salão está bem distribuído. Mantenha o equilíbrio e continue monitorando mensalmente.'}
+                        {d.nivel_risco==='critico' && 'Risco CRÍTICO: Redistribua clientes urgentemente, treine substituto e crie estratégia de retenção imediata.'}
+                        {d.nivel_risco==='alto'    && 'Risco ALTO: Desenvolva outro profissional com habilidades similares e registre os clientes preferenciais.'}
+                        {d.nivel_risco==='medio'   && 'Risco MODERADO: Monitore a satisfação e garanta que clientes conheçam outros profissionais do salão.'}
+                        {d.nivel_risco==='baixo'   && 'Baixo risco: O salão está bem distribuído. Mantenha o equilíbrio e continue monitorando mensalmente.'}
                       </p>
                     </div>
                   </div>
@@ -5128,13 +5128,13 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis ❤️ (${d
                 const maisVendeRows = (d.mais_vende||[]).map((item:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${item.servico}</strong></td><td>${item.quantidade}</td><td>${item.pct}%</td>${souProf?'':`<td>${fmtV(item.valor)}</td>`}</tr>`).join('')
                 const deveriaRows = (d.deveria_vender||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td><td>${item.motivo}</td>${souProf?'':`<td>${item.comissao>0?fmtV(item.comissao):'-'}</td>`}</tr>`).join('')
                 const nuncaRows = (d.nunca_oferece||[]).map((item:any)=>`<tr><td><strong>${item.servico}</strong></td>${souProf?'':`<td>${item.comissao>0?fmtV(item.comissao):'-'}</td>`}</tr>`).join('')
-                const corpo = `${maisVendeRows?`<div class="sec"><div class="sec-title">🏆 Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th>${souProf?'':'<th>Valor</th>'}</tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
-${deveriaRows?`<div class="sec"><div class="sec-title">🎯 Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th>${souProf?'':'<th>Comissão</th>'}</tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
-${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th>${souProf?'':'<th>Comissão potencial</th>'}</tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}`
+                const corpo = `${maisVendeRows?`<div class="sec"><div class="sec-title">Serviços que Mais Vende</div><table class="tbl"><thead><tr><th>#</th><th>Serviço</th><th>Qtd</th><th>%</th>${souProf?'':'<th>Valor</th>'}</tr></thead><tbody>${maisVendeRows}</tbody></table></div>`:''}
+${deveriaRows?`<div class="sec"><div class="sec-title">Serviços que Deveria Vender</div><table class="tbl"><thead><tr><th>Serviço</th><th>Motivo</th>${souProf?'':'<th>Comissão</th>'}</tr></thead><tbody>${deveriaRows}</tbody></table></div>`:''}
+${nuncaRows?`<div class="sec"><div class="sec-title">Serviços que Nunca Oferece</div><table class="tbl"><thead><tr><th>Serviço</th>${souProf?'':'<th>Comissão potencial</th>'}</tr></thead><tbody>${nuncaRows}</tbody></table></div>`:''}`
                 abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-                🖨️ Imprimir
+                Imprimir
               </button>
             </div>
             {loadAnalise.oportunidades && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
@@ -5171,7 +5171,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                       <div className="space-y-2">
                         {d.deveria_vender.map((item:any) => (
                           <div key={item.servico} className="flex items-center gap-3 p-3 bg-nodri-card rounded-xl border border-amber-500/15">
-                            <span className="text-[18px]">{item.qtd_historico === 0 ? '' : '️'}</span>
+                            <span className="text-[18px]">{item.qtd_historico === 0 ? '' : ''}</span>
                             <div className="flex-1">
                               <div className="text-[12px] text-nodri-t1 font-semibold">{item.servico}</div>
                               <div className="text-[10px] text-nodri-t3">{item.motivo}</div>
@@ -5211,7 +5211,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                   <div className="bg-nodri-surface border border-amber-500/30 rounded-2xl p-5">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
-                        <h3 className="font-syne font-bold text-[13px] text-amber-400">✨ Mais Oportunidades com IA</h3>
+                        <h3 className="font-syne font-bold text-[13px] text-amber-400">Mais Oportunidades com IA</h3>
                         <p className="text-[10px] text-nodri-t3 mt-0.5">A IA identifica oportunidades reais com base nas habilidades e comissões deste profissional</p>
                       </div>
                       <button
@@ -5244,7 +5244,7 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                         }}
                         className="shrink-0 flex items-center gap-2 bg-amber-500 text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                       >
-                        {loadOportunidadesIA ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : '🤖 Gerar com IA'}
+                        {loadOportunidadesIA ? <><Loader2 size={12} className="animate-spin"/> Analisando...</> : 'Gerar com IA'}
                       </button>
                     </div>
                     {oportunidadesIA === null && !loadOportunidadesIA && (
@@ -5267,8 +5267,8 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${op.potencial==='alto'?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'}`}>{op.potencial}</span>
                               </div>
                             </div>
-                            <p className="text-[10px] text-nodri-t3 mb-1">📊 {op.motivo}</p>
-                            <p className="text-[10px] text-amber-500 font-semibold">💬 {op.abordagem}</p>
+                            <p className="text-[10px] text-nodri-t3 mb-1">{op.motivo}</p>
+                            <p className="text-[10px] text-amber-500 font-semibold">{op.abordagem}</p>
                           </div>
                         ))}
                         <button onClick={() => setOportunidadesIA(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2 mt-1">↩ Limpar sugestões</button>
@@ -5293,15 +5293,15 @@ ${nuncaRows?`<div class="sec"><div class="sec-title">🔴 Serviços que Nunca Of
                 if (!d) return
                 const { wrap } = printBase('Combos que Vendem')
                 const paresRows = (d.pares||[]).map((par:any,i:number)=>`<tr><td>${i+1}º</td><td><strong>${par.servico_a}</strong></td><td><strong>${par.servico_b}</strong></td><td style="font-weight:700;color:${par.pct>=70?'#22c55e':par.pct>=40?'#f59e0b':'#5b4fcf'}">${par.pct}%</td><td>${par.count} clientes</td></tr>`).join('')
-                const corpo = `<div class="sec"><div class="sec-title">🔗 Pares de Serviços com Alta Co-ocorrência</div>
+                const corpo = `<div class="sec"><div class="sec-title">Pares de Serviços com Alta Co-ocorrência</div>
 <p style="font-size:9pt;color:#666;margin-bottom:10px">Análise de ${d.total_comandas||0} comandas · Pares com ≥20% de co-ocorrência</p>
 ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serviço B</th><th>Co-ocorrência</th><th>Clientes</th></tr></thead><tbody>${paresRows}</tbody></table>
-<p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">💡 Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para esta análise.</p>'}
+<p style="font-size:9pt;color:#5b4fcf;font-weight:600;margin-top:12px">Estratégia: Ofereça o Serviço B para clientes que vieram para o Serviço A</p>`:'<p style="color:#888">Dados insuficientes para esta análise.</p>'}
 </div>`
                 abrirImpressao(wrap(corpo))
               }}
                 className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-                🖨️ Imprimir
+                Imprimir
               </button>
             </div>
             {loadAnalise.bundle && <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-nodri-cyan"/></div>}
@@ -5312,7 +5312,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                   <p className="text-[13px]">Não foi possível carregar esta análise agora.</p>
                   <p className="text-[11px] mt-1 opacity-70">Pode ter sido a conexão. Tente novamente.</p>
                   <button onClick={() => carregarAnalise('bundle')}
-                    className="mt-4 px-4 py-2 rounded-lg text-[12px] font-bold bg-nodri-cyan text-white">🔄 Tentar de novo</button>
+                    className="mt-4 px-4 py-2 rounded-lg text-[12px] font-bold bg-nodri-cyan text-white">Tentar de novo</button>
                 </div>
               )
               if (!d.pares?.length) return (
@@ -5362,7 +5362,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
               <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                 <div className="flex items-start justify-between mb-3 gap-3">
                   <div>
-                    <h3 className="font-syne font-bold text-[13px] text-nodri-t1">✨ Mais Opções Geradas pela IA</h3>
+                    <h3 className="font-syne font-bold text-[13px] text-nodri-t1">Mais Opções Geradas pela IA</h3>
                     <p className="text-[10px] text-nodri-t3 mt-0.5">A IA analisa os serviços deste profissional e sugere combos estratégicos para aumentar o ticket médio</p>
                   </div>
                   <button
@@ -5396,7 +5396,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                     }}
                     className="shrink-0 flex items-center gap-2 bg-nodri-purple text-[#1a1a1a] text-[11px] font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition"
                   >
-                    {loadBundleIA ? <><Loader2 size={12} className="animate-spin"/> Gerando...</> : '🤖 Gerar com IA'}
+                    {loadBundleIA ? <><Loader2 size={12} className="animate-spin"/> Gerando...</> : 'Gerar com IA'}
                   </button>
                 </div>
 
@@ -5418,8 +5418,8 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                           <span className="text-nodri-t3 text-[10px]">+</span>
                           <span className="text-[11px] font-bold text-nodri-pink">{s.servico_b}</span>
                         </div>
-                        <p className="text-[10px] text-nodri-t2 mb-1">📊 {s.motivo}</p>
-                        <p className="text-[10px] text-nodri-cyan font-semibold">💬 {s.oportunidade}</p>
+                        <p className="text-[10px] text-nodri-t2 mb-1">{s.motivo}</p>
+                        <p className="text-[10px] text-nodri-cyan font-semibold">{s.oportunidade}</p>
                       </div>
                     ))}
                     <button onClick={() => setBundleIA(null)} className="text-[10px] text-nodri-t3 hover:text-nodri-t2 mt-1">↩ Limpar sugestões</button>
@@ -5501,9 +5501,9 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
               }
 
               const subTabs = [
-                { id: 'outra-categoria' as const, label: `🚨 Outra ${cargo}`, count: cp.outra_manicure?.length || 0, cor: '#ef4444' },
-                { id: 'outro-servico' as const, label: '↔️ Outro serviço', count: cp.outro_servico?.length || 0, cor: '#f59e0b' },
-                { id: 'saiu-salao' as const, label: '👻 Saíram do salão', count: cp.saiu_salao?.length || 0, cor: '#6b7280' },
+                { id: 'outra-categoria' as const, label: `Outra ${cargo}`, count: cp.outra_manicure?.length || 0, cor: '#ef4444' },
+                { id: 'outro-servico' as const, label: '↔ Outro serviço', count: cp.outro_servico?.length || 0, cor: '#f59e0b' },
+                { id: 'saiu-salao' as const, label: 'Saíram do salão', count: cp.saiu_salao?.length || 0, cor: '#6b7280' },
               ]
 
               const listaBase = subTabPerdidos === 'outra-categoria'
@@ -5572,7 +5572,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                           {isOutraCategoria && comissaoMedia > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
-                                <span className="text-nodri-t3">💔 Perda sua</span>
+                                <span className="text-nodri-t3">Perda sua</span>
                                 <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                               </div>
                               <div className="text-[8px] text-nodri-t3">comissão {fmt(comissaoMedia)}</div>
@@ -5581,7 +5581,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                           {isOutroServico && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
-                                <span className="text-nodri-t3">💸 Perda do salão</span>
+                                <span className="text-nodri-t3">Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
                               <div className="text-[8px] text-nodri-t3">ticket {fmt(ticketVisita)}</div>
@@ -5590,12 +5590,12 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                           {isSaiuSalao && ticketVisita > 0 && (
                             <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                               <div className="flex justify-between text-[9px]">
-                                <span className="text-nodri-t3">💸 Perda do salão</span>
+                                <span className="text-nodri-t3">Perda do salão</span>
                                 <span className="text-orange-400 font-bold">{fmt(qtd * ticketVisita)}</span>
                               </div>
                               {comissaoMedia > 0 && (
                                 <div className="flex justify-between text-[9px]">
-                                  <span className="text-nodri-t3">💔 Perda sua</span>
+                                  <span className="text-nodri-t3">Perda sua</span>
                                   <span className="text-red-400 font-bold">{fmt(qtd * comissaoMedia)}</span>
                                 </div>
                               )}
@@ -5609,19 +5609,19 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                     {/* 4º card: totalizador — ocupa a célula restante */}
                     {(perdaTotalSalao > 0 || perdaTotalProf > 0) && (
                       <div className="rounded-xl p-3 border-2 border-nodri-border bg-nodri-surface">
-                        <div className="text-[10px] text-nodri-t3 mb-0.5">📊 Impacto total</div>
+                        <div className="text-[10px] text-nodri-t3 mb-0.5">Impacto total</div>
                         <div className="font-syne font-black text-[22px] leading-none text-[#1a1a1a]">{cp.total}</div>
                         <div className="text-[9px] text-nodri-t3 mb-2">clientes perdidos</div>
                         <div className="border-t border-nodri-border pt-1.5 space-y-0.5">
                           {perdaTotalSalao > 0 && (
                             <div className="flex justify-between text-[9px]">
-                              <span className="text-nodri-t3">💸 Perda salão</span>
+                              <span className="text-nodri-t3">Perda salão</span>
                               <span className="text-orange-400 font-bold">{fmt(perdaTotalSalao)}</span>
                             </div>
                           )}
                           {perdaTotalProf > 0 && (
                             <div className="flex justify-between text-[9px]">
-                              <span className="text-nodri-t3">💔 Perda sua</span>
+                              <span className="text-nodri-t3">Perda sua</span>
                               <span className="text-red-400 font-bold">{fmt(perdaTotalProf)}</span>
                             </div>
                           )}
@@ -5645,7 +5645,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                   {/* Tabela */}
                   {listaAtual.length === 0 ? (
                     <div className="text-center py-14 text-nodri-t3">
-                      <span className="text-4xl">✅</span>
+
                       <p className="text-[13px] mt-3">Nenhum cliente nesta categoria.</p>
                     </div>
                   ) : (

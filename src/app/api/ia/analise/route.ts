@@ -155,8 +155,8 @@ export async function POST(req: NextRequest) {
       })
       ocorrProf.slice(0, 10).forEach((f: any) => {
         const data = f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : ''
-        // Acompanhamento não é 🚨 nem ✅: é a gestão registrando que conversou.
-        const marca = f.tipo === 'negativo' ? '🚨' : f.tipo === 'acompanhamento' ? '📌' : '✅'
+        // Acompanhamento não é nem : é a gestão registrando que conversou.
+        const marca = f.tipo === 'negativo' ? '' : f.tipo === 'acompanhamento' ? '' : ''
         linhas.push(`  [${marca}] ${data} — ${f.ocorrido_descricao || ''}${f.descricao ? ': ' + f.descricao : ''}`)
       })
       linhas.push('')
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     const servicosHabilitados = (servicosSalao || []).filter((s: any) => habilidades.includes(s.nome))
     if (servicosHabilitados.length > 0) {
       linhas.push('## SERVIÇOS HABILITADOS — PREÇO E COMISSÃO')
-      linhas.push('⚠️ REGRA CRÍTICA: A meta deste profissional é em COMISSÃO. Nos cenários use sempre o valor da comissão, não o preço de venda.')
+      linhas.push('REGRA CRÍTICA: A meta deste profissional é em COMISSÃO. Nos cenários use sempre o valor da comissão, não o preço de venda.')
       linhas.push('')
       const porCat: Record<string, any[]> = {}
       servicosHabilitados.forEach((s: any) => {
@@ -212,9 +212,9 @@ Antes de qualquer conclusão, valide se existem dados suficientes para sustentá
 • Quando não houver dado disponível: informe a limitação claramente, não compense com suposição
 
 FORMATO OBRIGATÓRIO — diferenciar sempre:
-📊 FATO — baseado em dado real
-💡 HIPÓTESE — possibilidade não confirmada
-🎯 RECOMENDAÇÃO — ação sugerida
+FATO — baseado em dado real
+HIPÓTESE — possibilidade não confirmada
+RECOMENDAÇÃO — ação sugerida
 
 Com base nos dados abaixo, gere um DIAGNÓSTICO COMPLETO e DEFINITIVO deste profissional.
 
@@ -226,28 +226,28 @@ ${dadosFormatados}
 
 Gere o diagnóstico no seguinte formato:
 
-📊 SITUAÇÃO ATUAL
+SITUAÇÃO ATUAL
 [faturamento atual, ticket médio, ocupação, tendência]
 
-📈 HISTÓRICO E TENDÊNCIA
+HISTÓRICO E TENDÊNCIA
 [evolução mês a mês, picos, quedas, sazonalidade]
 
-🚨 GARGALOS
+GARGALOS
 [problemas identificados com impacto financeiro]
 
-💰 OPORTUNIDADES
+OPORTUNIDADES
 [onde está o dinheiro não aproveitado]
 
-👥 PERFIL COMPORTAMENTAL
+PERFIL COMPORTAMENTAL
 [pontualidade, disciplina, ocorrências, padrões]
 
-📋 PENDÊNCIAS
+PENDÊNCIAS
 [o que está em aberto]
 
-🎯 METAS REALISTAS
+METAS REALISTAS
 [metas para próximos 30/60/90 dias baseadas no histórico]
 
-🤖 INSIGHT EXCLUSIVO
+INSIGHT EXCLUSIVO
 [algo que normalmente passaria despercebido]`
 
     // Gerar análise com streaming

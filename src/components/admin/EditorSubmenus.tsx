@@ -38,16 +38,16 @@ interface Submenu {
 
 /*  Constantes  */
 const SECOES_INFO: Record<SecaoTipo, { label: string; emoji: string }> = {
-  video:     { label: 'Vídeo YouTube',    emoji: '️' },
+  video:     { label: 'Vídeo YouTube',    emoji: '' },
   texto:     { label: 'Texto Rico',       emoji: '' },
-  imagens:   { label: 'Imagens',          emoji: '️' },
+  imagens:   { label: 'Imagens',          emoji: '' },
   tabela:    { label: 'Tabela',           emoji: '⊞' },
   colunas:   { label: 'Colunas',          emoji: '⫸' },
   checklist: { label: 'Checklist',        emoji: '' },
   faq:       { label: 'FAQ',              emoji: '' },
   pdf:       { label: 'PDF',              emoji: '' },
   excel:     { label: 'Excel / Planilha', emoji: '' },
-  downloads: { label: 'Downloads',        emoji: '️' },
+  downloads: { label: 'Downloads',        emoji: '' },
 }
 
 const ORDEM_PADRAO: SecaoTipo[] = ['video', 'texto', 'imagens', 'tabela', 'colunas', 'checklist', 'faq', 'pdf', 'excel', 'downloads']
@@ -341,7 +341,7 @@ export default function EditorSubmenus() {
               className="absolute inset-0 w-full h-full rounded-lg" style={{ border: 'none' }} allowFullScreen />
           </div>
         ) : dados.video_url ? (
-          <p className="text-nodri-red text-[11px]">️ Link inválido do YouTube</p>
+          <p className="text-nodri-red text-[11px]">Link inválido do YouTube</p>
         ) : null}
       </div>
     )
@@ -923,7 +923,7 @@ export default function EditorSubmenus() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="nodri-card p-6 max-w-sm w-full mx-4">
-            <h3 className="font-syne font-bold text-[14px] mb-2 text-nodri-red">️ Excluir página?</h3>
+            <h3 className="font-syne font-bold text-[14px] mb-2 text-nodri-red">Excluir página?</h3>
             <p className="text-nodri-t2 text-[12px] mb-4">Esta ação não pode ser desfeita.</p>
             <div className="flex gap-3">
               <button onClick={() => excluirPagina(confirmDelete)} className="flex-1 py-2 bg-nodri-red text-gray-900 font-bold rounded-lg text-[12px] hover:brightness-110">Excluir</button>
@@ -1020,7 +1020,6 @@ export default function EditorSubmenus() {
                     <div className="cursor-grab active:cursor-grabbing text-nodri-t3 hover:text-nodri-t2 shrink-0" onClick={e => e.stopPropagation()}>
                       <GripVertical size={15} />
                     </div>
-                    <span className="text-base">{info.emoji}</span>
                     <span className="font-syne font-bold text-[11.5px] text-nodri-t1 flex-1">{info.label}</span>
                     <span className="text-[9px] text-nodri-t3 italic mr-1 hidden sm:inline">arrastar para reordenar</span>
                     {colapsada ? <ChevronDown size={13} className="text-nodri-t3 shrink-0" /> : <ChevronUp size={13} className="text-nodri-t3 shrink-0" />}

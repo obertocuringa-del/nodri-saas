@@ -122,7 +122,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       setOpen(false)
     } else {
       // NÃO trava: deixa tentar de novo e mostra o motivo real
-      alert('⚠️ O WhatsApp foi aberto, mas NÃO consegui registrar o contato no sistema' +
+      alert('O WhatsApp foi aberto, mas NÃO consegui registrar o contato no sistema' +
         (erroReg ? ':\n\n' + erroReg : '.') +
         '\n\nÉ por isso que aparece 0 em "Contatadas". Tente clicar em enviar de novo. Se o erro continuar, me mande esta mensagem.')
     }

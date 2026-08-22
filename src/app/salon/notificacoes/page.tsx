@@ -76,7 +76,7 @@ export default function NotificacoesPage() {
           <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={3} placeholder="Escreva o aviso que aparecerá no painel do profissional…" style={{ ...inp, resize: 'vertical', marginBottom: 10 }} />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <select value={alvo} onChange={e => setAlvo(e.target.value)} style={{ ...inp, width: 'auto', minWidth: 240, flex: 1 }}>
-              <option value="todos">📣 Para TODOS os profissionais</option>
+              <option value="todos">Para TODOS os profissionais</option>
               {profs.map(p => <option key={p.id} value={p.id}>{p.apelido || p.nome_completo}</option>)}
             </select>
             <button onClick={enviar} disabled={enviando || !texto.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 22px', borderRadius: 10, border: 'none', background: texto.trim() ? '#16a34a' : '#cbd5e1', color: '#fff', fontSize: 14, fontWeight: 800, cursor: texto.trim() ? 'pointer' : 'not-allowed' }}>

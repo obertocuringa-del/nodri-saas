@@ -75,11 +75,11 @@ export default function DetalheClienteRelatorio(
   return (
     <div style={cx}>
       <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 11 }}>
-        {d.total_visitas >= 10 && selo('💎 Cliente VIP (10+ visitas)', '#7c3aed', '#f5f3ff')}
-        {d.cliente_fiel && selo('❤️ Cliente Fiel', '#dc2626', '#fef2f2')}
-        {mostrarValores && (d.ticket_medio || 0) >= 100 && selo('💰 Cliente de alto ticket', '#059669', '#ecfdf5')}
-        {d.freq_media_dias ? selo(`🔁 Voltava a cada ${d.freq_media_dias} dias`, '#0ea5e9', '#f0f9ff') : null}
-        {d.primeira_visita ? selo(`📌 1ª visita: ${d.primeira_visita}`, '#6b6860', '#f5f4f0') : null}
+        {d.total_visitas >= 10 && selo('Cliente VIP (10+ visitas)', '#7c3aed', '#f5f3ff')}
+        {d.cliente_fiel && selo('Cliente Fiel', '#dc2626', '#fef2f2')}
+        {mostrarValores && (d.ticket_medio || 0) >= 100 && selo('Cliente de alto ticket', '#059669', '#ecfdf5')}
+        {d.freq_media_dias ? selo(`Voltava a cada ${d.freq_media_dias} dias`, '#0ea5e9', '#f0f9ff') : null}
+        {d.primeira_visita ? selo(`1ª visita: ${d.primeira_visita}`, '#6b6860', '#f5f4f0') : null}
       </div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -92,7 +92,7 @@ export default function DetalheClienteRelatorio(
       {/* O que faltava nos relatórios: QUEM atendeu esta cliente. */}
       {d.profissionais_atendidos.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 11, padding: '10px 13px', marginBottom: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '.4px' }}>✂️ Já atendida por</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '.4px' }}>Já atendida por</span>
           <div style={{ fontSize: 12.5, color: '#1a1a1a', marginTop: 4, lineHeight: 1.6 }}>
             {d.profissionais_atendidos.join(', ')}
           </div>

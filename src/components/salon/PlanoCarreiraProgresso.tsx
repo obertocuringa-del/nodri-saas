@@ -149,7 +149,7 @@ export default function PlanoCarreiraProgresso({ profissionalId, somenteLeitura 
     const novo: ProgressoDoc = { ...progresso, historico: [registro, ...progresso.historico] }
     if (aprovarRevisao && proximoNivel) { novo.nivelId = proximoNivel.id }
     persistir(novo)
-    toast.success(aprovarRevisao ? (proximoNivel ? `Promovido(a) para ${proximoNivel.titulo}! 🎉` : 'Revisão registrada!') : 'Revisão registrada.')
+    toast.success(aprovarRevisao ? (proximoNivel ? `Promovido(a) para ${proximoNivel.titulo}!` : 'Revisão registrada!') : 'Revisão registrada.')
     setRevisaoAberta(false); setObsRevisao('')
   }
 
@@ -205,12 +205,12 @@ export default function PlanoCarreiraProgresso({ profissionalId, somenteLeitura 
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
         <div style={{ flex: '1 1 200px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px' }}>
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', marginBottom: 3 }}>💰 Comissionamento</div>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', marginBottom: 3 }}>Comissionamento</div>
           <div style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>{nivel.comissionamento}</div>
         </div>
         {nivel.beneficios && (
           <div style={{ flex: '1 1 200px', background: '#f0eefb', border: '1px solid #ddd6fb', borderRadius: 10, padding: '10px 14px' }}>
-            <div style={{ fontSize: 10.5, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', marginBottom: 3 }}>🎁 Benefícios</div>
+            <div style={{ fontSize: 10.5, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', marginBottom: 3 }}>Benefícios</div>
             <div style={{ fontSize: 12.5, color: '#4c3fa8' }}>{linhas(nivel.beneficios).map((l, li) => <div key={li}>{l}</div>)}</div>
           </div>
         )}
@@ -242,7 +242,7 @@ export default function PlanoCarreiraProgresso({ profissionalId, somenteLeitura 
       {revisaoAberta && (
         <div onClick={() => setRevisaoAberta(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 440, padding: 20 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>📋 Revisão de carreira — {nivel.titulo}</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>Revisão de carreira — {nivel.titulo}</h3>
             <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 14px' }}>Data: {new Date().toLocaleDateString('pt-BR')} · {totalOk} de {itens.length} critérios atingidos ({pct}%)</p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               <button onClick={() => setAprovarRevisao(true)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: aprovarRevisao ? 'none' : '1.5px solid #d0cdc7', background: aprovarRevisao ? '#16a34a' : '#fff', color: aprovarRevisao ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>✓ Aprovado{proximoNivel ? ' — promover' : ''}</button>

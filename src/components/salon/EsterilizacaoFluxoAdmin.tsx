@@ -39,7 +39,7 @@ export default function EsterilizacaoFluxoAdmin({ profsSalao = [] }: { profsSala
 
   async function registrarAvulso() {
     const n = Math.max(0, Math.round(Number(avQtd) || 0))
-    if (!avProf || !n) { toast('Escolha a profissional e a quantidade', { icon: '✍️' }); return }
+    if (!avProf || !n) { toast('Escolha a profissional e a quantidade', { icon: '' }); return }
     setEnviandoAv(true)
     try {
       const res = await fetch('/api/salon/esterilizacao-fluxo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profissionalId: avProf, qtdRecebida: n, obsRecebimento: avObs.trim() }) })
@@ -112,7 +112,7 @@ export default function EsterilizacaoFluxoAdmin({ profsSalao = [] }: { profsSala
                   <button onClick={() => excluir(p.id)} title="Excluir" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={14} /></button>
                 </div>
 
-                {divergencia && <div style={{ marginTop: 6, fontSize: 12, color: '#b45309' }}>⚠️ Divergência: informou {p.qtdEnviada}, recebido {p.qtdRecebida}.</div>}
+                {divergencia && <div style={{ marginTop: 6, fontSize: 12, color: '#b45309' }}>Divergência: informou {p.qtdEnviada}, recebido {p.qtdRecebida}.</div>}
                 {p.obsRecebimento && <div style={{ marginTop: 6, fontSize: 12, color: '#374151' }}><b>Obs.:</b> {p.obsRecebimento}</div>}
 
                 {/* Ação: RECEBER (pedido enviado pela profissional) */}

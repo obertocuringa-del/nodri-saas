@@ -89,7 +89,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const resumo = texto ? `: ${texto.slice(0, 90)}` : ''
       const nova = {
         id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        texto: `💬 Resposta na sua solicitação${resumo}`,
+        texto: `Resposta na sua solicitação${resumo}`,
         alvo, em: Date.now(), de: 'Departamentos',
       }
       await supabaseAdmin.from('salao_config').upsert(

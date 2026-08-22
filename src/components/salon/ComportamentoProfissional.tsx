@@ -68,7 +68,7 @@ export default function ComportamentoProfissional({ profId, nome, onFechar }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profId])
 
-  // ⚠️ A API devolve `ocorrencias` e `feedbacks` somando P1 + P2 (é assim que a
+  // A API devolve `ocorrencias` e `feedbacks` somando P1 + P2 (é assim que a
   // aba do perfil usa). Como aqui P2 já são 2 meses, usar o campo pronto
   // trazia 4 MESES de ocorrências — foi o que fez o número não bater.
   // Então filtramos pela data e recontamos só o que é dos últimos 2 meses.
@@ -155,7 +155,7 @@ export default function ComportamentoProfissional({ profId, nome, onFechar }: {
             <div>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>Resumo das ocorrências</div>
               {ocorrencias.length === 0 ? (
-                <p style={{ fontSize: 12.5, color: '#9ca3af', margin: 0 }}>Nenhuma ocorrência registrada no período. 👏</p>
+                <p style={{ fontSize: 12.5, color: '#9ca3af', margin: 0 }}>Nenhuma ocorrência registrada no período.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {ocorrencias.map(o => {

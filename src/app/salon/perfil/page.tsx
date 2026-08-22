@@ -123,7 +123,7 @@ export default function PerfilSalaoPage() {
               ) : (
                 <button type="button" onClick={() => logoRef.current?.click()}
                   className="w-full py-4 rounded-xl border-2 border-dashed border-nodri-border text-nodri-t2 text-[13px] font-bold hover:border-nodri-cyan hover:text-nodri-cyan transition-colors">
-                  🖼️ Clique para anexar a logo do salão
+                  Clique para anexar a logo do salão
                 </button>
               )}
             </div>

@@ -25,14 +25,14 @@ export interface MetricaInfo {
 }
 
 export const METRICAS_CORRIDA: MetricaInfo[] = [
-  { chave: 'faturamento', label: 'Faturamento',            unidade: 'R$',  emoji: '💰', desc: 'Quem mais faturou no período' },
-  { chave: 'atendimentos', label: 'Atendimentos (serviços)', unidade: 'qtd', emoji: '✂️', desc: 'Quem mais atendeu (nº de serviços realizados)' },
-  { chave: 'clientes',    label: 'Clientes atendidos',      unidade: 'qtd', emoji: '🧍', desc: 'Total de clientes atendidos no período' },
-  { chave: 'ticket',      label: 'Ticket médio',            unidade: 'R$',  emoji: '🎯', desc: 'Maior valor médio por atendimento' },
-  { chave: 'produtos',    label: 'Produtos vendidos',       unidade: 'qtd', emoji: '🛍️', desc: 'Quem mais vendeu produtos de revenda' },
-  { chave: 'servico',     label: 'Serviço específico',      unidade: 'qtd', emoji: '⭐', desc: 'Quem mais vendeu UM serviço (você escolhe qual)', precisaServico: true },
-  { chave: 'ocupacao',    label: 'Taxa de ocupação',        unidade: '%',   emoji: '📅', desc: 'Maior ocupação da agenda no período' },
-  { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '🌟', desc: 'Quem trouxe mais clientes novos (sem preferência)' },
+  { chave: 'faturamento', label: 'Faturamento',            unidade: 'R$',  emoji: '', desc: 'Quem mais faturou no período' },
+  { chave: 'atendimentos', label: 'Atendimentos (serviços)', unidade: 'qtd', emoji: '', desc: 'Quem mais atendeu (nº de serviços realizados)' },
+  { chave: 'clientes',    label: 'Clientes atendidos',      unidade: 'qtd', emoji: '', desc: 'Total de clientes atendidos no período' },
+  { chave: 'ticket',      label: 'Ticket médio',            unidade: 'R$',  emoji: '', desc: 'Maior valor médio por atendimento' },
+  { chave: 'produtos',    label: 'Produtos vendidos',       unidade: 'qtd', emoji: '', desc: 'Quem mais vendeu produtos de revenda' },
+  { chave: 'servico',     label: 'Serviço específico',      unidade: 'qtd', emoji: '', desc: 'Quem mais vendeu UM serviço (você escolhe qual)', precisaServico: true },
+  { chave: 'ocupacao',    label: 'Taxa de ocupação',        unidade: '%',   emoji: '', desc: 'Maior ocupação da agenda no período' },
+  { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)' },
 ]
 
 export function metricaInfo(m: MetricaCorrida): MetricaInfo {
@@ -104,6 +104,6 @@ export function formataValor(m: MetricaCorrida, v: number): string {
   return (Math.round(Number(v) || 0)).toLocaleString('pt-BR')
 }
 
-export const MEDALHAS = ['🥇', '🥈', '🥉']
+export const MEDALHAS = ['', '', '']
 
 export const ridC = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`

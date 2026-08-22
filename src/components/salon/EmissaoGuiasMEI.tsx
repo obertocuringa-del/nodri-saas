@@ -209,7 +209,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
         const okN = filaRef.current.filter(i => i.etapa === 'ok').length
         const erroN = filaRef.current.filter(i => i.etapa === 'erro').length
         if (erroN === 0) toast.success(`Emissão concluída — ${okN} guia(s) baixada(s).`)
-        else toast(`Emissão concluída — ${okN} ok, ${erroN} com problema.`, { icon: '⚠️' })
+        else toast(`Emissão concluída — ${okN} ok, ${erroN} com problema.`, { icon: '' })
       }
     }
     window.addEventListener('message', ouvir)
@@ -305,17 +305,17 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
     espera: '#9ca3af', andando: '#5b4fcf', captcha: '#d97706', ok: '#16a34a', erro: '#dc2626', pulado: '#6b7280',
   }
   const rotuloEtapa: Record<EtapaFila, string> = {
-    espera: 'Na fila', andando: 'Processando…', captcha: '⚠️ Resolva o captcha na aba do PGMEI',
-    ok: '✅ Baixada', erro: '❌ Falhou', pulado: '— Sem valor em aberto',
+    espera: 'Na fila', andando: 'Processando…', captcha: 'Resolva o captcha na aba do PGMEI',
+    ok: 'Baixada', erro: 'Falhou', pulado: '— Sem valor em aberto',
   }
 
   return (
     <>
       <button onClick={() => setPainel(v => !v)} style={{ ...btn('#fff'), color: '#5b4fcf', border: '1px solid #d0cdc7' }}>
-        ⚙️ Configurar emissão
+        Configurar emissão
       </button>
       <button onClick={abrirFila} style={btn('#0ea5e9')}>
-        📄 Emitir todas as guias
+        Emitir todas as guias
       </button>
       {/* Sempre visível quando o admin cadastrou o link — mesmo lugar e mesmo
           papel do "Baixar Programa" da tela inicial. Muda de cor conforme o
@@ -334,7 +334,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
               ? { background: '#f59e0b', border: '1px solid #f59e0b', color: '#fff' }
               : { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#5b4fcf' }),
           }}>
-          ⬇️ Baixar extensão
+          Baixar extensão
         </a>
       )}
 
@@ -437,7 +437,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
             {dirty && <span style={{ fontSize: 12, color: '#b45309' }}>Alterações não salvas</span>}
             <button onClick={() => { setCfg(cfgSalva); setPainel(false) }} style={{ ...btn('#fff'), color: '#6b6860', border: '1px solid #d0cdc7' }}>Fechar</button>
             <button onClick={salvarCfg} disabled={salvando || !dirty} style={{ ...btn('#5b4fcf'), opacity: (salvando || !dirty) ? 0.5 : 1 }}>
-              {salvando ? 'Salvando…' : '💾 Salvar'}
+              {salvando ? 'Salvando…' : 'Salvar'}
             </button>
           </div>
         </div>
@@ -472,7 +472,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                     <strong>Baixe o arquivo da extensão.</strong>
                     <div style={{ marginTop: 5 }}>
                       {linkExtensao
-                        ? <a href={linkExtensao} download target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>⬇️ Baixar extensão (.zip)</a>
+                        ? <a href={linkExtensao} download target="_blank" rel="noopener noreferrer" style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>Baixar extensão (.zip)</a>
                         : <span style={{ color: '#b45309' }}>O link ainda não foi cadastrado. Peça ao suporte do NODRI o arquivo <code>extensao-guias-mei.zip</code>.</span>}
                     </div>
                   </li>
@@ -500,7 +500,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                           try { navigator.clipboard.writeText('chrome://extensions') } catch { /* sem permissão de área de transferência */ }
                           toast.success('Endereço copiado! Cole numa aba nova.')
                         }}
-                        style={{ ...btn('#fff'), color: '#92400e', border: '1px solid #fbbf24' }}>📋 Copiar</button>
+                        style={{ ...btn('#fff'), color: '#92400e', border: '1px solid #fbbf24' }}>Copiar</button>
                     </div>
                   </li>
 
@@ -520,7 +520,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                   <li>
                     <strong>Volte aqui e confira.</strong>
                     <div style={{ marginTop: 5 }}>
-                      <button onClick={pingar} style={btn('#16a34a')}>🔄 Verificar de novo</button>
+                      <button onClick={pingar} style={btn('#16a34a')}>Verificar de novo</button>
                     </div>
                   </li>
                 </ol>
@@ -533,7 +533,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
             )}
             {extStatus === 'ok' && (
               <div style={{ margin: '0 0 10px', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
-                ✅ Extensão detectada{extVersao ? ` (v${extVersao})` : ''}
+                Extensão detectada{extVersao ? ` (v${extVersao})` : ''}
               </div>
             )}
               {fila.map((it, i) => (

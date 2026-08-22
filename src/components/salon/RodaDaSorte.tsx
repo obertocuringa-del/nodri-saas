@@ -73,7 +73,7 @@ export default function RodaDaSorte() {
       setRotacao(alvo)
       timer.current = setTimeout(async () => {
         setResultado(d)
-        if (d.premio > d.aposta) toast.success(`🎉 ${d.label}! Ganhou ${moeda(d.premio)}`)
+        if (d.premio > d.aposta) toast.success(`${d.label}! Ganhou ${moeda(d.premio)}`)
         else if (d.premio > 0) toast(`${d.label} — recebeu ${moeda(d.premio)}`)
         else toast(`${d.label} — não foi dessa vez`)
         await carregar()

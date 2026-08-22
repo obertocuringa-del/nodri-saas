@@ -28,8 +28,8 @@ export async function GET() {
       const plano = (salao as any).plano
       // Notificação no Admin
       await supabaseAdmin.from('notificacoes').insert({
-        titulo: '⚠️ PIX Vencendo em 5 dias',
-        mensagem: `💳 LEMBRETE DE COBRANÇA PIX\n\nSalão: ${salao.nome}\nEmail: ${salao.email}\nTelefone: ${salao.telefone || 'Não informado'}\nPlano: ${plano?.nome || 'Não definido'}\nValor: R$${plano?.preco?.toFixed(2) || '—'}\nVencimento: ${new Date(salao.licenca_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}\n\nAção: Cobrar via PIX e liberar manualmente após confirmação.`,
+        titulo: 'PIX Vencendo em 5 dias',
+        mensagem: `LEMBRETE DE COBRANÇA PIX\n\nSalão: ${salao.nome}\nEmail: ${salao.email}\nTelefone: ${salao.telefone || 'Não informado'}\nPlano: ${plano?.nome || 'Não definido'}\nValor: R$${plano?.preco?.toFixed(2) || '—'}\nVencimento: ${new Date(salao.licenca_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}\n\nAção: Cobrar via PIX e liberar manualmente após confirmação.`,
         tipo: 'warning',
         para_todos: false,
         salao_id: null,
@@ -57,8 +57,8 @@ export async function GET() {
     for (const salao of (vencendoHoje || [])) {
       const plano = (salao as any).plano
       await supabaseAdmin.from('notificacoes').insert({
-        titulo: '🔴 PIX Vence HOJE',
-        mensagem: `🚨 VENCIMENTO HOJE!\n\nSalão: ${salao.nome}\nEmail: ${salao.email}\nValor: R$${plano?.preco?.toFixed(2) || '—'}\n\nSe não pagar hoje, o acesso será bloqueado automaticamente.`,
+        titulo: 'PIX Vence HOJE',
+        mensagem: `VENCIMENTO HOJE!\n\nSalão: ${salao.nome}\nEmail: ${salao.email}\nValor: R$${plano?.preco?.toFixed(2) || '—'}\n\nSe não pagar hoje, o acesso será bloqueado automaticamente.`,
         tipo: 'danger',
         para_todos: false,
         salao_id: null,

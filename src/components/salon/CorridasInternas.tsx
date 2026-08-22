@@ -170,7 +170,7 @@ function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle }: {
             {info.label} · {periodoLabel(c)}
             {typeof c.meta === 'number' && c.meta > 0 && <> · meta {formataValor(c.metrica, c.meta)}</>}
           </div>
-          {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>🎁 {c.premio}</div>}
+          {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
         </div>
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
           <button onClick={onToggle} title={c.ativa ? 'Pausar (esconder dos profissionais)' : 'Publicar'} style={btnIco}>{c.ativa ? <Pause size={15} /> : <Play size={15} />}</button>

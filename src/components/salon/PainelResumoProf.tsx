@@ -215,7 +215,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
                   style={{ position: 'relative', ...(anim ? { animation: anim, borderColor: alertaPend ? '#ef4444' : '#0891b2' } : {}) }}>
                   <span className="pr-area-ic" style={alertaPend ? { background: '#fee2e2', color: '#dc2626' } : alertaCal ? { background: '#cffafe', color: '#0891b2' } : undefined}><a.Ic size={20} /></span>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</span>
-                  {badge > 0 && <span style={{ position: 'absolute', top: -8, right: -6, background: alertaPend ? '#dc2626' : '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, boxShadow: '0 3px 10px rgba(0,0,0,.22)' }}>{alertaPend ? '⚠' : '🔔'} {badge}</span>}
+                  {badge > 0 && <span style={{ position: 'absolute', top: -8, right: -6, background: alertaPend ? '#dc2626' : '#0891b2', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, boxShadow: '0 3px 10px rgba(0,0,0,.22)' }}>{alertaPend ? '' : ''} {badge}</span>}
                   <span className="pr-area-go"><ArrowRight size={16} /></span>
                 </div>
               )

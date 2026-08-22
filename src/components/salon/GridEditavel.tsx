@@ -76,7 +76,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
   const getCell = (s: Sel): Cell | undefined => { const tab = doc.tabelas[s.ti]; if (!tab) return undefined; return s.ri === -1 ? tab.cabecalho[s.ci] : tab.linhas[s.ri]?.[s.ci] }
   function setCellAt(s: Sel, patch: Partial<Cell>) { mut(d => { const tab = d.tabelas[s.ti]; const cell = s.ri === -1 ? tab.cabecalho[s.ci] : tab.linhas[s.ri][s.ci]; Object.assign(cell, patch) }) }
   function aplicar(patch: Partial<Cell> | ((cell: Cell) => Partial<Cell>)) {
-    if (!sel) { toast('Clique numa célula primeiro', { icon: '👆' }); return }
+    if (!sel) { toast('Clique numa célula primeiro', { icon: '' }); return }
     const cur = getCell(sel); if (!cur) return
     setCellAt(sel, typeof patch === 'function' ? patch(cur) : patch)
   }
@@ -96,7 +96,7 @@ export default function GridEditavel({ chave, defaultDoc, defaultDocFn, mensal, 
     })
   }
   function mesclarBaixo(s: Sel) {
-    if (s.ri < 0) { toast('Mescle para baixo só nas linhas (não no cabeçalho)', { icon: '👆' }); return }
+    if (s.ri < 0) { toast('Mescle para baixo só nas linhas (não no cabeçalho)', { icon: '' }); return }
     mut(d => {
       const t = d.tabelas[s.ti]; const anchor = t.linhas[s.ri][s.ci]; if (!anchor || anchor.h) return
       const cs = anchor.cs || 1, rs = (anchor.rs || 1) + 1

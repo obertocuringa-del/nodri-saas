@@ -1190,7 +1190,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div className={`p-3 border rounded-xl transition-all ${suiteEmManutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-cyan/40 bg-nodri-cyan/5'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
                         <div className="min-w-0">
-                          <div className="font-bold text-[10px] uppercase leading-tight truncate">🚀 Suite NODRI</div>
+                          <div className="font-bold text-[10px] uppercase leading-tight truncate">Suite NODRI</div>
                           <div className="text-[9px] text-nodri-t3">Confirmar Agend. · Feedback · Lista · Lista c/ Arquivo</div>
                         </div>
                         {suiteEmManutencao && <span className="text-[8px] bg-nodri-red text-gray-900 px-1.5 py-0.5 rounded font-bold shrink-0">MANUTENÇÃO</span>}

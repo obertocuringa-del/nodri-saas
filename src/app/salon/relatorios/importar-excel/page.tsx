@@ -45,7 +45,7 @@ export default function ImportarExcelPage() {
   async function resetarTudo() {
     // Nomeia o salão na confirmação — evita apagar os relatórios do salão errado
     const salaoTxt = nomeSalao ? `do salão "${nomeSalao}"` : 'do salão que você está logado agora'
-    if (!confirm(`⚠️ ATENÇÃO: isto vai APAGAR TODOS os relatórios ${salaoTxt}.\n\nConfirme que você está logado no salão CERTO. Esta ação não pode ser desfeita — você precisará reimportar a planilha depois.\n\nApagar mesmo?`)) return
+    if (!confirm(`ATENÇÃO: isto vai APAGAR TODOS os relatórios ${salaoTxt}.\n\nConfirme que você está logado no salão CERTO. Esta ação não pode ser desfeita — você precisará reimportar a planilha depois.\n\nApagar mesmo?`)) return
     if (nomeSalao && !confirm(`Última confirmação: apagar os relatórios de "${nomeSalao}"?`)) return
     setResetando(true)
     const res = await fetch('/api/relatorios/reset', { method: 'DELETE' })
@@ -257,10 +257,10 @@ export default function ImportarExcelPage() {
         <button onClick={reconstruirDoRaw} disabled={reconstruindo}
           className="w-full mt-4 py-3 rounded-xl text-[13px] font-syne font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ background: '#fef3c7', border: '1.5px solid #f59e0b', color: '#b45309' }}>
-          {reconstruindo ? <><Loader2 size={16} className="animate-spin" /> Reconstruindo dados...</> : '🔧 Reconstruir dados a partir dos atendimentos brutos'}
+          {reconstruindo ? <><Loader2 size={16} className="animate-spin" /> Reconstruindo dados...</> : 'Reconstruir dados a partir dos atendimentos brutos'}
         </button>
         <p className="text-[10px] mt-1.5 px-1" style={{ color: '#b45309' }}>
-          ⚠️ <strong>Avançado — raramente necessário.</strong> Recalcula serviços e detalhamentos
+          <strong>Avançado — raramente necessário.</strong> Recalcula serviços e detalhamentos
           a partir dos atendimentos brutos. Use só se um relatório de serviços estiver faltando.
           Não precisa clicar aqui no uso normal — a importação da planilha já traz tudo.
         </p>
@@ -270,10 +270,10 @@ export default function ImportarExcelPage() {
             style={{ background: resultadoReconstrucao.ok ? '#fef3c7' : '#fef2f2', borderColor: resultadoReconstrucao.ok ? '#f59e0b' : '#fca5a5' }}>
             {resultadoReconstrucao.ok ? (
               <div>
-                <div className="font-bold mb-2" style={{ color: '#b45309' }}>✅ {resultadoReconstrucao.meses_reconstruidos} meses reconstruídos!</div>
+                <div className="font-bold mb-2" style={{ color: '#b45309' }}>{resultadoReconstrucao.meses_reconstruidos} meses reconstruídos!</div>
                 {resultadoReconstrucao.detalhes?.map((d: any) => (
                   <div key={d.chave} className="text-[11px]" style={{ color: '#6b6860' }}>
-                    {d.erro ? `❌ ${d.chave}: ${d.erro}` : `✓ ${d.chave} — ${d.atendimentos} atend. | R$ ${d.faturamento?.toLocaleString('pt-BR')} | ${d.clientes} clientes`}
+                    {d.erro ? `${d.chave}: ${d.erro}` : `✓ ${d.chave} — ${d.atendimentos} atend. | R$ ${d.faturamento?.toLocaleString('pt-BR')} | ${d.clientes} clientes`}
                   </div>
                 ))}
               </div>
@@ -287,7 +287,7 @@ export default function ImportarExcelPage() {
         <button onClick={resetarTudo} disabled={resetando}
           className="w-full mt-4 py-2 rounded-xl text-[12px] font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ border: '1.5px solid #fca5a5', color: '#dc2626', background: '#fff5f5' }}>
-          {resetando ? <><Loader2 size={14} className="animate-spin" /> Limpando banco...</> : '🗑 Limpar todos os dados antes de reimportar'}
+          {resetando ? <><Loader2 size={14} className="animate-spin" /> Limpando banco...</> : 'Limpar todos os dados antes de reimportar'}
         </button>
 
         <p className="text-[10px] mt-1.5 px-1" style={{ color: '#dc2626' }}>
@@ -343,7 +343,7 @@ export default function ImportarExcelPage() {
                 </div>
                 {resultado.erros?.length > 0 && (
                   <div className="mt-3 text-[11px]" style={{ color: '#b45309' }}>
-                    <strong>⚠ {resultado.erros.length} erros:</strong>
+                    <strong>{resultado.erros.length} erros:</strong>
                     {resultado.erros.slice(0,3).map((e: string) => <div key={e}>• {e}</div>)}
                   </div>
                 )}

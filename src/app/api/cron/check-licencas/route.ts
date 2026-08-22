@@ -27,7 +27,7 @@ export async function GET() {
     // Cria notificação no admin para cada salão bloqueado
     for (const salao of vencidos) {
       await supabaseAdmin.from('notificacoes').insert({
-        titulo: '🔴 Licença Vencida',
+        titulo: 'Licença Vencida',
         mensagem: `Salão "${salao.nome}" (${salao.email}) teve a licença vencida e foi bloqueado automaticamente.`,
         tipo: 'danger',
         para_todos: false,

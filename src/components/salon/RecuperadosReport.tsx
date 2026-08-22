@@ -57,7 +57,7 @@ export default function RecuperadosReport() {
     <div>
       {/* Sub-abas */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {([['recuperados', '💚 Recuperados'], ['carteira', '💰 Carteira & Pagamentos'], ['jogo', '🎡 Sala de Recompensas'], ['desafios', '⚔️ Desafio 1×1'], ['arena', '🏟️ Arena NODRI']] as const).map(([v, l]) => (
+        {([['recuperados', 'Recuperados'], ['carteira', 'Carteira & Pagamentos'], ['jogo', 'Sala de Recompensas'], ['desafios', 'Desafio 1×1'], ['arena', 'Arena NODRI']] as const).map(([v, l]) => (
           <button key={v} onClick={() => setVista(v)}
             style={{ padding: '7px 14px', borderRadius: 8, border: vista === v ? '2px solid #5b4fcf' : '1.5px solid #e0ddd8', background: vista === v ? '#f0eefb' : '#fff', color: vista === v ? '#5b4fcf' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             {l}
@@ -79,7 +79,7 @@ export default function RecuperadosReport() {
       <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <h3 style={{ color: '#15803d', fontSize: 14, fontWeight: 700, margin: 0 }}>💚 Clientes Recuperados</h3>
+            <h3 style={{ color: '#15803d', fontSize: 14, fontWeight: 700, margin: 0 }}>Clientes Recuperados</h3>
             <p style={{ color: '#166534', fontSize: 12, margin: '4px 0 0' }}>
               Clientes que voltaram em até {data.janela_dias} dias após o contato. Bônus = {data.bonus_pct}% do valor pago na visita de volta.
             </p>

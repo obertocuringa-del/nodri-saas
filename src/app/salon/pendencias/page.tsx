@@ -287,7 +287,7 @@ export default function PendenciasPage() {
                 title="Editar anotação"
                 onClick={() => { setEditandoMensagem(p.id); setNovaMensagemEdit(p.mensagem); setEditandoData(null) }}
                 className="text-[10px] px-2 py-1 rounded-lg bg-nodri-card border border-nodri-border text-nodri-t3 hover:text-nodri-cyan transition-colors">
-                ✏️
+
               </button>
               <button
                 title="Editar data limite"
@@ -392,7 +392,7 @@ export default function PendenciasPage() {
             <div className="grid grid-cols-3 gap-3">
               {departamentos.map(d => {
                 const cor = d.departamento_cor || '#5b4fcf'
-                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : d.nome_completo === 'FINANCEIRO' ? '💰' : d.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'
+                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '' : d.nome_completo === 'FINANCEIRO' ? '' : d.nome_completo === 'RECEPÇÃO' ? '' : ''
                 const temPend = (d.pendencias_abertas || 0) > 0
                 const doPortal = solicPorSetor[d.id] || 0   // pedido feito pela profissional
                 return (
@@ -405,11 +405,11 @@ export default function PendenciasPage() {
                       <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>
                       {doPortal > 0 && (
                         <p className="text-[10px] font-bold mt-0.5" style={{ color: '#b91c1c' }}>
-                          📥 {doPortal} pedido{doPortal > 1 ? 's' : ''} do portal
+                          {doPortal} pedido{doPortal > 1 ? 's' : ''} do portal
                         </p>
                       )}
                       {temPend
-                        ? <p className="text-[10px] text-red-400 font-semibold mt-0.5">⚠ {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</p>
+                        ? <p className="text-[10px] text-red-400 font-semibold mt-0.5">{d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</p>
                         : <p className="text-[10px] mt-0.5" style={{ color: cor }}>✓ Em dia</p>
                       }
                     </div>
@@ -439,7 +439,7 @@ export default function PendenciasPage() {
                     <optgroup label="── Departamentos ──">
                       {departamentos.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.nome_completo === 'ADMINISTRATIVO' ? '🗂️' : p.nome_completo === 'FINANCEIRO' ? '💰' : p.nome_completo === 'RECEPÇÃO' ? '🛎️' : '🏢'} {p.nome_completo}
+                          {p.nome_completo === 'ADMINISTRATIVO' ? '' : p.nome_completo === 'FINANCEIRO' ? '' : p.nome_completo === 'RECEPÇÃO' ? '' : ''} {p.nome_completo}
                         </option>
                       ))}
                     </optgroup>

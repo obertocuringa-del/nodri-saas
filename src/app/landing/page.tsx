@@ -615,7 +615,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           <div className="nodri-chips" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
               <div key={i} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>{b.emoji}</span> {b.texto}
+                {b.texto}
               </div>
             ))}
           </div>

@@ -154,7 +154,7 @@ export default function EnxovaisLista() {
       if (!enviado && !recebido && !devolvido) continue
       novos.push({ id: rid(), item: i.chave, data: dataAlvo, qtdEnviada: enviado, qtdRecebida: recebido, qtdDevolvida: devolvido, precoUnitario: cfg[i.chave]?.precoUnitario || 0, observacao: modalLote.observacao })
     }
-    if (novos.length === 0) { toast('Informe ao menos uma quantidade em algum item', { icon: '✍️' }); return }
+    if (novos.length === 0) { toast('Informe ao menos uma quantidade em algum item', { icon: '' }); return }
     setRegistros([...semEssaData, ...novos])
     setDirty(true); setModalLote(null)
   }
@@ -238,7 +238,7 @@ export default function EnxovaisLista() {
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
         <div onClick={() => setPrecosAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, color: precosAberto ? COR : '#9ca3af', transition: 'transform .15s', transform: precosAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
-          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>💲 Valor unitário por lavagem</h3>
+          <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Valor unitário por lavagem</h3>
           {!precosAberto && (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 11.5, color: '#6b6860' }}>
               {ITENS.map(i => (
@@ -313,7 +313,7 @@ export default function EnxovaisLista() {
       {/* ── Por item ── */}
       {porItem.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>📊 Por item — {mes.split('-').reverse().join('/')}</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Por item — {mes.split('-').reverse().join('/')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {porItem.map(i => (
               <div key={i.chave} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 12px', borderRadius: 10, background: '#faf9f7', flexWrap: 'wrap' }}>
@@ -328,7 +328,7 @@ export default function EnxovaisLista() {
       )}
 
       {/* ── Visitas (registros agrupados por dia) ── */}
-      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>🧺 Visitas do mês</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Visitas do mês</h3>
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         visitasDoMes.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
@@ -356,7 +356,7 @@ export default function EnxovaisLista() {
                   </div>
                   {aberta && (
                     <div style={{ borderTop: '1px solid #f0eee8', padding: '10px 16px 14px', background: '#faf9f7' }}>
-                      {v.observacao && <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 8 }}>📝 {v.observacao}</div>}
+                      {v.observacao && <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 8 }}>{v.observacao}</div>}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {v.regs.map(r => (
                           <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12.5, flexWrap: 'wrap' }}>
@@ -381,7 +381,7 @@ export default function EnxovaisLista() {
         <div onClick={() => setModalLote(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 640, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{registros.some(r => r.data === modalLote.data) ? '✏️ Editar visita' : '🧺 Registrar movimento'}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>{registros.some(r => r.data === modalLote.data) ? 'Editar visita' : 'Registrar movimento'}</h3>
               <button onClick={() => setModalLote(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
 

@@ -110,18 +110,18 @@ ${contexto}
 
 Formato do resumo (markdown, máximo 400 palavras):
 
-## 📊 Resumo da Semana — ${agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+## Resumo da Semana — ${agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
 
-**🏆 Destaques positivos**
+** Destaques positivos**
 [2-3 pontos]
 
-**⚠️ Pontos de atenção**
+** Pontos de atenção**
 [2-3 pontos]
 
-**🎯 Foco para a próxima semana**
+** Foco para a próxima semana**
 [3 ações concretas com impacto estimado]
 
-**💡 Insight da semana**
+** Insight da semana**
 [Uma observação que o gestor provavelmente não percebeu]
 
 Seja direto, use números reais, sem enrolação.`
@@ -156,7 +156,7 @@ Seja direto, use números reais, sem enrolação.`
       body: JSON.stringify({
         from: 'NODRI IA <noreply@nodri.com.br>',
         to: emailDestino,
-        subject: `📊 Resumo Semanal NODRI — ${agora.toLocaleDateString('pt-BR')}`,
+        subject: `Resumo Semanal NODRI — ${agora.toLocaleDateString('pt-BR')}`,
         html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
           <h2 style="color:#b45309">NODRI IA — Resumo Semanal</h2>
           <div style="white-space:pre-wrap;line-height:1.7;color:#e8e6e0">${resumoTexto.replace(/\n/g, '<br>')}</div>

@@ -60,12 +60,12 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
                 <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 20, background: sinfo.bg, color: sinfo.cor }}>{sinfo.label}</span>
               </div>
               <div style={{ fontSize: 12, color: '#6b6860' }}>{info.label} · {periodoLabel(c)}</div>
-              {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>🎁 {c.premio}</div>}
+              {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
             </div>
 
             {minha && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,#dcfce7,#d1fae5)', border: '1.5px solid #16a34a', borderRadius: 10, padding: '10px 14px' }}>
-                <span style={{ fontSize: 22 }}>{minha.pos <= 3 ? MEDALHAS[minha.pos - 1] : '📍'}</span>
+                <span style={{ fontSize: 22 }}>{minha.pos <= 3 ? MEDALHAS[minha.pos - 1] : ''}</span>
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: '#15803d' }}>
                   Você está em <b>{minha.pos}º lugar</b>{ranking.length > 1 ? ` de ${ranking.length}` : ''}
                   {typeof minha.pctMeta === 'number' && (minha.bateuMeta ? ' — meta batida! ✓' : ` — ${minha.pctMeta}% da meta`)}

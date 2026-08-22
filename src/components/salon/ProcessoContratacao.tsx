@@ -34,7 +34,7 @@ const DEFAULT: Doc = {
         { id: rid(), titulo: 'Etapa 12 — Preparação da Integração', texto: 'Antes do primeiro dia, conferir: uniforme separado, crachá confeccionado, mesa preparada, equipamentos e materiais de trabalho disponíveis, treinamentos agendados e escala definida.' },
         { id: rid(), titulo: 'Etapa 13 — Primeiro Dia de Trabalho', texto: 'Assinatura do contrato e da ficha de registro, cadastro no ponto eletrônico, entrega do uniforme com termo de recebimento, apresentação da empresa e da equipe, integração institucional e treinamento inicial.' },
         { id: rid(), titulo: 'Etapa 14 — Benefícios', texto: 'No primeiro dia: cadastro do vale-transporte e do vale-alimentação e pagamento proporcional dos benefícios até o final do mês.' },
-        { id: rid(), titulo: 'Etapa 15 — Documentação Bancária', texto: 'Quando necessário, emitir a carta para abertura de conta salário.\n👉 Use o botão “📄 Carta de Abertura de Conta” no topo desta página: escolha o funcionário, a carta vem preenchida e você só preenche o salário (em vermelho).' },
+        { id: rid(), titulo: 'Etapa 15 — Documentação Bancária', texto: 'Quando necessário, emitir a carta para abertura de conta salário.\n Use o botão “ Carta de Abertura de Conta” no topo desta página: escolha o funcionário, a carta vem preenchida e você só preenche o salário (em vermelho).' },
       ],
     },
     {
@@ -45,7 +45,7 @@ const DEFAULT: Doc = {
   ],
 }
 
-export default function ProcessoContratacao({ pessoas, chave = 'processo_contratacao_clt', modelo, titulo = '📝 Processo de Contratação', comCarta = true }: { pessoas: Pessoa[]; chave?: string; modelo?: Doc; titulo?: string; comCarta?: boolean }) {
+export default function ProcessoContratacao({ pessoas, chave = 'processo_contratacao_clt', modelo, titulo = 'Processo de Contratação', comCarta = true }: { pessoas: Pessoa[]; chave?: string; modelo?: Doc; titulo?: string; comCarta?: boolean }) {
   const MODELO = modelo || DEFAULT
   const [doc, setDoc] = useState<Doc>({ secoes: [] })
   const [loading, setLoading] = useState(true)
@@ -88,7 +88,7 @@ export default function ProcessoContratacao({ pessoas, chave = 'processo_contrat
   function delSecao(si: number) { if (!confirm('Excluir esta etapa inteira?')) return; mut(d => { d.secoes.splice(si, 1) }) }
 
   function mensagem(secao: string, p: Passo) {
-    return `*${secao} — ${p.titulo}*\n\n${p.texto}\n\n_Enviado pelo NODRI 💛_`
+    return `*${secao} — ${p.titulo}*\n\n${p.texto}\n\n_Enviado pelo NODRI _`
   }
   function enviarWhats(pessoa: Pessoa) {
     if (!enviar) return
@@ -212,7 +212,7 @@ export default function ProcessoContratacao({ pessoas, chave = 'processo_contrat
         <div onClick={() => setEnviar(null)} style={overlay}>
           <div onClick={e => e.stopPropagation()} style={{ ...card, maxWidth: 440, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>📲 Enviar “{enviar.passo.titulo}” para:</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Enviar “{enviar.passo.titulo}” para:</h3>
               <button onClick={() => setEnviar(null)} style={{ ...btnX, color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <div style={{ padding: '12px 16px' }}>

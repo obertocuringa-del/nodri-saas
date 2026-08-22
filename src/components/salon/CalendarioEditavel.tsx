@@ -319,7 +319,7 @@ ${doMes.length
             <button onClick={() => setLembreteAberto(false)} style={{ position: 'absolute', top: 10, right: 10, border: 'none', background: 'rgba(255,255,255,.25)', color: '#fff', borderRadius: 8, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={15} /></button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, marginBottom: 8 }}><Bell size={16} /> Compromissos chegando!</div>
             {proximos.map(e => { const n = diasAte(e.data); return (
-              <div key={e.id} style={{ fontSize: 13, marginBottom: 3 }}>📌 <strong>{n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `em ${n} dias`}</strong> — {e.texto}{e.responsavel ? ` (${e.responsavel})` : ''}</div>
+              <div key={e.id} style={{ fontSize: 13, marginBottom: 3 }}><strong>{n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `em ${n} dias`}</strong> — {e.texto}{e.responsavel ? ` (${e.responsavel})` : ''}</div>
             ) })}
           </div>
         )}
@@ -384,7 +384,7 @@ ${doMes.length
                       return (
                         <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                           {e.texto}
-                          {e.responsavel && <em style={{ display: 'block', fontStyle: 'normal', color: '#8b95a5', fontWeight: 500 }}>👤 {e.responsavel}</em>}
+                          {e.responsavel && <em style={{ display: 'block', fontStyle: 'normal', color: '#8b95a5', fontWeight: 500 }}>{e.responsavel}</em>}
                         </span>
                       )
                     })}
@@ -437,7 +437,7 @@ ${doMes.length
             <div onClick={ev => ev.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: corTema, margin: 0 }}>📅 {brData(selDia)}</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: corTema, margin: 0 }}>{brData(selDia)}</h3>
                   <span style={{ fontSize: 11.5, color: '#9ca3af', textTransform: 'capitalize' }}>
                     {SEM_LONGO[new Date(Number(selDia.slice(0, 4)), Number(selDia.slice(5, 7)) - 1, Number(selDia.slice(8, 10))).getDay()]}
                   </span>
@@ -486,7 +486,7 @@ ${doMes.length
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13.5, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
-                          {e.responsavel && <div style={{ fontSize: 11.5, color: corTema, fontWeight: 700, marginTop: 3, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
+                          {e.responsavel && <div style={{ fontSize: 11.5, color: corTema, fontWeight: 700, marginTop: 3, wordBreak: 'break-word' }}>{e.responsavel}</div>}
                           <div style={{ fontSize: 10.5, color: '#9ca3af', marginTop: 3 }}>{legenda[c.id] || c.nome}</div>
                         </div>
                         {!somenteLeitura && (
@@ -539,7 +539,7 @@ ${doMes.length
           if (!futuros.length) return null
           return (
             <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 800, color: corTema, margin: '0 0 10px' }}>📋 Próximos compromissos</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: corTema, margin: '0 0 10px' }}>Próximos compromissos</h3>
               {futuros.map(e => {
                 const n = diasAte(e.data)
                 const badge = n === 0 ? 'HOJE' : n === 1 ? 'AMANHÃ' : `${n} dias`
@@ -550,7 +550,7 @@ ${doMes.length
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{brData(e.data)}</div>
                       <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
-                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2, wordBreak: 'break-word' }}>👤 {e.responsavel}</div>}
+                      {e.responsavel && <div style={{ fontSize: 11, color: corTema, fontWeight: 700, marginTop: 2, wordBreak: 'break-word' }}>{e.responsavel}</div>}
                     </div>
                     {!somenteLeitura && (
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
@@ -570,7 +570,7 @@ ${doMes.length
             sai na segunda folha da impressão. */}
         <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: corTema, margin: 0 }}>🗒️ Compromissos de {MESES[ref.mes]} {ref.ano}</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: corTema, margin: 0 }}>Compromissos de {MESES[ref.mes]} {ref.ano}</h3>
             <span style={{ fontSize: 11.5, color: '#9ca3af' }}>descrição completa · {doMes.length} no total</span>
           </div>
           {doMes.length === 0
@@ -587,8 +587,8 @@ ${doMes.length
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{e.texto}</div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 4 }}>
-                      <span style={{ fontSize: 11.5, color: corTema, fontWeight: 700 }}>👤 {e.responsavel || 'sem responsável'}</span>
-                      <span style={{ fontSize: 11.5, color: '#8b95a5' }}>🏷️ {legenda[c.id] || c.nome}</span>
+                      <span style={{ fontSize: 11.5, color: corTema, fontWeight: 700 }}>{e.responsavel || 'sem responsável'}</span>
+                      <span style={{ fontSize: 11.5, color: '#8b95a5' }}>{legenda[c.id] || c.nome}</span>
                     </div>
                   </div>
                   {!somenteLeitura && (
@@ -602,7 +602,7 @@ ${doMes.length
             })}
         </div>
 
-        <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 14 }}>Clique numa data para adicionar, ver, editar (✎) ou remover. A impressão sai em A4 deitado: a primeira folha é o mês, a segunda é a descrição. {salvando && '· salvando...'}</p>
+        <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 14 }}>Clique numa data para adicionar, ver, editar () ou remover. A impressão sai em A4 deitado: a primeira folha é o mês, a segunda é a descrição. {salvando && '· salvando...'}</p>
       </div>
     </div>
   )

@@ -196,7 +196,7 @@ export default function CadastroPublicoPage() {
   if (invalido) return (
     <div style={{ minHeight: '100vh', background: '#f0eeea', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ background: '#fff', borderRadius: '16px', padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+
         <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Link inválido</h2>
         <p style={{ color: '#767069', fontSize: '14px' }}>Este link de cadastro não existe ou foi desativado. Solicite um novo link ao salão.</p>
       </div>
@@ -220,7 +220,7 @@ export default function CadastroPublicoPage() {
 
       {/* HEADER */}
       <div style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', padding: '28px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: '28px', marginBottom: '8px' }}>✂️</div>
+
         <h1 style={{ color: '#fff', fontSize: '22px', fontWeight: 800, margin: '0 0 6px' }}>{salaoNome || 'Salão'}</h1>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', margin: 0 }}>Preencha seus dados para criar seu perfil profissional</p>
       </div>
@@ -245,7 +245,7 @@ export default function CadastroPublicoPage() {
         </div>
 
         {/* DADOS PESSOAIS */}
-        {card('👤 Dados Pessoais', '#5b4fcf',
+        {card('Dados Pessoais', '#5b4fcf',
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {inp('Nome Completo *', nome, setNome, { full: true })}
             {inp('Apelido', apelido, setApelido)}
@@ -270,7 +270,7 @@ export default function CadastroPublicoPage() {
                     <input value={cep} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setCep(v); if (v.length === 8) buscarCep(v) }}
                       placeholder="00000000" maxLength={8} inputMode="numeric"
                       style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none' }} />
-                    {buscandoCep && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>⏳</span>}
+                    {buscandoCep && <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#9ca3af' }}>buscando...</span>}
                   </div>
                 </div>
                 <div>
@@ -289,7 +289,7 @@ export default function CadastroPublicoPage() {
                     style={{ width: '100%', padding: '12px', border: '1.5px solid #e0ddd8', borderRadius: '10px', fontSize: '14px', background: '#fff', color: '#1a1a1a', outline: 'none', textAlign: 'center' }} />
                 </div>
               </div>
-              {(bairro || cidade) && <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>📍 {[bairro, cidade && uf ? `${cidade}-${uf}` : cidade, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', ')}</p>}
+              {(bairro || cidade) && <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>{[bairro, cidade && uf ? `${cidade}-${uf}` : cidade, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', ')}</p>}
             </div>
             {inp('Telefone (WhatsApp)', telefone, setTelefone, { placeholder: '(00) 00000-0000' })}
             <div>
@@ -384,7 +384,7 @@ export default function CadastroPublicoPage() {
         )}
 
         {/* PERFIL PESSOAL */}
-        {card('😊 Perfil Pessoal', '#f43f8e',
+        {card('Perfil Pessoal', '#f43f8e',
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {inp('Cor Favorita', corFav, setCorFav)}
             {inp('Comida Favorita', comidaFav, setComidaFav)}
@@ -396,7 +396,7 @@ export default function CadastroPublicoPage() {
         )}
 
         {/* DADOS PROFISSIONAIS */}
-        {card('💼 Dados Profissionais', '#0891b2',
+        {card('Dados Profissionais', '#0891b2',
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {inp('CNPJ (MEI)', cnpj, setCnpj, { placeholder: '00.000.000/0001-00' })}
             {inp('Dados Bancários (Banco / Ag / Conta)', banco, setBanco, { placeholder: 'Banco / Ag / Conta' })}
@@ -453,7 +453,7 @@ export default function CadastroPublicoPage() {
         {/* ENVIAR */}
         <button onClick={handleSubmit} disabled={salvando}
           style={{ width: '100%', background: salvando ? '#a09890' : 'linear-gradient(135deg, #5b4fcf, #f43f8e)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '16px', fontWeight: 700, padding: '16px', cursor: salvando ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {salvando ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Enviando...</> : '✅ Criar Cadastro'}
+          {salvando ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Enviando...</> : 'Criar Cadastro'}
         </button>
       </div>
 

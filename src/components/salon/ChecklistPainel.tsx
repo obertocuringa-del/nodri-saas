@@ -194,7 +194,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
     setDoc(novoDoc)
     try {
       const res = await fetch('/api/salon/grid', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave, doc: novoDoc }) })
-      if (res.ok) { toast.success('Feito! Pendência resolvida ✅'); setDirty(false) } else toast.error('Erro ao salvar')
+      if (res.ok) { toast.success('Feito! Pendência resolvida'); setDirty(false) } else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') }
   }
   function addDemanda(ci: number, freq = 'Diário') { mut(d => { d.categorias[ci].demandas.push({ id: rid(), texto: '', freq, feito: false }) }); setSecoesAbertas(s => ({ ...s, [freq]: true })) }
@@ -269,7 +269,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <AutoTextarea value={dem.texto} onChange={v => setDemanda(catSel, di, 'texto', v)} feito={feitoOk} readOnly={soLeitura || soExecuta} />
-            {alertaHoje && <div style={{ fontSize: 10.5, fontWeight: 900, color: '#dc2626', paddingLeft: 8 }}>⚠ MARCADA PARA HOJE ({hojeAbrev.toUpperCase()}) — AINDA NÃO FEITA</div>}
+            {alertaHoje && <div style={{ fontSize: 10.5, fontWeight: 900, color: '#dc2626', paddingLeft: 8 }}>MARCADA PARA HOJE ({hojeAbrev.toUpperCase()}) — AINDA NÃO FEITA</div>}
           </div>
         </div>
 
@@ -343,7 +343,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
         {dd !== DIA_SEM && <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 900, color: '#7c3aed', background: '#f5f3ff', border: '1px solid #e9d5ff', borderRadius: 7, padding: '3px 8px', whiteSpace: 'nowrap' }}>dia {dd}</span>}
         <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: feitoOk ? '#9ca3af' : '#1a1a1a', textDecoration: feitoOk ? 'line-through' : 'none', lineHeight: 1.35 }}>
           {dem.texto}
-          {alertaHoje && <span style={{ display: 'block', fontSize: 10.5, fontWeight: 900, color: '#dc2626' }}>⚠ marcada para hoje</span>}
+          {alertaHoje && <span style={{ display: 'block', fontSize: 10.5, fontWeight: 900, color: '#dc2626' }}>marcada para hoje</span>}
         </span>
       </div>
     )
@@ -357,7 +357,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
       <nav style={{ background: temAlerta ? '#fdf1f1' : '#faf9f7', borderBottom: temAlerta ? '1px solid #f3c8c8' : '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>✅ Check List Diário</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>Check List Diário</span>
         {!soLeitura && (
           <div style={{ display: 'inline-flex', border: '1.5px solid #d8d4f0', borderRadius: 9, overflow: 'hidden', marginLeft: 4 }}>
             <button onClick={() => setModo('fazer')} title="Roteiro guiado — para executar/cobrir" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', border: 'none', background: modo === 'fazer' ? '#5b4fcf' : '#fff', color: modo === 'fazer' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}><Route size={14} /> Fazer</button>
@@ -366,11 +366,11 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
         )}
         <div style={{ flex: 1 }} />
         <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
-        <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
+        <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? '' : ''}</button>
         {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
         {!soLeitura && <button onClick={() => salvar()} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>}
-        {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>👁️ Somente visualização</span>}
-        {soExecuta && <span style={{ fontSize: 12, color: '#b45309', background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 8, padding: '6px 12px' }}>🧾 Modo Caixa — só executa e adiciona</span>}
+        {soLeitura && <span style={{ fontSize: 12, color: '#6b6860', background: '#f1eefb', border: '1px solid #ddd6f5', borderRadius: 8, padding: '6px 12px' }}>Somente visualização</span>}
+        {soExecuta && <span style={{ fontSize: 12, color: '#b45309', background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 8, padding: '6px 12px' }}>Modo Caixa — só executa e adiciona</span>}
       </nav>
       )}
 
@@ -378,14 +378,14 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
       <div style={{ margin: '0 auto', padding: embutido ? 0 : (isMobile ? 16 : '16px 28px') }}>
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (<>
 
-          {/* 💸 LANÇAR DESCONTO — fixo no topo: consolida o desconto mensal de cada
+          {/* LANÇAR DESCONTO — fixo no topo: consolida o desconto mensal de cada
               profissional (bebidas + serviços internos + empréstimos) numa lista só */}
           {!soLeitura && ehGerente && (
             <button onClick={() => setDescontoOpen(true)}
               style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', borderRadius: 14, padding: isMobile ? '13px 15px' : '15px 18px', marginBottom: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(22,163,74,.28)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,.22)', flexShrink: 0 }}><HandCoins size={22} /></span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <strong style={{ display: 'block', fontSize: 15, fontWeight: 900, letterSpacing: '.2px' }}>💸 LANÇAR DESCONTO (mensal)</strong>
+                <strong style={{ display: 'block', fontSize: 15, fontWeight: 900, letterSpacing: '.2px' }}>LANÇAR DESCONTO (mensal)</strong>
                 <span style={{ fontSize: 12, opacity: .95 }}>Puxa tudo a ser descontado de cada profissional — bebidas, serviços internos e empréstimos — numa lista só.</span>
               </span>
               <span style={{ fontSize: 22, opacity: .9, flexShrink: 0 }}>›</span>
@@ -403,7 +403,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
               </div>
               <div style={{ flex: 1 }} />
               <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={btnNav(verComuns)}><Copy size={14} /> Demandas em comum</button>
-              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
+              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={btnNav(verRelatorio)}><BarChart3 size={14} /> Relatório{temAlerta ? '' : ''}</button>
               {!soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado (os períodos já zeram sozinhos)" style={btnNav(false)}><RotateCcw size={14} /> Limpar</button>}
               <button onClick={() => salvar()} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar geral</>}</button>
             </div>
@@ -421,23 +421,23 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
               do topo; o botão real fica invisível aqui só para o topo acioná-lo) */}
           {isMobile && (
             <div className="nodri-linha-1" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={{ ...btnMob(verRelatorio), flex: 1 }}><BarChart3 size={14} /> Relatório{temAlerta ? ' ⚠️' : ''}</button>
+              <button onClick={() => { setVerRelatorio(v => !v); setVerComuns(false) }} style={{ ...btnMob(verRelatorio), flex: 1 }}><BarChart3 size={14} /> Relatório{temAlerta ? '' : ''}</button>
               <button onClick={() => { setVerComuns(v => !v); setVerRelatorio(false) }} style={{ ...btnMob(verComuns), flex: 1 }}><Copy size={14} /> Em comum</button>
               {!soLeitura && !soExecuta && <button onClick={limparMarcacoes} title="Reinício forçado" style={{ ...btnMob(false), width: 44, justifyContent: 'center' }}><RotateCcw size={15} /></button>}
               {!soLeitura && <button onClick={() => salvar()} aria-hidden tabIndex={-1} style={{ display: 'none' }}><Save size={12} /> Salvar</button>}
             </div>
           )}
 
-          {/* 🔴 ALERTA DO DIA — some sozinho quando a última for marcada como feita */}
+          {/* ALERTA DO DIA — some sozinho quando a última for marcada como feita */}
           {temAlerta && ehGerente && (
             <button onClick={() => { setVerRelatorio(true); setVerComuns(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 18px', marginBottom: 16, cursor: 'pointer', boxShadow: '0 10px 28px rgba(220,38,38,.35)' }}>
-              <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
+
               <span style={{ flex: 1, minWidth: 0 }}>
                 <strong style={{ display: 'block', fontSize: 14.5, fontWeight: 900, letterSpacing: '.3px' }}>HOJE É {NOME_DIA[hojeIdx]} — {pendHoje.length} tarefa{pendHoje.length > 1 ? 's' : ''} de hoje ainda não {pendHoje.length > 1 ? 'foram feitas' : 'foi feita'}!</strong>
                 <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '6px 0' }}>
                   {catsAlerta.map(([nome, n]) => (
-                    <span key={nome} style={{ background: 'rgba(255,255,255,.22)', border: '1px solid rgba(255,255,255,.45)', borderRadius: 20, padding: '2px 10px', fontSize: 11.5, fontWeight: 800 }}>📋 {nome}{n > 1 ? ` · ${n}` : ''}</span>
+                    <span key={nome} style={{ background: 'rgba(255,255,255,.22)', border: '1px solid rgba(255,255,255,.45)', borderRadius: 20, padding: '2px 10px', fontSize: 11.5, fontWeight: 800 }}>{nome}{n > 1 ? ` · ${n}` : ''}</span>
                   ))}
                 </span>
                 <span style={{ fontSize: 12, opacity: .92 }}>Este aviso aparece para todos e só some quando tudo for marcado como feito. Toque aqui para ver e resolver.</span>
@@ -470,7 +470,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
           </div>
           )}
 
-          {/* 📊 RELATÓRIO: progresso por categoria + pendências por período com resolução na hora */}
+          {/* RELATÓRIO: progresso por categoria + pendências por período com resolução na hora */}
           {verRelatorio && (() => {
             const idsHoje = new Set(pendHoje.map(p => p.dem.id))
             const pendPorFreq: Record<string, { dem: Demanda; cat: string }[]> = {}
@@ -498,23 +498,23 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
             )
             return (
               <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>📊 Relatório do período</h3>
+                <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>Relatório do período</h3>
                 <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 12px' }}>Cada tarefa zera sozinha quando o período vira: diárias à meia-noite, semanais na segunda, quinzenais nos dias 1 e 16, mensais no dia 1º, trimestrais em jan/abr/jul/out, semestrais em jan/jul e anuais em janeiro.</p>
                 {relat.map((r, i) => (
                   <div key={i} style={{ marginBottom: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 3 }}><span style={{ fontWeight: 700 }}>{r.nome}{(pendPorCat[i] || 0) > 0 ? ' ⚠️' : ''}</span><span style={{ color: '#6b6860' }}>{r.ok}/{r.tot} · {r.pct}%</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 3 }}><span style={{ fontWeight: 700 }}>{r.nome}{(pendPorCat[i] || 0) > 0 ? '' : ''}</span><span style={{ color: '#6b6860' }}>{r.ok}/{r.tot} · {r.pct}%</span></div>
                     <div style={{ height: 8, background: '#eee', borderRadius: 5, overflow: 'hidden' }}><div style={{ width: `${r.pct}%`, height: '100%', background: r.pct === 100 ? '#16a34a' : '#5b4fcf' }} /></div>
                   </div>
                 ))}
 
                 <div style={{ borderTop: '1px solid #f0eee8', margin: '16px 0 12px' }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 10px' }}>⏰ Pendências por período {totalPend > 0 && <span style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '2px 10px', marginLeft: 6 }}>{totalPend}</span>}</h3>
+                <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 10px' }}>Pendências por período {totalPend > 0 && <span style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', borderRadius: 10, padding: '2px 10px', marginLeft: 6 }}>{totalPend}</span>}</h3>
 
-                {totalPend === 0 && <p style={{ fontSize: 13.5, color: '#16a34a', fontWeight: 700 }}>🎉 Nenhuma pendência no momento — tudo em dia!</p>}
+                {totalPend === 0 && <p style={{ fontSize: 13.5, color: '#16a34a', fontWeight: 700 }}>Nenhuma pendência no momento — tudo em dia!</p>}
 
                 {pendHoje.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#dc2626', letterSpacing: '.4px', marginBottom: 6 }}>🔴 MARCADAS PARA HOJE ({NOME_DIA[hojeIdx]}) — {pendHoje.length}</div>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: '#dc2626', letterSpacing: '.4px', marginBottom: 6 }}>MARCADAS PARA HOJE ({NOME_DIA[hojeIdx]}) — {pendHoje.length}</div>
                     {pendHoje.map(p => <LinhaPend key={p.dem.id} dem={p.dem} cat={p.cat} destaque />)}
                   </div>
                 )}
@@ -531,7 +531,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
 
           {verComuns && (
             <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 6px' }}>🔁 Demandas em comum entre categorias</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 6px' }}>Demandas em comum entre categorias</h3>
               <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 10px' }}>Demandas iguais que aparecem em mais de uma categoria.</p>
               {comuns.length === 0 ? <p style={{ fontSize: 13, color: '#9ca3af' }}>Nenhuma demanda repetida entre categorias.</p> :
                 comuns.map((c, i) => (
@@ -550,7 +550,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                 style={{ flex: 1, minWidth: 0, padding: '12px 14px', borderRadius: 12, border: '1.5px solid #5b4fcf', background: '#f0eefb', color: '#1a1a1a', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                 {doc.categorias.map((c, i) => {
                   const ok = c.demandas.filter(feitoNoPeriodo).length
-                  return <option key={c.id} value={i}>{(pendPorCat[i] || 0) > 0 ? '⚠️ ' : ''}{c.nome} — {ok}/{c.demandas.length}</option>
+                  return <option key={c.id} value={i}>{(pendPorCat[i] || 0) > 0 ? '' : ''}{c.nome} — {ok}/{c.demandas.length}</option>
                 })}
               </select>
               {!soLeitura && <button onClick={addCategoria} title="Nova categoria" style={{ padding: '12px 14px', borderRadius: 12, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 14, fontWeight: 800, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}><Plus size={16} /></button>}
@@ -563,7 +563,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#6b6860', letterSpacing: '.5px' }}>CATEGORIAS</span>
                 <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5b4fcf', background: '#f0eefb', borderRadius: 20, padding: '3px 11px' }}>{doc.categorias.length}</span>
-                <input value={buscaCat} onChange={e => setBuscaCat(e.target.value)} placeholder="🔎 Buscar categoria..."
+                <input value={buscaCat} onChange={e => setBuscaCat(e.target.value)} placeholder="Buscar categoria..."
                   style={{ flex: 1, minWidth: 170, maxWidth: 300, padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e0ddd8', fontSize: 13, outline: 'none' }}
                   onFocus={e => (e.currentTarget.style.borderColor = '#5b4fcf')} onBlur={e => (e.currentTarget.style.borderColor = '#e0ddd8')} />
                 {!soLeitura && <button onClick={addCategoria} style={{ padding: '8px 14px', borderRadius: 10, border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Plus size={14} /> Categoria</button>}
@@ -584,7 +584,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                       onMouseLeave={e => { if (!sel) e.currentTarget.style.borderColor = alertas > 0 ? '#fca5a5' : '#eceae4' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 8, minHeight: 30 }}>
                         <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, lineHeight: 1.25, wordBreak: 'break-word' }}>{c.nome}</span>
-                        {alertas > 0 && <span style={{ flexShrink: 0, background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 900 }}>⚠ {alertas}</span>}
+                        {alertas > 0 && <span style={{ flexShrink: 0, background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 900 }}>{alertas}</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <div style={{ flex: 1, height: 5, borderRadius: 3, background: sel ? 'rgba(255,255,255,.25)' : '#f0eee8', overflow: 'hidden' }}>
@@ -605,7 +605,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
               return (
                 <button key={c.id} onClick={() => setCatSel(i)} style={{ padding: '8px 14px', borderRadius: 10, border: catSel === i ? 'none' : alertas > 0 ? '1.5px solid #fca5a5' : '1.5px solid #e0ddd8', background: catSel === i ? '#1a1a1a' : '#fff', color: catSel === i ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {c.nome} <span style={{ opacity: .7, fontSize: 11 }}>{ok}/{c.demandas.length}</span>
-                  {alertas > 0 && <span style={{ marginLeft: 6, background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 900 }}>⚠ {alertas}</span>}
+                  {alertas > 0 && <span style={{ marginLeft: 6, background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 900 }}>{alertas}</span>}
                 </button>
               )
             })}
@@ -638,7 +638,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 'none', borderRadius: aberto ? '11px 11px 0 0' : 11, background: completo ? '#ecfdf3' : fc.bg, cursor: 'pointer' }}>
                       <span style={{ width: 13, height: 13, borderRadius: 4, background: '#fff', border: `3.5px solid ${fc.bd}`, flexShrink: 0 }} />
                       <span style={{ fontWeight: 900, fontSize: 13.5, color: fc.txt, letterSpacing: '.5px' }}>{freq.toUpperCase()}</span>
-                      {alertas > 0 && <span style={{ background: '#dc2626', color: '#fff', borderRadius: 10, padding: '2px 9px', fontSize: 10.5, fontWeight: 900, flexShrink: 0 }}>⚠ {alertas} de hoje</span>}
+                      {alertas > 0 && <span style={{ background: '#dc2626', color: '#fff', borderRadius: 10, padding: '2px 9px', fontSize: 10.5, fontWeight: 900, flexShrink: 0 }}>{alertas} de hoje</span>}
                       <span style={{ flex: 1 }} />
                       <span style={{ fontSize: 13, fontWeight: 900, color: completo ? '#16a34a' : fc.txt }}>{completo ? '✓ ' : ''}{ok}/{itens.length}</span>
                       <ChevronDown size={17} color={fc.txt} style={{ transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }} />

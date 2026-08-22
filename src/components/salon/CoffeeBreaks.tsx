@@ -64,10 +64,10 @@ const g = (titulo: string, itens: string[]): Grupo =>
   ({ id: rid(), titulo, itens: itens.map(t => ({ id: rid(), texto: t, on: false })) })
 
 const CARDAPIO_PADRAO = (): Grupo[] => [
-  g('☕ Bebidas', ['Café', 'Café com leite', 'Chá', 'Água', 'Água com gás', 'Suco', 'Refrigerante']),
-  g('🥐 Salgados', ['Mini croissant', 'Mini sanduíches', 'Pão de queijo', 'Quiches', 'Folhados', 'Mini salgados']),
-  g('🍰 Doces', ['Mini bolo', 'Brownie', 'Cookies', 'Mini tortinhas', 'Docinhos']),
-  g('🍎 Opções leves', ['Frutas', 'Iogurte', 'Granola', 'Castanhas', 'Sanduíches leves']),
+  g('Bebidas', ['Café', 'Café com leite', 'Chá', 'Água', 'Água com gás', 'Suco', 'Refrigerante']),
+  g('Salgados', ['Mini croissant', 'Mini sanduíches', 'Pão de queijo', 'Quiches', 'Folhados', 'Mini salgados']),
+  g('Doces', ['Mini bolo', 'Brownie', 'Cookies', 'Mini tortinhas', 'Docinhos']),
+  g('Opções leves', ['Frutas', 'Iogurte', 'Granola', 'Castanhas', 'Sanduíches leves']),
 ]
 const RESTRICOES_PADRAO = (): Grupo[] => [
   g('Restrições alimentares', ['Vegetarianos', 'Veganos', 'Intolerância à lactose', 'Alergia a castanhas', 'Restrição ao glúten', 'Diabetes / outros cuidados']),
@@ -199,7 +199,7 @@ export default function CoffeeBreaks() {
 
     const custos = ev.custos.filter(c => c.item.trim() || num(c.valor) > 0 || num(c.qtd) > 0)
     const tabCustos = custos.length ? `
-      <div class="bloco"><h2>🧮 Controle de custo</h2>
+      <div class="bloco"><h2>Controle de custo</h2>
       <table><thead><tr><th>Item</th><th class="r">Qtd</th><th class="r">Valor un.</th><th class="r">Total</th></tr></thead>
       <tbody>${custos.map(c => `<tr><td>${esc(c.item) || '—'}</td><td class="r">${esc(c.qtd) || '—'}</td><td class="r">${num(c.valor) ? moeda(num(c.valor)) : '—'}</td><td class="r"><b>${moeda(num(c.qtd) * num(c.valor))}</b></td></tr>`).join('')}</tbody>
       <tfoot><tr><td colspan="3"><b>TOTAL</b></td><td class="r"><b>${moeda(t.total)}</b></td></tr>
@@ -210,7 +210,7 @@ export default function CoffeeBreaks() {
     // Quanto comprar — só quando há pessoas para calcular
     const horas = num(ev.duracao) || 3
     const tabCompra = t.pessoas > 0 ? `
-      <div class="bloco"><h2>📏 Quanto comprar — ${t.pessoas} pessoas em ${horas}h</h2>
+      <div class="bloco"><h2>Quanto comprar — ${t.pessoas} pessoas em ${horas}h</h2>
       <table><tbody>
         <tr><td>Salgados</td><td class="r"><b>${Math.round(t.pessoas * 5)} a ${Math.round(t.pessoas * 7)} un.</b></td></tr>
         <tr><td>Doces</td><td class="r"><b>${t.pessoas * 2} a ${t.pessoas * 3} un.</b></td></tr>
@@ -221,12 +221,12 @@ export default function CoffeeBreaks() {
 
     const resp = ev.responsaveis.filter(r => r.papel.trim())
     const tabResp = resp.length ? `
-      <div class="bloco"><h2>👩‍💼 Quem cuida da operação</h2>
+      <div class="bloco"><h2>Quem cuida da operação</h2>
       <table><tbody>${resp.map(r => `<tr><td style="width:42%">${esc(r.papel)}</td><td><b>${esc(r.nome) || '_______________'}</b></td></tr>`).join('')}</tbody></table></div>` : ''
 
     const crono = ev.cronograma.filter(c => c.hora.trim() || c.oque.trim())
     const tabCrono = crono.length ? `
-      <div class="bloco"><h2>⏰ Cronograma</h2>
+      <div class="bloco"><h2>Cronograma</h2>
       <table><tbody>${crono.map(c => `<tr><td style="width:70px"><b>${esc(c.hora) || '—'}</b></td><td>${esc(c.oque)}</td></tr>`).join('')}</tbody></table></div>` : ''
 
     const css = `@page{size:A4 portrait;margin:13mm}
@@ -272,10 +272,10 @@ tfoot td{border-top:2px solid #5b4fcf;background:#f0eefb;padding:7px 8px}
 <div class="tt"><strong>${esc(ev.nome || 'Coffee break')}</strong>${esc(ev.objetivo)} · ${dataFmt}${ev.hora ? ` às ${esc(ev.hora)}` : ''}</div></div>
 
 <div class="chips">
-  ${ev.local ? `<span class="chip">📍 <b>${esc(ev.local)}</b></span>` : ''}
-  <span class="chip">🎯 <b>${esc(ev.objetivo)}</b></span>
-  <span class="chip">👥 Público: <b>${esc(ev.publico)}</b></span>
-  ${ev.duracao ? `<span class="chip">⏱ Duração: <b>${esc(ev.duracao)}h</b></span>` : ''}
+  ${ev.local ? `<span class="chip"><b>${esc(ev.local)}</b></span>` : ''}
+  <span class="chip"><b>${esc(ev.objetivo)}</b></span>
+  <span class="chip">Público: <b>${esc(ev.publico)}</b></span>
+  ${ev.duracao ? `<span class="chip">Duração: <b>${esc(ev.duracao)}h</b></span>` : ''}
 </div>
 
 <div class="kpis">
@@ -290,7 +290,7 @@ tfoot td{border-top:2px solid #5b4fcf;background:#f0eefb;padding:7px 8px}
   <div class="col">${grupos(ev.apresentacao)}${tabResp}${tabCrono}</div>
 </div>
 ${tabCustos}
-${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="obs">${esc(ev.observacoes).replace(/\n/g, '<br>')}</div></div>` : ''}
+${ev.observacoes ? `<div class="bloco"><h2>Observações</h2><div class="obs">${esc(ev.observacoes).replace(/\n/g, '<br>')}</div></div>` : ''}
 <div class="rodape">Gerado em ${new Date().toLocaleDateString('pt-BR')} · Coffee breaks e encontros internos</div>
 <script>window.onload=function(){window.print()}<\/script></body></html>`
     const w = window.open('', '_blank', 'width=900,height=700'); if (!w) return
@@ -441,14 +441,14 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
             <input value={ev.nome} onChange={e => mudar(ev.id, 'nome', e.target.value)} placeholder="Ex.: Treinamento de coloração" style={{ ...campo, fontWeight: 800 }} />
           </div>
           <div>
-            <label style={rotulo}>🎯 Objetivo</label>
+            <label style={rotulo}>Objetivo</label>
             <select value={ev.objetivo} onChange={e => mudar(ev.id, 'objetivo', e.target.value)} style={campo}>
               {OBJETIVOS.map(o => <option key={o}>{o}</option>)}
               {!OBJETIVOS.includes(ev.objetivo) && <option>{ev.objetivo}</option>}
             </select>
           </div>
           <div>
-            <label style={rotulo}>👥 Público</label>
+            <label style={rotulo}>Público</label>
             <select value={ev.publico} onChange={e => mudar(ev.id, 'publico', e.target.value)} style={campo}>
               {PUBLICOS.map(p => <option key={p}>{p}</option>)}
             </select>
@@ -459,7 +459,7 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
           <div><label style={rotulo}>Nº de pessoas</label><input type="number" value={ev.pessoas} onChange={e => mudar(ev.id, 'pessoas', e.target.value)} style={campo} /></div>
           <div><label style={rotulo}>Local</label><input value={ev.local} onChange={e => mudar(ev.id, 'local', e.target.value)} placeholder="Onde vai acontecer" style={campo} /></div>
           <div>
-            <label style={rotulo}>💰 Orçamento por pessoa</label>
+            <label style={rotulo}>Orçamento por pessoa</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <input type="number" value={ev.orcPessoa} onChange={e => mudar(ev.id, 'orcPessoa', e.target.value)} placeholder="R$" style={campo} />
               {num(ev.orcPessoa) > 0 && (
@@ -474,7 +474,7 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
       {pessoas > 0 && (
         <div style={{ background: '#f8f8fc', border: '1px solid #ddd6f5', borderRadius: 13, padding: '13px 15px', marginBottom: 11 }}>
           <div style={{ fontSize: 11.5, fontWeight: 900, color: '#5b4fcf', marginBottom: 8, letterSpacing: '.4px' }}>
-            📏 QUANTO COMPRAR — sugestão para {pessoas} pessoas em {horas}h
+            QUANTO COMPRAR — sugestão para {pessoas} pessoas em {horas}h
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 9 }}>
             {[
@@ -499,21 +499,21 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
       {/* 4 e 5 — cardápio, restrições e apresentação */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 11, marginBottom: 11 }}>
         <div>
-          <Secao titulo="🥐 O que servir" />
+          <Secao titulo="O que servir" />
           {Lista('cardapio')}
           <div style={{ height: 11 }} />
-          <Secao titulo="🥛 Restrições alimentares" />
+          <Secao titulo="Restrições alimentares" />
           {Lista('restricoes')}
         </div>
         <div>
-          <Secao titulo="✨ Apresentação e montagem" />
+          <Secao titulo="Apresentação e montagem" />
           {Lista('apresentacao')}
         </div>
       </div>
 
       {/* 7 — controle de custo */}
       <div style={{ background: '#fff', border: '1px solid #eae8e3', borderRadius: 13, padding: 15, marginBottom: 11 }}>
-        <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>🧮 CONTROLE DE CUSTO</div>
+        <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>CONTROLE DE CUSTO</div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 460 }}>
             <thead>
@@ -567,7 +567,7 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
       {/* 8 e 9 — responsáveis e cronograma */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 11, marginBottom: 11 }}>
         <div style={{ background: '#fff', border: '1px solid #eae8e3', borderRadius: 13, padding: 15 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>👩‍💼 QUEM CUIDA DA OPERAÇÃO</div>
+          <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>QUEM CUIDA DA OPERAÇÃO</div>
           {ev.responsaveis.map(r => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 0', borderTop: '1px solid #f7f6f3' }}>
               <input value={r.papel} onChange={e => mudar(ev.id, 'responsaveis', ev.responsaveis.map(x => x.id === r.id ? { ...x, papel: e.target.value } : x))}
@@ -588,7 +588,7 @@ ${ev.observacoes ? `<div class="bloco"><h2>📝 Observações</h2><div class="ob
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #eae8e3', borderRadius: 13, padding: 15 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>⏰ CRONOGRAMA</div>
+          <div style={{ fontSize: 11.5, fontWeight: 900, color: '#1a1a1a', marginBottom: 9, letterSpacing: '.4px' }}>CRONOGRAMA</div>
           {ev.cronograma.map(c => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 0', borderTop: '1px solid #f7f6f3' }}>
               <input type="time" value={c.hora} onChange={e => mudar(ev.id, 'cronograma', ev.cronograma.map(x => x.id === c.id ? { ...x, hora: e.target.value } : x))}

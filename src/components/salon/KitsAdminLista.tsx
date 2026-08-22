@@ -93,7 +93,7 @@ export default function KitsAdminLista() {
 
       {/* ── Configuração de preço ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 18 }}>
-        <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 12px' }}>💲 Preço por kit</h3>
+        <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: '0 0 12px' }}>Preço por kit</h3>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b6860', marginBottom: 5 }}>Kit Mão (R$)</label>
@@ -124,7 +124,7 @@ export default function KitsAdminLista() {
 
       {/* ── Cruzamento atendimentos x pedidos ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>📊 Atendimentos x Pedidos — {mes.split('-').reverse().join('/')}</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Atendimentos x Pedidos — {mes.split('-').reverse().join('/')}</h3>
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 30 }}><Loader2 size={20} className="animate-spin" style={{ color: COR }} /></div> :
           linhas.length === 0 ? (
             <p style={{ fontSize: 13, color: '#9ca3af', padding: '16px 0' }}>Nenhum atendimento de manicure/pedicure encontrado nos Relatórios para este mês.</p>
@@ -142,7 +142,7 @@ export default function KitsAdminLista() {
       </div>
 
       {/* ── Lista de solicitações ── */}
-      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>📦 Solicitações do mês</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Solicitações do mês</h3>
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         solicitacoes.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
@@ -155,7 +155,7 @@ export default function KitsAdminLista() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af' }}>{s.data}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: s.status === 'pendente' ? '#b45309' : '#16a34a' }}>{s.status === 'pendente' ? '⏳ Pendente' : '✓ Separado'}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: s.status === 'pendente' ? '#b45309' : '#16a34a' }}>{s.status === 'pendente' ? 'Pendente' : '✓ Separado'}</span>
                     <button onClick={() => excluirSolicitacao(s.id)} title="Remover" style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function KitsAdminLista() {
                 <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <strong style={{ fontSize: 14, color: '#16a34a' }}>R$ {fmtBRL(s.valor)}</strong>
-                    {(s.parcelas || 1) > 1 && <div style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700 }}>💳 em {s.parcelas}× de R$ {fmtBRL(valorParcelas(s.valor, s.parcelas || 1)[0])}</div>}
+                    {(s.parcelas || 1) > 1 && <div style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700 }}>em {s.parcelas}× de R$ {fmtBRL(valorParcelas(s.valor, s.parcelas || 1)[0])}</div>}
                   </div>
                   {s.status === 'pendente' && <button onClick={() => marcarSeparado(s.id)} style={{ padding: '7px 12px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Marcar separado</button>}
                 </div>
@@ -194,7 +194,7 @@ export default function KitsAdminLista() {
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6b6860', fontSize: 12.5 }}>{s.data}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       {s.status === 'pendente'
-                        ? <button onClick={() => marcarSeparado(s.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fffbeb', color: '#b45309', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>⏳ Pendente — marcar separado</button>
+                        ? <button onClick={() => marcarSeparado(s.id)} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: '#fffbeb', color: '#b45309', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Pendente — marcar separado</button>
                         : <span style={{ padding: '5px 10px', borderRadius: 7, background: '#f0fdf4', color: '#16a34a', fontSize: 11, fontWeight: 800 }}>✓ Separado {s.dataSeparado}</span>}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>

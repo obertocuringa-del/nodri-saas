@@ -109,8 +109,8 @@ export function PopsEAvaliacao({ cargo, profId, profNome }: { cargo?: string | n
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <Pill id="processos" label="📘 Processos (POPs)" />
-        <Pill id="avaliacoes" label="✅ Avaliação POP" />
+        <Pill id="processos" label="Processos (POPs)" />
+        <Pill id="avaliacoes" label="Avaliação POP" />
       </div>
       {sub === 'processos'
         ? <PopsDoProfissional cargo={cargo} />
@@ -144,7 +144,7 @@ export function PopsDoProfissional({ cargo }: { cargo?: string | null }) {
     <div className="space-y-4">
       <style>{POP_DOC_CSS}</style>
       <div className="nodri-card px-4 py-3 text-[12px] text-nodri-t2">
-        📘 POPs da categoria <strong className="text-nodri-cyan">{ROTULO_CATEGORIA[categoria]}</strong> — novos POPs criados para esta categoria aparecem aqui automaticamente.
+        POPs da categoria <strong className="text-nodri-cyan">{ROTULO_CATEGORIA[categoria]}</strong> — novos POPs criados para esta categoria aparecem aqui automaticamente.
       </div>
       <div className="flex gap-4 items-start flex-col lg:flex-row">
         <aside className="w-full lg:w-72 shrink-0">
@@ -272,7 +272,7 @@ Seja específico e use os itens reais listados acima.`
   return (
     <div className="space-y-4">
       <div className="nodri-card px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-        <p className="text-[12px] text-nodri-t2">✅ <strong className="text-nodri-t1">{ordenadas.length}</strong> avaliação(ões) de POP · Média geral:</p>
+        <p className="text-[12px] text-nodri-t2"><strong className="text-nodri-t1">{ordenadas.length}</strong> avaliação(ões) de POP · Média geral:</p>
         <span className="text-lg font-bold" style={{ color: corPct(media) }}>{media}%</span>
       </div>
       {ordenadas.map(av => {
@@ -298,7 +298,7 @@ Seja específico e use os itens reais listados acima.`
               <div className="border-t border-nodri-border px-4 py-4 space-y-4">
                 {/* Gráfico por seção */}
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">📊 Conformidade por seção</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">Conformidade por seção</p>
                   <div className="space-y-2">
                     {stats.map(s => (
                       <div key={s.secao}>
@@ -317,7 +317,7 @@ Seja específico e use os itens reais listados acima.`
                 {Array.isArray((av as any).comportamental) && (av as any).comportamental.some((c: any) => c.nota > 0) && (
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">
-                      🧭 Comportamental · média <span style={{ color: corPct(((av as any).mediaComportamental || 0) * 20) }}>{(av as any).mediaComportamental || 0} / 5</span>
+                      Comportamental · média <span style={{ color: corPct(((av as any).mediaComportamental || 0) * 20) }}>{(av as any).mediaComportamental || 0} / 5</span>
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                       {(av as any).comportamental.map((c: any, i: number) => (
@@ -332,7 +332,7 @@ Seja específico e use os itens reais listados acima.`
                 {/* Itens não conformes */}
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">
-                    {naoConformes.length ? `⚠️ Itens não conformes (${naoConformes.length})` : '🏆 Todos os itens conformes!'}
+                    {naoConformes.length ? `Itens não conformes (${naoConformes.length})` : 'Todos os itens conformes!'}
                   </p>
                   {naoConformes.length > 0 && (
                     <ul className="space-y-1">

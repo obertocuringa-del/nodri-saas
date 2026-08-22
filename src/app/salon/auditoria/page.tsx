@@ -43,10 +43,10 @@ export default function AuditoriaPage() {
         <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 12px' }}>Registro de quem alterou, criou ou excluiu informações no sistema (últimos 300 eventos).</p>
         {semTabela && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: 14, color: '#92400e', fontSize: 13, marginBottom: 14 }}>
-            ⚙️ O log ainda não está ativo. Rode o <strong>SQL</strong> que o suporte te passou no Supabase para criar a tabela <code>audit_log</code>. Depois disso, as ações passam a ser registradas aqui automaticamente.
+            O log ainda não está ativo. Rode o <strong>SQL</strong> que o suporte te passou no Supabase para criar a tabela <code>audit_log</code>. Depois disso, as ações passam a ser registradas aqui automaticamente.
           </div>
         )}
-        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍 Filtrar por usuário, ação ou item…" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, marginBottom: 14 }} />
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Filtrar por usuário, ação ou item…" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, marginBottom: 14 }} />
 
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> :
           filtrados.length === 0 ? <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14 }}>{semTabela ? 'Ative o log para começar a registrar.' : 'Nenhum evento registrado ainda.'}</div> : (

@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     tipo = 'emprestimo'
     prioridade = 'urgente'
     emprestimo = { valor, motivo, status: 'pendente' }
-    mensagem = `💰 Pedido de empréstimo: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — Motivo: ${motivo}`
+    mensagem = `Pedido de empréstimo: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — Motivo: ${motivo}`
   } else {
     if (!mensagem) return NextResponse.json({ error: 'Escreva a solicitação' }, { status: 400 })
   }

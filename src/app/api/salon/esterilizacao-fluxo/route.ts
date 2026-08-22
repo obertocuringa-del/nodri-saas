@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
   const { error } = await gravar(sess.salaoId, [novo, ...lista])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   await notificar(sess.salaoId, profissionalId,
-    `⚠️ ${nome}, você deixou ${qtd} alicate(s) para esterilizar, mas NÃO solicitou pelo sistema. Como a quantidade não foi informada por você, o salão não se responsabiliza pela quantidade recebida.`,
+    `${nome}, você deixou ${qtd} alicate(s) para esterilizar, mas NÃO solicitou pelo sistema. Como a quantidade não foi informada por você, o salão não se responsabiliza pela quantidade recebida.`,
     novo.id)
   return NextResponse.json({ ok: true, pedido: novo })
 }
@@ -158,8 +158,8 @@ export async function PATCH(req: NextRequest) {
     const divergiu = typeof p.qtdEnviada === 'number' && qtd !== p.qtdEnviada
     if (divergiu || obs) {
       const base = divergiu
-        ? `📋 Atenção: você informou ${p.qtdEnviada} alicate(s), mas o salão recebeu ${qtd}.`
-        : `📋 Sobre seus alicates (${qtd} recebido(s)).`
+        ? `Atenção: você informou ${p.qtdEnviada} alicate(s), mas o salão recebeu ${qtd}.`
+        : `Sobre seus alicates (${qtd} recebido(s)).`
       await notificar(sess.salaoId, p.profissionalId, obs ? `${base} Observação do salão: ${obs}` : base, id)
     }
     return NextResponse.json({ ok: true })
@@ -170,7 +170,7 @@ export async function PATCH(req: NextRequest) {
     lista[i] = { ...p, status: 'entregue', qtdEntregue: qtd, dataEntrega: hojeBREster() }
     const { error } = await gravar(sess.salaoId, lista)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    await notificar(sess.salaoId, p.profissionalId, `✅ Entregue ${qtd} alicate(s) esterilizado(s). Você confirma o recebimento?`, id)
+    await notificar(sess.salaoId, p.profissionalId, `Entregue ${qtd} alicate(s) esterilizado(s). Você confirma o recebimento?`, id)
     return NextResponse.json({ ok: true })
   }
 

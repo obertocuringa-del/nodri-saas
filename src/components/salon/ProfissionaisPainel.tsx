@@ -91,7 +91,7 @@ const inpFer: React.CSSProperties = { width: '100%', padding: '6px 8px', borderR
 const CONTEUDO_INFO: Record<string, { titulo: string; texto: string }> = {
   abertura:     { titulo: 'Abertura de Conta Bancária', texto: 'Oriente o profissional a abrir uma conta PJ no banco de sua preferência. Documentos necessários: RG, CPF, comprovante de residência e CNPJ (se MEI). Bancos recomendados: Nubank PJ, Inter PJ, Caixa, Bradesco.' },
   contratacao:  { titulo: 'Processo de Contratação', texto: 'Etapas: 1. Entrevista inicial → 2. Período de teste (7 dias) → 3. Avaliação técnica → 4. Negociação de comissão → 5. Assinatura de contrato → 6. Cadastro no sistema → 7. Integração com a equipe.' },
-  perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: ✅ Pontuais e comprometidos ✅ Com cartela de clientes ✅ Que valorizam higiene e organização ✅ Comunicativos e empáticos ✅ Com CNPJ ativo ✅ Abertos a feedback e treinamento contínuo.' },
+  perfil:       { titulo: 'Perfil Ideal de Profissional', texto: 'Buscamos profissionais: Pontuais e comprometidos Com cartela de clientes Que valorizam higiene e organização Comunicativos e empáticos Com CNPJ ativo Abertos a feedback e treinamento contínuo.' },
   certificados: { titulo: 'Certificados', texto: 'Solicite cópias dos certificados de cursos concluídos: colorimetria, corte, escova, tratamentos capilares, manicure, podologia, etc. Guarde digitalmente na ficha do profissional. Incentive atualização constante.' },
 }
 
@@ -1039,7 +1039,7 @@ ${montarContratoHTML()}
               {!loading && profissionais.filter(p => (p as any).status_cadastro === 'pendente').length > 0 && (
                 <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: '18px' }}>⏳</span>
+
                     <div style={{ flex: 1 }}>
                       <p style={{ color: '#92400e', fontWeight: 700, fontSize: '12px', margin: 0 }}>
                         {profissionais.filter(p => (p as any).status_cadastro === 'pendente').length} cadastro(s) aguardando aprovação
@@ -1103,7 +1103,7 @@ ${montarContratoHTML()}
                           </span>
                           {temPendencia(p) && (
                             <span style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '20px', background: '#ef444420', color: '#ef4444', fontWeight: 700, border: '1px solid #ef444440', whiteSpace: 'nowrap' }}>
-                              ⚠ PENDÊNCIAS
+                              PENDÊNCIAS
                             </span>
                           )}
                         </div>
@@ -1120,7 +1120,7 @@ ${montarContratoHTML()}
                         ].filter(Boolean) as string[]
                         return pends.length > 0 ? (
                           <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '8px', background: '#ef444410', border: '1px solid #ef444430' }}>
-                            <p style={{ color: '#ef4444', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>⚠ Pendências:</p>
+                            <p style={{ color: '#ef4444', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>Pendências:</p>
                             {pends.map(item => (
                               <p key={item} style={{ color: '#dc2626', fontSize: '10px', margin: '1px 0', display: 'flex', alignItems: 'center', gap: 4 }}>• {item}</p>
                             ))}
@@ -1202,7 +1202,7 @@ ${montarContratoHTML()}
                   <ArrowLeft size={14} /> Voltar
                 </button>
                 <h2 style={{ color: '#1a1a1a', fontSize: '18px', fontWeight: 700, margin: 0 }}>
-                  {editando ? `✏️ Editando: ${editando.nome_completo}` : '➕ Cadastrar Profissional'}
+                  {editando ? `Editando: ${editando.nome_completo}` : 'Cadastrar Profissional'}
                 </h2>
               </div>
 
@@ -1210,7 +1210,7 @@ ${montarContratoHTML()}
               {!editando && (
                 <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #fdf2f8)', border: '1px solid #c4b5fd', borderRadius: '14px', padding: '18px 20px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '10px' }}>
-                    <span style={{ fontSize: '18px' }}>🔗</span>
+
                     <div>
                       <p style={{ color: '#5b4fcf', fontWeight: 700, fontSize: '13px', margin: 0 }}>Link de Auto-Cadastro</p>
                       <p style={{ color: '#767069', fontSize: '11px', margin: '2px 0 0' }}>Envie este link para o profissional preencher os dados pelo celular</p>
@@ -1230,7 +1230,7 @@ ${montarContratoHTML()}
                       disabled={!linkCadastro}
                       style={{ flex: 1, background: linkCopiado ? '#10b981' : '#5b4fcf', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '9px', cursor: 'pointer' }}
                     >
-                      {linkCopiado ? '✓ Copiado!' : '📋 Copiar Link'}
+                      {linkCopiado ? '✓ Copiado!' : 'Copiar Link'}
                     </button>
                     <button
                       type="button"
@@ -1238,7 +1238,7 @@ ${montarContratoHTML()}
                       disabled={gerandoLink}
                       style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: '8px', color: '#767069', fontSize: '12px', padding: '9px 14px', cursor: 'pointer' }}
                     >
-                      {gerandoLink ? '...' : '🔄 Novo link'}
+                      {gerandoLink ? '...' : 'Novo link'}
                     </button>
                   </div>
                 </div>
@@ -1278,7 +1278,7 @@ ${montarContratoHTML()}
                   )
                   return (
                     <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
-                      <h3 style={{ color: '#5b4fcf', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>👤 Dados Pessoais</h3>
+                      <h3 style={{ color: '#5b4fcf', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>Dados Pessoais</h3>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         {inp2('Nome Completo *', form.nome_completo, v => setForm(f => ({ ...f, nome_completo: v })), { full: true })}
                         {inp2('Apelido', form.apelido, v => setForm(f => ({ ...f, apelido: v })))}
@@ -1315,7 +1315,7 @@ ${montarContratoHTML()}
                                 <input value={formCep} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,8); setFormCep(v); if (v.length === 8) buscarCep(v) }}
                                   placeholder="00000000" maxLength={8}
                                   style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none', paddingRight: buscandoCep ? '32px' : '12px' }} />
-                                {buscandoCep && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#5b4fcf' }}>⏳</span>}
+                                {buscandoCep && <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#9ca3af' }}>buscando...</span>}
                               </div>
                             </div>
                             <div>
@@ -1334,7 +1334,7 @@ ${montarContratoHTML()}
                                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #dedad4', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none', textAlign: 'center' }} />
                             </div>
                           </div>
-                          {(formBairro || formCidade) && <p style={{ fontSize: '10px', color: '#a09890', marginTop: '4px' }}>📍 {[formBairro, formCidade && formUf ? `${formCidade}-${formUf}` : formCidade, formCep ? `CEP: ${formCep}` : ''].filter(Boolean).join(', ')}</p>}
+                          {(formBairro || formCidade) && <p style={{ fontSize: '10px', color: '#a09890', marginTop: '4px' }}>{[formBairro, formCidade && formUf ? `${formCidade}-${formUf}` : formCidade, formCep ? `CEP: ${formCep}` : ''].filter(Boolean).join(', ')}</p>}
                         </div>
                         {inp2('Nome do Responsável', resp.nome || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, nome: v }) })) })}
                         {inp2('Telefone do Responsável', resp.tel || '', v => { const c = (() => { try { return JSON.parse(form.contato_responsavel || '{}') } catch { return {} } })(); setForm(f => ({ ...f, contato_responsavel: JSON.stringify({ ...c, tel: v }) })) }, { placeholder: '(00) 00000-0000' })}
@@ -1430,7 +1430,7 @@ ${montarContratoHTML()}
 
                 {/* PERFIL PESSOAL */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '16px' }}>
-                  <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>✨ Perfil Pessoal</h3>
+                  <h3 style={{ color: '#f43f8e', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>Perfil Pessoal</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('Cor Favorita', 'cor_favorita')}
                     {F('Comida Favorita', 'comida_favorita')}
@@ -1443,7 +1443,7 @@ ${montarContratoHTML()}
 
                 {/* DADOS PROFISSIONAIS */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0', padding: '20px', marginBottom: '24px' }}>
-                  <h3 style={{ color: '#0891b2', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>💼 Dados Profissionais</h3>
+                  <h3 style={{ color: '#0891b2', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>Dados Profissionais</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {F('CNPJ (MEI)', 'cnpj', { placeholder: '00.000.000/0001-00' })}
                     {F('Dados Bancários (Banco / Ag / Conta)', 'conta_bancaria', { placeholder: 'Banco / Ag / Conta' })}
@@ -1456,7 +1456,7 @@ ${montarContratoHTML()}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button type="submit" disabled={saving}
                     style={{ flex: 1, background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
-                    {saving ? 'Salvando...' : editando ? '💾 Atualizar Profissional' : '✅ Cadastrar Profissional'}
+                    {saving ? 'Salvando...' : editando ? 'Atualizar Profissional' : 'Cadastrar Profissional'}
                   </button>
                   <button type="button" onClick={() => { setSecao('lista'); setEditando(null); setForm({ ...FORM_INITIAL }); setFotoPreview('') }}
                     style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: '10px', padding: '13px 20px', color: '#767069', fontSize: '14px', cursor: 'pointer' }}>
@@ -1471,12 +1471,12 @@ ${montarContratoHTML()}
           {secao === 'categorias' && (
             <div style={{ maxWidth: 600 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>🏷️ Gerenciar Categorias</h2>
+                <h2 style={{ color: '#1a1a1a', fontSize: '20px', fontWeight: 700, margin: 0 }}>Gerenciar Categorias</h2>
               </div>
 
               {/* Criar nova categoria */}
               <div style={{ background: '#ffffff', border: '1px solid #f59e0b40', borderRadius: 12, padding: 16, marginBottom: 20 }}>
-                <p style={{ color: '#767069', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>➕ CRIAR NOVA CATEGORIA</p>
+                <p style={{ color: '#767069', fontSize: 12, margin: '0 0 10px', fontWeight: 600 }}>CRIAR NOVA CATEGORIA</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input value={novaCatTexto} onChange={e => setNovaCatTexto(e.target.value)}
                     placeholder="Ex: Depiladora, Esteticista..."
@@ -1513,18 +1513,18 @@ ${montarContratoHTML()}
                           </div>
                           <button onClick={() => { setEditandoCategoria(cat); setEditandoCategoriaValor(cat) }}
                             style={{ background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '5px 10px', color: '#767069', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            ✏️ Editar
+                            Editar
                           </button>
                           {qtd === 0 && (
                             <button onClick={() => excluirCategoria(cat)}
                               style={{ background: '#ffffff', border: '1px solid #ef444440', borderRadius: 6, padding: '5px 10px', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}>
-                              🗑️ Excluir
+                              Excluir
                             </button>
                           )}
                           {qtd > 0 && (
                             <button onClick={() => excluirCategoria(cat)}
                               style={{ background: '#ffffff', border: '1px solid #ef444440', borderRadius: 6, padding: '5px 10px', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}>
-                              🗑️ Remover
+                              Remover
                             </button>
                           )}
                         </>
@@ -1547,7 +1547,7 @@ ${montarContratoHTML()}
                     <Edit2 size={14} /> {distratoEditando ? 'Concluir Edição' : 'Editar Arquivo por Completo'}
                   </button>
                   <button onClick={imprimirDistrato} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    🖨️ Imprimir
+                    Imprimir
                   </button>
                 </div>
               </div>
@@ -1569,7 +1569,7 @@ ${montarContratoHTML()}
 
               {distratoProf && distratoPendencias.length > 0 && (
                 <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px' }}>
-                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>⚠️ Documentos pendentes — {distratoProf.nome_completo}</div>
+                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>Documentos pendentes — {distratoProf.nome_completo}</div>
                   <p style={{ fontSize: '13px', color: '#7f1d1d', margin: '0 0 8px' }}>Este profissional ainda não tem no cadastro: <strong>{distratoPendencias.join(', ')}</strong>.</p>
                   <p style={{ fontSize: '12px', color: '#991b1b', margin: 0 }}>Preencha na <strong>ficha do profissional → Cadastro</strong> antes de gerar o distrato.</p>
                 </div>
@@ -1585,7 +1585,7 @@ ${montarContratoHTML()}
                 {/* Aviso se faltar dados do salão */}
                 {(!dSalaoCNPJ || !dSalaoEndereco) && (
                   <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '12px', color: '#92400e', fontFamily: 'sans-serif' }}>
-                    ⚠️ Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> para o distrato ficar completo.
+                    Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> para o distrato ficar completo.
                   </div>
                 )}
 
@@ -1593,13 +1593,13 @@ ${montarContratoHTML()}
                 {distratoEditando && (
                   <div style={{ background: '#f5f4f0', border: '1px solid #d6d3ce', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (DISTRATANTE)</p>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>DADOS DO SALÃO (DISTRATANTE)</p>
                       <button onClick={async () => {
                         const res = await fetch('/api/salon/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: dSalaoNome, responsavel: dSalaoResponsavel, cnpj: dSalaoCNPJ, endereco: dSalaoEndereco, cidade: dSalaoCidade, rg_responsavel: dSalaoRG }) })
                         if (res.ok) toast.success('Dados do salão salvos no perfil!')
                         else toast.error('Erro ao salvar')
                       }} style={{ fontSize: '11px', fontWeight: 600, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
-                        💾 Salvar dados do salão
+                        Salvar dados do salão
                       </button>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
@@ -1611,9 +1611,9 @@ ${montarContratoHTML()}
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>RG do Responsável<input style={iStyle} value={dSalaoRG} onChange={e => setDSalaoRG(e.target.value)} /></label>
                     </div>
                     <p style={{ fontSize: '11px', color: '#767069', margin: '0 0 14px', fontFamily: 'sans-serif', fontStyle: 'italic', background: '#fff', border: '1px dashed #d6d3ce', borderRadius: '8px', padding: '8px 10px' }}>
-                      📋 Os dados do profissional (nome, CPF, CNPJ, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
+                      Os dados do profissional (nome, CPF, CNPJ, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
                     </p>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ DATAS</p>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>DATAS</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data início do contrato<input style={iStyle} value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Local do distrato<input style={iStyle} value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)} /></label>
@@ -1685,7 +1685,7 @@ ${montarContratoHTML()}
                     <Edit2 size={14} /> {contratoEditando ? 'Concluir Edição' : 'Editar Arquivo por Completo'}
                   </button>
                   <button onClick={imprimirContrato} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#5b4fcf,#f43f8e)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    🖨️ Imprimir
+                    Imprimir
                   </button>
                 </div>
               </div>
@@ -1706,7 +1706,7 @@ ${montarContratoHTML()}
 
               {contratoProf && contratoPendencias.length > 0 && (
                 <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px' }}>
-                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>⚠️ Documentos pendentes — {contratoProf.nome_completo}</div>
+                  <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '14px', marginBottom: '6px' }}>Documentos pendentes — {contratoProf.nome_completo}</div>
                   <p style={{ fontSize: '13px', color: '#7f1d1d', margin: '0 0 8px' }}>Este profissional ainda não tem no cadastro: <strong>{contratoPendencias.join(', ')}</strong>.</p>
                   <p style={{ fontSize: '12px', color: '#991b1b', margin: 0 }}>Preencha na <strong>ficha do profissional → Cadastro</strong> antes de gerar o contrato, para ele sair completo.</p>
                 </div>
@@ -1717,19 +1717,19 @@ ${montarContratoHTML()}
 
                 {(!dSalaoCNPJ || !dSalaoEndereco) && (
                   <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '12px', color: '#92400e', fontFamily: 'sans-serif' }}>
-                    ⚠️ Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> (ou no botão Editar abaixo) para o contrato ficar completo.
+                    Preencha CNPJ, endereço e cidade do salão em <strong>Meu Perfil</strong> (ou no botão Editar abaixo) para o contrato ficar completo.
                   </div>
                 )}
 
                 {contratoEditando && (
                   <div style={{ background: '#f5f4f0', border: '1px solid #d6d3ce', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>✏️ DADOS DO SALÃO (SALÃO-PARCEIRO)</p>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#5b4fcf', margin: 0, fontFamily: 'sans-serif' }}>DADOS DO SALÃO (SALÃO-PARCEIRO)</p>
                       <button onClick={async () => {
                         const res = await fetch('/api/salon/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: dSalaoNome, responsavel: dSalaoResponsavel, cnpj: dSalaoCNPJ, endereco: dSalaoEndereco, cidade: dSalaoCidade, rg_responsavel: dSalaoRG }) })
                         if (res.ok) toast.success('Dados do salão salvos no perfil!'); else toast.error('Erro ao salvar')
                       }} style={{ fontSize: '11px', fontWeight: 600, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'sans-serif' }}>
-                        💾 Salvar dados do salão
+                        Salvar dados do salão
                       </button>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
@@ -1744,9 +1744,9 @@ ${montarContratoHTML()}
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Órgão emissor do RG<input style={iStyle} value={dSalaoOrgaoRG} onChange={e => setDSalaoOrgaoRG(e.target.value)} placeholder="Ex: SSP/RS" /></label>
                     </div>
                     <p style={{ fontSize: '11px', color: '#767069', margin: '0 0 14px', fontFamily: 'sans-serif', fontStyle: 'italic', background: '#fff', border: '1px dashed #d6d3ce', borderRadius: '8px', padding: '8px 10px' }}>
-                      📋 Os dados do profissional (nome, CPF, CNPJ, RG, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
+                      Os dados do profissional (nome, CPF, CNPJ, RG, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
                     </p>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>✏️ LOCAL E DATA</p>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>LOCAL E DATA</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Local<input style={iStyle} value={cLocalContrato} onChange={e => setCLocalContrato(e.target.value)} /></label>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data<input style={iStyle} value={cDataContrato} onChange={e => setCDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
@@ -1794,7 +1794,7 @@ ${montarContratoHTML()}
                             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderTop: i > 0 ? '1px solid #f0eee8' : 'none', flexWrap: 'wrap' }}>
                               <span style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '14px', flex: '1 1 150px', minWidth: 0 }}>{p.nome_completo}</span>
                               <div style={{ fontSize: '12px', color: '#374151', flex: '1 1 140px' }}>
-                                🕐 {horario ? <strong>{horario}</strong> : <span style={{ color: '#b45309' }}>horário não definido</span>}
+                                {horario ? <strong>{horario}</strong> : <span style={{ color: '#b45309' }}>horário não definido</span>}
                               </div>
                               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: '1 1 200px' }}>
                                 {folgas.length > 0
@@ -1823,9 +1823,9 @@ ${montarContratoHTML()}
                   intactos. Para trazer as abas de volta é só restaurar esta barra, ou
                   passar subFixa="contratacao" / "desligamento" ao componente. */}
               {cnpjSub === 'contratacao' ? (
-                <ProcessoContratacao chave="processo_contratacao_pj" modelo={PJ_CONTRATACAO} titulo="📝 Processo de Contratação (PJ/MEI)" pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+                <ProcessoContratacao chave="processo_contratacao_pj" modelo={PJ_CONTRATACAO} titulo="Processo de Contratação (PJ/MEI)" pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : cnpjSub === 'desligamento' ? (
-                <ProcessoContratacao chave="processo_desligamento_pj" modelo={PJ_DESLIGAMENTO} titulo="🚪 Processo de Desligamento (PJ/MEI)" comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
+                <ProcessoContratacao chave="processo_desligamento_pj" modelo={PJ_DESLIGAMENTO} titulo="Processo de Desligamento (PJ/MEI)" comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <div>
@@ -1837,8 +1837,8 @@ ${montarContratoHTML()}
                     const cols = ['Nome', 'Categoria', 'CNPJ', 'Admissão', 'Status', 'Observação']
                     const rows = () => profissionais.filter(p => !excluiCnpj(p)).sort((a, b) => (a.cargo || '').localeCompare(b.cargo || '')).map(p => [p.nome_completo || '', p.cargo || '', p.cnpj || 'PENDENTE DE CRIAÇÃO', fmtData((p as any).data_admissao), ((p as any).cnpj_status === 'pendente' || !p.cnpj) ? 'Pendente' : 'OK', (p as any).cnpj_observacao || ''])
                     return (<>
-                      <button onClick={() => imprimirTabela('CNPJ dos Profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
-                      <button onClick={() => exportarExcel('CNPJ_profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
+                      <button onClick={() => imprimirTabela('CNPJ dos Profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Imprimir</button>
+                      <button onClick={() => exportarExcel('CNPJ_profissionais', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Excel</button>
                       <EmissaoGuiasMEI profissionais={profissionais.filter(p => !excluiCnpj(p)).map(p => ({ id: p.id, nome_completo: p.nome_completo, apelido: p.apelido, cnpj: p.cnpj, cnpj_status: (cnpjEdits[p.id]?.status ?? (p as any).cnpj_status ?? (p.cnpj ? 'ok' : 'pendente')) }))} />
                     </>)
                   })()}
@@ -1864,14 +1864,14 @@ ${montarContratoHTML()}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                                 <span style={{ fontWeight: 800, fontSize: '15px', color: '#1a1a1a' }}>{p.nome_completo}</span>
                                 {semCnpj
-                                  ? <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '20px', padding: '3px 10px' }}>⚠️ CNPJ pendente de criação</span>
+                                  ? <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '20px', padding: '3px 10px' }}>CNPJ pendente de criação</span>
                                   : <>
                                       <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700 }}>CNPJ: {p.cnpj}</span>
                                       <button onClick={() => { try { navigator.clipboard.writeText(p.cnpj || '') } catch { /* */ } toast.success('CNPJ copiado!') }}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>📋 Copiar</button>
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Copiar</button>
                                     </>}
                                 <a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/pgmei.app/Identificacao" target="_blank" rel="noopener noreferrer"
-                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>🧾 Emitir Guia do MEI ↗</a>
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>Emitir Guia do MEI ↗</a>
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
                                 <div>
@@ -1882,8 +1882,8 @@ ${montarContratoHTML()}
                                   <label style={{ fontSize: '11px', color: '#6b6860', display: 'block', marginBottom: '3px' }}>Status do CNPJ</label>
                                   <select value={status} onChange={e => setCnpjEdits(prev => ({ ...prev, [p.id]: { ...prev[p.id], status: e.target.value } }))}
                                     style={{ width: '100%', padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d0cdc7', fontSize: '13px', background: status === 'ok' ? '#f0fdf4' : '#fffbeb', color: status === 'ok' ? '#16a34a' : '#b45309', fontWeight: 700 }}>
-                                    <option value="ok">✅ OK / Ativo</option>
-                                    <option value="pendente">⏳ Pendente</option>
+                                    <option value="ok">OK / Ativo</option>
+                                    <option value="pendente">Pendente</option>
                                   </select>
                                 </div>
                                 <div style={{ gridColumn: '1 / -1' }}>
@@ -1896,7 +1896,7 @@ ${montarContratoHTML()}
                                 <div style={{ marginTop: '10px', textAlign: 'right' }}>
                                   <button onClick={() => salvarCnpj(p)} disabled={cnpjSalvando === p.id}
                                     style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: '#5b4fcf', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                                    {cnpjSalvando === p.id ? 'Salvando...' : '💾 Salvar'}
+                                    {cnpjSalvando === p.id ? 'Salvando...' : 'Salvar'}
                                   </button>
                                 </div>
                               )}
@@ -1917,7 +1917,7 @@ ${montarContratoHTML()}
             <div style={{ maxWidth: '1000px' }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', borderBottom: '1px solid #ece9e2', paddingBottom: 12 }}>
                 {subFixa ? null : <button onClick={() => setCltSub('clt')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'clt' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'clt' ? '#0ea5e9' : '#fff', color: cltSub === 'clt' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Profissionais CLT</button>}
-                {subFixa ? null : <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📝 Processo de Contratação</button>}
+                {subFixa ? null : <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Processo de Contratação</button>}
               </div>
               {cltSub === 'processo' ? (
                 <ProcessoContratacao pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
@@ -1937,8 +1937,8 @@ ${montarContratoHTML()}
                       return [p.nome_completo || '', p.cargo || '', fmtData((p as any).data_admissao), horario, folgas, (p as any).clt_observacao || '']
                     })
                     return (<>
-                      <button onClick={() => imprimirTabela('Profissionais CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir</button>
-                      <button onClick={() => exportarExcel('Profissionais_CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📊 Excel</button>
+                      <button onClick={() => imprimirTabela('Profissionais CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Imprimir</button>
+                      <button onClick={() => exportarExcel('Profissionais_CLT', cols, rows())} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Excel</button>
                     </>)
                   })()}
                 </div>
@@ -1980,7 +1980,7 @@ ${montarContratoHTML()}
                               {/* ── FÉRIAS ── */}
                               <div style={{ marginTop: '12px', background: '#f7fbff', border: '1px solid #dcefff', borderRadius: '10px', padding: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                                  <span style={{ fontSize: 12, fontWeight: 800, color: '#0369a1' }}>🏖️ Férias</span>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: '#0369a1' }}>Férias</span>
                                   <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: finfo.cor, borderRadius: 20, padding: '3px 10px' }}>Próxima: {finfo.texto}</span>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginBottom: 8 }}>
@@ -2003,7 +2003,7 @@ ${montarContratoHTML()}
                               {(cltEdits[p.id] || cltFerias[p.id]) && (
                                 <div style={{ marginTop: '10px', textAlign: 'right' }}>
                                   <button onClick={() => salvarClt(p)} disabled={cltSalvando === p.id} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: '#0ea5e9', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                                    {cltSalvando === p.id ? 'Salvando...' : '💾 Salvar'}
+                                    {cltSalvando === p.id ? 'Salvando...' : 'Salvar'}
                                   </button>
                                 </div>
                               )}
@@ -2037,7 +2037,7 @@ ${montarContratoHTML()}
                   <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Guia de Entrevista</h2>
                   <p style={{ fontSize: '13px', color: '#6b6860', margin: 0 }}>Roteiro completo para entrevistar novos profissionais. Imprima em A4 com espaço para anotar as respostas.</p>
                 </div>
-                <button onClick={imprimirGuiaEntrevista} className="no-mobile" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖨️ Imprimir Ficha (A4)</button>
+                <button onClick={imprimirGuiaEntrevista} className="no-mobile" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Imprimir Ficha (A4)</button>
               </div>
               <div style={{ background: '#f0eefb', border: '1px solid #ddd6fb', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
                 <div style={{ fontWeight: 800, color: '#5b4fcf', fontSize: 13, marginBottom: 6 }}>Antes da entrevista</div>
@@ -2053,7 +2053,7 @@ ${montarContratoHTML()}
                   </ol>
                 </div>
               )) })()}
-              <div style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic', background: '#faf9f7', borderRadius: 10, padding: '12px 14px' }}>💡 {GUIA_ENTREVISTA.nota}</div>
+              <div style={{ fontSize: 12, color: '#6b6860', fontStyle: 'italic', background: '#faf9f7', borderRadius: 10, padding: '12px 14px' }}>{GUIA_ENTREVISTA.nota}</div>
             </div>
           )}
 
@@ -2069,10 +2069,10 @@ ${montarContratoHTML()}
               return { nome: p.apelido || p.nome_completo || '—', cargo: p.cargo || '', atual, delta, qtd: avs.length, data: avs[0]?.data || '' }
             }).sort((a, b) => (b.atual ?? -1) - (a.atual ?? -1))
             const corPct = (v: number | null) => v == null ? '#9ca3af' : v >= 80 ? '#16a34a' : v >= 60 ? '#f59e0b' : '#ef4444'
-            const medalha = (i: number) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`
+            const medalha = (i: number) => i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : `${i + 1}º`
             return (
               <div style={{ maxWidth: 900 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>🏆 Ranking de Avaliações</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Ranking de Avaliações</h2>
                 <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 16px' }}>Classificação pela <strong>última avaliação</strong> de cada profissional, com a variação (Δ) em relação à anterior. As notas vêm da aba <strong>Avaliar</strong>.</p>
                 {linhas.length === 0 ? <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>Nenhum profissional ativo.</div> : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -2134,7 +2134,7 @@ ${montarContratoHTML()}
                 </p>
                 <div style={{ marginTop: '24px', padding: '16px', background: '#f5f4f0', borderRadius: '10px', border: '1px solid #e8e6e0' }}>
                   <p style={{ color: '#767069', fontSize: '12px', margin: 0 }}>
-                    💡 <strong style={{ color: '#767069' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
+                    <strong style={{ color: '#767069' }}>Dica:</strong> Para personalizar este conteúdo com as informações do seu salão, entre em contato com o suporte Nodri.
                   </p>
                 </div>
               </div>

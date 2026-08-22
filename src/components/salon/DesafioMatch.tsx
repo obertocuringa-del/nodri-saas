@@ -46,7 +46,7 @@ export default function DesafioMatch() {
       if (!res.ok) { toast.error(d?.error || 'Erro'); setBusy(''); return }
       if (payload.acao === 'desafio_criar') toast.success('Desafio criado! Aguardando aceite.')
       if (payload.acao === 'desafio_recusar') toast('Desafio recusado — aposta estornada.')
-      if (payload.acao === 'desafio_aceitar') { setDuelo(d); toast.success(`🏆 ${d.vencedor} venceu o pote de ${moeda(d.pote)}!`) }
+      if (payload.acao === 'desafio_aceitar') { setDuelo(d); toast.success(`${d.vencedor} venceu o pote de ${moeda(d.pote)}!`) }
       await carregar(true)
     } catch { toast.error('Erro de conexão') }
     setBusy('')
@@ -90,7 +90,7 @@ export default function DesafioMatch() {
               )
             })}
           </div>
-          <div style={{ marginTop: 10, fontWeight: 800, color: '#b45309' }}>🏆 {duelo.vencedor} levou {moeda(duelo.pote)}!</div>
+          <div style={{ marginTop: 10, fontWeight: 800, color: '#b45309' }}>{duelo.vencedor} levou {moeda(duelo.pote)}!</div>
         </div>
       )}
 
@@ -131,7 +131,7 @@ export default function DesafioMatch() {
             {pendentes.map(d => (
               <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', border: '1px solid #f0eee8', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>
-                  <strong>{d.desafiante}</strong> <span style={{ color: '#b91c1c' }}>⚔ VS ⚔</span> <strong>{d.desafiado}</strong>
+                  <strong>{d.desafiante}</strong> <span style={{ color: '#b91c1c' }}>VS</span> <strong>{d.desafiado}</strong>
                   <span style={{ marginLeft: 8, color: '#d97706', fontWeight: 700 }}>aposta {moeda(d.aposta)}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -159,7 +159,7 @@ export default function DesafioMatch() {
               <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid #f0eee8', paddingTop: 6 }}>
                 <span style={{ color: '#1a1a1a' }}>{d.desafiante} vs {d.desafiado} · {moeda(d.aposta)}</span>
                 <span style={{ fontWeight: 700, color: d.status === 'recusado' ? '#9ca3af' : '#16a34a' }}>
-                  {d.status === 'recusado' ? 'recusado' : <>🏆 {d.vencedor}</>}
+                  {d.status === 'recusado' ? 'recusado' : <>{d.vencedor}</>}
                 </span>
               </div>
             ))}

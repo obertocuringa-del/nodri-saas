@@ -55,17 +55,17 @@ export default function ArenaNodri() {
     return melhor
   }
   const titulos = [
-    { titulo: '👑 Rainha da Recuperação', dono: lider('recuperados'), icon: <Crown size={14} />, cor: '#d97706' },
-    { titulo: '💬 Mestre do WhatsApp', dono: lider('contatos'), icon: <MessageCircle size={14} />, cor: '#16a34a' },
-    { titulo: '💰 Imperatriz das Vendas', dono: lider('bonus'), icon: <DollarSign size={14} />, cor: '#5b4fcf' },
-    { titulo: '⚔️ Gladiadora da Arena', dono: lider('vitorias'), icon: <Swords size={14} />, cor: '#b91c1c' },
+    { titulo: 'Rainha da Recuperação', dono: lider('recuperados'), icon: <Crown size={14} />, cor: '#d97706' },
+    { titulo: 'Mestre do WhatsApp', dono: lider('contatos'), icon: <MessageCircle size={14} />, cor: '#16a34a' },
+    { titulo: 'Imperatriz das Vendas', dono: lider('bonus'), icon: <DollarSign size={14} />, cor: '#5b4fcf' },
+    { titulo: 'Gladiadora da Arena', dono: lider('vitorias'), icon: <Swords size={14} />, cor: '#b91c1c' },
   ]
-  const medalha = (i: number) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`
+  const medalha = (i: number) => i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : `${i + 1}º`
 
   return (
     <div>
       <div style={{ background: 'linear-gradient(135deg,#0f172a,#4338ca)', borderRadius: 16, padding: '16px 20px', marginBottom: 16, color: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800 }}>🏟️ Arena NODRI</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800 }}>Arena NODRI</div>
         <p style={{ fontSize: 12, opacity: 0.85, margin: '6px 0 0' }}>Ranking gamificado da equipe. Pontos = recuperações ×100 + contatos ×10 + bônus + vitórias em desafios ×50.</p>
       </div>
 

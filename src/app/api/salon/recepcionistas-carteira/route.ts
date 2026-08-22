@@ -75,7 +75,7 @@ function jogarMines(qtd: number): { mult: number; label: string; detalhe: any } 
   const abertas = ordem.slice(0, n)
   const acertouBomba = abertas.some(p => bombas.has(p))
   const mult = acertouBomba ? 0 : (MINES_MULT[n] || 1)
-  const label = acertouBomba ? '💥 Bomba!' : `${n} diamantes! ${mult}×`
+  const label = acertouBomba ? 'Bomba!' : `${n} diamantes! ${mult}×`
   return { mult, label, detalhe: { bombas: [...bombas], abertas, total, ganhou: !acertouBomba } }
 }
 

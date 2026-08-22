@@ -24,7 +24,7 @@ export default function AniversariantesPage() {
 
   function abrirWhats(a: Aniv) {
     const primeiro = (a.nome || '').trim().split(/\s+/)[0]
-    setMsgTexto(`Olá *${primeiro}*! 🎂🎉\n\nToda a equipe deseja a você um feliz aniversário! Que este novo ciclo seja repleto de saúde, alegria e muitas conquistas. 💛\n\nConte sempre com a gente!`)
+    setMsgTexto(`Olá *${primeiro}*! \n\nToda a equipe deseja a você um feliz aniversário! Que este novo ciclo seja repleto de saúde, alegria e muitas conquistas. \n\nConte sempre com a gente!`)
     setMsgAlvo(a)
   }
   function enviarWhats() {
@@ -69,14 +69,14 @@ export default function AniversariantesPage() {
           <ArrowLeft size={16} /> Voltar
         </button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>🎂 Aniversariantes do Mês</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>Aniversariantes do Mês</span>
       </nav>
 
       <div style={{ maxWidth: 820, margin: '0 auto', padding: 16 }}>
         {/* Destaque do mês atual */}
         <div style={{ background: 'linear-gradient(135deg,#7c3aed,#db2777)', borderRadius: 16, padding: '18px 22px', marginBottom: 18, color: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800 }}><Gift size={18} /> {MESES[mesAtual - 1]} — {doMesAtual.length} aniversariante{doMesAtual.length !== 1 ? 's' : ''}</div>
-          <p style={{ fontSize: 12, opacity: 0.9, margin: '6px 0 0' }}>Quem faz aniversário este mês. Que tal mandar uma mensagem? 💛</p>
+          <p style={{ fontSize: 12, opacity: 0.9, margin: '6px 0 0' }}>Quem faz aniversário este mês. Que tal mandar uma mensagem?</p>
         </div>
 
         {loading ? (
@@ -128,13 +128,13 @@ export default function AniversariantesPage() {
         <div onClick={() => setMsgAlvo(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 440, padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>🎂 Parabenizar {msgAlvo.nome}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Parabenizar {msgAlvo.nome}</h3>
               <button onClick={() => setMsgAlvo(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Mensagem (edite à vontade)</label>
             <textarea value={msgTexto} onChange={e => setMsgTexto(e.target.value)} rows={6}
               style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #d0cdc7', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, marginBottom: 8 }} />
-            {!msgAlvo.telefone && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>⚠️ Sem telefone no cadastro — adicione o telefone na ficha do profissional.</p>}
+            {!msgAlvo.telefone && <p style={{ fontSize: 11, color: '#ef4444', margin: '0 0 8px' }}>Sem telefone no cadastro — adicione o telefone na ficha do profissional.</p>}
             <button onClick={enviarWhats} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Send size={16} /> Enviar pelo WhatsApp
             </button>

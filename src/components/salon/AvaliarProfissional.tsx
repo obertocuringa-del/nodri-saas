@@ -135,7 +135,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
           {r.secoes.map((s, i) => <Gauge key={i} pct={s.pct} cor={s.cor} label={s.titulo} />)}
         </div>
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>📊 Média por categoria</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>Média por categoria</h3>
           {r.secoes.map((s, i) => {
             const c = classificarAval(s.pct, faixas)
             return (
@@ -224,7 +224,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
         const tdE: React.CSSProperties = { padding: '6px 8px', fontSize: 12, borderBottom: '1px solid #f0eee8', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }
         return (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 14, overflowX: 'auto' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>📈 Evolução por categoria</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Evolução por categoria</h3>
             <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Comparativo de cada categoria ao longo das avaliações. Δ = variação da primeira para a última.</p>
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 320 }}>
               <thead><tr><th style={{ ...thE, textAlign: 'left' }}>Categoria</th>{calcs.map((c, i) => <th key={i} style={thE}>{fmt(c.data)}</th>)}<th style={thE}>Δ</th></tr></thead>

@@ -79,7 +79,7 @@ export default function MateriaisTrabalho() {
     })
   }
   function aplicar(patch: Partial<Cell> | ((cell: Cell) => Partial<Cell>)) {
-    if (!sel) { toast('Clique numa célula primeiro', { icon: '👆' }); return }
+    if (!sel) { toast('Clique numa célula primeiro', { icon: '' }); return }
     const cur = getCell(sel); if (!cur) return
     setCellAt(sel, typeof patch === 'function' ? patch(cur) : patch)
   }

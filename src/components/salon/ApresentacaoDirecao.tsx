@@ -36,9 +36,9 @@ const painelDias = (r: any) => r.diasImportados > 0 ? r.diasImportados : new Dat
 
 type Farol = 'verde' | 'amarelo' | 'vermelho'
 const CORES: Record<Farol, { cor: string; fundo: string; borda: string; emoji: string }> = {
-  verde:    { cor: '#16a34a', fundo: '#f0fdf4', borda: '#bbf7d0', emoji: '🟢' },
-  amarelo:  { cor: '#b45309', fundo: '#fffbeb', borda: '#fde68a', emoji: '🟡' },
-  vermelho: { cor: '#dc2626', fundo: '#fef2f2', borda: '#fecaca', emoji: '🔴' },
+  verde:    { cor: '#16a34a', fundo: '#f0fdf4', borda: '#bbf7d0', emoji: '' },
+  amarelo:  { cor: '#b45309', fundo: '#fffbeb', borda: '#fde68a', emoji: '' },
+  vermelho: { cor: '#dc2626', fundo: '#fef2f2', borda: '#fecaca', emoji: '' },
 }
 
 interface Linha { id: string; a: string; b: string; c: string; d: string }
@@ -401,7 +401,7 @@ tbody tr:nth-child(even) td{background:#faf9ff}
 <div class="tt"><strong>Apresentação dos Resultados à Direção</strong>${MESES[mes - 1]} de ${ano}</div></div>
 <div class="frase"><b>Resultado do mês:</b> ${esc(painel.frase)}</div>
 <div class="kpis">${painel.indicadores.map(i => `<div class="kpi"><span>${esc(i.rotulo)}</span><b>${esc(i.valor)}</b>${i.varia !== null ? ` <small>${i.varia >= 0 ? '▲' : '▼'} ${esc(pct(Math.abs(i.varia)))}</small>` : ''}</div>`).join('')}</div>
-<div class="bloco"><h2>Semáforo por setor</h2><div class="sem">${painel.setores.map((s: any) => `<span>${CORES[s.farol as Farol].emoji} ${esc(s.nome)}${s.pendencias ? ` · ${s.pendencias}` : ''}</span>`).join('')}</div></div>
+<div class="bloco"><h2>Semáforo por setor</h2><div class="sem">${painel.setores.map((s: any) => `<span>${esc(s.nome)}${s.pendencias ? ` · ${s.pendencias}` : ''}</span>`).join('')}</div></div>
 ${tab('Principais problemas', ['Problema', 'Impacto', 'Causa e ação', 'Responsável / prazo'], linhasDe('problemas'))}
 ${tab('Oportunidades', ['Oportunidade', 'Potencial', 'Plano', 'Responsável'], [
       ...painel.oportunidades.map((o: any) => [o.titulo, moeda(o.potencial), o.detalhe, '—']),
@@ -569,7 +569,6 @@ ${doc.observacoes ? `<div class="bloco"><h2>Observações</h2><p style="font-siz
               const c = CORES[s.farol as Farol]
               return (
                 <div key={s.id} style={{ background: c.fundo, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13 }}>{c.emoji}</span>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 11.5, fontWeight: 800, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nome}</div>
                     <div style={{ fontSize: 10, color: c.cor, fontWeight: 700 }}>

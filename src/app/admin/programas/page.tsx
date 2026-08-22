@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 // ============================================================================
-// 🛠️ Configuração remota dos PROGRAMAS DESKTOP (Suite NODRI)
+// Configuração remota dos PROGRAMAS DESKTOP (Suite NODRI)
 // Campo vazio = programa usa o padrão de fábrica (mostrado como placeholder).
 // Campo preenchido = vale para TODOS os clientes na próxima abertura do app.
 // ============================================================================
@@ -15,7 +15,7 @@ type Secao = { chave: string; titulo: string; emoji: string; descricao: string; 
 
 const SECOES: Secao[] = [
   {
-    chave: 'listas_foto', emoji: '📷', titulo: 'Lista com Foto (WhatsApp)',
+    chave: 'listas_foto', emoji: '', titulo: 'Lista com Foto (WhatsApp)',
     descricao: 'XPaths do WhatsApp e os tempos de espera do envio (em segundos).',
     campos: [
       { chave: 'xpath_anexo', label: 'XPath do botão anexar (clipe)' },
@@ -33,7 +33,7 @@ const SECOES: Secao[] = [
     ],
   },
   {
-    chave: 'listas_sem_foto', emoji: '📄', titulo: 'Lista sem Foto (WhatsApp)',
+    chave: 'listas_sem_foto', emoji: '', titulo: 'Lista sem Foto (WhatsApp)',
     descricao: 'Tempos de espera do envio de mensagens sem imagem (em segundos).',
     campos: [
       { chave: 'espera_whatsapp', label: 'Espera do WhatsApp abrir — máximo (segundos)', tipo: 'numero' },
@@ -42,7 +42,7 @@ const SECOES: Secao[] = [
     ],
   },
   {
-    chave: 'confirmacao_feedback', emoji: '✅', titulo: 'Confirmação de Agendamento + Mensagem de Feedback',
+    chave: 'confirmacao_feedback', emoji: '', titulo: 'Confirmação de Agendamento + Mensagem de Feedback',
     descricao: 'Os dois programas usam o mesmo caminho no painel Avec (relatório 0051).',
     campos: [
       { chave: 'relatorio_url', label: 'Link do relatório de agendamentos (0051)' },
@@ -64,7 +64,7 @@ const SECOES: Secao[] = [
     ],
   },
   {
-    chave: 'relatorio', emoji: '📊', titulo: 'Relatório de Profissionais (NODRI v4.0)',
+    chave: 'relatorio', emoji: '', titulo: 'Relatório de Profissionais (NODRI v4.0)',
     descricao: 'Tempos, XPaths e os 12 links de relatórios do Avec usados na coleta.',
     campos: [
       { chave: 'timeout_login', label: 'Timeout do login (segundos)', tipo: 'numero' },
@@ -163,7 +163,7 @@ export default function ProgramasConfigPage() {
         }
       }
       const res = await fetch('/api/config/programas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: limpo }) })
-      if (res.ok) toast.success('Salvo! Os programas pegam os valores novos na próxima abertura. ✅')
+      if (res.ok) toast.success('Salvo! Os programas pegam os valores novos na próxima abertura.')
       else { const d = await res.json().catch(() => null); toast.error(d?.error || 'Erro ao salvar') }
     } catch { toast.error('Erro de conexão') }
     setSaving(false)
@@ -190,7 +190,7 @@ export default function ProgramasConfigPage() {
       <div className="max-w-3xl mx-auto px-5 py-6">
         <div className="rounded-xl border border-nodri-cyan/25 bg-nodri-cyan/5 p-4 mb-5">
           <p className="text-[12px] text-nodri-t2 leading-relaxed">
-            💡 <strong className="text-nodri-t1">Como funciona:</strong> os programas da Suite (em TODOS os clientes) consultam esta página ao abrir.
+            <strong className="text-nodri-t1">Como funciona:</strong> os programas da Suite (em TODOS os clientes) consultam esta página ao abrir.
             Campo <strong className="text-nodri-t1">vazio</strong> = padrão de fábrica (mostrado dentro do campo).
             Campo <strong className="text-amber-400">preenchido</strong> = vale para todos na próxima abertura — sem reinstalar nada.
           </p>
@@ -207,7 +207,6 @@ export default function ProgramasConfigPage() {
                 <div key={sec.chave} className="rounded-2xl border border-nodri-border bg-nodri-card overflow-hidden">
                   <button onClick={() => setAberta(abertaEsta ? '' : sec.chave)}
                     className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/3 transition-colors">
-                    <span className="text-xl">{sec.emoji}</span>
                     <div className="flex-1 min-w-0">
                       <div className="font-syne font-bold text-[13px] text-nodri-t1">{sec.titulo}</div>
                       <div className="text-[11px] text-nodri-t3">{sec.descricao}</div>

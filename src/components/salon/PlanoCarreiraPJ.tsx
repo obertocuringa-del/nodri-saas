@@ -25,10 +25,10 @@ const CHAVE = 'plano_carreira_pj'
 const linhas = (s: string) => (s || '').split('\n').map(l => l.trim()).filter(Boolean)
 
 const DEFAULT_DOC: Doc = {
-  intro: 'Este é o caminho de crescimento dentro do salão. A cada degrau que você sobe, ganha mais reconhecimento, mais autonomia na agenda e principalmente mais dinheiro no bolso. Aqui embaixo você vê exatamente o que precisa fazer para subir de nível — e o que ganha em cada etapa. O seu crescimento é o nosso crescimento! 🚀',
+  intro: 'Este é o caminho de crescimento dentro do salão. A cada degrau que você sobe, ganha mais reconhecimento, mais autonomia na agenda e principalmente mais dinheiro no bolso. Aqui embaixo você vê exatamente o que precisa fazer para subir de nível — e o que ganha em cada etapa. O seu crescimento é o nosso crescimento!',
   niveis: [
     {
-      id: 'n1', emoji: '1️⃣', titulo: 'Assistente de Cabeleireiro', cor: '#16a34a',
+      id: 'n1', emoji: '1⃣', titulo: 'Assistente de Cabeleireiro', cor: '#16a34a',
       perfil: 'Profissional iniciante que auxilia os cabeleireiros, com experiência mínima de 6 meses.',
       atividades: 'Lavar e preparar os cabelos.\nAplicar tonalizantes e tratamentos sob supervisão.\nAuxiliar na organização do salão.',
       certificados: 'Curso de lavatório ou de tratamentos das marcas parceiras.',
@@ -38,7 +38,7 @@ const DEFAULT_DOC: Doc = {
       meta: 'Se desenvolver tecnicamente para assumir pequenos serviços.',
     },
     {
-      id: 'n2', emoji: '2️⃣', titulo: 'Cabeleireiro Júnior', cor: '#0891b2',
+      id: 'n2', emoji: '2⃣', titulo: 'Cabeleireiro Júnior', cor: '#0891b2',
       perfil: 'Profissional recém-promovido ou com até 2 anos de experiência no mercado.',
       atividades: 'Realinhamento / Maquiagem / Corte / Mechas.\nTricologia, coloração global, retoques e esfumado.\nModelagem avançada e babyliss.',
       certificados: 'Curso de modelagem/preparação de penteado e coloração básica.',
@@ -48,7 +48,7 @@ const DEFAULT_DOC: Doc = {
       meta: 'Desenvolvimento técnico e aumento da carteira de clientes.',
     },
     {
-      id: 'n3', emoji: '3️⃣', titulo: 'Cabeleireiro Pleno', cor: '#7c3aed',
+      id: 'n3', emoji: '3⃣', titulo: 'Cabeleireiro Pleno', cor: '#7c3aed',
       perfil: 'Profissional com experiência a partir de 3 anos e carteira própria de clientes.',
       atividades: 'Corte avançado e acabamento.\nMechas e design de cor.',
       certificados: '5 workshops nos últimos 3 anos nas habilidades que possui, com atendimento consultivo.',
@@ -58,7 +58,7 @@ const DEFAULT_DOC: Doc = {
       meta: '10% em curso de capacitação por semestre (não acumulativo) e parcelamento do curso no rateio.',
     },
     {
-      id: 'n4', emoji: '4️⃣', titulo: 'Cabeleireiro Sênior / Especialista', cor: '#c2410c',
+      id: 'n4', emoji: '4⃣', titulo: 'Cabeleireiro Sênior / Especialista', cor: '#c2410c',
       perfil: 'Referência profissional no salão, com agenda cheia e autoridade técnica (colorista, mechas, corte ou maquiagem).',
       atividades: 'Técnicas avançadas e personalizadas (conforme a especialidade) e correção de cor.\nEnsino e mentoria da equipe.\nVisagismo, coaching (PSC) e didática em andragogia (ensino para adultos).',
       certificados: 'Criação de tendências dentro do salão.',
@@ -68,7 +68,7 @@ const DEFAULT_DOC: Doc = {
       meta: '15% em curso de capacitação por semestre (não acumulativo) e parcelamento do curso no rateio.',
     },
     {
-      id: 'n5', emoji: '5️⃣', titulo: 'Mestre Cabeleireiro / Embaixador da Marca', cor: '#a16207',
+      id: 'n5', emoji: '5⃣', titulo: 'Mestre Cabeleireiro / Embaixador da Marca', cor: '#a16207',
       perfil: 'Profissional de elite, mentor e formador de novos talentos — a maior referência do salão.',
       atividades: 'Atendimento VIP e serviços exclusivos.\nRepresentação do salão em eventos e redes sociais.\nOferece cursos para fora do salão.\nDesenvolvimento de novas técnicas, treinamentos internos e criação de tendências.',
       certificados: 'Reconhecimento externo consolidado (prêmios, convites para eventos, participação como referência técnica).',
@@ -165,7 +165,7 @@ li.obrig{font-weight:800;color:#b45309}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Plano de Carreira PJ</title><style>${css}</style></head><body>
 <div class="hd">${cab}<div style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</div></div>
-<h1>🏆 PLANO DE CARREIRA — PROFISSIONAIS PJ</h1>
+<h1>PLANO DE CARREIRA — PROFISSIONAIS PJ</h1>
 <div class="intro">${esc(doc.intro)}</div>
 ${doc.niveis.map(blocoNivel).join('')}
 <script>window.onload=function(){window.print()}</script></body></html>`
@@ -177,12 +177,12 @@ ${doc.niveis.map(blocoNivel).join('')}
   return (
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>🏆 Plano de Carreira — Profissionais PJ</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Plano de Carreira — Profissionais PJ</h2>
         {abaTopo === 'plano' && <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#5b4fcf', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir plano completo</button>}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setAbaTopo('plano')} style={{ padding: '8px 16px', borderRadius: 10, border: abaTopo === 'plano' ? 'none' : '1.5px solid #e0ddd8', background: abaTopo === 'plano' ? '#1a1a1a' : '#fff', color: abaTopo === 'plano' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📋 Plano</button>
+        <button onClick={() => setAbaTopo('plano')} style={{ padding: '8px 16px', borderRadius: 10, border: abaTopo === 'plano' ? 'none' : '1.5px solid #e0ddd8', background: abaTopo === 'plano' ? '#1a1a1a' : '#fff', color: abaTopo === 'plano' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Plano</button>
         <button onClick={() => setAbaTopo('equipe')} style={{ padding: '8px 16px', borderRadius: 10, border: abaTopo === 'equipe' ? 'none' : '1.5px solid #e0ddd8', background: abaTopo === 'equipe' ? '#1a1a1a' : '#fff', color: abaTopo === 'equipe' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Users size={14} /> Acompanhamento da Equipe</button>
       </div>
 
@@ -241,15 +241,15 @@ ${doc.niveis.map(blocoNivel).join('')}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
                         <div>
-                          <SecaoTitulo>🛠️ Atividades</SecaoTitulo>
+                          <SecaoTitulo>Atividades</SecaoTitulo>
                           <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 13.5, color: '#374151', lineHeight: 1.7 }}>
                             {linhas(n.atividades).map((l, li) => <li key={li}>{l}</li>)}
                           </ul>
-                          <SecaoTitulo>📜 Certificados exigidos</SecaoTitulo>
+                          <SecaoTitulo>Certificados exigidos</SecaoTitulo>
                           <p style={{ margin: 0, fontSize: 13.5, color: '#374151', lineHeight: 1.6 }}>{n.certificados}</p>
                         </div>
                         <div>
-                          <SecaoTitulo>📈 Requisitos para evoluir de nível</SecaoTitulo>
+                          <SecaoTitulo>Requisitos para evoluir de nível</SecaoTitulo>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {linhas(n.indicadores).map((l, li) => {
                               const obrig = l.startsWith('*')
@@ -267,17 +267,17 @@ ${doc.niveis.map(blocoNivel).join('')}
 
                       <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                         <div style={{ flex: '1 1 200px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px' }}>
-                          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>💰 Comissionamento</div>
+                          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Comissionamento</div>
                           <div style={{ fontSize: 13.5, color: '#15803d', fontWeight: 700 }}>{n.comissionamento}</div>
                         </div>
                         {n.beneficios && (
                           <div style={{ flex: '1 1 200px', background: '#f0eefb', border: '1px solid #ddd6fb', borderRadius: 10, padding: '10px 14px' }}>
-                            <div style={{ fontSize: 10.5, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>🎁 Benefícios</div>
+                            <div style={{ fontSize: 10.5, fontWeight: 800, color: '#5b4fcf', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Benefícios</div>
                             <div style={{ fontSize: 13, color: '#4c3fa8', lineHeight: 1.5 }}>{linhas(n.beneficios).map((l, li) => <div key={li}>{l}</div>)}</div>
                           </div>
                         )}
                         <div style={{ flex: '1 1 200px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px' }}>
-                          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#a16207', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>🏆 Meta {i < doc.niveis.length - 1 ? 'para o próximo nível' : 'de crescimento'}</div>
+                          <div style={{ fontSize: 10.5, fontWeight: 800, color: '#a16207', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Meta {i < doc.niveis.length - 1 ? 'para o próximo nível' : 'de crescimento'}</div>
                           <div style={{ fontSize: 13, color: '#854d0e', lineHeight: 1.5 }}>{n.meta}</div>
                         </div>
                       </div>

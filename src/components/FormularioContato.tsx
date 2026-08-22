@@ -77,7 +77,7 @@ export default function FormularioContato() {
   if (pronto) {
     return (
       <div style={{ background: '#fff', borderRadius: 20, padding: '48px 32px', textAlign: 'center' }}>
-        <div style={{ fontSize: 44, marginBottom: 12 }}>✅</div>
+
         <h3 style={{ fontSize: 21, fontWeight: 900, color: '#1a1a1a', marginBottom: 10 }}>
           Recebemos seu contato, {f.nome.split(' ')[0]}!
         </h3>
@@ -149,7 +149,7 @@ export default function FormularioContato() {
 
       {erro && (
         <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 11, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 13.5 }}>
-          ⚠️ {erro}
+          {erro}
         </div>
       )}
 

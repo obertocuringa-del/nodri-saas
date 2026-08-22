@@ -434,7 +434,7 @@ ${REC_VENDAS([
 
 <h2>8. Envio da Confirmação</h2>
 <p>Enviar imediatamente pelo WhatsApp.</p>
-<blockquote>"Olá, (Nome)! Seu agendamento foi realizado com sucesso. 📅 Data: [Data] ⏰ Horário: [Horário] 💇 Procedimento: [Serviço] 👩‍🎨 Profissional: [Nome] Qualquer dúvida estamos à disposição. Equipe [Nome do Salão] 🧡"</blockquote>
+<blockquote>"Olá, (Nome)! Seu agendamento foi realizado com sucesso. Data: [Data] Horário: [Horário] Procedimento: [Serviço] Profissional: [Nome] Qualquer dúvida estamos à disposição. Equipe [Nome do Salão]"</blockquote>
 
 <h2>9. Finalização</h2>
 <blockquote>"Agradecemos sua preferência. Será um prazer recebê-lo(a). Tenha um excelente dia!"</blockquote>
@@ -462,11 +462,11 @@ ${REC_IDENT('POP-REC-002 — Atendimento via WhatsApp (Primeiro Contato)',
   <li>Verificar se o nome do cliente aparece no perfil do WhatsApp.</li>
   <li>Se tiver nome:</li>
 </ol>
-<blockquote>"Olá, (Nome)! Tudo bem? 😃 Meu nome é (nome da recepcionista), sou o recepcionista do [Nome do Salão] que será responsável pelo seu agendamento. ✨"</blockquote>
+<blockquote>"Olá, (Nome)! Tudo bem? Meu nome é (nome da recepcionista), sou o recepcionista do [Nome do Salão] que será responsável pelo seu agendamento."</blockquote>
 <ol start="3">
   <li>Se NÃO tiver nome:</li>
 </ol>
-<blockquote>"Olá! Meu nome é (nome da recepcionista), sou o recepcionista do [Nome do Salão] que será responsável pelo seu atendimento 😊. Poderia me informar seu nome e sobrenome? ✨"</blockquote>
+<blockquote>"Olá! Meu nome é (nome da recepcionista), sou o recepcionista do [Nome do Salão] que será responsável pelo seu atendimento. Poderia me informar seu nome e sobrenome?"</blockquote>
 <ol start="4">
   <li>A recepcionista desenvolve a conversa para entender a necessidade.</li>
   <li>${REC_CADASTRO}</li>
@@ -493,14 +493,14 @@ ${REC_VENDAS([
 
 <h2>8. Finalização</h2>
 <p>Mensagem obrigatória:</p>
-<blockquote>"✨ (Nome da cliente), sou (nome da recepcionista) e estou finalizando seu atendimento. Seu agendamento foi realizado para: 📅 Data: [Data] ⏰ Horário: [Horário] 💇 Serviços: [Lista de Serviços] 👩‍🎨 Profissional: [Nome] Gostaria de agendar algo mais? ✨🧡"</blockquote>
+<blockquote>"(Nome da cliente), sou (nome da recepcionista) e estou finalizando seu atendimento. Seu agendamento foi realizado para: Data: [Data] Horário: [Horário] Serviços: [Lista de Serviços] Profissional: [Nome] Gostaria de agendar algo mais?"</blockquote>
 
 <h2>9. Envio da Confirmação e Lembrete</h2>
 <ul>
   <li>Enviar a mensagem de confirmação imediatamente.</li>
   <li>Um dia antes do atendimento, enviar a confirmação novamente:</li>
 </ul>
-<blockquote>"Olá, (Nome)! Passando para confirmar seu agendamento de amanhã às [Horário]. Estamos te aguardando! 🧡"</blockquote>
+<blockquote>"Olá, (Nome)! Passando para confirmar seu agendamento de amanhã às [Horário]. Estamos te aguardando!"</blockquote>
 
 ${REC_INDICADORES([
   'Taxa de conversão de WhatsApp.',
@@ -559,9 +559,9 @@ ${REC_VENDAS([
 
 <h2>9. Envio da Confirmação e Lembrete</h2>
 <p>Enviar a mensagem de confirmação via WhatsApp imediatamente após a ligação:</p>
-<blockquote>"✨ (Nome da cliente), sou (nome da recepcionista) e estou finalizando seu atendimento por telefone. Seu agendamento foi realizado para: 📅 Data: [Data] ⏰ Horário: [Horário] 💇 Serviços: [Lista de Serviços] 👩‍🎨 Profissional: [Nome] Gostaria de agendar algo mais? ✨🧡"</blockquote>
+<blockquote>"(Nome da cliente), sou (nome da recepcionista) e estou finalizando seu atendimento por telefone. Seu agendamento foi realizado para: Data: [Data] Horário: [Horário] Serviços: [Lista de Serviços] Profissional: [Nome] Gostaria de agendar algo mais?"</blockquote>
 <p>Um dia antes do atendimento, enviar a confirmação novamente:</p>
-<blockquote>"Olá, (Nome)! Passando para confirmar seu agendamento de amanhã às [Horário]. Estamos aguardando você. 🧡"</blockquote>
+<blockquote>"Olá, (Nome)! Passando para confirmar seu agendamento de amanhã às [Horário]. Estamos aguardando você."</blockquote>
 
 ${REC_INDICADORES([
   'Taxa de conversão de contatos em agendamentos.',
@@ -875,7 +875,7 @@ const REC_FINALIZACAO_HTML = `
 <h2>11. Pós-Atendimento (Dia Seguinte)</h2>
 <h3>A. Envio de Mensagem de Feedback</h3>
 <p>No dia seguinte ao atendimento, a recepcionista deverá enviar a mensagem padrão de feedback.</p>
-<blockquote>"Olá (Nome)! Tudo bem?<br/><br/>O [Nome do Salão] busca oferecer serviços de qualidade aos clientes. Gostaríamos de saber como foi a sua experiência no salão. Sua opinião é importante para nortear nossas ações em busca de um atendimento cada vez melhor. 🧡🎋<br/><br/>Agradecemos a colaboração!<br/><br/>Caso não queira se identificar, mande seu feedback pelo link:<br/>[Link da Pesquisa]"</blockquote>
+<blockquote>"Olá (Nome)! Tudo bem?<br/><br/>O [Nome do Salão] busca oferecer serviços de qualidade aos clientes. Gostaríamos de saber como foi a sua experiência no salão. Sua opinião é importante para nortear nossas ações em busca de um atendimento cada vez melhor.<br/><br/>Agradecemos a colaboração!<br/><br/>Caso não queira se identificar, mande seu feedback pelo link:<br/>[Link da Pesquisa]"</blockquote>
 <h3>B. Agendamento Online (se disponível)</h3>
 <blockquote>"Lembre-se que você pode agendar online pelo site:<br/>[Link do Agendamento]"</blockquote>
 
@@ -5429,8 +5429,8 @@ const CHECKD = 'list-style:none;padding-left:0;margin:6px 0 16px;line-height:1.6
 const HAB = (n: number, titulo: string, modelos: string, curso: string, pontos: [string, string][]) => `
 <h3>${n}. ${titulo}</h3>
 <div style="${BOX}">
-  <p style="margin:0"><strong>✅ Quantidade de modelos:</strong> ${modelos}</p>
-  <p style="margin:8px 0 0"><strong>📚 Curso:</strong> ${curso}</p>
+  <p style="margin:0"><strong>Quantidade de modelos:</strong> ${modelos}</p>
+  <p style="margin:8px 0 0"><strong>Curso:</strong> ${curso}</p>
 </div>
 <p style="margin:10px 0 2px"><strong>Pontos de avaliação:</strong></p>
 <ul style="${CHECKD}">

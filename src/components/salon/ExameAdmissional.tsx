@@ -36,7 +36,7 @@ export default function ExameAdmissional({ pessoas }: { pessoas: Pessoa[] }) {
     let doc: GridDoc | null = null
     try { doc = await fetch(`/api/salon/grid?chave=${CHAVE}`).then(r => r.ok ? r.json() : null) } catch { /* */ }
     if (!doc || !Array.isArray(doc.tabelas)) doc = DEFAULT_EXAME
-    let txt = '*🩺 EXAME ADMISSIONAL*\n'
+    let txt = '* EXAME ADMISSIONAL*\n'
     for (const t of doc.tabelas) {
       const linhas = t.linhas
         .filter(r => r.some(c => (c.t || '').trim()))
@@ -44,7 +44,7 @@ export default function ExameAdmissional({ pessoas }: { pessoas: Pessoa[] }) {
       if (!linhas.length) continue
       txt += `\n*${t.titulo}*\n${linhas.map(l => `• ${l}`).join('\n')}\n`
     }
-    txt += '\n_Enviado pelo NODRI 💛_'
+    txt += '\n_Enviado pelo NODRI _'
     return txt
   }
 
@@ -63,7 +63,7 @@ export default function ExameAdmissional({ pessoas }: { pessoas: Pessoa[] }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>🩺 Exame Admissional</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Exame Admissional</h2>
           <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Edite a tabela (mesclar, cores, negrito, imprimir). <strong>Salve</strong> antes de enviar pelo WhatsApp.</p>
         </div>
         <div style={{ flex: 1 }} />
@@ -76,7 +76,7 @@ export default function ExameAdmissional({ pessoas }: { pessoas: Pessoa[] }) {
         <div onClick={() => setModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 440, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>📲 Enviar para quem?</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Enviar para quem?</h3>
               <button onClick={() => setModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             <div style={{ padding: '12px 16px' }}>

@@ -44,7 +44,7 @@ export default function EditorAvaliacao() {
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>🎯 Perfil e Avaliação de Desempenho</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Perfil e Avaliação de Desempenho</h2>
           <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>Edite as categorias e os critérios. <strong>O que você salvar aqui vira a pontuação da aba “Avaliar” de todos os profissionais.</strong> ({totalCrit} critérios)</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

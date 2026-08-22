@@ -240,7 +240,7 @@ export default function ConferenciaCaixas() {
                     style={{ width: 15, height: 15, accentColor: '#5b4fcf', cursor: 'pointer' }} />
                   Conferido
                 </label>
-                {([['ok', '✅ OK'], ['inconsistente', '⚠ Inconsistente']] as const).map(([v, rot]) => (
+                {([['ok', 'OK'], ['inconsistente', 'Inconsistente']] as const).map(([v, rot]) => (
                   <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: c.status === v ? 800 : 600, color: c.status === v ? (v === 'ok' ? '#15803d' : '#b91c1c') : '#4b5563', cursor: 'pointer' }}>
                     <input type="radio" name={`st-${c.id}`} checked={c.status === v} onChange={() => mudarCaixa(diaAberto, c.id, 'status', v)}
                       style={{ width: 14, height: 14, accentColor: v === 'ok' ? '#16a34a' : '#dc2626', cursor: 'pointer' }} />

@@ -130,7 +130,7 @@ ${cats.map(c => htmlCategoria(c, logo, esc)).join('')}
 
   async function compartilharPdf(ci: number) {
     const cat = doc.categorias[ci]
-    if (!cat || !cat.pacotes.length) { toast('Adicione pelo menos um pacote antes de compartilhar', { icon: '✍️' }); return }
+    if (!cat || !cat.pacotes.length) { toast('Adicione pelo menos um pacote antes de compartilhar', { icon: '' }); return }
     setGerandoPdf(cat.id)
     try {
       const [jsPdfMod, autoTableMod] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
@@ -160,13 +160,13 @@ ${cats.map(c => htmlCategoria(c, logo, esc)).join('')}
       const file = new File([blob], nomeArq, { type: 'application/pdf' })
       const nav: any = navigator
       if (typeof nav.canShare === 'function' && nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file], title: `Pacotes — ${cat.nome}`, text: `Confira nossos pacotes de ${cat.nome}! 💛` })
+        await nav.share({ files: [file], title: `Pacotes — ${cat.nome}`, text: `Confira nossos pacotes de ${cat.nome}!` })
         toast.success('Compartilhado!')
       } else {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a'); a.href = url; a.download = nomeArq; document.body.appendChild(a); a.click(); a.remove()
         URL.revokeObjectURL(url)
-        toast('PDF baixado! Abra o WhatsApp e anexe o arquivo para enviar ao cliente (o navegador não permite anexar automaticamente).', { icon: '📎', duration: 7000 })
+        toast('PDF baixado! Abra o WhatsApp e anexe o arquivo para enviar ao cliente (o navegador não permite anexar automaticamente).', { icon: '', duration: 7000 })
         window.open('https://web.whatsapp.com/', '_blank')
       }
     } catch (e: any) {

@@ -13,32 +13,32 @@ const rs = (v: number) => 'R$ ' + Math.round(Number(v) || 0).toLocaleString('pt-
 const n1 = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
 const TEMAS: Tema[] = [
-  { titulo: '📊 Desempenho', cols: [
+  { titulo: 'Desempenho', cols: [
     { k: 'faturamento', t: 'Faturamento', fmt: rs },
     { k: 'ticket_medio', t: 'Ticket', fmt: rs },
     { k: 'servicos', t: 'Serviços', fmt: n1 },
     { k: 'produtos', t: 'Produtos', fmt: n1 },
   ]},
-  { titulo: '👥 Atendimento', cols: [
+  { titulo: 'Atendimento', cols: [
     { k: 'preferencia', t: 'Preferência', fmt: n1 },
     { k: 'sem_preferencia', t: 'Sem pref.', fmt: n1 },
     { k: 'dias_trabalhados', t: 'Dias', fmt: n1 },
     { k: 'ocupacao', t: 'Ocupação', fmt: (v) => n1(v) + '%' },
   ]},
-  { titulo: '⚡ Eficiência', cols: [
+  { titulo: 'Eficiência', cols: [
     { k: 'fat_dia', t: 'Faturam./dia', fmt: rs },
     { k: 'serv_dia', t: 'Serviços/dia', fmt: n1 },
     { k: 'ticket_servico', t: 'Ticket/serviço', fmt: rs },
   ]},
-  { titulo: '⚠️ Ocorrências', dynamic: 'ocorr' },
-  { titulo: '👑 Dependência', cols: [
+  { titulo: 'Ocorrências', dynamic: 'ocorr' },
+  { titulo: 'Dependência', cols: [
     { k: 'pct_salao', t: '% do salão', fmt: (v) => n1(v) + '%' },
     { k: 'fat_gerado', t: 'Faturam. gerado (valor cheio)', fmt: rs },
   ]},
-  { titulo: '❤️ Fidelização', cols: [
+  { titulo: 'Fidelização', cols: [
     { k: 'clientes_perdidos', t: 'Atendeu e não fidelizou', low: true, fmt: n1 },
   ]},
-  { titulo: '🎯 Meta', cols: [
+  { titulo: 'Meta', cols: [
     { k: 'meta_pct', t: '% atingimento', fmt: (v) => n1(v) + '%' },
     { k: 'falta', t: 'Quanto falta', low: true, fmt: rs },
   ]},

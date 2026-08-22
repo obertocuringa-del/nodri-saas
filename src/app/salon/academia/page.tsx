@@ -51,7 +51,7 @@ export default function AcademiaPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-nodri-dark to-nodri-dark/90 text-white px-4 py-6">
+      <div className="bg-gradient-to-r from-[#4b3fb5] to-[#5b4fcf] text-white px-4 py-6">
         <div className="max-w-4xl mx-auto">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-white/70 hover:text-white text-sm mb-4 transition-colors">
             <ArrowLeft size={16} /> Voltar
@@ -88,7 +88,7 @@ export default function AcademiaPage() {
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setCategoriaAtiva(null)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!categoriaAtiva ? 'bg-nodri-dark text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!categoriaAtiva ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
           >
             Todos
           </button>
@@ -96,9 +96,9 @@ export default function AcademiaPage() {
             <button
               key={cat.key}
               onClick={() => setCategoriaAtiva(categoriaAtiva === cat.key ? null : cat.key)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${categoriaAtiva === cat.key ? 'bg-nodri-dark text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${categoriaAtiva === cat.key ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
             >
-              {cat.emoji} {cat.label}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -140,9 +140,8 @@ export default function AcademiaPage() {
                         onClick={() => router.push(`/salon/academia/${artigo.id}`)}
                         className={`w-full text-left bg-white rounded-xl border ${cat.borda} p-4 flex items-center gap-3 hover:shadow-md transition-all group`}
                       >
-                        <span className="text-2xl flex-shrink-0">{artigo.emoji}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 text-sm group-hover:text-nodri-dark transition-colors">{artigo.titulo}</p>
+                          <p className="font-semibold text-gray-800 text-sm group-hover:text-nodri-cyan transition-colors">{artigo.titulo}</p>
                           {artigo.resumo && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{artigo.resumo}</p>}
                         </div>
                         <ChevronRight size={16} className="text-gray-300 group-hover:text-nodri-amber flex-shrink-0 transition-colors" />

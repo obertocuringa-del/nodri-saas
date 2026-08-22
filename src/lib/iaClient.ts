@@ -21,8 +21,16 @@ export interface IaOpts {
 
 // Chama a IA e devolve o texto. Tenta novamente em erro transitório/rede/resposta
 // vazia. Só lança quando todas as tentativas falharem.
+// O site nao usa emoji em lugar nenhum (ago/2026). Sem esta linha a IA volta
+// a enfeitar as respostas com eles, e o texto dela aparece dentro das telas —
+// entao a regra tem que valer para toda chamada, nao so para as que lembrarem.
+const SEM_EMOJI = 'Nunca use emojis, emoticons ou simbolos decorativos na resposta. Escreva em texto puro.'
+
 export async function iaGerar(apiKey: string, modelo: string, prompt: string, opts: IaOpts = {}): Promise<string> {
   const maxTokens = opts.maxTokens ?? 4096
+  const system = opts.system ? `${opts.system}
+
+${SEM_EMOJI}` : SEM_EMOJI
   const tentativas = Math.max(1, opts.tentativas ?? 4)
   let ultimoErro: any = null
 
@@ -35,7 +43,7 @@ export async function iaGerar(apiKey: string, modelo: string, prompt: string, op
         const msg = await anthropic.messages.create({
           model: modelo,
           max_tokens: maxTokens,
-          ...(opts.system ? { system: opts.system } : {}),
+          system,
           messages: [{ role: 'user', content: prompt }],
         })
         const txt = msg.content.find((c: any) => c.type === 'text') as any
@@ -49,7 +57,7 @@ export async function iaGerar(apiKey: string, modelo: string, prompt: string, op
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            ...(opts.system ? { systemInstruction: { parts: [{ text: opts.system }] } } : {}),
+            systemInstruction: { parts: [{ text: system }] },
             generationConfig: genCfg,
           }),
         })

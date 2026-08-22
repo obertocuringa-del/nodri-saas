@@ -441,7 +441,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     // Em manutenção — bloqueia mesmo que habilitado
     if (modulo.em_manutencao) {
       toast(modulo.msg_manutencao || 'Módulo em manutenção. Voltaremos em breve!', {
-        icon: '🔧',
+        icon: '',
         style: { background: '#fff0f0', color: '#ff4444', border: '1px solid #ff4444', fontWeight: 'bold' },
         duration: 4000,
       })
@@ -499,7 +499,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 18, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,.35)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ background: 'linear-gradient(135deg,#ef4444,#db2777)', color: '#fff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <span style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>📅 Compromissos chegando! ({totalCompromissos})</span>
+              <span style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>Compromissos chegando! ({totalCompromissos})</span>
               <button onClick={() => setLembreteCalAberto(false)} style={{ border: 'none', background: 'rgba(255,255,255,.25)', color: '#fff', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
             </div>
             <div style={{ padding: 20, overflowY: 'auto' }}>
@@ -640,10 +640,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               const destaque = alerta || novoCur || alertaKits
               const cor = (alerta || alertaKits) ? '#dc2626' : '#5b4fcf'
               const badgeAdm = [
-                kitsPendentes > 0 ? `🧰 ${kitsPendentes}` : '',
-                esterPendentes > 0 ? `✂️ ${esterPendentes}` : '',
+                kitsPendentes > 0 ? `${kitsPendentes}` : '',
+                esterPendentes > 0 ? `${esterPendentes}` : '',
               ].filter(Boolean).join(' ')
-              const badgeTxt = alerta ? `⚠ ${checklistAlertas}`
+              const badgeTxt = alerta ? `${checklistAlertas}`
                 : alertaKits ? badgeAdm
                 : `${curriculosNovos} novo${curriculosNovos > 1 ? 's' : ''}`
               return (
@@ -728,7 +728,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             </div>
           </div>
 
-          {/* ⚠️ AVISO DE USO DO WHATSAPP — obrigatório antes de abrir a Suite.
+          {/* AVISO DE USO DO WHATSAPP — obrigatório antes de abrir a Suite.
               Aparece TODA vez, por decisão do dono do sistema: o texto trata de
               responsabilidade e risco de bloqueio de conta, então o incômodo de
               reler é proposital. A pulsação é lenta (2s) de propósito — piscar
@@ -743,7 +743,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               <div onClick={e => e.stopPropagation()}
                 style={{ background: '#fff', borderRadius: 16, maxWidth: 560, width: '100%', maxHeight: '88vh', overflowY: 'auto', border: '3px solid #dc2626', animation: 'nodriPulsaVermelho 2s ease-in-out infinite' }}>
                 <div style={{ background: '#dc2626', color: '#fff', padding: '14px 20px', fontWeight: 900, fontSize: 15.5 }}>
-                  ⚠️ ATENÇÃO — USO DO WHATSAPP
+                  ATENÇÃO — USO DO WHATSAPP
                 </div>
                 <div style={{ padding: '18px 20px', fontSize: 13.5, color: '#1f2937', lineHeight: 1.55 }}>
                   <p style={{ margin: '0 0 12px' }}>Para evitar riscos de bloqueio e garantir o uso adequado da ferramenta, siga estas orientações:</p>
@@ -755,7 +755,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                     <li>Evite comportamentos que possam ser interpretados pelo WhatsApp como envio excessivo ou inadequado de mensagens.</li>
                   </ul>
                   <p style={{ margin: 0, padding: '10px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, fontWeight: 700, color: '#991b1b' }}>
-                    ⚠️ O uso correto da ferramenta é de responsabilidade do usuário. Siga estas orientações para reduzir riscos de restrições ou bloqueios da sua conta.
+                    O uso correto da ferramenta é de responsabilidade do usuário. Siga estas orientações para reduzir riscos de restrições ou bloqueios da sua conta.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10, padding: '0 20px 20px', flexWrap: 'wrap' }}>
@@ -814,12 +814,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           {busca.trim() === '' && (
             <div className="px-5 mt-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
               {[
-                { perm: 'profissionais', href: '/salon/profissionais', emoji: '👥', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
-                { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '🎂', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
-                { perm: 'pendencias', href: '/salon/pendencias', emoji: '⚠️', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0, alerta: solicAbertas > 0, sub: solicAbertas > 0 ? `${solicAbertas} pedido(s) do portal esperando` : '' },
-                { perm: 'calendario', href: '/salon/calendario', emoji: '📅', label: 'Calendário', valor: totalCompromissos, cor: '#0891b2', badge: 0 },
-                { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '⭐', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
-                { perm: 'calculadora', href: finId ? `/salon/departamentos/${finId}` : '/salon/profissionais', emoji: '📄', label: 'Boletos vencidos', valor: kpiBoletos, cor: '#dc2626', badge: 0, alerta: (kpiBoletos || 0) > 0, sub: (kpiBoletos || 0) > 0 ? `R$ ${kpiBoletosVlr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a pagar` : 'tudo em dia' },
+                { perm: 'profissionais', href: '/salon/profissionais', emoji: '', label: 'Profissionais ativos', valor: kpiAtivos, cor: '#5b4fcf', badge: 0 },
+                { perm: 'aniversariantes', href: '/salon/aniversariantes', emoji: '', label: 'Aniversariantes do mês', valor: kpiNiver, cor: '#db2777', badge: 0 },
+                { perm: 'pendencias', href: '/salon/pendencias', emoji: '', label: 'Pendências abertas', valor: kpiPend, cor: '#ea580c', badge: 0, alerta: solicAbertas > 0, sub: solicAbertas > 0 ? `${solicAbertas} pedido(s) do portal esperando` : '' },
+                { perm: 'calendario', href: '/salon/calendario', emoji: '', label: 'Calendário', valor: totalCompromissos, cor: '#0891b2', badge: 0 },
+                { perm: 'feedback_cliente', href: fbFormId ? `/salon/feedback/resultados/${fbFormId}` : '/salon/feedback', emoji: '', label: 'Feedbacks de clientes', valor: kpiFb, cor: '#16a34a', badge: fbNovos },
+                { perm: 'calculadora', href: finId ? `/salon/departamentos/${finId}` : '/salon/profissionais', emoji: '', label: 'Boletos vencidos', valor: kpiBoletos, cor: '#dc2626', badge: 0, alerta: (kpiBoletos || 0) > 0, sub: (kpiBoletos || 0) > 0 ? `R$ ${kpiBoletosVlr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a pagar` : 'tudo em dia' },
               ].filter(k => pode(k.perm)).map(k => {
                 return (
                 <a key={k.perm} href={k.href}

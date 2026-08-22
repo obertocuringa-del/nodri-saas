@@ -174,7 +174,7 @@ export default function AvaliacaoPage() {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff1f5 0%, #fdf4ff 50%, #f0f9ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>😕</div>
+
           <h1 style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Formulário indisponível</h1>
           <p style={{ color: '#6b7280', fontSize: 15 }}>{error}</p>
         </div>
@@ -232,11 +232,6 @@ export default function AvaliacaoPage() {
             </>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 28 }}>
-            {[1,2,3,4,5].map(i => (
-              <span key={i} style={{ fontSize: 28 }}>⭐</span>
-            ))}
-          </div>
           {form?.salao_nome && (
             <p style={{ marginTop: 24, color: '#6b7280', fontSize: 13 }}>
               — {form.salao_nome}
@@ -540,7 +535,7 @@ export default function AvaliacaoPage() {
               padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#dc2626',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              ⚠️ {erroEnvio}
+              {erroEnvio}
             </div>
           )}
 

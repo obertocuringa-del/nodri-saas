@@ -107,7 +107,7 @@ export default function DocEditavel({ chave, tituloPadrao, blocosPadrao, corTema
           </div>
         ) : (
           <button onClick={() => fileRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 20px', borderRadius: 12, border: '2px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-            🖼️ Anexar logo (clique para escolher a imagem)
+            Anexar logo (clique para escolher a imagem)
           </button>
         )}
         <p style={{ fontSize: 11, color: '#9ca3af', margin: '6px 0 0' }}>A logo aparece no topo e na impressão. Tudo é <strong>salvo automaticamente</strong>. (imagem até 1,5 MB)</p>

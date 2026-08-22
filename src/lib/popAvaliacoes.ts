@@ -22,11 +22,11 @@ export interface ModeloAvaliacao {
 }
 
 export function faixaResultado(pct: number): { label: string; emoji: string; cor: string } {
-  if (pct >= 90) return { label: 'Excelente', emoji: '⭐', cor: '#059669' }
-  if (pct >= 80) return { label: 'Bom', emoji: '✅', cor: '#10b981' }
-  if (pct >= 70) return { label: 'Regular', emoji: '⚠️', cor: '#f59e0b' }
-  if (pct >= 60) return { label: 'Necessita Treinamento', emoji: '🔶', cor: '#f97316' }
-  return { label: 'Crítico', emoji: '❌', cor: '#dc2626' }
+  if (pct >= 90) return { label: 'Excelente', emoji: '', cor: '#059669' }
+  if (pct >= 80) return { label: 'Bom', emoji: '', cor: '#10b981' }
+  if (pct >= 70) return { label: 'Regular', emoji: '', cor: '#f59e0b' }
+  if (pct >= 60) return { label: 'Necessita Treinamento', emoji: '', cor: '#f97316' }
+  return { label: 'Crítico', emoji: '', cor: '#dc2626' }
 }
 
 export const AVALIACOES_POP: Record<string, ModeloAvaliacao> = {

@@ -26,7 +26,7 @@ export default function EsterilizacaoFluxoProf() {
 
   async function enviar() {
     const n = Math.max(0, Math.round(Number(qtd) || 0))
-    if (!n) { toast('Informe a quantidade de alicates', { icon: '✍️' }); return }
+    if (!n) { toast('Informe a quantidade de alicates', { icon: '' }); return }
     setEnviando(true)
     try {
       const res = await fetch('/api/salon/esterilizacao-fluxo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ qtdEnviada: n }) })
@@ -141,7 +141,7 @@ export default function EsterilizacaoFluxoProf() {
                 )}
                 {p.origem === 'salao' && (
                   <div style={{ marginTop: 8, fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 10px' }}>
-                    ⚠️ Estes alicates foram registrados pelo salão porque não houve solicitação sua pelo sistema. A quantidade não foi informada por você.
+                    Estes alicates foram registrados pelo salão porque não houve solicitação sua pelo sistema. A quantidade não foi informada por você.
                   </div>
                 )}
                 {p.status === 'entregue' && (

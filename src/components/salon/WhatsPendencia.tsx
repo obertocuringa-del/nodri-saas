@@ -30,7 +30,7 @@ export default function WhatsPendencia({ mensagem }: { mensagem: string }) {
   function enviar(c: { nome: string; telefone: string }) {
     const fone = String(c.telefone).replace(/\D/g, '')
     const numero = fone.startsWith('55') ? fone : '55' + fone
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`📋 *Pendência do salão:*\n\n${mensagem}`)}`, '_blank')
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(`*Pendência do salão:*\n\n${mensagem}`)}`, '_blank')
     setOpen(false)
   }
 

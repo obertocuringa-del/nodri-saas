@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 const ARTIGOS = [
   // ─── FINANCEIRO ───────────────────────────────────────────────────────────
   {
-    categoria: 'financeiro', emoji: '⚖️', ordem: 1,
+    categoria: 'financeiro', emoji: '', ordem: 1,
     titulo: 'Como calcular o ponto de equilíbrio do seu salão',
     resumo: 'Descubra quantos atendimentos você precisa fazer para não ter prejuízo.',
     conteudo: `O ponto de equilíbrio é o número mínimo de atendimentos que seu salão precisa realizar para cobrir todos os custos fixos sem gerar lucro nem prejuízo.
@@ -47,7 +47,7 @@ Salão cheio não significa salão lucrativo. Se o ticket médio for baixo, voc�
 Calcule agora: some todos os seus custos fixos do mês e divida pelo seu ticket médio. Esse número é sua meta mínima de atendimentos.`
   },
   {
-    categoria: 'financeiro', emoji: '💼', ordem: 2,
+    categoria: 'financeiro', emoji: '', ordem: 2,
     titulo: 'Capital de Giro, Reserva Financeira e Depreciação',
     resumo: 'Três conceitos que a maioria dos gestores confunde — entenda a diferença.',
     conteudo: `Um dos erros mais comuns na gestão de salões é misturar esses três conceitos. Cada um tem uma função diferente e usa um dinheiro diferente.
@@ -111,7 +111,7 @@ Valor do equipamento ÷ anos de vida útil = valor mensal a reservar
 | Onde | Conta corrente | Aplicação | Aplicação separada |`
   },
   {
-    categoria: 'financeiro', emoji: '💰', ordem: 3,
+    categoria: 'financeiro', emoji: '', ordem: 3,
     titulo: 'Como precificar serviços corretamente',
     resumo: 'Precificar olhando só para o concorrente é o caminho para trabalhar no prejuízo.',
     conteudo: `A maioria dos salões precifica errado: olha para o concorrente ou para o que "parece razoável". O resultado é trabalhar muito sem lucro.
@@ -157,7 +157,7 @@ Preço mínimo para não ter prejuízo: **R$318,50**
 • O preço do produto subiu mas você não repassou`
   },
   {
-    categoria: 'financeiro', emoji: '📊', ordem: 4,
+    categoria: 'financeiro', emoji: '', ordem: 4,
     titulo: 'Reforma Tributária: o que muda para o seu salão em 2026',
     resumo: 'Split Payment começa em 2026. Salão sem contabilidade atualizada vai pagar mais imposto.',
     conteudo: `A Reforma Tributária começa a impactar os salões a partir de 2026 com o Split Payment — e quem não se preparar vai ter surpresas desagradáveis.
@@ -198,7 +198,7 @@ A partir de 2026, no momento em que o cliente pagar (cartão, Pix), o imposto é
 Com o Split Payment, o dinheiro que chega à sua conta já vem com o imposto retido. Isso muda o fluxo de caixa. Sua reserva e capital de giro precisam ser recalculados considerando essa mudança.`
   },
   {
-    categoria: 'financeiro', emoji: '💳', ordem: 5,
+    categoria: 'financeiro', emoji: '', ordem: 5,
     titulo: 'Como estruturar comissionamento que funciona',
     resumo: 'O modelo certo de comissão incentiva produtividade sem destruir a margem.',
     conteudo: `O modelo de comissionamento é uma das decisões mais estratégicas do salão. Errar aqui cria profissionais acomodados ou margem negativa.
@@ -249,7 +249,7 @@ Além da comissão base, criar bônus por:
 
   // ─── MARKETING ────────────────────────────────────────────────────────────
   {
-    categoria: 'marketing', emoji: '📣', ordem: 1,
+    categoria: 'marketing', emoji: '', ordem: 1,
     titulo: '6 estratégias para atrair clientes todos os meses',
     resumo: 'Divulgação de salão vai muito além de post bonito no Instagram.',
     conteudo: `Depender só de um canal para atrair clientes é arriscado. Salões que crescem usam pelo menos 3 dessas estratégias simultaneamente.
@@ -316,7 +316,7 @@ Buscar comércios e empresas com o mesmo público.
 **Como estruturar:** ofereça benefício mútuo — você divulga o parceiro, ele divulga você`
   },
   {
-    categoria: 'marketing', emoji: '🔄', ordem: 2,
+    categoria: 'marketing', emoji: '', ordem: 2,
     titulo: 'Como reativar clientes inativos sem dar desconto',
     resumo: '80 clientes inativos = R$8.000 a R$24.000 de faturamento esperando para ser recuperado.',
     conteudo: `Cliente inativo é o ativo mais subaproveitado do salão. Ele já conhece seu trabalho, já confiou uma vez — custa 5x menos reativar do que conquistar alguém novo.
@@ -339,7 +339,7 @@ Desconto treina o cliente a esperar por promoção. Valor agregado resolve uma d
 • Oferecer bônus de valor (serviço extra, não desconto)
 • Tom: "Sentimos sua falta"
 
-**Exemplo:** "Oi [nome]! Faz um tempinho que não te vemos por aqui. Sua [coloração] deve estar precisando de reforço. Que tal agendar? Na sua volta você ganha uma hidratação de presente. 💜"
+**Exemplo:** "Oi [nome]! Faz um tempinho que não te vemos por aqui. Sua [coloração] deve estar precisando de reforço. Que tal agendar? Na sua volta você ganha uma hidratação de presente."
 
 ### 90 a 180 dias (cliente frio)
 • Mensagem mais direta com benefício claro
@@ -363,7 +363,7 @@ Com mensagens personalizadas e bem escritas:
 Toda semana, a recepção verifica clientes que completam 60 dias sem visita e envia mensagem. Isso deve ser parte da rotina — não uma ação emergencial quando o mês está fraco.`
   },
   {
-    categoria: 'marketing', emoji: '📅', ordem: 3,
+    categoria: 'marketing', emoji: '', ordem: 3,
     titulo: 'Cronograma de postagens: como parar de postar por postar',
     resumo: 'Stories são sua bancada de vendas. Use com intenção, não no improviso.',
     conteudo: `A diferença entre o salão que atrai clientes pelo Instagram e o que "está lá mas não funciona" é uma só: intenção estratégica nas postagens.
@@ -414,7 +414,7 @@ Com cronograma:
 Um post simples todo dia supera um post perfeito uma vez por semana. O algoritmo e os clientes recompensam consistência.`
   },
   {
-    categoria: 'marketing', emoji: '💡', ordem: 4,
+    categoria: 'marketing', emoji: '', ordem: 4,
     titulo: 'Os 4 focos de todo marketing que dá resultado',
     resumo: 'Antes de pensar em post ou promoção, você precisa saber exatamente onde quer chegar.',
     conteudo: `Marketing sem objetivo é desperdício de tempo e dinheiro. Todo marketing eficiente parte de um dos 4 focos abaixo.
@@ -478,7 +478,7 @@ Se a equipe está desmotivada → Foco 4 (endomarketing)
 Nunca tentar fazer os 4 ao mesmo tempo com recursos limitados. Escolha um, execute bem, depois avança para o próximo.`
   },
   {
-    categoria: 'marketing', emoji: '🎯', ordem: 5,
+    categoria: 'marketing', emoji: '', ordem: 5,
     titulo: 'Campanhas para datas sazonais — como planejar',
     resumo: 'Dezembro, Dia das Mães, Dia da Mulher: como transformar datas em faturamento real.',
     conteudo: `Datas sazonais são as maiores oportunidades de faturamento do ano — e os salões que se preparam com antecedência saem muito na frente dos que improvisan.
@@ -527,7 +527,7 @@ Na saída de cada cliente, agendar o próximo atendimento.
 
   // ─── EQUIPE ───────────────────────────────────────────────────────────────
   {
-    categoria: 'equipe', emoji: '🤝', ordem: 1,
+    categoria: 'equipe', emoji: '', ordem: 1,
     titulo: 'Manual de Integração do Novo Profissional',
     resumo: 'Os primeiros 90 dias definem se o profissional fica ou vai embora.',
     conteudo: `A integração mal feita é a principal causa de rotatividade nos primeiros 3 meses. Um profissional que não se sente acolhido vai embora — e leva junto o tempo que você investiu na seleção.
@@ -590,7 +590,7 @@ Escolha um profissional experiente, engajado com a cultura, para ser referência
 O padrinho responde dúvidas do dia a dia sem precisar do gerente e acolhe o novo de igual para igual.`
   },
   {
-    categoria: 'equipe', emoji: '💬', ordem: 2,
+    categoria: 'equipe', emoji: '', ordem: 2,
     titulo: 'Passo a passo para dar feedback individual',
     resumo: 'Feedback mal dado cria ressentimento. Feedback bem dado transforma.',
     conteudo: `Dar feedback é a habilidade mais importante — e mais evitada — na gestão de equipe. A maioria dos gestores evita porque não sabe como fazer. Este passo a passo resolve isso.
@@ -651,7 +651,7 @@ Finalize valorizando e incentivando.
 • **Uma coisa por vez** — não acumular feedback de semanas em uma conversa`
   },
   {
-    categoria: 'equipe', emoji: '⚔️', ordem: 3,
+    categoria: 'equipe', emoji: '', ordem: 3,
     titulo: 'Como resolver conflitos na equipe',
     resumo: 'Conflito ignorado vira cultura. Conflito resolvido vira maturidade.',
     conteudo: `Conflitos no salão são inevitáveis. O problema não é o conflito — é o gestor que ignora ou que reage sem método.
@@ -704,7 +704,7 @@ Se após feedback estruturado e prazo definido o comportamento não muda:
 **Nunca:** tolerar indefinidamente em nome da "paz" — conflito ignorado contamina toda a equipe.`
   },
   {
-    categoria: 'equipe', emoji: '🚀', ordem: 4,
+    categoria: 'equipe', emoji: '', ordem: 4,
     titulo: 'Como motivar a equipe sem aumentar salário',
     resumo: 'Dinheiro não é o único motivador — e às vezes nem é o principal.',
     conteudo: `Pesquisas de comportamento organizacional mostram que após um salário razoável, outros fatores motivam mais que aumento. No salão, isso se aplica completamente.
@@ -761,7 +761,7 @@ Profissional que se sente parte do projeto não vai embora por qualquer oferta.
 • Premiação que nunca chega`
   },
   {
-    categoria: 'equipe', emoji: '📋', ordem: 5,
+    categoria: 'equipe', emoji: '', ordem: 5,
     titulo: 'Como contratar: divulgação de vagas e seleção',
     resumo: 'Contratação não pode ser reação ao desespero. Precisa ser processo.',
     conteudo: `O maior erro na contratação é o desespero. Quando o salão está sem profissional e precisa de alguém para amanhã, a tendência é contratar qualquer um — e isso quase sempre termina em demissão rápida.
@@ -810,7 +810,7 @@ Avaliação formal ao final com decisão clara de continuidade.
 Não deixar passar de 90 dias sem conversa formal — estender indefinidamente cria relação sem clareza para os dois lados.`
   },
   {
-    categoria: 'equipe', emoji: '🌟', ordem: 6,
+    categoria: 'equipe', emoji: '', ordem: 6,
     titulo: 'Missão, Visão e Valores: como criar a cultura do seu salão',
     resumo: 'Sem cultura definida, cada profissional segue sua própria regra.',
     conteudo: `Muitos gestores acham que missão, visão e valores são coisa de grande empresa. Na prática, são a base que transforma um grupo de profissionais em um time.
@@ -871,7 +871,7 @@ Podem ser construídas junto com a equipe — o que gera mais adesão.
 5. Reforce nas reuniões mensais — cultura se constrói com repetição`
   },
   {
-    categoria: 'equipe', emoji: '🔄', ordem: 7,
+    categoria: 'equipe', emoji: '', ordem: 7,
     titulo: 'Troca de serviços entre profissionais: como organizar',
     resumo: 'Troca pode fortalecer a equipe — ou criar confusão financeira. Depende das regras.',
     conteudo: `A troca de serviços entre profissionais é uma prática saudável quando tem regra clara. Sem regra, o que era para ser leve vira confusão — e o salão paga conta que não é dele.
@@ -925,7 +925,7 @@ Se o serviço usa shampoo, toalha, condicionador, produto de tratamento, colora�
 
   // ─── ATENDIMENTO ──────────────────────────────────────────────────────────
   {
-    categoria: 'atendimento', emoji: '🎯', ordem: 1,
+    categoria: 'atendimento', emoji: '', ordem: 1,
     titulo: 'Venda consultiva: como vender sem parecer chato',
     resumo: 'A venda que vem de um desejo que o cliente revelou não parece venda — parece cuidado.',
     conteudo: `Venda que parece venda afasta. Venda consultiva fideliza — porque parte da necessidade real do cliente.
@@ -998,7 +998,7 @@ Quando você pergunta e escuta primeiro:
 • "Você gostaria de um acabamento mais natural ou mais glamouroso?"`
   },
   {
-    categoria: 'atendimento', emoji: '💆', ordem: 2,
+    categoria: 'atendimento', emoji: '', ordem: 2,
     titulo: 'Recepção que vende: ações práticas para o dia a dia',
     resumo: 'A recepção é o motor de faturamento do salão — não só a porta de entrada.',
     conteudo: `A recepcionista que só agenda e confirma horário está deixando muito dinheiro na mesa. Com ações simples e diárias, a recepção pode ser o maior motor de crescimento do faturamento.
@@ -1043,7 +1043,7 @@ Criar métricas claras e premiação real:
 Recepção motivada por resultado vende mais — e o salão cresce junto.`
   },
   {
-    categoria: 'atendimento', emoji: '💎', ordem: 3,
+    categoria: 'atendimento', emoji: '', ordem: 3,
     titulo: 'Como criar experiência memorável no atendimento',
     resumo: 'Cliente que volta e indica não é aquela que teve o melhor resultado — é a que teve a melhor experiência.',
     conteudo: `Resultado técnico impecável é o mínimo esperado. O que transforma uma boa cliente em fã do salão é a experiência completa — o que ela sente do momento que entra até o momento que sai.
@@ -1101,7 +1101,7 @@ Pesquisas sobre o que fideliza clientes de salão mostram:
 • Ambiente limpo e organizado quando ela chega`
   },
   {
-    categoria: 'atendimento', emoji: '😔', ordem: 4,
+    categoria: 'atendimento', emoji: '', ordem: 4,
     titulo: 'Como lidar com cliente insatisfeita',
     resumo: 'Cliente que reclama e é bem atendida tem 70% mais chance de continuar fiel do que quem nunca reclamou.',
     conteudo: `Uma reclamação bem tratada pode ser a experiência que mais fideliza uma cliente. O erro está em ignorar, justificar ou pedir para ela entender.
@@ -1162,7 +1162,7 @@ Ou propor diretamente: "Posso [refazer, ajustar, devolver, fazer diferente]. Qua
 
   // ─── OPERAÇÃO ─────────────────────────────────────────────────────────────
   {
-    categoria: 'operacao', emoji: '🧴', ordem: 1,
+    categoria: 'operacao', emoji: '', ordem: 1,
     titulo: '5 passos para organizar o estoque do seu salão',
     resumo: 'Estoque é dinheiro. Controlar é obrigação — não diferencial.',
     conteudo: `Produto vencido na gaveta, profissional que "não tem produto", compra duplicada por falta de controle — tudo isso é prejuízo direto que pode ser eliminado com um processo simples.
@@ -1233,7 +1233,7 @@ Isso elimina produto vencendo enquanto o novo está fechado.
 • Resultado do inventário: mostra exatamente quanto está sendo consumido por atendimento`
   },
   {
-    categoria: 'operacao', emoji: '📅', ordem: 2,
+    categoria: 'operacao', emoji: '', ordem: 2,
     titulo: 'Como montar uma grade de horários eficiente',
     resumo: 'Agenda bem estruturada aumenta faturamento sem contratar mais ninguém.',
     conteudo: `A grade de horários é onde o faturamento nasce ou morre. Uma agenda mal estruturada cria buraco onde deveria ter cliente.
@@ -1288,7 +1288,7 @@ Isso aumenta o faturamento por hora sem contratar ninguém.
 O que funciona no verão pode não funcionar no inverno. O que funciona com 5 profissionais pode precisar de ajuste com 7.`
   },
   {
-    categoria: 'operacao', emoji: '🚫', ordem: 3,
+    categoria: 'operacao', emoji: '', ordem: 3,
     titulo: 'Como reduzir no-show e cancelamentos em cima da hora',
     resumo: 'No-show é dinheiro jogado fora. Com processo simples, cai até 70%.',
     conteudo: `No-show (cliente que não aparece) e cancelamento em cima da hora são os maiores destruidores de faturamento invisível. O horário fica vazio, o profissional fica ocioso e não tem como recuperar.
@@ -1312,10 +1312,10 @@ Para um salão com 8 profissionais: **R$57.600/ano em receita perdida.**
 ## O sistema que reduz no-show em até 70%
 
 ### 1. Confirmação automática 48h antes
-"Oi [nome]! Lembrei de te avisar do seu horário de [serviço] amanhã às [hora] com [profissional]. Confirma? Responda SIM ou me avise se precisar reagendar. 💜"
+"Oi [nome]! Lembrei de te avisar do seu horário de [serviço] amanhã às [hora] com [profissional]. Confirma? Responda SIM ou me avise se precisar reagendar."
 
 ### 2. Lembrete 2h antes
-"Oi [nome], a gente está te esperando daqui a pouquinho! Nos vemos às [hora]. 😊"
+"Oi [nome], a gente está te esperando daqui a pouquinho! Nos vemos às [hora]."
 
 ### 3. Lista de espera ativa
 Sempre que tiver horário nobre (sexta à tarde, sábado) com vaga em aberto:
@@ -1326,7 +1326,7 @@ Sempre que tiver horário nobre (sexta à tarde, sábado) com vaga em aberto:
 Definir e comunicar na hora do agendamento:
 "Cancelamentos com menos de 24h não garantem reembolso de sinal" (se aplicável)
 
-Ou mais simples: "Se precisar cancelar, avise com pelo menos 24h — assim consigo encaixar outra cliente. 💜"
+Ou mais simples: "Se precisar cancelar, avise com pelo menos 24h — assim consigo encaixar outra cliente."
 
 ### 5. Sinal para horários de alta demanda
 Para horários concorridos (sextas à tarde, véspera de festas):
@@ -1341,7 +1341,7 @@ Para horários concorridos (sextas à tarde, véspera de festas):
 4. Registrar para identificar clientes recorrentes no padrão`
   },
   {
-    categoria: 'operacao', emoji: '💡', ordem: 4,
+    categoria: 'operacao', emoji: '', ordem: 4,
     titulo: 'Iluminação no salão: guia completo por tipo de serviço',
     resumo: 'A iluminação certa valoriza o trabalho do profissional e a experiência do cliente.',
     conteudo: `Iluminação errada é o inimigo silencioso do salão. Uma coloração feita com luz amarela pode parecer diferente na luz natural. Um corte com sombra no rosto pode parecer assimétrico.
@@ -1407,7 +1407,7 @@ Luz natural valoriza a cor real do cabelo e da pele — é a referência perfeit
 • Fachada: iluminação externa para o salão aparecer à noite`
   },
   {
-    categoria: 'operacao', emoji: '📊', ordem: 5,
+    categoria: 'operacao', emoji: '', ordem: 5,
     titulo: 'Como calcular produtividade real por hora trabalhada',
     resumo: 'Faturamento alto não significa alta produtividade. Saiba quem realmente usa melhor o tempo.',
     conteudo: `Dois profissionais podem ter faturamentos diferentes mas produtividade por hora completamente distinta. Saber quem usa melhor o tempo é essencial para decisões de gestão.

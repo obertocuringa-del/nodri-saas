@@ -65,23 +65,23 @@ const CHAVES: Record<string, string[]> = {
 
 // Descrições genéricas de cada função (só sugestão inicial — o salão edita).
 const PADRAO: Record<string, { icone: string; linhas: string[] }> = {
-  contabilidade: { icone: '📑', linhas: ['Assessoria externa', 'Fiscal e tributário'] },
-  gerencia:      { icone: '👔', linhas: ['Metas e resultado', 'Gestão do time'] },
-  administrativo:{ icone: '🗂️', linhas: ['Documentos e contratos', 'Rotinas administrativas'] },
-  financeiro:    { icone: '💰', linhas: ['Contas e caixa', 'Comissões'] },
-  comercial:     { icone: '🤝', linhas: ['Conversão e follow-up', 'Reativação de clientes'] },
-  marketing:     { icone: '📣', linhas: ['Marca e conteúdo', 'Tráfego e campanhas'] },
-  rh:            { icone: '👥', linhas: ['Recrutar e treinar', 'Avaliar desempenho'] },
-  compras:       { icone: '🛒', linhas: ['Fornecedores', 'Estoque e inventário'] },
-  qualidade:     { icone: '📋', linhas: ['POPs e auditoria', 'Conformidade — audita todos'] },
-  tecnica:       { icone: '🛡️', linhas: ['Exigência legal', 'Padrão técnico e segurança'] },
-  coordenador:   { icone: '⚙️', linhas: ['Operação diária', 'Cumprimento de processos'] },
-  recepcao:      { icone: '🛎️', linhas: ['Agenda e acolhida', 'Caixa do dia'] },
-  profissionais: { icone: '✂️', linhas: ['Execução do serviço', 'Padrão de atendimento'] },
-  gerais:        { icone: '🧹', linhas: ['Limpeza e apoio', 'Ambientes e estrutura'] },
-  manutencao:    { icone: '🔧', linhas: ['Predial e equipamentos', 'Preventiva e reparos'] },
-  dosagem:       { icone: '🧪', linhas: ['Fórmulas e mistura', 'Controle técnico'] },
-  cafe:          { icone: '☕', linhas: ['Copa e cortesias', 'Bebidas e lanches'] },
+  contabilidade: { icone: '', linhas: ['Assessoria externa', 'Fiscal e tributário'] },
+  gerencia:      { icone: '', linhas: ['Metas e resultado', 'Gestão do time'] },
+  administrativo:{ icone: '', linhas: ['Documentos e contratos', 'Rotinas administrativas'] },
+  financeiro:    { icone: '', linhas: ['Contas e caixa', 'Comissões'] },
+  comercial:     { icone: '', linhas: ['Conversão e follow-up', 'Reativação de clientes'] },
+  marketing:     { icone: '', linhas: ['Marca e conteúdo', 'Tráfego e campanhas'] },
+  rh:            { icone: '', linhas: ['Recrutar e treinar', 'Avaliar desempenho'] },
+  compras:       { icone: '', linhas: ['Fornecedores', 'Estoque e inventário'] },
+  qualidade:     { icone: '', linhas: ['POPs e auditoria', 'Conformidade — audita todos'] },
+  tecnica:       { icone: '', linhas: ['Exigência legal', 'Padrão técnico e segurança'] },
+  coordenador:   { icone: '', linhas: ['Operação diária', 'Cumprimento de processos'] },
+  recepcao:      { icone: '', linhas: ['Agenda e acolhida', 'Caixa do dia'] },
+  profissionais: { icone: '', linhas: ['Execução do serviço', 'Padrão de atendimento'] },
+  gerais:        { icone: '', linhas: ['Limpeza e apoio', 'Ambientes e estrutura'] },
+  manutencao:    { icone: '', linhas: ['Predial e equipamentos', 'Preventiva e reparos'] },
+  dosagem:       { icone: '', linhas: ['Fórmulas e mistura', 'Controle técnico'] },
+  cafe:          { icone: '', linhas: ['Copa e cortesias', 'Bebidas e lanches'] },
 }
 
 // Alguns setores foram cadastrados com cor bem clara (ex.: um lilás quase
@@ -220,7 +220,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   }) {
     if (!dep) return null
     const info = doc[dep.id] || {}
-    const padrao = PADRAO[chave] || { icone: '🏢', linhas: [] }
+    const padrao = PADRAO[chave] || { icone: '', linhas: [] }
     const cor = CORES[chave] || corLegivel(dep.departamento_cor || '#5b4fcf')
     const linhas = info.linhas && info.linhas.length ? info.linhas : padrao.linhas
     const pend = dep.pendencias_abertas || 0
@@ -257,7 +257,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
             <button onClick={e => { e.stopPropagation(); onExcluir(dep.id, dep.nome_completo) }}
               title="Excluir setor"
               style={{ border: 'none', background: 'transparent', color: solida ? '#fff' : '#dc2626', cursor: 'pointer', fontSize: 10, lineHeight: 1, padding: 0 }}>
-              🗑
+
             </button>
           )}
         </div>
@@ -284,7 +284,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           <>
             {info.responsavel && (
               <p className="font-semibold" style={{ fontSize: 8.4, color: solida ? '#ffffffdd' : '#3f3a35', marginBottom: 1 }}>
-                👤 {info.responsavel}
+                {info.responsavel}
               </p>
             )}
             {linhas.map((l, i) => (
@@ -292,7 +292,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
             ))}
             {(pend > 0 || doPortal > 0) && (
               <p className="font-bold" style={{ fontSize: 7.8, color: solida ? '#fff' : '#b91c1c', marginTop: 3 }}>
-                {doPortal > 0 ? `📥 ${doPortal} do portal` : `⚠ ${pend} pendência${pend > 1 ? 's' : ''}`}
+                {doPortal > 0 ? `${doPortal} do portal` : `${pend} pendência${pend > 1 ? 's' : ''}`}
               </p>
             )}
           </>
@@ -362,12 +362,12 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
               <button onClick={salvar} disabled={salvando}
                 className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white disabled:opacity-60"
                 style={{ background: '#16a34a' }}>
-                {salvando ? 'Salvando…' : '💾 Salvar'}
+                {salvando ? 'Salvando…' : 'Salvar'}
               </button>
             )}
             <button onClick={cancelar}
               className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-nodri-border">
-              {editando ? 'Cancelar' : '✏️ Editar textos'}
+              {editando ? 'Cancelar' : 'Editar textos'}
             </button>
           </div>
         )}
@@ -450,7 +450,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
       </div>
 
       <p className="text-[9.5px] text-nodri-t3 mt-2 text-center">
-        ⭐ Integrar todas as áreas para entregar excelência no atendimento, qualidade nos serviços e resultados sustentáveis.
+        Integrar todas as áreas para entregar excelência no atendimento, qualidade nos serviços e resultados sustentáveis.
       </p>
     </div>
   )

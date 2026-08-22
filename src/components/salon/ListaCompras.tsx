@@ -448,7 +448,7 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                 )}
                 {p.status === 'aprovado' && (
                   <p style={{ fontSize: 11.5, color: '#15803d', fontWeight: 700, margin: '9px 0 0' }}>
-                    ✅ Aprovado — você está autorizado a comprar.
+                    Aprovado — você está autorizado a comprar.
                     <button onClick={() => marcarComprado(p)}
                       style={{ marginLeft: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '5px 11px', borderRadius: 8, cursor: 'pointer' }}>
                       Marcar como comprado
@@ -462,7 +462,7 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                 )}
                 {p.status === 'financeiro_compra' && (
                   <p style={{ fontSize: 11.5, color: '#5b4fcf', fontWeight: 700, margin: '9px 0 0' }}>
-                    🛒 O Financeiro assumiu a compra — não precisa comprar.
+                    O Financeiro assumiu a compra — não precisa comprar.
                   </p>
                 )}
 
@@ -478,7 +478,7 @@ export default function ListaCompras({ area, titulo }: { area: string; titulo: s
                   </div>
                 )}
                 {p.status === 'comprado' && (
-                  <p style={{ fontSize: 11.5, color: '#15803d', fontWeight: 700, margin: '9px 0 0' }}>✅ Compra feita.</p>
+                  <p style={{ fontSize: 11.5, color: '#15803d', fontWeight: 700, margin: '9px 0 0' }}>Compra feita.</p>
                 )}
               </div>
             )

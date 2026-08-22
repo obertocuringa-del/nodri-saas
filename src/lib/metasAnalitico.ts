@@ -28,10 +28,10 @@ function calcAlcancabilidade(p: {
     : Math.round(Math.max(5, 100 - (1 - baseProjecao) * 120))
 
   let label = '', cor = ''
-  if (probabilidade >= 80) { label = '✅ Meta confortável'; cor = '#22c55e' }
-  else if (probabilidade >= 60) { label = '✅ Meta desafiadora porém alcançável'; cor = '#5b4fcf' }
-  else if (probabilidade >= 35) { label = '⚠️ Meta ambiciosa'; cor = '#f59e0b' }
-  else { label = '⚠️ Meta pouco realista'; cor = '#ef4444' }
+  if (probabilidade >= 80) { label = 'Meta confortável'; cor = '#22c55e' }
+  else if (probabilidade >= 60) { label = 'Meta desafiadora porém alcançável'; cor = '#5b4fcf' }
+  else if (probabilidade >= 35) { label = 'Meta ambiciosa'; cor = '#f59e0b' }
+  else { label = 'Meta pouco realista'; cor = '#ef4444' }
 
   return { probabilidade, label, cor, maior_historico: maiorHistorico, maior_historico_mes: p.maiorHistoricoMes ?? null, maior_historico_ano: p.maiorHistoricoAno ?? null, projecao_ritmo_atual: Math.round(ritmoComTendencia * 100) / 100 }
 }
@@ -229,11 +229,11 @@ export function identificarCausaRaiz(p: {
 function clamp(v: number, min: number, max: number) { return Math.max(min, Math.min(max, v)) }
 
 function classificarScore(total: number): string {
-  if (total >= 95) return '🏆 Elite'
-  if (total >= 85) return '🔵 Alta Performance'
-  if (total >= 70) return '🟢 Bom'
-  if (total >= 50) return '🟡 Atenção'
-  return '🔴 Crítico'
+  if (total >= 95) return 'Elite'
+  if (total >= 85) return 'Alta Performance'
+  if (total >= 70) return 'Bom'
+  if (total >= 50) return 'Atenção'
+  return 'Crítico'
 }
 
 // Conta ocorrências de feedback (positivas/negativas) e sinaliza atrasos/faltas recorrentes

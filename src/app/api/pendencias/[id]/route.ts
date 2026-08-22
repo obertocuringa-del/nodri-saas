@@ -88,9 +88,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       const setor = await nomeDe(salaoId, (data as any).profissional_id)
       const resp = (typeof body.resposta === 'string' && body.resposta.trim()) ? ` — "${body.resposta.trim()}"` : ''
       if (body.resolvido === true && !(atual as any).resolvido) {
-        await notificarSolicitante(salaoId, solicitante, `✅ Sua solicitação para ${setor} foi RESOLVIDA${resp}`)
+        await notificarSolicitante(salaoId, solicitante, `Sua solicitação para ${setor} foi RESOLVIDA${resp}`)
       } else if (body.resposta !== undefined && body.resolvido !== true && (body.resposta || '').trim()) {
-        await notificarSolicitante(salaoId, solicitante, `💬 ${setor} respondeu sua solicitação${resp}`)
+        await notificarSolicitante(salaoId, solicitante, `${setor} respondeu sua solicitação${resp}`)
       }
     }
 

@@ -409,7 +409,7 @@ export default function DiaSemanaReport() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6b6860', marginTop: 4 }}>
-                    <span>🟥 Exclusivos deste dia</span><span>🟩 Frequentam outros dias</span>
+                    <span>Exclusivos deste dia</span><span>Frequentam outros dias</span>
                   </div>
                 </div>
 

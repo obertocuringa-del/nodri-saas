@@ -169,7 +169,7 @@ export default function SalaoAdministrativoPage() {
       <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>🗂️ Salão Administrativo</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>Salão Administrativo</span>
         <div style={{ flex: 1 }} />
         <button onClick={() => { setVerHistorico(true); carregarHistorico() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid #d0cdc7', borderRadius: 8, padding: '6px 12px', color: '#6b6860', cursor: 'pointer', fontSize: 13 }}><History size={14} /> Mensagens</button>
       </nav>
@@ -302,7 +302,7 @@ export default function SalaoAdministrativoPage() {
         <div onClick={() => setVerHistorico(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '80vh', overflowY: 'auto', padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>📨 Mensagens enviadas (relatório)</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Mensagens enviadas (relatório)</h3>
               <button onClick={() => setVerHistorico(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={18} /></button>
             </div>
             {historico.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Nenhuma mensagem registrada ainda.</p> : (

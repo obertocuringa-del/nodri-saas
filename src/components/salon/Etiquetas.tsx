@@ -45,7 +45,7 @@ export default function Etiquetas() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#5b4fcf', margin: 0, flex: 1, minWidth: 160 }}>🏷️ Etiquetas</h3>
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#5b4fcf', margin: 0, flex: 1, minWidth: 160 }}>Etiquetas</h3>
         <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Colunas:</label>
         <select value={cols} onChange={e => setCols(Number(e.target.value))} style={{ padding: '7px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>
           {[2, 3, 4, 5].map(c => <option key={c} value={c}>{c}</option>)}

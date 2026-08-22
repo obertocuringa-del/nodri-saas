@@ -45,11 +45,11 @@ export const MODELO_AVAL_DEFAULT: ModeloAval = {
 }
 
 export const CLASSIF_AVAL: Faixa[] = [
-  { min: 90, txt: 'Profissional Destaque', cor: '#16a34a', emoji: '🏆' },
-  { min: 80, txt: 'Excelente desempenho', cor: '#0891b2', emoji: '⭐' },
-  { min: 70, txt: 'Bom desempenho', cor: '#65a30d', emoji: '👍' },
-  { min: 60, txt: 'Necessita desenvolvimento', cor: '#f59e0b', emoji: '⚠️' },
-  { min: 0, txt: 'Plano de ação imediato', cor: '#ef4444', emoji: '🚨' },
+  { min: 90, txt: 'Profissional Destaque', cor: '#16a34a', emoji: '' },
+  { min: 80, txt: 'Excelente desempenho', cor: '#0891b2', emoji: '' },
+  { min: 70, txt: 'Bom desempenho', cor: '#65a30d', emoji: '' },
+  { min: 60, txt: 'Necessita desenvolvimento', cor: '#f59e0b', emoji: '' },
+  { min: 0, txt: 'Plano de ação imediato', cor: '#ef4444', emoji: '' },
 ]
 export function classificarAval(pct: number, faixas: Faixa[] = CLASSIF_AVAL): Faixa {
   const f = [...(faixas && faixas.length ? faixas : CLASSIF_AVAL)].sort((a, b) => b.min - a.min)

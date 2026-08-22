@@ -252,7 +252,7 @@ ${corpo}<script>window.onload=function(){window.print()}</script></body></html>`
               </div>
             ) : (
               <button onClick={() => fileRef.current?.click()} style={{ ...btn, padding: '12px 18px', border: '2px dashed #c9c4f0', background: '#f6f4ff', color: ROXO }}>
-                🖼️ Anexar logo do salão (aparece na impressão)
+                Anexar logo do salão (aparece na impressão)
               </button>
             )}
           </div>

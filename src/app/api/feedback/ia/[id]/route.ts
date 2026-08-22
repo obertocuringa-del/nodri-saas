@@ -146,10 +146,10 @@ Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido
     "tendencia": "crescendo|estavel|caindo"
   },
   "gargalos": [
-    {"emoji": "🚨", "titulo": "...", "descricao": "problema com dados específicos e impacto financeiro estimado"}
+    {"emoji": "", "titulo": "...", "descricao": "problema com dados específicos e impacto financeiro estimado"}
   ],
   "oportunidades_escondidas": [
-    {"emoji": "✅", "titulo": "...", "descricao": "oportunidade com potencial de receita estimado em R$"}
+    {"emoji": "", "titulo": "...", "descricao": "oportunidade com potencial de receita estimado em R$"}
   ],
   "pontos_fortes": [
     {"titulo": "...", "descricao": "cite dados específicos do feedback"}

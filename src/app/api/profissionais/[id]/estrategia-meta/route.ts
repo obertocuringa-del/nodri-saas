@@ -139,7 +139,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const corte15 = new Date(agora); corte15.setDate(agora.getDate() - 15)
       const negSegundaQ = negativos.filter((r: any) => new Date(r.criado_em) >= corte15).length
       const negPrimeiraQ = negativos.filter((r: any) => new Date(r.criado_em) < corte15).length
-      const tendencia = negSegundaQ > negPrimeiraQ ? '📈 piorando' : negSegundaQ < negPrimeiraQ ? '📉 melhorando' : '➡️ estável'
+      const tendencia = negSegundaQ > negPrimeiraQ ? 'piorando' : negSegundaQ < negPrimeiraQ ? 'melhorando' : 'estável'
 
       feedbacksTexto = [
         `POSITIVOS (${positivos.length} total):`,
@@ -279,7 +279,7 @@ Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use
 
 ---
 
-## 🎯 RESUMO EXECUTIVO
+## RESUMO EXECUTIVO
 
 | Item | Valor |
 |---|---|
@@ -294,29 +294,29 @@ Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use
 
 ---
 
-## 🔍 RAIO-X 360°
+## RAIO-X 360°
 
 Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita entre eixos.
 
-**💰 Financeiro**
-✅ O que está funcionando: use benchmarking para mostrar a posição atual entre os colegas de cargo. O campo benchmarking tem ranking_faturamento, ranking_ticket_medio, ranking_ocupacao e total_profissionais_categoria. Escreva como "Ocupa o Xº lugar de Y profissionais em faturamento este mês". Se benchmarking for null ou "sem colegas", diga "sem colegas suficientes para comparar".
-⚠️ O que está prejudicando: (1-2 pontos baseados nos dados reais do mês atual)
+** Financeiro**
+O que está funcionando: use benchmarking para mostrar a posição atual entre os colegas de cargo. O campo benchmarking tem ranking_faturamento, ranking_ticket_medio, ranking_ocupacao e total_profissionais_categoria. Escreva como "Ocupa o Xº lugar de Y profissionais em faturamento este mês". Se benchmarking for null ou "sem colegas", diga "sem colegas suficientes para comparar".
+O que está prejudicando: (1-2 pontos baseados nos dados reais do mês atual)
 
-**🛒 Comercial**
-✅ O que está funcionando: (considere venda_produtos e frequência de serviços)
-⚠️ O que está prejudicando: (1-2 pontos)
+** Comercial**
+O que está funcionando: (considere venda_produtos e frequência de serviços)
+O que está prejudicando: (1-2 pontos)
 
-**👥 Comportamental**
-✅ O que está funcionando: use comportamental.principais_elogios — liste os elogios reais dos clientes. Se houver elogios, cite pelo menos 2. Se pendencias_abertas for vazio, mencione isso como positivo. Se não há nenhum dado positivo, diga "sem registros positivos neste período".
-⚠️ O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
+** Comportamental**
+O que está funcionando: use comportamental.principais_elogios — liste os elogios reais dos clientes. Se houver elogios, cite pelo menos 2. Se pendencias_abertas for vazio, mencione isso como positivo. Se não há nenhum dado positivo, diga "sem registros positivos neste período".
+O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
 
-**❤️ Experiência do Cliente**
-✅ O que está funcionando: use fidelizacao.tendencia.mes_atual.preferencia para mostrar a base fiel atual.
-⚠️ O que está prejudicando: use fidelizacao.tendencia para comparar dois meses. Escreva: "No mês anterior recebeu {mes_anterior.sem_preferencia} clientes sem preferência. Destes, apenas {novos_fidelizados} viraram preferência neste mês (taxa de conversão: {taxa_conversao_pct}%)." Se sem dado, diga isso claramente.
+** Experiência do Cliente**
+O que está funcionando: use fidelizacao.tendencia.mes_atual.preferencia para mostrar a base fiel atual.
+O que está prejudicando: use fidelizacao.tendencia para comparar dois meses. Escreva: "No mês anterior recebeu {mes_anterior.sem_preferencia} clientes sem preferência. Destes, apenas {novos_fidelizados} viraram preferência neste mês (taxa de conversão: {taxa_conversao_pct}%)." Se sem dado, diga isso claramente.
 
 ---
 
-## 🧠 CAUSA RAIZ
+## CAUSA RAIZ
 
 Escreva no estilo: "O problema não é [X]. Também não é [Y]. O verdadeiro gargalo é [Z] — e é por isso que [consequência em cadeia]."
 Use causa_raiz_do_gargalo e conecte com os dados abaixo:
@@ -327,7 +327,7 @@ Use causa_raiz_do_gargalo e conecte com os dados abaixo:
 
 ---
 
-## 💰 SIMULADOR DE META
+## SIMULADOR DE META
 
 **Faltam R$ {falta} — veja como atingir:**
 
@@ -336,13 +336,13 @@ Para cada cenário em simulador_meta, monte uma tabela:
 | Serviço | Comissão por Atend. | Quantidade | Subtotal |
 |---|---|---|---|
 (preencha com os dados exatos de cada cenário)
-**Total do cenário: R$ X** ✅ Meta atingida / ⚠️ Parcialmente coberta
+**Total do cenário: R$ X** Meta atingida / Parcialmente coberta
 
 Escreva 1 frase de recomendação indicando qual cenário é mais realista dado o histórico do profissional.
 
 ---
 
-## 💎 OPORTUNIDADES OCULTAS + BENCHMARKING
+## OPORTUNIDADES OCULTAS + BENCHMARKING
 
 **Posição entre colegas:**
 | Indicador | Posição |
@@ -359,23 +359,23 @@ Escreva 1 frase de recomendação indicando qual cenário é mais realista dado 
 
 ---
 
-## 💸 DINHEIRO PERDIDO ESTE MÊS
+## DINHEIRO PERDIDO ESTE MÊS
 
 Use EXATAMENTE os números de dinheiro_perdido. Monte assim:
 
-🔴 **Atrasos:** {atrasos} atrasos × comissão do serviço mais vendido ({servico_mais_vendido} = R$ {comissao_servico_mais_vendido}) = **R$ {perda_atrasos} perdidos**
+**Atrasos:** {atrasos} atrasos × comissão do serviço mais vendido ({servico_mais_vendido} = R$ {comissao_servico_mais_vendido}) = **R$ {perda_atrasos} perdidos**
 
-🔴 **Faltas:** {faltas} faltas × média diária (R$ {media_faturamento_diario}) = **R$ {perda_faltas} perdidos**
+**Faltas:** {faltas} faltas × média diária (R$ {media_faturamento_diario}) = **R$ {perda_faltas} perdidos**
 
-🔴 **Produtos não vendidos:** {clientes_sem_produto_estimado} clientes (~10% dos {clientes_atendidos_mes} atendidos) × R$ {comissao_media_produto} comissão média = **R$ {perda_produtos} deixados na mesa**
+**Produtos não vendidos:** {clientes_sem_produto_estimado} clientes (~10% dos {clientes_atendidos_mes} atendidos) × R$ {comissao_media_produto} comissão média = **R$ {perda_produtos} deixados na mesa**
 
-**💰 Total potencial perdido: R$ {total_perdido}**
+** Total potencial perdido: R$ {total_perdido}**
 
 (Se algum campo vier nulo, omita aquela linha e explique brevemente por que não foi possível calcular)
 
 ---
 
-## ❤️ RETENÇÃO E FIDELIZAÇÃO
+## RETENÇÃO E FIDELIZAÇÃO
 
 Use dados de fidelizacao e comportamental.
 - Clientes com preferência: {clientes_preferencia} | Sem preferência: {clientes_sem_preferencia}
@@ -385,7 +385,7 @@ Use dados de fidelizacao e comportamental.
 
 ---
 
-## 🎯 AS 3 AÇÕES QUE MAIS MOVEM O RESULTADO
+## AS 3 AÇÕES QUE MAIS MOVEM O RESULTADO
 
 Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 **1. [Nome da ação]**
@@ -394,21 +394,21 @@ Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 
 ---
 
-## 📅 PLANO DE EXECUÇÃO
+## PLANO DE EXECUÇÃO
 
-**📍 Diário** — Meta: R$ {necessario_por_dia} de comissão
+** Diário** — Meta: R$ {necessario_por_dia} de comissão
 - (2-3 comportamentos obrigatórios diários)
 
-**📍 Semanal**
+** Semanal**
 - (3 prioridades da semana — diferentes das diárias)
 
-**📍 Mensal**
+** Mensal**
 - Meta: R$ {meta} de comissão total
 - (resultado esperado em ocupação e comportamento)
 
 ---
 
-## 📋 CHECKLIST DOS PRÓXIMOS 30 DIAS
+## CHECKLIST DOS PRÓXIMOS 30 DIAS
 
 □ Não faltar nenhum dia
 □ Não atrasar nenhum atendimento
@@ -420,13 +420,13 @@ Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
 
 ---
 
-## 📱 PRESENÇA DIGITAL E POSICIONAMENTO
+## PRESENÇA DIGITAL E POSICIONAMENTO
 
 (Escreva 3-4 orientações práticas e diretas para este cargo/perfil — sem inventar dados de redes sociais que não existem no sistema. Foco em: como usar o próprio resultado do trabalho para atrair clientes, como pedir indicações, como fortalecer relacionamento com clientes fiéis.)
 
 ---
 
-🤖 **Insight NODRI:** (1 frase final — o insight mais valioso, do tipo que faz o gestor pensar "essa IA entendeu a situação de verdade")`
+**Insight NODRI:** (1 frase final — o insight mais valioso, do tipo que faz o gestor pensar "essa IA entendeu a situação de verdade")`
 
   let plano_texto = ''
   try {

@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   await supabaseAdmin.from('notificacoes').insert({
-    titulo: '🤝 Novo Afiliado Cadastrado',
+    titulo: 'Novo Afiliado Cadastrado',
     mensagem: `${nome} (${email}) se cadastrou como afiliado. Cupom: ${cupom}`,
     tipo: 'info',
     para_todos: false,

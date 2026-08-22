@@ -144,7 +144,7 @@ h1{text-align:center;font-size:19px;font-weight:900;color:#1a1a2e;margin:10px 0 
               <button onClick={() => fileRef.current?.click()} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Trocar</button>
               <button onClick={() => { setLogo(''); setDirty(true) }} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Remover</button>
             </div>
-          ) : <button onClick={() => fileRef.current?.click()} style={{ padding: '12px 18px', borderRadius: 12, border: '2px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🖼️ Anexar logo</button>}
+          ) : <button onClick={() => fileRef.current?.click()} style={{ padding: '12px 18px', borderRadius: 12, border: '2px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Anexar logo</button>}
         </div>
       )}
 
@@ -169,7 +169,7 @@ h1{text-align:center;font-size:19px;font-weight:900;color:#1a1a2e;margin:10px 0 
         <>
           {/* Busca + contador */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔎 Buscar serviço..."
+            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar serviço..."
               style={{ flex: 1, minWidth: 200, maxWidth: 340, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e0ddd8', fontSize: 13, outline: 'none', background: '#fff' }}
               onFocus={e => (e.currentTarget.style.borderColor = '#5b4fcf')} onBlur={e => (e.currentTarget.style.borderColor = '#e0ddd8')} />
             <span style={{ fontSize: 12, fontWeight: 800, color: '#5b4fcf', background: '#f0eefb', padding: '5px 12px', borderRadius: 20 }}>{itens.length} itens</span>

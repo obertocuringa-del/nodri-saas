@@ -16,7 +16,6 @@ const CATEGORIAS = [
   { key: 'operacao',    label: ' Operação e Agenda' },
 ]
 
-const EMOJIS = ['','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']
 
 interface Artigo {
   id: string
@@ -199,7 +198,6 @@ export default function AdminAcademiaPage() {
                   <div className="divide-y divide-gray-800">
                     {cat.artigos.map(a => (
                       <div key={a.id} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50/30 transition-colors ${!a.ativo ? 'opacity-50' : ''}`}>
-                        <span className="text-xl flex-shrink-0">{a.emoji}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-gray-900 truncate">{a.titulo}</p>
                           {a.resumo && <p className="text-xs text-gray-500 truncate">{a.resumo}</p>}
@@ -272,22 +270,6 @@ export default function AdminAcademiaPage() {
                     onChange={e => setForm(f => ({ ...f, ordem: Number(e.target.value) }))}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500"
                   />
-                </div>
-              </div>
-
-              {/* Emoji picker */}
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Emoji</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {EMOJIS.map(e => (
-                    <button
-                      key={e}
-                      onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-gray-50 hover:bg-gray-100'}`}
-                    >
-                      {e}
-                    </button>
-                  ))}
                 </div>
               </div>
 

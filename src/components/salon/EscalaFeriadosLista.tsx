@@ -47,7 +47,7 @@ function migrarFormatoAntigo(doc: any): FeriadoItem[] | null {
 }
 
 function textoCompartilhar(f: FeriadoItem): string {
-  const linhas = [`📅 *Escala de Feriado — ${f.nome || '—'}*`, `Data: ${f.data || '—'}`]
+  const linhas = [`*Escala de Feriado — ${f.nome || '—'}*`, `Data: ${f.data || '—'}`]
   linhas.push(f.fechado ? 'Salão fechado' : `Horário: ${f.horario || '—'}`)
   if (!f.fechado) linhas.push(`Escalados: ${f.profissionais || '—'}`)
   if (f.obs) linhas.push(`Obs: ${f.obs}`)

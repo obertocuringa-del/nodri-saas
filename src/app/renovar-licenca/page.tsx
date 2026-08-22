@@ -108,7 +108,7 @@ export default function RenovarLicencaPage() {
 
         {erro && (
           <div className="nodri-card p-4 text-center text-[13px] mb-6" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>
-            ⚠️ {erro}
+            {erro}
           </div>
         )}
 

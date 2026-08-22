@@ -21,7 +21,7 @@ export const PJ_CONTRATACAO: ProcDoc = {
         { id: id(), titulo: 'Etapa 10 — Atualização dos Controles Internos', texto: 'Atualizar: lista de café, horário de trabalho, escala de folgas, lista de aniversariantes, cadastro de endereço, cadastro do CNPJ, dados bancários, lista telefônica interna e grupo de comunicação interna.' },
         { id: id(), titulo: 'Etapa 11 — Preparação para Início', texto: 'Antes do primeiro dia, verificar: uniforme disponível, armário disponível, materiais de trabalho disponíveis, cadastro concluído em todos os sistemas, acessos liberados e equipe comunicada.' },
         { id: id(), titulo: 'Etapa 12 — Integração e Início das Atividades', texto: 'No primeiro dia:\n• Apresentar a empresa, missão, visão e valores.\n• Apresentar a equipe e as regras internas.\n• Treinar sobre os sistemas utilizados.\n• Explicar regras financeiras, comissões e procedimentos operacionais.\n• Realizar tour pelas dependências do salão.' },
-        { id: id(), titulo: 'Etapa 13 — Dados Bancários', texto: 'Quando necessário:\n• Emitir carta para abertura de conta no Banco Bradesco (use o botão “📄 Carta de Abertura de Conta” no topo).\n• Registrar os dados bancários do profissional.' },
+        { id: id(), titulo: 'Etapa 13 — Dados Bancários', texto: 'Quando necessário:\n• Emitir carta para abertura de conta no Banco Bradesco (use o botão “ Carta de Abertura de Conta” no topo).\n• Registrar os dados bancários do profissional.' },
         { id: id(), titulo: 'Etapa 14 — Acompanhamento Inicial', texto: 'Acompanhar o profissional após 30 e 90 dias.\nAvaliar: qualidade técnica, relacionamento com clientes, relacionamento com a equipe, cumprimento das regras internas e resultados financeiros.' },
       ],
     },

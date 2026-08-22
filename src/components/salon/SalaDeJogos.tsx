@@ -8,11 +8,11 @@ import { buscarComCache, buscarFresco } from '@/lib/fetchCache'
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 const JOGOS = [
-  { id: 'roda', nome: 'Roda da Sorte', emoji: '🎡' },
-  { id: 'dados', nome: 'Batalha de Dados', emoji: '🎲' },
-  { id: 'cartas', nome: 'Batalha de Cartas', emoji: '🃏' },
-  { id: 'mines', nome: 'Mina de Diamantes', emoji: '💎' },
-  { id: 'caixas', nome: 'Caixas Misteriosas', emoji: '🎁' },
+  { id: 'roda', nome: 'Roda da Sorte', emoji: '' },
+  { id: 'dados', nome: 'Batalha de Dados', emoji: '' },
+  { id: 'cartas', nome: 'Batalha de Cartas', emoji: '' },
+  { id: 'mines', nome: 'Mina de Diamantes', emoji: '' },
+  { id: 'caixas', nome: 'Caixas Misteriosas', emoji: '' },
 ]
 
 // geometria da roda
@@ -82,7 +82,7 @@ export default function SalaDeJogos() {
       if (!res.ok) { toast.error(d?.error || 'Erro'); setGirando(false); return }
       const finalizar = async () => {
         setResultado(d)
-        if (d.premio > d.aposta) toast.success(`🎉 ${d.label}! Ganhou ${moeda(d.premio)}`)
+        if (d.premio > d.aposta) toast.success(`${d.label}! Ganhou ${moeda(d.premio)}`)
         else if (d.premio > 0) toast(`${d.label} — recebeu ${moeda(d.premio)}`)
         else toast(`${d.label} — não foi dessa vez`)
         await carregar(true)
@@ -156,7 +156,7 @@ export default function SalaDeJogos() {
                   <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                     {(resultado?.dados || [1, 1, 1]).map((v: number, i: number) => (
                       <div key={i} style={{ width: 60, height: 60, borderRadius: 12, background: '#fff', color: '#1e1b4b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 900, boxShadow: '0 4px 10px rgba(0,0,0,.4)', transform: girando ? 'rotate(12deg)' : 'none', transition: 'transform .2s' }}>
-                        {girando ? '🎲' : v}
+                        {girando ? '' : v}
                       </div>
                     ))}
                   </div>
@@ -167,12 +167,12 @@ export default function SalaDeJogos() {
               {/* CARTAS */}
               {jogo === 'cartas' && (
                 <div style={{ width: 130, height: 185, borderRadius: 14, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', boxShadow: '0 6px 20px rgba(0,0,0,.5)', color: resultado?.vermelho ? '#dc2626' : '#1a1a1a' }}>
-                  {girando ? <span style={{ fontSize: 50 }}>🂠</span> : resultado ? (
+                  {girando ? <span style={{ fontSize: 40, color: '#9ca3af' }}>...</span> : resultado ? (
                     <>
                       <span style={{ fontSize: 44, fontWeight: 900 }}>{resultado.rank}</span>
                       <span style={{ fontSize: 40 }}>{resultado.naipe}</span>
                     </>
-                  ) : <span style={{ fontSize: 50, color: '#cbd5e1' }}>🂠</span>}
+                  ) : <span style={{ fontSize: 40, color: '#d1d5db' }}>?</span>}
                 </div>
               )}
 
@@ -186,7 +186,7 @@ export default function SalaDeJogos() {
                       const bg = aberta ? (bomba ? '#fee2e2' : '#dcfce7') : (resultado && bomba ? '#fff1f2' : '#1e293b')
                       return (
                         <div key={i} style={{ width: 44, height: 44, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, border: '1px solid #334155' }}>
-                          {aberta ? (bomba ? '💣' : '💎') : (resultado && bomba ? '💣' : '')}
+                          {aberta ? (bomba ? '' : '') : (resultado && bomba ? '' : '')}
                         </div>
                       )
                     })}
@@ -204,7 +204,7 @@ export default function SalaDeJogos() {
                     return (
                       <button key={i} disabled={girando || !!resultado} onClick={() => jogar({ escolha: i })}
                         style={{ width: 56, height: 56, borderRadius: 10, border: escolhida ? '2px solid #fbbf24' : '1px solid #334155', background: revelada ? '#0f172a' : '#1e293b', color: '#fff', fontSize: revelada ? 13 : 24, fontWeight: 800, cursor: (girando || resultado) ? 'default' : 'pointer' }}>
-                        {revelada ? (val > 0 ? `${val}×` : '—') : '🎁'}
+                        {revelada ? (val > 0 ? `${val}×` : '—') : ''}
                       </button>
                     )
                   })}
@@ -266,7 +266,7 @@ export default function SalaDeJogos() {
               )}
 
               {jogo === 'caixas' ? (
-                <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 6px' }}>👉 Escolha uma das 12 caixas ao lado para jogar.</p>
+                <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 6px' }}>Escolha uma das 12 caixas ao lado para jogar.</p>
               ) : (
                 <button onClick={() => jogar(jogo === 'mines' ? { qtd: minasQtd } : {})} disabled={!podeJogar}
                   style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: podeJogar ? 'linear-gradient(135deg,#7c3aed,#db2777)' : '#d1d5db', color: '#fff', fontSize: 15, fontWeight: 800, cursor: podeJogar ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: podeJogar ? '0 6px 18px rgba(124,58,237,.4)' : 'none' }}>

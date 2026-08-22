@@ -65,8 +65,8 @@ export default function AnexosLista({ chave, titulo, campoNome, comData = true, 
       const legenda = [titulo, it.nome, it.data ? it.data.split('-').reverse().join('/') : '', it.obs]
         .filter(Boolean).join(' — ')
       const como = await compartilharArquivoWhats({ url: it.url, filename: it.filename, texto: `*${legenda}*` })
-      if (como === 'baixado') toast('Arquivo baixado — arraste ele para a conversa do WhatsApp.', { icon: '📎', duration: 6000 })
-      else if (como === 'link') toast('Enviando o link: o arquivo não pôde ser baixado agora.', { icon: '🔗', duration: 5000 })
+      if (como === 'baixado') toast('Arquivo baixado — arraste ele para a conversa do WhatsApp.', { icon: '', duration: 6000 })
+      else if (como === 'link') toast('Enviando o link: o arquivo não pôde ser baixado agora.', { icon: '', duration: 5000 })
     } catch { toast.error('Não foi possível compartilhar') }
     setEnviandoWhats(null)
   }

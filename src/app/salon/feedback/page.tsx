@@ -87,7 +87,7 @@ export default function FeedbackPage() {
   }, [])
 
   const modeloPadraoMsg = useCallback((nome: string) =>
-    `Passando pra agradecer pela sua visita aqui no *${nome || 'nosso salão'}*, foi um prazer te atender! ✨\n\nSua opinião é muito importante pra gente melhorar cada vez mais nosso atendimento.\n\nVocê pode me contar rapidinho como foi sua experiência?\n\n*É só clicar aqui:* {link}`, [])
+    `Passando pra agradecer pela sua visita aqui no *${nome || 'nosso salão'}*, foi um prazer te atender! \n\nSua opinião é muito importante pra gente melhorar cada vez mais nosso atendimento.\n\nVocê pode me contar rapidinho como foi sua experiência?\n\n*É só clicar aqui:* {link}`, [])
 
   useEffect(() => {
     if (!selected?.id) return
@@ -624,7 +624,7 @@ export default function FeedbackPage() {
                           {renderWhats(montarMsg(msgAtual, linkFeedback))}
                         </div>
                         <div className="mt-3 flex gap-2 flex-wrap">
-                          <button onClick={() => { navigator.clipboard.writeText(montarMsg(msgAtual, linkFeedback)); toast.success('Mensagem copiada! É só colar no WhatsApp. 💬') }}
+                          <button onClick={() => { navigator.clipboard.writeText(montarMsg(msgAtual, linkFeedback)); toast.success('Mensagem copiada! É só colar no WhatsApp.') }}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
                             style={{ background: '#25D366', color: '#fff', border: 'none' }}>
                             <Copy size={12} /> Copiar mensagem

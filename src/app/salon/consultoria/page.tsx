@@ -8,13 +8,13 @@ import AvisoPlano from '@/components/salon/AvisoPlano'
 
 const PROMPT_RESUMO = `Aja como a Diretora Executiva do salão. Faça uma CONSULTORIA DO MÊS ATUAL usando os dados reais do sistema, em 3 blocos curtos e objetivos (sem inventar números):
 
-1) 📊 RESUMO DO MÊS — faturamento, ticket médio, clientes atendidos e comparação com o mês anterior (use os dados que tiver disponíveis).
-2) ⚠️ PONTOS DE ATENÇÃO — o que está caindo ou preocupa (profissionais com queda, pendências em aberto, feedback negativo, custos altos).
-3) 🎯 PLANO DE AÇÃO — de 3 a 5 ações práticas e priorizadas para o próximo mês, do mais urgente ao menos.
+1) RESUMO DO MÊS — faturamento, ticket médio, clientes atendidos e comparação com o mês anterior (use os dados que tiver disponíveis).
+2) PONTOS DE ATENÇÃO — o que está caindo ou preocupa (profissionais com queda, pendências em aberto, feedback negativo, custos altos).
+3) PLANO DE AÇÃO — de 3 a 5 ações práticas e priorizadas para o próximo mês, do mais urgente ao menos.
 
 Seja direta e objetiva. Se faltar algum dado, diga claramente em vez de supor.`
 
-const PROMPT_MKT = `Aja como especialista de marketing do salão. Gere 5 ideias de POSTS para redes sociais (Instagram) para este mês, considerando o perfil do salão e a época do ano. Para cada post traga: 🎯 objetivo, ✍️ legenda pronta (com emojis e chamada para ação) e # hashtags. Seja criativo e direto.`
+const PROMPT_MKT = `Aja como especialista de marketing do salão. Gere 5 ideias de POSTS para redes sociais (Instagram) para este mês, considerando o perfil do salão e a época do ano. Para cada post traga: objetivo, legenda pronta (com emojis e chamada para ação) e # hashtags. Seja criativo e direto.`
 
 export default function ConsultoriaIAPage() {
   const router = useRouter()
@@ -68,7 +68,7 @@ export default function ConsultoriaIAPage() {
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         <div style={{ background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', borderRadius: 16, padding: '20px', color: '#fff', marginBottom: 16 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>🤖 Sua consultora do salão</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Sua consultora do salão</div>
           <div style={{ fontSize: 13, opacity: .92 }}>A NODRI IA lê os dados do seu salão e te entrega um diagnóstico com plano de ação. É gerado na hora, sob demanda.</div>
         </div>
 
@@ -84,11 +84,11 @@ export default function ConsultoriaIAPage() {
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
           <button onClick={() => gerar('resumo')} disabled={loading} style={btn('#5b4fcf', loading)}>{loading && modo === 'resumo' ? <><Loader2 size={16} className="animate-spin" /> Analisando…</> : <><Sparkles size={16} /> Resumo do mês + plano de ação</>}</button>
-          <button onClick={() => gerar('mkt')} disabled={loading} style={btn('#db2777', loading)}>{loading && modo === 'mkt' ? <><Loader2 size={16} className="animate-spin" /> Criando…</> : <>📣 Ideias de posts (marketing)</>}</button>
+          <button onClick={() => gerar('mkt')} disabled={loading} style={btn('#db2777', loading)}>{loading && modo === 'mkt' ? <><Loader2 size={16} className="animate-spin" /> Criando…</> : <>Ideias de posts (marketing)</>}</button>
           {texto && !loading && <button onClick={() => gerar(modo)} style={{ ...btn('#6b6860', false), background: '#fff', color: '#6b6860', border: '1px solid #d0cdc7' }}><RefreshCw size={15} /> Gerar de novo</button>}
         </div>
 
-        {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 12, padding: 14, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>⚠️ {erro}{erro.includes('ativada') || erro.includes('API') ? ' (peça ao administrador do NODRI para ativar a IA do seu salão.)' : ''}</div>}
+        {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 12, padding: 14, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>{erro}{erro.includes('ativada') || erro.includes('API') ? ' (peça ao administrador do NODRI para ativar a IA do seu salão.)' : ''}</div>}
 
         {(texto || loading) && (
           <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18, fontSize: 14, lineHeight: 1.65, color: '#1a1a1a', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>

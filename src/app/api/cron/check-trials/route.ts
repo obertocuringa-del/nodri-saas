@@ -23,7 +23,7 @@ export async function GET() {
     for (const salao of trialsVencidos) {
       await supabaseAdmin.from('notificacoes').insert({
         salao_id: salao.id,
-        mensagem: '⚠️ Seu período de trial de 7 dias expirou. Entre em contato para continuar.',
+        mensagem: 'Seu período de trial de 7 dias expirou. Entre em contato para continuar.',
         tipo: 'danger',
         para_todos: false,
       })

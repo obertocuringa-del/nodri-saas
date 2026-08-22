@@ -37,12 +37,12 @@ export async function GET(req: NextRequest) {
         afiliado_nome: afiliado.nome,
         percentual: descontoCliente,
         comissao_afiliado: afiliado.comissao_percentual || 40,
-        mensagem: `✅ Cupom do afiliado ${afiliado.nome.split(' ')[0]}! Você ganhou ${descontoCliente}% de desconto!`,
+        mensagem: `Cupom do afiliado ${afiliado.nome.split(' ')[0]}! Você ganhou ${descontoCliente}% de desconto!`,
       })
     }
 
     // Cupom AFIL não encontrado ou inativo
-    return NextResponse.json({ valido: false, percentual: 0, mensagem: '❌ Cupom inválido ou inativo' })
+    return NextResponse.json({ valido: false, percentual: 0, mensagem: 'Cupom inválido ou inativo' })
   }
 
   // 2. Verifica cupom de desconto normal
@@ -61,9 +61,9 @@ export async function GET(req: NextRequest) {
       valido: true,
       tipo: 'desconto',
       percentual: cupom.percentual,
-      mensagem: `✅ ${cupom.percentual}% de desconto aplicado!`,
+      mensagem: `${cupom.percentual}% de desconto aplicado!`,
     })
   }
 
-  return NextResponse.json({ valido: false, percentual: 0, mensagem: '❌ Cupom inválido ou expirado' })
+  return NextResponse.json({ valido: false, percentual: 0, mensagem: 'Cupom inválido ou expirado' })
 }

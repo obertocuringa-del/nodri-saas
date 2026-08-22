@@ -24,7 +24,7 @@ export function nomesNaoSalvos(): string[] {
 export function confirmarSaidaSemSalvar(): boolean {
   if (!haNaoSalvo()) return true
   const onde = nomesNaoSalvos().join(', ')
-  return confirm(`⚠️ Você tem alterações NÃO SALVAS${onde ? ` em: ${onde}` : ''}.\n\nClique em CANCELAR para voltar e salvar, ou em OK para sair sem salvar (as alterações serão perdidas).`)
+  return confirm(`Você tem alterações NÃO SALVAS${onde ? ` em: ${onde}` : ''}.\n\nClique em CANCELAR para voltar e salvar, ou em OK para sair sem salvar (as alterações serão perdidas).`)
 }
 
 let seq = 0

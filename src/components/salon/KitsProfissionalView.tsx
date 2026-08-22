@@ -62,7 +62,7 @@ export default function KitsProfissionalView() {
   const valoresParc = useMemo(() => valorParcelas(totalPreview, parcelas), [totalPreview, parcelas])
 
   async function solicitar() {
-    if (qtdMao === 0 && qtdPe === 0) { toast('Informe ao menos 1 kit', { icon: '✍️' }); return }
+    if (qtdMao === 0 && qtdPe === 0) { toast('Informe ao menos 1 kit', { icon: '' }); return }
     setEnviando(true)
     try {
       const res = await fetch('/api/kits/solicitacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kitsMao: qtdMao, kitsPe: qtdPe, parcelas }) })
@@ -102,7 +102,7 @@ export default function KitsProfissionalView() {
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 18, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>📦 Solicitar kits</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Solicitar kits</h3>
         <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 16px' }}>Kit mão: R$ {fmtBRL(cfg.precoMao)} · Kit pé: R$ {fmtBRL(cfg.precoPe)}</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>

@@ -490,7 +490,7 @@ function ObsComProf({ valor, onChange, profs }: {
         style={{ flex: 1, minWidth: 0, background: '#fff', border: '1px dashed #f59e0b80', borderRadius: 8, padding: '6px 10px', fontSize: 11.5, color: '#78350f', outline: 'none' }} />
       <button ref={btnRef} type="button" onClick={toggle} title="Escolher profissional cadastrado"
         style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, background: aberto ? '#f59e0b' : '#fff', border: '1px solid #f59e0b80', borderRadius: 8, padding: '6px 9px', fontSize: 11, color: aberto ? '#fff' : '#b45309', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
-        👤 Profissional
+        Profissional
       </button>
       {aberto && (
         <>
@@ -1286,7 +1286,7 @@ export default function CalculadoraCusto() {
     // Se já está pago, não tem o que copiar depois: não enche o saco.
     const semCod = parcPago ? 0 : linhas.filter(l => !l.cod?.trim()).length
     const aviso = semCod > 0
-      ? `\n\n⚠️ ${semCod} de ${N} parcela(s) SEM código de barras. Sem o código, o Financeiro não vai ter o que copiar pra pagar no banco.`
+      ? `\n\n ${semCod} de ${N} parcela(s) SEM código de barras. Sem o código, o Financeiro não vai ter o que copiar pra pagar no banco.`
       : ''
     if (!confirm(`Lançar "${nome}" em ${N}x?\n\n${resumo}${aviso}\n\nCada parcela é SOMADA ao mês (nada é apagado) e já fica salva. Confirmar?`)) return
 
@@ -1467,7 +1467,7 @@ export default function CalculadoraCusto() {
         if(editar) setProdutosCatalogo(p=>p.map(x=>x.id===editar?d.produto:x).sort((a,b)=>a.nome.localeCompare(b.nome)))
         else setProdutosCatalogo(p=>[...p, d.produto].sort((a,b)=>a.nome.localeCompare(b.nome)))
         setFNome(''); setFMarca(''); setFUnid('ml'); setFQtd(''); setFPreco('')
-        setEditandoProd(null); setMsgCat('✅ Produto salvo!')
+        setEditandoProd(null); setMsgCat('Produto salvo!')
         setTimeout(()=>setMsgCat(''),3000)
       }
     } finally { setSalvandoCat(false) }
@@ -1496,7 +1496,7 @@ export default function CalculadoraCusto() {
         if(editar) setServicosCatalogo(p=>p.map(x=>x.id===editar?d.servico:x).sort((a,b)=>a.nome.localeCompare(b.nome)))
         else setServicosCatalogo(p=>[...p, d.servico].sort((a,b)=>a.nome.localeCompare(b.nome)))
         setFsNome(''); setFsRateio('50'); setFsImposto('5'); setFsProduto('0')
-        setEditandoServ(null); setMsgCat('✅ Serviço salvo!')
+        setEditandoServ(null); setMsgCat('Serviço salvo!')
         setTimeout(()=>setMsgCat(''),3000)
       }
     } finally { setSalvandoCat(false) }
@@ -1837,11 +1837,11 @@ Use números reais. Seja direto.`
 
   function semaforoDespesa(nome: string, valor: number): {cor: string, label: string, icone: string} {
     const bench = BENCHMARKS[nome]
-    if (!bench || !fatN) return {cor: '#767069', label: 'Sem benchmark', icone: '⚪'}
+    if (!bench || !fatN) return {cor: '#767069', label: 'Sem benchmark', icone: ''}
     const pct = (valor / fatN) * 100
-    if (pct > bench * 1.2) return {cor: '#ef4444', label: `${pct.toFixed(1)}% — Acima do limite (máx ${bench}%)`, icone: '🔴'}
-    if (pct > bench * 0.9) return {cor: '#f59e0b', label: `${pct.toFixed(1)}% — No limite (ref ${bench}%)`, icone: '🟡'}
-    return {cor: '#10b981', label: `${pct.toFixed(1)}% — Saudável (ref ${bench}%)`, icone: '🟢'}
+    if (pct > bench * 1.2) return {cor: '#ef4444', label: `${pct.toFixed(1)}% — Acima do limite (máx ${bench}%)`, icone: ''}
+    if (pct > bench * 0.9) return {cor: '#f59e0b', label: `${pct.toFixed(1)}% — No limite (ref ${bench}%)`, icone: ''}
+    return {cor: '#10b981', label: `${pct.toFixed(1)}% — Saudável (ref ${bench}%)`, icone: ''}
   }
 
   const scoreFinanceiro = (() => {
@@ -1854,9 +1854,9 @@ Use números reais. Seja direto.`
     if (totDiretas / fatN > n(custDirD) / 100 * 1.2) pts -= 15
     if (fatN < pe) pts -= 20
     pts = Math.max(0, Math.min(100, pts))
-    if (pts >= 75) return {score: pts, label: 'Saudável', cor: '#10b981', icone: '🟢', sub: 'Parabéns! Suas finanças estão bem controladas.'}
-    if (pts >= 50) return {score: pts, label: 'Atenção', cor: '#f59e0b', icone: '🟡', sub: 'Há pontos de melhoria importantes. Veja os alertas abaixo.'}
-    return {score: pts, label: 'Crítico', cor: '#ef4444', icone: '🔴', sub: 'Situação exige ação imediata. Priorize reduzir custos.'}
+    if (pts >= 75) return {score: pts, label: 'Saudável', cor: '#10b981', icone: '', sub: 'Parabéns! Suas finanças estão bem controladas.'}
+    if (pts >= 50) return {score: pts, label: 'Atenção', cor: '#f59e0b', icone: '', sub: 'Há pontos de melhoria importantes. Veja os alertas abaixo.'}
+    return {score: pts, label: 'Crítico', cor: '#ef4444', icone: '', sub: 'Situação exige ação imediata. Priorize reduzir custos.'}
   })()
 
   // Marca o mês como não salvo a cada digitação — MENOS quando vem de <select>.
@@ -2038,7 +2038,7 @@ Use números reais. Seja direto.`
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#5b4fcf',color:'#fff'}}>1</span>
-                      <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>💰 Faturamento Mensal (R$)</label>
+                      <label className="text-xs font-bold" style={{color:'#5b4fcf'}}>Faturamento Mensal (R$)</label>
                       <InfoBtn id="faturamento"/>
                     </div>
                     <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Quanto entrou no caixa neste mês. Vem do relatório do avec — pode editar.</p>
@@ -2048,7 +2048,7 @@ Use números reais. Seja direto.`
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 pl-7">
                         {fatRealMes[`${anoSel}-${mesSel}`] > 0 && (
                           <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#0891b2'}}>
-                            💰 Real de {MESES_NOMES[mesSel]}: <strong>R$ {Math.round(fatRealMes[`${anoSel}-${mesSel}`]).toLocaleString('pt-BR')}</strong>
+                            Real de {MESES_NOMES[mesSel]}: <strong>R$ {Math.round(fatRealMes[`${anoSel}-${mesSel}`]).toLocaleString('pt-BR')}</strong>
                             <button onClick={()=>{setFat(String(Math.round(fatRealMes[`${anoSel}-${mesSel}`]))); setFatManual(false)}}
                               className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
                             {!fatManual && <span style={{color:'#16a34a'}}>• em uso</span>}
@@ -2056,7 +2056,7 @@ Use números reais. Seja direto.`
                         )}
                         {mediaFat12 > 0 && (
                           <span className="inline-flex items-center gap-1.5 text-[10px]" style={{color:'#5b4fcf'}}>
-                            📊 Média 12 meses: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong>
+                            Média 12 meses: <strong>R$ {mediaFat12.toLocaleString('pt-BR')}</strong>
                             <button onClick={()=>{setFat(String(mediaFat12)); setFatManual(true)}}
                               className="px-2 py-0.5 rounded-full font-bold" style={{background:'#5b4fcf',color:'#fff'}}>Usar</button>
                           </span>
@@ -2097,7 +2097,7 @@ Use números reais. Seja direto.`
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#7c6fe0',color:'#fff'}}>5</span>
-                      <label className="text-xs font-bold" style={{color:'#767069'}}>🏦 Investimento Inicial (R$)</label>
+                      <label className="text-xs font-bold" style={{color:'#767069'}}>Investimento Inicial (R$)</label>
                       <InfoBtn id="invInicial"/>
                     </div>
                     <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Tudo que você gastou para montar o salão.</p>
@@ -2112,7 +2112,7 @@ Use números reais. Seja direto.`
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{background:'#7c6fe0',color:'#fff'}}>6</span>
-                      <label className="text-xs font-bold" style={{color:'#767069'}}>📉 Total a ser Depreciado (R$)</label>
+                      <label className="text-xs font-bold" style={{color:'#767069'}}>Total a ser Depreciado (R$)</label>
                       <InfoBtn id="totalDeprec"/>
                     </div>
                     <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>
@@ -2146,7 +2146,7 @@ Use números reais. Seja direto.`
                     className="nodri-btn-lancar flex items-center justify-center gap-2 rounded-xl font-extrabold"
                     style={{background:'linear-gradient(135deg,#5b4fcf,#7c3aed)',color:'#fff',border:'none',
                       fontSize:15,padding:'14px 22px',boxShadow:'0 4px 14px rgba(91,79,207,.35)'}}>
-                    💳 Lançar boleto
+                    Lançar boleto
                   </button>
                   <button onClick={()=>setShowCatDespesa(true)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
@@ -2168,7 +2168,7 @@ Use números reais. Seja direto.`
                   <div className="text-center">Valor Mensal</div>
                   <div className="text-center">% Fat.</div>
                   <div className="text-center">Parcela</div>
-                  <div className="text-center" title="Preenchendo o vencimento, a conta entra automaticamente na fila de boletos do setor FINANCEIRO.">📅 Vencimento</div>
+                  <div className="text-center" title="Preenchendo o vencimento, a conta entra automaticamente na fila de boletos do setor FINANCEIRO.">Vencimento</div>
                   <div/>
                 </div>
 
@@ -2185,7 +2185,7 @@ Use números reais. Seja direto.`
                           {d.nome}
                         </span>
                         <InfoBtn id={d.nome==='Aluguel'?'aluguel':d.nome==='Energia Elétrica'?'energia':d.nome==='Água'?'agua':d.nome==='Contabilidade'?'contabilidade':''}/>
-                        <button onClick={()=>toggleNota('d'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                        <button onClick={()=>toggleNota('d'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}></button>
                         {!notasAbertas.has('d'+i) && d.obs && (
                           <span onClick={()=>toggleNota('d'+i)} className="nodri-resumo-linha text-[9.5px]"
                             style={{color:'#9a7b3a',maxWidth:190,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer'}}>{d.obs}</span>
@@ -2239,9 +2239,9 @@ Use números reais. Seja direto.`
                         {/* no-mobile: selo e lápis somem no celular — repetiam em toda
                             linha e o nome já abre a observação ao ser clicado */}
                         {d.grupo
-                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>💳 parcela {d.parcela}</span>
+                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#dbeafe',color:'#1d4ed8'}}>parcela {d.parcela}</span>
                           : <span className="no-mobile text-[9px] px-1.5 py-0.5 rounded-full" style={{background:'#f59e0b20',color:'#b45309'}}>catálogo</span>}
-                        <button onClick={()=>toggleNota('e'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}>📝</button>
+                        <button onClick={()=>toggleNota('e'+i)} title="Observação" className="no-mobile" style={{fontSize:11,lineHeight:1,padding:'1px 3px',border:'none',background:'transparent',cursor:'pointer',opacity:d.obs?1:0.45}}></button>
                         {/* Fechado: mostra quem é e a data, sem ocupar linha */}
                         {!notasAbertas.has('e'+i) && (d.obs || d.data) && (
                           <span onClick={()=>toggleNota('e'+i)} className="nodri-resumo-linha text-[9.5px]"
@@ -2273,7 +2273,7 @@ Use números reais. Seja direto.`
                       </div>
                       {d.cod && <LinhaCodigo cod={d.cod} onLimpar={()=>{const nd=[...extrasDespInd];nd[i]={...nd[i],cod:''};setExtrasDespInd(nd);setDirtyCalc(true)}}/>}
                       {/* Observação / profissional / data da quinzena aparecem SÓ ao clicar
-                          no nome (ou no 📝). Antes abriam sozinhas em toda despesa do
+                          no nome (ou no). Antes abriam sozinhas em toda despesa do
                           catálogo, porque o catálogo já grava a data do lançamento. */}
                       {notasAbertas.has('e'+i) && (
                         <>
@@ -2283,7 +2283,7 @@ Use números reais. Seja direto.`
                               chave não fosse digitada (ou fosse no campo errado),
                               não havia como ver nem corrigir por aqui. */}
                           <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                            <label style={{fontSize:11,fontWeight:700,color:'#6b21a8',whiteSpace:'nowrap'}}>💠 Chave PIX:</label>
+                            <label style={{fontSize:11,fontWeight:700,color:'#6b21a8',whiteSpace:'nowrap'}}>Chave PIX:</label>
                             <input value={d.pix||''} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
                               onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],pix:e.target.value};setExtrasDespInd(nd);setDirtyCalc(true)}}
                               style={{flex:'1 1 220px',minWidth:0,border:`1px solid ${d.pix?'#c4b5fd':'#e9d5ff'}`,borderRadius:8,padding:'5px 9px',fontSize:11.5,color:'#3a3835',background:d.pix?'#faf9ff':'#fff'}}/>
@@ -2297,7 +2297,7 @@ Use números reais. Seja direto.`
                             {d.pix && <span style={{fontSize:10,color:'#7c6fa8'}}>aparece no card do FINANCEIRO</span>}
                           </div>
                           <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                            <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>📅 Data do lançamento (para separar por quinzena):</label>
+                            <label style={{fontSize:11,fontWeight:700,color:'#78350f'}}>Data do lançamento (para separar por quinzena):</label>
                             <input type="date" value={brParaISO(d.data||'')} onChange={e=>{const nd=[...extrasDespInd];nd[i]={...nd[i],data:isoParaBR(e.target.value)};setExtrasDespInd(nd);setDirtyCalc(true)}}
                               style={{border:'1px solid #f59e0b80',borderRadius:8,padding:'5px 9px',fontSize:11.5,color:'#78350f',background:'#fff'}}/>
                             {d.data && <span style={{fontSize:10.5,color:'#9a7b3a'}}>sem data = conta no “mês inteiro”</span>}
@@ -2311,10 +2311,10 @@ Use números reais. Seja direto.`
                 {/* Botão adicionar + parcelar + modal catálogo */}
                 <div className="px-5 py-3 border-t flex items-center gap-2 flex-wrap" style={{borderColor:'#f59e0b40',background:'#fef9ec'}}>
                   {despesasCatalogo.filter(c=>c.categoria==='indireta').length===0 && (
-                    <span className="text-[10px]" style={{color:'#b45309'}}>⚠️ Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
+                    <span className="text-[10px]" style={{color:'#b45309'}}>Cadastre despesas em <strong>Gerenciar Catálogo</strong> primeiro</span>
                   )}
                   <span className="text-[10px] w-full" style={{color:'#9a7b3a'}}>
-                    Para lançar uma despesa nova, use o botão <strong>💳 Lançar boleto</strong> no cabeçalho desta seção — ele exige o <strong>Vencimento</strong>,
+                    Para lançar uma despesa nova, use o botão <strong>Lançar boleto</strong> no cabeçalho desta seção — ele exige o <strong>Vencimento</strong>,
                     e com isso a conta entra sozinha na fila de <strong>Boletos</strong> do FINANCEIRO, onde você marca como paga.
                   </span>
                 </div>
@@ -2328,7 +2328,7 @@ Use números reais. Seja direto.`
                     <div className="nodri-modal-lanc" style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:940,maxHeight:'92vh',display:'flex',flexDirection:'column',gap:16,overflowY:'auto',border:'2px solid #f59e0b'}} onClick={e=>e.stopPropagation()}>
                       <div className="nodri-modal-head" style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid #f3e8d0',paddingBottom:12}}>
                         <div style={{minWidth:0}}>
-                          <h3 style={{fontSize:19,fontWeight:900,color:'#1a1a1a',margin:0}}>💳 Lançar boleto / despesa</h3>
+                          <h3 style={{fontSize:19,fontWeight:900,color:'#1a1a1a',margin:0}}>Lançar boleto / despesa</h3>
                           <p className="no-mobile" style={{fontSize:12.5,color:'#767069',margin:'4px 0 0'}}>Cada parcela cai no mês do seu vencimento e entra na fila de <strong>Boletos</strong> do FINANCEIRO. Nada é apagado — tudo é somado ao mês.</p>
                         </div>
                         <button onClick={()=>!parcSalvando&&setParcAberto(false)} style={{background:'#faf9f7',border:'1.5px solid #e8e6e0',borderRadius:10,padding:7,cursor:'pointer',color:'#767069',lineHeight:0,flexShrink:0}}><X size={20}/></button>
@@ -2367,7 +2367,7 @@ Use números reais. Seja direto.`
 
                           {ehEmprestimoParc && (
                             <div>
-                              <label style={{fontSize:12.5,fontWeight:800,color:'#78350f',display:'block',marginBottom:5}}>🗓️ Data do lançamento (separar por quinzena)</label>
+                              <label style={{fontSize:12.5,fontWeight:800,color:'#78350f',display:'block',marginBottom:5}}>Data do lançamento (separar por quinzena)</label>
                               <input type="date" value={parcData} onChange={e=>setParcData(e.target.value)}
                                 onClick={e=>{try{(e.currentTarget as any).showPicker?.()}catch{}}}
                                 style={{width:'100%',border:'2px solid #e8e6e0',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',cursor:'pointer'}}/>
@@ -2377,7 +2377,7 @@ Use números reais. Seja direto.`
 
                           {/* PIX da conta: nota fiscal sem código de barras */}
                           <div>
-                            <label style={{fontSize:12.5,fontWeight:800,color:'#6b21a8',display:'block',marginBottom:5}}>💠 Chave PIX para pagar (opcional)</label>
+                            <label style={{fontSize:12.5,fontWeight:800,color:'#6b21a8',display:'block',marginBottom:5}}>Chave PIX para pagar (opcional)</label>
                             <div style={{display:'flex',gap:8,alignItems:'center'}}>
                               <input value={parcPix} onChange={e=>setParcPix(e.target.value)} placeholder="CNPJ, telefone, e-mail ou chave aleatória"
                                 style={{flex:1,minWidth:0,border:'2px solid #e9d5ff',borderRadius:10,padding:'12px 11px',fontSize:14,outline:'none',background:'#faf9ff'}}/>
@@ -2436,7 +2436,7 @@ Use números reais. Seja direto.`
                                   style={{width:'100%',minWidth:0,border:'2px solid #e8e6e0',borderRadius:10,padding:'10px 6px',fontSize:13.5,outline:'none',cursor:'pointer'}}/>
                                 {!l.cod && (
                                   <div style={{gridColumn:'1 / -1',fontSize:11,color:'#b45309',display:'flex',alignItems:'center',gap:6}}>
-                                    <span style={{fontSize:14}}>📷</span> Sem código de barras — toque no botão de barras pra ler o boleto
+                                     Sem código de barras — toque no botão de barras pra ler o boleto
                                   </div>
                                 )}
                                 {l.cod && (
@@ -2549,7 +2549,7 @@ Use números reais. Seja direto.`
                   {secProvisao ? <ChevronUp size={14} style={{color:'#7c6fe0'}}/> : <ChevronDown size={14} style={{color:'#7c6fe0'}}/>}
                   <div className="text-left">
                     <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>Provisão Mensal</span>
-                    <p className="text-[10px] mt-0.5" style={{color:'#767069'}}>✨ Automático a partir de <strong style={{color:'#7c6fe0'}}>Salários</strong></p>
+                    <p className="text-[10px] mt-0.5" style={{color:'#767069'}}>Automático a partir de <strong style={{color:'#7c6fe0'}}>Salários</strong></p>
                   </div>
                 </div>
                 <span className="font-bold text-sm" style={{color:'#7c6fe0'}}>{fmtR(totProvisao)}</span>
@@ -2580,7 +2580,7 @@ Use números reais. Seja direto.`
               </div>
               {depMensal > 0 && (
                 <div className="px-5 pb-3 flex items-center gap-2 text-xs" style={{color:'#767069'}}>
-                  <span>📉 Depreciação mensal:</span>
+                  <span>Depreciação mensal:</span>
                   <span className="font-bold" style={{color:'#7c6fe0'}}>{fmtR(depMensal)}</span>
                   <span style={{color:'#767069'}}>(inclusa no Custo Operacional)</span>
                 </div>
@@ -2617,7 +2617,7 @@ Use números reais. Seja direto.`
                         botão devolve o número original se você editar. */}
                     {f.real > 0 && (
                       <div className="flex items-center gap-1.5 mb-1.5 pl-7 text-[10px]" style={{color:'#0891b2'}}>
-                        💰 Pago aos profissionais em {MESES_NOMES[mesSel]}: <strong>R$ {f.real.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+                        Pago aos profissionais em {MESES_NOMES[mesSel]}: <strong>R$ {f.real.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
                         <button onClick={()=>{f.set(f.real.toFixed(2)); setRateioManual(false)}}
                           className="px-2 py-0.5 rounded-full font-bold" style={{background:'#0891b2',color:'#fff'}}>Usar</button>
                         {!rateioManual && <span style={{color:'#16a34a'}}>• em uso</span>}
@@ -2813,9 +2813,9 @@ Use números reais. Seja direto.`
                       const otimo = c.tipo==='custo' ? c.real <= c.desej*0.8 : c.real >= c.desej*1.5
                       const status = ok
                         ? (otimo
-                          ? (c.tipo==='custo' ? '🎉 Excelente! Bem abaixo do limite' : '🏆 Excepcional! Muito acima da meta')
-                          : (c.tipo==='custo' ? '✅ Dentro do limite' : '✅ Meta atingida'))
-                        : (c.tipo==='custo' ? '⚠️ Acima do limite máximo' : '⚠️ Abaixo da meta mínima')
+                          ? (c.tipo==='custo' ? 'Excelente! Bem abaixo do limite' : 'Excepcional! Muito acima da meta')
+                          : (c.tipo==='custo' ? 'Dentro do limite' : 'Meta atingida'))
+                        : (c.tipo==='custo' ? 'Acima do limite máximo' : 'Abaixo da meta mínima')
                       const corBorda = ok ? '#10b98130' : '#ef444430'
                       return(
                         <div key={c.l} className="rounded-lg p-3 border" style={{background:'#f5f4f0',borderColor:corBorda}}>
@@ -2835,8 +2835,8 @@ Use números reais. Seja direto.`
                 {/* Extras */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    {l:'🚨 Quanto guardei de reserva ESTE MÊS',v:reservaEmerg,set:setReservaEmerg,dica:'O que você separou/guardou especificamente este mês',info:'reservaEmerg'},
-                    {l:'📦 Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
+                    {l:'Quanto guardei de reserva ESTE MÊS',v:reservaEmerg,set:setReservaEmerg,dica:'O que você separou/guardou especificamente este mês',info:'reservaEmerg'},
+                    {l:'Valor de Produtos em Estoque',v:vlrProdEstoque,set:setVlrProdEstoque,dica:'Valor total do estoque atual',info:'vlrProdEstoque'},
                   ].map((f:any)=>(
                     <div key={f.l} className="rounded-xl p-4 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
                       <div className="flex items-center gap-1.5 mb-1">
@@ -2857,7 +2857,7 @@ Use números reais. Seja direto.`
                 {/* ══ RESUMO FINANCEIRO COMPLETO ══ */}
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#5b4fcf50'}}>
                   <div className="px-5 py-4 border-b" style={{background:'linear-gradient(135deg,#ffffff,#faf9f7)',borderColor:'#e8e6e0'}}>
-                    <h2 className="font-bold text-base text-[#1a1a1a] flex items-center gap-2">📊 Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
+                    <h2 className="font-bold text-base text-[#1a1a1a] flex items-center gap-2">Resumo da Situação Financeira — {MESES_NOMES[mesSel]}/{anoSel}</h2>
                     <p className="text-xs mt-1" style={{color:'#767069'}}>Tudo que você precisa saber sobre a saúde financeira do seu salão neste mês.</p>
                   </div>
 
@@ -2865,9 +2865,9 @@ Use números reais. Seja direto.`
                   {(() => {
                     const lucroReal = fatN > 0 ? resultOp / fatN * 100 : 0
                     const acimaPE = fatN >= pe && pe > 0
-                    let cor = '#10b981', icone = '🟢', titulo = 'SAUDÁVEL', msg = 'Parabéns! O salão está lucrando e acima do ponto de equilíbrio.'
-                    if (!acimaPE || lucroReal < 0) { cor='#ef4444'; icone='🔴'; titulo='ATENÇÃO URGENTE'; msg='O salão está operando abaixo do ponto de equilíbrio. Os gastos superam a receita.' }
-                    else if (lucroReal < 10) { cor='#f59e0b'; icone='🟡'; titulo='ATENÇÃO'; msg='O salão cobre os custos, mas a margem de lucro está baixa. É hora de revisar os gastos.' }
+                    let cor = '#10b981', icone = '', titulo = 'SAUDÁVEL', msg = 'Parabéns! O salão está lucrando e acima do ponto de equilíbrio.'
+                    if (!acimaPE || lucroReal < 0) { cor='#ef4444'; icone=''; titulo='ATENÇÃO URGENTE'; msg='O salão está operando abaixo do ponto de equilíbrio. Os gastos superam a receita.' }
+                    else if (lucroReal < 10) { cor='#f59e0b'; icone=''; titulo='ATENÇÃO'; msg='O salão cobre os custos, mas a margem de lucro está baixa. É hora de revisar os gastos.' }
                     return (
                       <div className="p-5 border-b" style={{background:`${cor}08`,borderColor:`${cor}30`}}>
                         <div className="flex items-center gap-4">
@@ -2921,7 +2921,7 @@ Use números reais. Seja direto.`
                         <div className="flex items-center gap-3">
                           <div className="w-32 text-xs text-right" style={{color:'#ef4444'}}>PREJUÍZO</div>
                           <div className="flex-1 rounded-full h-6 flex items-center px-3" style={{background:'#ef444415',border:'1px solid #ef444440'}}>
-                            <span className="text-[10px] font-bold" style={{color:'#ef4444'}}>🚨 {fmtR(Math.abs(resultOp))} de prejuízo neste mês</span>
+                            <span className="text-[10px] font-bold" style={{color:'#ef4444'}}>{fmtR(Math.abs(resultOp))} de prejuízo neste mês</span>
                           </div>
                         </div>
                       )}
@@ -2933,30 +2933,30 @@ Use números reais. Seja direto.`
                     <p className="text-xs font-bold mb-4" style={{color:'#767069'}}>OS NÚMEROS QUE VOCÊ PRECISA SABER</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#767069'}}>⚖️ Ponto de Equilíbrio</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>Ponto de Equilíbrio</p>
                         <p className="text-xl font-bold" style={{color:'#059669'}}>{fmtR(pe)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>É o mínimo que você precisa faturar para não ter prejuízo.</p>
                         <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=pe&&pe>0?'#10b981':'#ef4444'}}>
-                          {pe===0?'Preencha as despesas acima':fatN>=pe?`✅ Você está ${fmtR(fatN-pe)} ACIMA do equilíbrio`:`🚨 Falta ${fmtR(pe-fatN)} para cobrir todos os custos`}
+                          {pe===0?'Preencha as despesas acima':fatN>=pe?`Você está ${fmtR(fatN-pe)} ACIMA do equilíbrio`:`Falta ${fmtR(pe-fatN)} para cobrir todos os custos`}
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#767069'}}>🎯 Para ter {lucroD}% de Lucro</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>Para ter {lucroD}% de Lucro</p>
                         <p className="text-xl font-bold" style={{color:'#7c6fe0'}}>{fmtR(peLucro)}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Faturamento necessário para atingir sua meta de lucro.</p>
                         <p className="text-[10px] mt-1 font-bold" style={{color:fatN>=peLucro&&peLucro>0?'#10b981':'#f59e0b'}}>
-                          {peLucro===0?'—':fatN>=peLucro?`✅ Meta atingida!`:`Falta ${fmtR(peLucro-fatN)} para a meta`}
+                          {peLucro===0?'—':fatN>=peLucro?`Meta atingida!`:`Falta ${fmtR(peLucro-fatN)} para a meta`}
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#767069'}}>💼 Retorno sobre Investimento</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>Retorno sobre Investimento</p>
                         <p className="text-xl font-bold" style={{color:rentab>0?'#10b981':'#ef4444'}}>{n(invInicial)>0?(rentab*100).toFixed(2)+'%':'—'}</p>
                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>
                           {n(invInicial)>0?`Para cada R$100 investidos, você recuperou R$${(rentab*100).toFixed(2)}.`:'Informe o Investimento Inicial para calcular.'}
                         </p>
                       </div>
                       <div className="rounded-xl p-4" style={{background:'#f5f4f0',border:'1px solid #e8e6e0'}}>
-                        <p className="text-xs mb-1" style={{color:'#767069'}}>🏦 Reserva de Emergência</p>
+                        <p className="text-xs mb-1" style={{color:'#767069'}}>Reserva de Emergência</p>
                         <div className="flex items-end gap-2 mt-1">
                           <p className="text-xl font-bold" style={{color:'#0891b2'}}>{fmtR(totalReservaAcum)}</p>
                           <p className="text-[10px] mb-0.5" style={{color:'#6b6860'}}>acumulado</p>
@@ -2970,7 +2970,7 @@ Use números reais. Seja direto.`
                             </div>
                             <p className="text-[10px] mt-1 font-bold" style={{color:totalReservaAcum>=capGiro?'#10b981':'#06b6d4'}}>
                               {totalReservaAcum>=capGiro
-                                ? '✅ Reserva completa!'
+                                ? 'Reserva completa!'
                                 : `${((totalReservaAcum/capGiro)*100).toFixed(0)}% da meta — falta ${fmtR(capGiro-totalReservaAcum)}`}
                             </p>
                           </div>
@@ -2995,7 +2995,7 @@ Use números reais. Seja direto.`
                         const ok = pct <= c.limite
                         return (
                           <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{background:'#f5f4f0'}}>
-                            <span className="text-xs w-3">{ok?'✅':'⚠️'}</span>
+                            <span className="text-xs w-3">{ok?'':''}</span>
                             <div className="flex-1">
                               <div className="flex justify-between items-center mb-0.5">
                                 <span className="text-xs font-bold" style={{color:'#3a3835'}}>{c.nome}</span>
@@ -3015,13 +3015,13 @@ Use números reais. Seja direto.`
                     <div className="p-5">
                       <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>O QUE FAZER AGORA</p>
                       <div className="space-y-2">
-                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1.5px solid #ef444460'}}><span>🚨</span><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
-                        {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><span>⚠️</span><p className="text-xs" style={{color:'#92400e'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
-                        {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><span>📈</span><p className="text-xs" style={{color:'#7c6fe0'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
-                        {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><span>🏆</span><p className="text-xs" style={{color:'#059669'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
+                        {resultOp < 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#ef444415',border:'1.5px solid #ef444460'}}><p className="text-xs" style={{color:'#dc2626'}}>Seus gastos estão maiores que sua receita. Revise urgentemente as despesas diretas e veja se é possível aumentar o faturamento.</p></div>}
+                        {fatN < pe && pe > 0 && resultOp >= 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#f59e0b15',border:'1px solid #f59e0b30'}}><p className="text-xs" style={{color:'#92400e'}}>Você está abaixo do ponto de equilíbrio. Tente aumentar o faturamento em {fmtR(pe-fatN)} ou reduzir os custos fixos.</p></div>}
+                        {pe > 0 && fatN >= pe && fatN < peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><p className="text-xs" style={{color:'#7c6fe0'}}>Você cobre os custos, mas ainda não atingiu sua meta de lucro. Falta {fmtR(peLucro-fatN)} de faturamento. Adicione mais clientes ou suba o ticket médio.</p></div>}
+                        {peLucro > 0 && fatN >= peLucro && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><p className="text-xs" style={{color:'#059669'}}>Excelente! Você superou a meta de lucro. Agora pense em guardar parte do lucro na reserva de emergência e considere reinvestir no salão.</p></div>}
                         {totalReservaAcum < capGiro && capGiro > 0 && (
                           <div className="flex gap-2 p-3 rounded-xl" style={{background:'#06b6d415',border:'1px solid #06b6d430'}}>
-                            <span>💰</span>
+
                             <div>
                               <p className="text-xs font-bold mb-1" style={{color:'#0891b2'}}>Reserva de Emergência: {fmtR(totalReservaAcum)} de {fmtR(capGiro)}</p>
                               <p className="text-xs" style={{color:'#0891b2'}}>
@@ -3032,8 +3032,8 @@ Use números reais. Seja direto.`
                             </div>
                           </div>
                         )}
-                        {totalReservaAcum >= capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><span>🏦</span><p className="text-xs" style={{color:'#059669'}}>✅ Sua reserva de emergência está completa! Você tem {fmtR(totalReservaAcum)} guardados — equivalente a {((totalReservaAcum/capGiro)*3).toFixed(1)} meses de custos.</p></div>}
-                        <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><span>📅</span><p className="text-xs" style={{color:'#7c6fe0'}}>Salve os dados deste mês clicando em <strong>"Salvar {MESES_NOMES[mesSel]}"</strong> no topo para comparar com os próximos meses.</p></div>
+                        {totalReservaAcum >= capGiro && capGiro > 0 && <div className="flex gap-2 p-3 rounded-xl" style={{background:'#10b98115',border:'1.5px solid #10b98160'}}><p className="text-xs" style={{color:'#059669'}}>Sua reserva de emergência está completa! Você tem {fmtR(totalReservaAcum)} guardados — equivalente a {((totalReservaAcum/capGiro)*3).toFixed(1)} meses de custos.</p></div>}
+                        <div className="flex gap-2 p-3 rounded-xl" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30'}}><p className="text-xs" style={{color:'#7c6fe0'}}>Salve os dados deste mês clicando em <strong>"Salvar {MESES_NOMES[mesSel]}"</strong> no topo para comparar com os próximos meses.</p></div>
                       </div>
                     </div>
                   )}
@@ -3043,7 +3043,7 @@ Use números reais. Seja direto.`
                 <button onClick={atualizar}
                   className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
                   style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
-                  {atualizando ? '✅ Tudo atualizado!' : '🔄 Atualizar Resultados'}
+                  {atualizando ? 'Tudo atualizado!' : 'Atualizar Resultados'}
                 </button>
 
                 {/* Botão IA */}
@@ -3051,13 +3051,13 @@ Use números reais. Seja direto.`
                   {!analiseIA&&!loadingIA&&!erroIA&&(
                     <button onClick={analisarIA} className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
                       style={{background:'linear-gradient(135deg,#5b4fcf20,#7c6fe020)',color:'#7c6fe0',border:'none'}}>
-                      🤖 Quero a análise completa da NODRI IA
+                      Quero a análise completa da NODRI IA
                       <span className="text-xs font-normal" style={{color:'#767069'}}>— opcional</span>
                     </button>
                   )}
                   {loadingIA&&(<div className="p-5 flex items-center gap-3" style={{background:'#faf9f7'}}><Loader2 size={18} className="animate-spin" style={{color:'#5b4fcf'}}/><span className="text-sm" style={{color:'#767069'}}>NODRI IA analisando...</span></div>)}
-                  {erroIA&&(<div className="p-5 flex items-center justify-between" style={{background:'#faf9f7'}}><span className="text-sm" style={{color:'#ef4444'}}>⚠️ {erroIA}</span><button onClick={analisarIA} className="text-xs px-3 py-1.5 rounded-lg" style={{background:'#5b4fcf',color:'white'}}>Tentar novamente</button></div>)}
-                  {analiseIA&&(<div className="p-6" style={{background:'#faf9f7'}}><h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>🤖 Análise da NODRI IA</h3><div className="text-sm leading-relaxed" style={{color:'#3a3835'}} dangerouslySetInnerHTML={{__html:analiseIA.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1a1a1a">$1</strong>').replace(/\n/g,'<br/>')}}/></div>)}
+                  {erroIA&&(<div className="p-5 flex items-center justify-between" style={{background:'#faf9f7'}}><span className="text-sm" style={{color:'#ef4444'}}>{erroIA}</span><button onClick={analisarIA} className="text-xs px-3 py-1.5 rounded-lg" style={{background:'#5b4fcf',color:'white'}}>Tentar novamente</button></div>)}
+                  {analiseIA&&(<div className="p-6" style={{background:'#faf9f7'}}><h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>Análise da NODRI IA</h3><div className="text-sm leading-relaxed" style={{color:'#3a3835'}} dangerouslySetInnerHTML={{__html:analiseIA.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1a1a1a">$1</strong>').replace(/\n/g,'<br/>')}}/></div>)}
                 </div>
               </div>}
             </div>
@@ -3151,8 +3151,8 @@ Use números reais. Seja direto.`
                 <div className="px-5 pb-6 pt-4 border-t" style={{borderColor:'#10b98120'}}>
                   <div className="max-w-xl mx-auto space-y-3">
                     {[
-                      {num:'1',l:'⚖️ Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos — abaixo disso é prejuízo',c:'#10b981',comparar:true},
-                      {num:'2',l:`🎯 PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Quanto precisa faturar para cobrir os custos E ter o lucro desejado',c:'#7c6fe0',comparar:false},
+                      {num:'1',l:'Ponto de Equilíbrio',v:fmtR(PE_),sub:'Faturamento mínimo para cobrir todos os custos — abaixo disso é prejuízo',c:'#10b981',comparar:true},
+                      {num:'2',l:`PE p/ Lucro de ${n(metaLucroPE)||n(lucroD)}%`,v:fmtR(PELucro_),sub:'Quanto precisa faturar para cobrir os custos E ter o lucro desejado',c:'#7c6fe0',comparar:false},
                     ].map((c:any)=>(
                       <div key={c.num} className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:`${c.c}30`}}>
                         <div className="flex items-center gap-2 mb-0.5">
@@ -3161,7 +3161,7 @@ Use números reais. Seja direto.`
                         </div>
                         <p className="text-[10px] mb-1 pl-7" style={{color:'#767069'}}>{c.sub}</p>
                         <p className="text-3xl font-bold pl-7" style={{color:c.c}}>{c.v}</p>
-                        {c.comparar&&fatPE_>0&&<p className="text-xs mt-1 pl-7" style={{color:fatPE_>=PE_?'#10b981':'#ef4444'}}>{fatPE_>=PE_?`✅ Você fatura ${fmtR(fatPE_-PE_)} acima do PE`:`🚨 Falta ${fmtR(PE_-fatPE_)} para o PE`}</p>}
+                        {c.comparar&&fatPE_>0&&<p className="text-xs mt-1 pl-7" style={{color:fatPE_>=PE_?'#10b981':'#ef4444'}}>{fatPE_>=PE_?`Você fatura ${fmtR(fatPE_-PE_)} acima do PE`:`Falta ${fmtR(PE_-fatPE_)} para o PE`}</p>}
                       </div>
                     ))}
                     <div className="rounded-xl p-4 border" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
@@ -3199,7 +3199,7 @@ Use números reais. Seja direto.`
                       </div>
                     </div>
                     <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
-                      <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Como funciona:</p>
+                      <p className="font-bold mb-1" style={{color:'#767069'}}>Como funciona:</p>
                       <p>• <strong style={{color:'#1a1a1a'}}>PE</strong> = Custo Operacional ÷ Margem Operacional% — faturamento mínimo para não ter prejuízo</p>
                       <p>• <strong style={{color:'#1a1a1a'}}>PE c/ Lucro</strong> = Custo Op ÷ (Margem% − Meta Lucro%) — para cobrir E lucrar</p>
                       <p>• <strong style={{color:'#1a1a1a'}}>PE por Profissional</strong> = PE Total ÷ nº de profissionais — meta individual</p>
@@ -3212,7 +3212,7 @@ Use números reais. Seja direto.`
             )}
             <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
               style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
-              {atualizando?'✅ Tudo atualizado!':'🔄 Atualizar Resultados'}
+              {atualizando?'Tudo atualizado!':'Atualizar Resultados'}
             </button>
           </div>
         )}
@@ -3326,7 +3326,7 @@ Use números reais. Seja direto.`
                   <div className="pl-7">
                     <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
                       style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#767069',border:`1.5px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
-                      {salaoParceiro?'✅ SIM':'NÃO'}
+                      {salaoParceiro?'SIM':'NÃO'}
                     </button>
                   </div>
                 </div>
@@ -3375,7 +3375,7 @@ Use números reais. Seja direto.`
             {/* Barra de busca e ordenação */}
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
+
                 <input value={buscaServico} onChange={e=>setBuscaServico(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
@@ -3384,7 +3384,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
                 style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
-                {ordenarPorLucro ? '📈 Mais lucrativo primeiro' : '🔤 Ordem original'}
+                {ordenarPorLucro ? 'Mais lucrativo primeiro' : 'Ordem original'}
               </button>
               {buscaServico && <button onClick={()=>setBuscaServico('')} className="text-xs px-2 py-1 rounded" style={{color:'#767069'}}>✕ limpar</button>}
             </div>
@@ -3410,7 +3410,7 @@ Use números reais. Seja direto.`
                       <div className="flex items-center gap-2 min-w-0">
                         {aberto ? <ChevronUp size={14} style={{color:'#5b4fcf',flexShrink:0}}/> : <ChevronDown size={14} style={{color:'#5b4fcf',flexShrink:0}}/>}
                         <span className="font-bold text-sm truncate" style={{color:'#1a1a1a'}}>{s.nome||'Novo serviço'}</span>
-                        {c&&<span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{background:c.resultado>0?'#10b98120':'#ef444420',color:c.resultado>0?'#059669':'#ef4444'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</span>}
+                        {c&&<span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{background:c.resultado>0?'#10b98120':'#ef444420',color:c.resultado>0?'#059669':'#ef4444'}}>{c.resultado>0?'Lucrativo':'Prejuízo'}</span>}
                       </div>
                       <div className="text-right flex-shrink-0">
                         {n(s.preco)>0&&<p className="text-xs font-bold" style={{color:'#5b4fcf'}}>{fmtR(n(s.preco))}</p>}
@@ -3462,7 +3462,7 @@ Use números reais. Seja direto.`
                                       </div>
                                     : <>
                                         <div className="px-3 py-1.5 border-b text-[10px] font-bold sticky top-0" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#767069'}}>
-                                          📦 Escolha um produto do catálogo ({produtosCatalogo.length})
+                                          Escolha um produto do catálogo ({produtosCatalogo.length})
                                         </div>
                                         {produtosCatalogo.map(p=>(
                                           <button key={p.id}
@@ -3488,7 +3488,7 @@ Use números reais. Seja direto.`
                             {f.k==='produto' && s.produtoNome && (
                               <div className="flex items-center gap-1.5 mt-1.5 pl-7">
                                 <span className="text-[11px] px-2 py-1 rounded-lg font-bold" style={{background:'#5b4fcf12',color:'#5b4fcf',border:'1px solid #5b4fcf30'}}>
-                                  📦 {s.produtoNome} — {fmtR(n(s.produto))}
+                                  {s.produtoNome} — {fmtR(n(s.produto))}
                                 </span>
                                 <button onClick={()=>setServicos(p=>p.map(x=>x.id===s.id?{...x,produtoNome:''}:x))}
                                   title="Remover o nome (mantém o valor)" className="text-xs" style={{color:'#767069'}}>✕</button>
@@ -3581,10 +3581,10 @@ Use números reais. Seja direto.`
                       <div className="mx-4 mb-3 rounded-xl overflow-hidden border" style={{borderColor:'#e8e6e0'}}>
                         <div className="grid grid-cols-4 divide-x text-center py-2" style={{background:'#f5f4f0',borderColor:'#e8e6e0'}}>
                           {[
-                            {l:'💸 Total de Despesas',sub:'Tudo que custa realizar este serviço',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
-                            {l:'📊 Margem Operacional',sub:'O que sobrou após pagar comissão, produto, cartão e imposto',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
-                            {l:'🏢 Custo Operacional',sub:'Parte dos custos fixos do salão que este serviço cobre',v:fmtR(c.custoOpR),p:`${(c.custOpPct*100).toFixed(1)}%`,co:'#7c6fe0'},
-                            {l:'🏆 Resultado Líquido',sub:'Seu lucro real após pagar absolutamente tudo',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
+                            {l:'Total de Despesas',sub:'Tudo que custa realizar este serviço',v:fmtR(c.total),p:`${(c.totalPct*100).toFixed(1)}%`,co:'#f59e0b'},
+                            {l:'Margem Operacional',sub:'O que sobrou após pagar comissão, produto, cartão e imposto',v:fmtR(c.margOp),p:`${(c.margOpPct*100).toFixed(1)}%`,co:'#06b6d4'},
+                            {l:'Custo Operacional',sub:'Parte dos custos fixos do salão que este serviço cobre',v:fmtR(c.custoOpR),p:`${(c.custOpPct*100).toFixed(1)}%`,co:'#7c6fe0'},
+                            {l:'Resultado Líquido',sub:'Seu lucro real após pagar absolutamente tudo',v:fmtR(c.resultado),p:`${(c.resultPct*100).toFixed(1)}%`,co:corRes(c.resultado)},
                           ].map((item,i)=>(
                             <div key={i} className="px-2 py-2">
                               <p className="text-[9px] font-bold mb-0.5" style={{color:'#767069'}}>{item.l}</p>
@@ -3601,12 +3601,12 @@ Use números reais. Seja direto.`
                           <div>Rateio: {fmtR(c.rateioR)} <span style={{color:'#9ca3af'}}>({n(s.rateioP)}% {taxaAntesRateio ? 'do l\u00edquido' : 'do cheio'})</span></div>
                           <div>Produto: {fmtR(c.prod)} | Cartão: {fmtR(c.cartaoR)}</div>
                           <div>Imposto: {fmtR(c.impostR)}</div>
-                          <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'✅ Lucrativo':'🚨 Prejuízo'}</div>
+                          <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'Lucrativo':'Prejuízo'}</div>
                         </div>
                         <button onClick={()=>toggleDiag(s.id)}
                           className="w-full py-2 text-[11px] font-bold border-t transition-all"
                           style={{background:diagAbertos.has(s.id)?'#5b4fcf':'#5b4fcf12',color:diagAbertos.has(s.id)?'#fff':'#5b4fcf',borderColor:'#e8e6e0'}}>
-                          💡 {diagAbertos.has(s.id)?'Ocultar':'Ver'} Diagnóstico da Comissão &amp; Recomendações
+                          {diagAbertos.has(s.id)?'Ocultar':'Ver'} Diagnóstico da Comissão &amp; Recomendações
                         </button>
                         {diagAbertos.has(s.id) && (()=>{
                           const r: any = calcRecom(s)
@@ -3617,25 +3617,25 @@ Use números reais. Seja direto.`
                               {/* Status da comissão atual */}
                               {c.resultado < 0
                                 ? <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#ef444415',border:'1px solid #ef444450',color:'#b91c1c'}}>
-                                    ⚠️ Sua comissão está gerando prejuízo para o salão! Perda de {fmtR(-c.resultado)} por atendimento (margem {(c.resultPct*100).toFixed(1)}%).
+                                    Sua comissão está gerando prejuízo para o salão! Perda de {fmtR(-c.resultado)} por atendimento (margem {(c.resultPct*100).toFixed(1)}%).
                                   </div>
                                 : c.resultPct < r.meta
                                   ? <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#f59e0b15',border:'1px solid #f59e0b50',color:'#92400e'}}>
-                                      🟡 Lucro positivo ({fmtR(c.resultado)} · {(c.resultPct*100).toFixed(1)}%), mas abaixo da sua meta de {metaPct}%. Veja as opções abaixo.
+                                      Lucro positivo ({fmtR(c.resultado)} · {(c.resultPct*100).toFixed(1)}%), mas abaixo da sua meta de {metaPct}%. Veja as opções abaixo.
                                     </div>
                                   : <div className="rounded-xl p-3 text-xs font-bold" style={{background:'#10b98115',border:'1px solid #10b98150',color:'#059669'}}>
-                                      🎯 Meta atingida! Lucro de {fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%) por atendimento.
+                                      Meta atingida! Lucro de {fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%) por atendimento.
                                     </div>}
                               {/* Meta de lucro */}
                               <div className="rounded-xl p-3 border" style={{background:'#faf9f7',borderColor:'#5b4fcf30'}}>
                                 <div className="flex items-center justify-between mb-1">
-                                  <label className="text-[11px] font-bold" style={{color:'#5b4fcf'}}>🎯 META DE LUCRO POR ATENDIMENTO</label>
+                                  <label className="text-[11px] font-bold" style={{color:'#5b4fcf'}}>META DE LUCRO POR ATENDIMENTO</label>
                                   <span className="text-sm font-bold" style={{color:'#5b4fcf'}}>{metaPct}%</span>
                                 </div>
                                 <input type="range" min={0} max={50} step={1} value={n(metaLucroServ)||0} onChange={e=>setMetaLucroServ(e.target.value)}
                                   className="w-full" style={{accentColor:'#5b4fcf'}}/>
                                 <div className="flex justify-between text-[9px]" style={{color:'#767069'}}>
-                                  <span>Só não perder dinheiro (0%)</span><span style={{color:'#f59e0b',fontWeight:700}}>⭐ Saudável (15%)</span><span>50%</span>
+                                  <span>Só não perder dinheiro (0%)</span><span style={{color:'#f59e0b',fontWeight:700}}>Saudável (15%)</span><span>50%</span>
                                 </div>
                               </div>
                               {r.impossivel
@@ -3655,13 +3655,13 @@ Use números reais. Seja direto.`
                                         <p className="text-[10px] mt-1" style={{color:'#6b6860'}}>Para aplicar, digite <strong>{(r.comMaxPctCampo*100).toFixed(1)}%</strong> no campo Rateio deste serviço.</p>
                                         {r.comMaxPctPreco < n(s.rateioP)/100 && (
                                           <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#f59e0b15',color:'#92400e',border:'1px solid #f59e0b40'}}>
-                                            ⚠️ Reduzir a comissão de forma brusca pode desmotivar o profissional e gerar debandada da equipe. Considere a Opção B (recomendada).
+                                            Reduzir a comissão de forma brusca pode desmotivar o profissional e gerar debandada da equipe. Considere a Opção B (recomendada).
                                           </p>
                                         )}
                                       </>}
                                 </div>
                                 <div className="rounded-xl p-3 border-2" style={{background:'#5b4fcf08',borderColor:'#5b4fcf60'}}>
-                                  <p className="text-[10px] font-bold mb-2" style={{color:'#5b4fcf'}}>⭐ OPÇÃO B · CORRIGIR O PREÇO (RECOMENDADA)</p>
+                                  <p className="text-[10px] font-bold mb-2" style={{color:'#5b4fcf'}}>OPÇÃO B · CORRIGIR O PREÇO (RECOMENDADA)</p>
                                   <p className="text-[10px]" style={{color:'#767069'}}>Novo Preço:</p>
                                   <p className="text-lg font-bold" style={{color:'#5b4fcf'}}>{fmtR(r.novoPreco)}</p>
                                   <div className="text-[10px] mt-1 space-y-0.5" style={{color:'#3a3835'}}>
@@ -3671,34 +3671,34 @@ Use números reais. Seja direto.`
                                   </div>
                                   {r.arred > 0 && Math.abs(r.arred - r.novoPreco) > 0.01 && (
                                     <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#10b98110',color:'#059669',border:'1px solid #10b98140'}}>
-                                      💡 Sugestão de arredondamento: <strong>{fmtR(r.arred)}</strong> — lucro sobe para {(r.pctArred*100).toFixed(1)}%
+                                      Sugestão de arredondamento: <strong>{fmtR(r.arred)}</strong> — lucro sobe para {(r.pctArred*100).toFixed(1)}%
                                     </p>
                                   )}
                                   {r.aumento > 0.3 && (
                                     <p className="text-[10px] mt-2 rounded-lg p-2" style={{background:'#f59e0b15',color:'#92400e',border:'1px solid #f59e0b40'}}>
-                                      ⚠️ Aumento de {(r.aumento*100).toFixed(0)}% no preço! Reajustes acima de 30% exigem cautela — avalie se o mercado suporta esse valor antes de aplicar.
+                                      Aumento de {(r.aumento*100).toFixed(0)}% no preço! Reajustes acima de 30% exigem cautela — avalie se o mercado suporta esse valor antes de aplicar.
                                     </p>
                                   )}
                                 </div>
                               </div>
                               {/* Técnica das Três Opções */}
                               <div>
-                                <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>🤝 OPÇÕES DE NEGOCIAÇÃO — apresente ao profissional e deixe que ele escolha:</p>
+                                <p className="text-[10px] font-bold mb-2" style={{color:'#767069'}}>OPÇÕES DE NEGOCIAÇÃO — apresente ao profissional e deixe que ele escolha:</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   <div className="rounded-xl p-3 border text-[10px] space-y-1" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#3a3835'}}>
-                                    <p className="font-bold" style={{color:'#767069'}}>1️⃣ Manter Tudo Igual</p>
+                                    <p className="font-bold" style={{color:'#767069'}}>1⃣ Manter Tudo Igual</p>
                                     <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
                                     <p>Comissão: <strong>{n(s.rateioP)}% ({fmtR(c.rateioR)})</strong></p>
                                     <p>Lucro do Salão: <strong style={{color:c.resultado>=0?'#059669':'#b91c1c'}}>{fmtR(c.resultado)} ({(c.resultPct*100).toFixed(1)}%)</strong></p>
                                   </div>
                                   <div className="rounded-xl p-3 border text-[10px] space-y-1" style={{background:'#faf9f7',borderColor:'#e8e6e0',color:'#3a3835'}}>
-                                    <p className="font-bold" style={{color:'#767069'}}>2️⃣ Ajustar Comissão no Preço Atual</p>
+                                    <p className="font-bold" style={{color:'#767069'}}>2⃣ Ajustar Comissão no Preço Atual</p>
                                     <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
                                     <p>Comissão: <strong>{r.comMaxR>=0?`${(r.comMaxPctPreco*100).toFixed(1)}% (${fmtR(r.comMaxR)})`:'—'}</strong></p>
                                     <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroAlvoAtual)} ({metaPct}%)</strong></p>
                                   </div>
                                   <div className="rounded-xl p-3 border-2 text-[10px] space-y-1" style={{background:'#5b4fcf08',borderColor:'#5b4fcf60',color:'#3a3835'}}>
-                                    <p className="font-bold" style={{color:'#5b4fcf'}}>3️⃣ Preço Corrigido ⭐ Recomendado</p>
+                                    <p className="font-bold" style={{color:'#5b4fcf'}}>3⃣ Preço Corrigido Recomendado</p>
                                     <p>Preço: <strong>{fmtR(r.novoPreco)}</strong></p>
                                     <p>Comissão: <strong>{(r.comPctEqB*100).toFixed(1)}% ({fmtR(r.C)})</strong></p>
                                     <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroB)} ({metaPct}%)</strong></p>
@@ -3708,7 +3708,7 @@ Use números reais. Seja direto.`
                                   {/* 4ª via: o produto sai do bolso do profissional */}
                                   <div className="rounded-xl p-3 border text-[10px] space-y-1"
                                     style={{background: r.insumoInviavel ? '#fff7ed' : '#faf9f7', borderColor: r.insumoInviavel ? '#fdba74' : '#e8e6e0', color:'#3a3835'}}>
-                                    <p className="font-bold" style={{color:'#767069'}}>4️⃣ Profissional fornece o produto</p>
+                                    <p className="font-bold" style={{color:'#767069'}}>4⃣ Profissional fornece o produto</p>
                                     <p>Preço: <strong>{fmtR(c.preco)}</strong></p>
                                     <p>Comissão: <strong>{n(s.rateioP)}% ({fmtR(r.C)})</strong></p>
                                     <p>Ele leva pra casa: <strong style={{color: r.ganhoProfInsumo>=0 ? '#059669' : '#b91c1c'}}>{fmtR(r.ganhoProfInsumo)}</strong>
@@ -3716,7 +3716,7 @@ Use números reais. Seja direto.`
                                     <p>Lucro do Salão: <strong style={{color:'#059669'}}>{fmtR(r.lucroSalaoInsumo)} ({c.preco>0?(r.lucroSalaoInsumo/c.preco*100).toFixed(1):'0'}%)</strong></p>
                                     {r.insumoInviavel && (
                                       <p className="rounded-lg p-1.5 mt-1" style={{background:'#ffedd5',color:'#9a3412'}}>
-                                        ⚠ O produto custa mais que a comissão — ele sai devendo. Não apresente esta opção.
+                                        O produto custa mais que a comissão — ele sai devendo. Não apresente esta opção.
                                       </p>
                                     )}
                                   </div>
@@ -3742,7 +3742,7 @@ Use números reais. Seja direto.`
             </div>
 
             <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
-              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Fórmula do cálculo:</p>
+              <p className="font-bold mb-1" style={{color:'#767069'}}>Fórmula do cálculo:</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Rateio R$</strong> = (Preço − Cartão R$, se abatido antes) × Rateio% − (Produto × Abatimento%)</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Imposto</strong>: Salão Parceiro → (Preço − Rateio) × Imp%. Normal → Preço × Imp%</p>
               <p>• <strong style={{color:'#1a1a1a'}}>Resultado</strong> = Preço − Total Despesas − Custo Operacional</p>
@@ -3761,13 +3761,13 @@ Use números reais. Seja direto.`
               {titulo:'Ver Custo Total',desc:'O custo exato do produto por serviço aparece automaticamente',ok:servicosProd.some(s=>s.ingredientes.some(i=>n(i.qtdEmb)>0&&n(i.preco)>0&&n(i.qtdUsa)>0)),cor:'#5b4fcf'},
             ]}/>
             <div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
-              ✨ Calcule o custo exato de cada insumo por serviço. Use o total em <strong>💇 Calcular Serviços</strong> → campo "Produto (R$)".
+              Calcule o custo exato de cada insumo por serviço. Use o total em <strong>Calcular Serviços</strong> → campo "Produto (R$)".
             </div>
 
             {/* Busca + ordenação */}
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#767069'}}>🔍</span>
+
                 <input value={buscaProduto} onChange={e=>setBuscaProduto(e.target.value)}
                   placeholder="Buscar serviço pelo nome..."
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-xs text-[#1a1a1a] focus:outline-none"
@@ -3776,7 +3776,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
                 style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
-                {ordenarPorLucro ? '📈 Menor custo primeiro' : '🔤 Ordem original'}
+                {ordenarPorLucro ? 'Menor custo primeiro' : 'Ordem original'}
               </button>
               {buscaProduto && <button onClick={()=>setBuscaProduto('')} className="text-xs px-2 py-1 rounded" style={{color:'#767069'}}>✕ limpar</button>}
             </div>
@@ -3796,7 +3796,7 @@ Use números reais. Seja direto.`
                   <button onClick={()=>toggleProdCard(sp.id)} className="w-full px-5 py-4 flex items-center justify-between gap-3 transition-colors" style={{background:'#ffffff'}}>
                     <div className="flex items-center gap-2 min-w-0">
                       {prodAbertos.has(sp.id) ? <ChevronUp size={14} style={{color:'#b45309',flexShrink:0}}/> : <ChevronDown size={14} style={{color:'#b45309',flexShrink:0}}/>}
-                      <span className="text-lg">🧴</span>
+
                       <span className="font-bold text-sm truncate" style={{color:'#1a1a1a'}}>{sp.nomeServico||'Novo serviço'}</span>
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{background:'#f59e0b20',color:'#b45309'}}>{sp.ingredientes.filter(i=>i.nome).length} produto(s)</span>
                     </div>
@@ -3823,7 +3823,7 @@ Use números reais. Seja direto.`
                     return(
                       <div key={idx} className="rounded-xl border p-3" style={{background:'#fffdf5',borderColor:'#f59e0b30'}}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-[11px] font-bold" style={{color:'#b45309'}}>🧴 Produto {idx+1}</p>
+                          <p className="text-[11px] font-bold" style={{color:'#b45309'}}>Produto {idx+1}</p>
                           <div className="flex items-center gap-2">
                             {custo>0&&<span className="text-xs font-bold" style={{color:'#f59e0b'}}>Custo/uso: {fmtR(custo)}</span>}
                             <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
@@ -3850,7 +3850,7 @@ Use números reais. Seja direto.`
                               style={{background:'#faf9f7',borderColor:'#dedad4',maxHeight:'200px',overflowY:'auto'}}>
                               {/* Botão ver todos */}
                               <div className="px-3 py-1.5 border-b text-[10px] font-bold" style={{borderColor:'#e8e6e0',color:'#767069'}}>
-                                📦 {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length} produto(s) — clique para selecionar
+                                {produtosCatalogo.filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase())).length} produto(s) — clique para selecionar
                               </div>
                               {produtosCatalogo
                                 .filter(p=>!ing.nome||p.nome.toLowerCase().includes(ing.nome.toLowerCase()))
@@ -3932,7 +3932,7 @@ Use números reais. Seja direto.`
               <Plus size={15}/> Adicionar outro serviço
             </button>
             <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#faf9f7',border:'1px solid #e8e6e0',color:'#767069'}}>
-              <p className="font-bold mb-1" style={{color:'#767069'}}>💡 Fórmula:</p>
+              <p className="font-bold mb-1" style={{color:'#767069'}}>Fórmula:</p>
               <p>• Custo por uso = (Preço da embalagem ÷ Qtd da embalagem) × Qtd usada no serviço</p>
               <p style={{color:'#7c6fe0'}}>Ex: Tinta R$35,27 / 60g × 90g usados = <strong>R$52,91 de custo</strong></p>
             </div>
@@ -3947,9 +3947,9 @@ Use números reais. Seja direto.`
               {titulo:'Nº de Cadeiras',desc:'Quantas cadeiras ou postos de atendimento tem o salão',ok:rawPostosCad>0||n(numCad)>0,cor:'#f59e0b'},
               {titulo:'Ver Aluguel Sugerido',desc:'Valor mínimo e sugerido por cadeira aparecem automaticamente',ok:custPorCad>0,cor:'#5b4fcf'},
             ]}/>
-            {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
+            {custoOp>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>Custo operacional da aba Receitas e Despesas: <strong>{fmtR(custoOp)}</strong> — preenchido automaticamente</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <h2 className="font-bold text-base mb-1" style={{color:'#b45309'}}>💺 Aluguel de Cadeira</h2>
+              <h2 className="font-bold text-base mb-1" style={{color:'#b45309'}}>Aluguel de Cadeira</h2>
               <p className="text-xs mb-5" style={{color:'#767069'}}>Quanto cobrar de aluguel por cadeira para cobrir custos e ter lucro.</p>
               <div className="space-y-4">
                 <div>
@@ -4022,12 +4022,12 @@ Use números reais. Seja direto.`
               {custPorCad>0&&(
                 <div className="mt-6 space-y-3">
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#f59e0b40'}}>
-                    <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Custo Base por Cadeira (ponto de equilíbrio)</p>
+                    <p className="text-xs mb-1" style={{color:'#767069'}}>Custo Base por Cadeira (ponto de equilíbrio)</p>
                     <p className="text-3xl font-bold" style={{color:'#b45309'}}>{fmtR(custPorCad)}</p>
                     <p className="text-xs mt-1" style={{color:'#6b6860'}}>Valor mínimo que cada cadeira precisa gerar só para cobrir os custos</p>
                   </div>
                   <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
-                    <div className="flex items-center gap-2 mb-1"><span>💰</span><p className="text-xs font-bold" style={{color:'#059669'}}>Aluguel Limpo Sugerido (mensal)</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>margem {Math.round(margemCadN*100)}%</span></div>
+                    <div className="flex items-center gap-2 mb-1"><p className="text-xs font-bold" style={{color:'#059669'}}>Aluguel Limpo Sugerido (mensal)</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>margem {Math.round(margemCadN*100)}%</span></div>
                     <p className="text-3xl font-bold" style={{color:'#059669'}}>{fmtR(alugSuger)}</p>
                     <p className="text-xs mt-1" style={{color:'#6b6860'}}>Com margem sobre o preço + depreciação (5%) + vacância (30%)</p>
                   </div>
@@ -4048,16 +4048,16 @@ Use números reais. Seja direto.`
                   {aluguelAtualCadN>0&&(
                     aluguelAtualCadN<custPorCad
                       ? <div className="rounded-xl p-4 text-xs" style={{background:'#ef444415',border:'1px solid #ef444450',color:'#b91c1c'}}>
-                          <p className="font-bold mb-1">🔴 Risco financeiro</p>
+                          <p className="font-bold mb-1">Risco financeiro</p>
                           <p>Seu aluguel atual de <strong>{fmtR(aluguelAtualCadN)}</strong> está <strong>abaixo</strong> do custo base de <strong>{fmtR(custPorCad)}</strong>. Você não está cobrindo os custos — reajuste o piso do aluguel.</p>
                         </div>
                       : <div className="rounded-xl p-4 text-xs" style={{background:'#10b98115',border:'1px solid #10b98150',color:'#059669'}}>
-                          <p className="font-bold mb-1">🟢 Saudável</p>
+                          <p className="font-bold mb-1">Saudável</p>
                           <p>Seu aluguel atual de <strong>{fmtR(aluguelAtualCadN)}</strong> está <strong>acima</strong> do custo base de <strong>{fmtR(custPorCad)}</strong>. Sua operação cobre os custos.{alugSuger>aluguelAtualCadN && <> Ainda há espaço: o sugerido é <strong>{fmtR(alugSuger)}</strong>.</>}</p>
                         </div>
                   )}
                   <div className="rounded-xl p-4 text-xs space-y-1" style={{background:'#5b4fcf10',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>
-                    <p><strong>💡 Resumo:</strong></p>
+                    <p><strong>Resumo:</strong></p>
                     <p>• {nCadeirasCad.toLocaleString('pt-BR',{maximumFractionDigits:1})} postos efetivos × {fmtR(alugSuger)} = <strong>{fmtR(alugSuger*nCadeirasCad)}/mês arrecadado</strong></p>
                     <p>• Lucro estimado: <strong style={{color:'#059669'}}>{fmtR(alugSuger*nCadeirasCad-custoOpCadN)}/mês</strong></p>
                   </div>
@@ -4075,9 +4075,9 @@ Use números reais. Seja direto.`
               {titulo:'Metragem do Salão',desc:'Área total do salão em metros quadrados',ok:n(mTotal)>0,cor:'#f59e0b'},
               {titulo:'Ver Resultado por M²',desc:'Faturamento necessário por metro quadrado aparece automaticamente',ok:fatPorM2>0,cor:'#5b4fcf'},
             ]}/>
-            {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>✨ Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
+            {pe>0&&<div className="rounded-xl p-3 text-xs" style={{background:'#5b4fcf15',border:'1px solid #5b4fcf30',color:'#7c6fe0'}}>Ponto de equilíbrio da aba Receitas e Despesas: <strong>{fmtR(pe)}</strong> — preenchido automaticamente como faturamento mínimo</div>}
             <div className="rounded-2xl p-6 border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-              <h2 className="font-bold text-base mb-1" style={{color:'#0891b2'}}>📐 Faturamento por M²</h2>
+              <h2 className="font-bold text-base mb-1" style={{color:'#0891b2'}}>Faturamento por M²</h2>
               <p className="text-xs mb-5" style={{color:'#767069'}}>Quanto cada metro quadrado do salão precisa gerar para ser rentável.</p>
               <div className="space-y-4">
                 <div>
@@ -4104,12 +4104,12 @@ Use números reais. Seja direto.`
                 <div className="mt-6 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#06b6d440'}}>
-                      <p className="text-xs mb-1" style={{color:'#767069'}}>📊 Faturamento por M² (P.E.)</p>
+                      <p className="text-xs mb-1" style={{color:'#767069'}}>Faturamento por M² (P.E.)</p>
                       <p className="text-3xl font-bold" style={{color:'#0891b2'}}>{fmtR(fatPorM2)}/m²</p>
                       <p className="text-xs mt-1" style={{color:'#6b6860'}}>Meta mínima por m² para cobrir custos</p>
                     </div>
                     <div className="rounded-xl p-4 border" style={{background:'#f5f4f0',borderColor:'#10b98140'}}>
-                      <div className="flex items-center gap-2 mb-1"><span>⭐</span><p className="text-xs font-bold" style={{color:'#059669'}}>Faturamento Sugerido por M²</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>+50%</span></div>
+                      <div className="flex items-center gap-2 mb-1"><p className="text-xs font-bold" style={{color:'#059669'}}>Faturamento Sugerido por M²</p><span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#10b98120',color:'#059669'}}>+50%</span></div>
                       <p className="text-3xl font-bold" style={{color:'#059669'}}>{fmtR(fatSugM2)}/m²</p>
                     </div>
                   </div>
@@ -4139,7 +4139,7 @@ Use números reais. Seja direto.`
 
             {!fatN ? (
               <div className="rounded-2xl p-10 text-center border" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
-                <p className="text-4xl mb-3">📊</p>
+
                 <p className="font-bold text-[#1a1a1a] mb-1">Nenhum dado ainda</p>
                 <p className="text-sm" style={{color:'#767069'}}>Preencha o Faturamento e as Despesas na aba <strong style={{color:'#7c6fe0'}}>Receitas e Despesas</strong> para ver os gráficos.</p>
               </div>
@@ -4178,11 +4178,11 @@ Use números reais. Seja direto.`
                   </div>
                   <div className="p-5 space-y-3">
                     {[
-                      {l:'Despesas Diretas', v:totDiretas, c:'#ef4444', ico:'📌'},
-                      {l:'Custo Operacional', v:custoOp, c:'#f59e0b', ico:'⚙️'},
-                      {l:'Resultado Operacional', v:Math.max(0,resultOp), c:'#10b981', ico:'💵'},
-                      {l:'Outras Despesas', v:n(aquisicaoEq)+n(distSocios), c:'#06b6d4', ico:'💸'},
-                      resultFin < 0 ? {l:'Prejuízo', v:Math.abs(resultFin), c:'#ef4444', ico:'🚨'} : {l:'Lucro Final', v:resultFin, c:'#7c6fe0', ico:'🏆'},
+                      {l:'Despesas Diretas', v:totDiretas, c:'#ef4444', ico:''},
+                      {l:'Custo Operacional', v:custoOp, c:'#f59e0b', ico:''},
+                      {l:'Resultado Operacional', v:Math.max(0,resultOp), c:'#10b981', ico:''},
+                      {l:'Outras Despesas', v:n(aquisicaoEq)+n(distSocios), c:'#06b6d4', ico:''},
+                      resultFin < 0 ? {l:'Prejuízo', v:Math.abs(resultFin), c:'#ef4444', ico:''} : {l:'Lucro Final', v:resultFin, c:'#7c6fe0', ico:''},
                     ].filter(i=>i.v>0).map((item,idx)=>{
                       const pct = fatN > 0 ? (item.v/fatN)*100 : 0
                       return (
@@ -4206,7 +4206,7 @@ Use números reais. Seja direto.`
                     {/* Barra total */}
                     <div className="pt-2 border-t" style={{borderColor:'#e8e6e0'}}>
                       <div className="flex items-center justify-between text-xs font-bold">
-                        <span style={{color:'#767069'}}>📊 Faturamento Total</span>
+                        <span style={{color:'#767069'}}>Faturamento Total</span>
                         <span style={{color:'#1a1a1a'}}>{fmtR(fatN)}</span>
                       </div>
                     </div>
@@ -4321,10 +4321,10 @@ Use números reais. Seja direto.`
                       const escala = item.meta * 2
                       const pctBarra = Math.min((item.real / escala) * 100, 100)
                       const pctMeta  = 50 // meta sempre no meio da barra
-                      const emoji = ok ? '✅' : '⚠️'
+                      const emoji = ok ? '' : ''
                       const textoStatus = item.tipo==='custo'
-                        ? (item.real <= item.meta * 0.7 ? '🎉 Excelente! Bem abaixo do limite' : ok ? '✅ Dentro do limite' : '⚠️ Acima do limite máximo')
-                        : (item.real >= item.meta * 2 ? '🏆 Excepcional!' : ok ? '✅ Meta atingida' : '⚠️ Abaixo da meta')
+                        ? (item.real <= item.meta * 0.7 ? 'Excelente! Bem abaixo do limite' : ok ? 'Dentro do limite' : 'Acima do limite máximo')
+                        : (item.real >= item.meta * 2 ? 'Excepcional!' : ok ? 'Meta atingida' : 'Abaixo da meta')
                       return (
                         <div key={idx}>
                           <div className="flex items-center justify-between mb-1">
@@ -4357,14 +4357,14 @@ Use números reais. Seja direto.`
                 {/* Alertas críticos */}
                 {(() => {
                   const alertas: {msg: string, cor: string, icone: string}[] = []
-                  if (fatN < pe) alertas.push({msg:`Faturando ${fmtR(pe-fatN)} ABAIXO do ponto de equilíbrio — operando no prejuízo`, cor:'#ef4444', icone:'🚨'})
-                  if (resultOp < 0) alertas.push({msg:`Resultado operacional negativo: ${fmtR(resultOp)} — custos maiores que receitas`, cor:'#ef4444', icone:'🔴'})
-                  if (n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0') / fatN > 0.12) alertas.push({msg:`Aluguel acima de 12% do faturamento — considere renegociar`, cor:'#f59e0b', icone:'⚠️'})
-                  if (n(despInd.find(d=>d.nome==='Salários')?.valor||'0') / fatN > 0.45) alertas.push({msg:`Folha salarial acima de 45% — avaliar produtividade da equipe`, cor:'#f59e0b', icone:'⚠️'})
-                  if (fatN > 0 && n(produto) / fatN > 0.15) alertas.push({msg:`Gasto com produtos acima de 15% — rever fornecedores ou desperdício`, cor:'#f59e0b', icone:'⚠️'})
+                  if (fatN < pe) alertas.push({msg:`Faturando ${fmtR(pe-fatN)} ABAIXO do ponto de equilíbrio — operando no prejuízo`, cor:'#ef4444', icone:''})
+                  if (resultOp < 0) alertas.push({msg:`Resultado operacional negativo: ${fmtR(resultOp)} — custos maiores que receitas`, cor:'#ef4444', icone:''})
+                  if (n(despInd.find(d=>d.nome==='Aluguel')?.valor||'0') / fatN > 0.12) alertas.push({msg:`Aluguel acima de 12% do faturamento — considere renegociar`, cor:'#f59e0b', icone:''})
+                  if (n(despInd.find(d=>d.nome==='Salários')?.valor||'0') / fatN > 0.45) alertas.push({msg:`Folha salarial acima de 45% — avaliar produtividade da equipe`, cor:'#f59e0b', icone:''})
+                  if (fatN > 0 && n(produto) / fatN > 0.15) alertas.push({msg:`Gasto com produtos acima de 15% — rever fornecedores ou desperdício`, cor:'#f59e0b', icone:''})
                   if (alertas.length === 0) return (
                     <div className="rounded-2xl p-4 border text-center" style={{background:'#10b98110',borderColor:'#10b98130'}}>
-                      <p className="text-2xl mb-1">🎉</p>
+
                       <p className="text-sm font-bold" style={{color:'#059669'}}>Nenhum alerta crítico!</p>
                       <p className="text-xs mt-1" style={{color:'#767069'}}>Suas despesas estão dentro dos parâmetros saudáveis.</p>
                     </div>
@@ -4396,9 +4396,9 @@ Use números reais. Seja direto.`
                     <div className="p-5 space-y-4">
                       {/* Faturamento */}
                       {[
-                        {label:'💰 Faturamento', key:'fat', cor:'#10b981'},
-                        {label:'⚙️ Custo Operacional', key:'custoOp', cor:'#f59e0b'},
-                        {label:'💵 Resultado', key:'resultado', cor:'#5b4fcf'},
+                        {label:'Faturamento', key:'fat', cor:'#10b981'},
+                        {label:'Custo Operacional', key:'custoOp', cor:'#f59e0b'},
+                        {label:'Resultado', key:'resultado', cor:'#5b4fcf'},
                       ].map(({label,key,cor})=>{
                         const maxVal = Math.max(...historicoMeses.map((m:any)=>Math.abs(m[key]||0)),1)
                         return (
@@ -4446,7 +4446,7 @@ Use números reais. Seja direto.`
                 )}
                 {historicoMeses.length <= 1 && (
                   <div className="rounded-xl p-4 text-center" style={{background:'#faf9f7',border:'1px solid #e8e6e0'}}>
-                    <p className="text-2xl mb-1">📅</p>
+
                     <p className="text-sm font-bold" style={{color:'#767069'}}>Comparativo mensal disponível com 2+ meses salvos</p>
                     <p className="text-xs mt-1" style={{color:'#767069'}}>Salve os dados deste mês e do próximo para ver a evolução</p>
                   </div>
@@ -4460,7 +4460,7 @@ Use números reais. Seja direto.`
               <button onClick={()=>window.print()}
                 className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
                 style={{background:'#5b4fcf20',color:'#7c6fe0',border:'1px solid #5b4fcf40'}}>
-                🖨️ Exportar / Imprimir Relatório PDF
+                Exportar / Imprimir Relatório PDF
               </button>
             )}
           </div>
@@ -4471,7 +4471,7 @@ Use números reais. Seja direto.`
           <div className="space-y-4">
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#5b4fcf40'}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>{editandoServ?'✏️ Editar Serviço':'➕ Cadastrar Novo Serviço'}</h3>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#5b4fcf'}}>{editandoServ?'Editar Serviço':'Cadastrar Novo Serviço'}</h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Serviço *</label>
                   <input value={fsNome} onChange={e=>setFsNome(e.target.value)} placeholder="Ex: Coloração Completa"
@@ -4502,7 +4502,7 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex items-center justify-between px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <span className="font-bold text-sm text-[#1a1a1a]">Serviços Cadastrados ({servicosCatalogo.length})</span>
-                <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="🔍 Buscar serviço..."
+                <input value={buscarServico} onChange={e=>setBuscarServico(e.target.value)} placeholder="Buscar serviço..."
                   className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               {servicosCatalogo.filter(s=>s.nome.toLowerCase().includes(buscarServico.toLowerCase())).length===0
@@ -4518,8 +4518,8 @@ Use números reais. Seja direto.`
                       <div className="flex items-center gap-4">
                         <span className="text-xs" style={{color:'#7c6fe0'}}>Rateio: {s.rateio_pct}%</span>
                         <span className="text-xs" style={{color:'#b45309'}}>Imposto: {s.imposto_pct}%</span>
-                        <button onClick={e=>{e.stopPropagation();editarServico(s)}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>✏️ Editar</button>
-                        <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}>🗑️</button>
+                        <button onClick={e=>{e.stopPropagation();editarServico(s)}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>Editar</button>
+                        <button onClick={e=>{e.stopPropagation();excluirServico(s.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}></button>
                       </div>
                     </div>
                     {acordeaoServ===s.id&&(
@@ -4543,7 +4543,7 @@ Use números reais. Seja direto.`
           <div className="nodri-aba space-y-4">
             {/* Formulário cadastro */}
             <div className="rounded-2xl p-5 border" style={{background:'#faf9f7',borderColor:'#f59e0b40'}}>
-              <h3 className="font-bold text-sm mb-4" style={{color:'#b45309'}}>{editandoProd?'✏️ Editar Produto':'➕ Cadastrar Novo Produto'}</h3>
+              <h3 className="font-bold text-sm mb-4" style={{color:'#b45309'}}>{editandoProd?'Editar Produto':'Cadastrar Novo Produto'}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                 <div className="col-span-2"><label className="text-xs font-bold block mb-1" style={{color:'#767069'}}>Nome do Produto *</label>
                   <input value={fNome} onChange={e=>setFNome(e.target.value)} placeholder="Ex: Tinta Color Sem Amônia"
@@ -4577,7 +4577,7 @@ Use números reais. Seja direto.`
             <div className="rounded-2xl border overflow-hidden" style={{background:'#faf9f7',borderColor:'#e8e6e0'}}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3 border-b" style={{background:'#ffffff',borderColor:'#e8e6e0'}}>
                 <span className="font-bold text-sm text-[#1a1a1a] whitespace-nowrap">Produtos Cadastrados ({produtosCatalogo.length})</span>
-                <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="🔍 Buscar produto..."
+                <input value={buscarProduto} onChange={e=>setBuscarProduto(e.target.value)} placeholder="Buscar produto..."
                   className="px-3 py-1.5 rounded-lg text-xs text-[#1a1a1a] focus:outline-none w-full sm:w-48" style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               {produtosCatalogo.filter(p=>p.nome.toLowerCase().includes(buscarProduto.toLowerCase())).length===0
@@ -4593,8 +4593,8 @@ Use números reais. Seja direto.`
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <span className="text-xs whitespace-nowrap" style={{color:'#059669'}}>R$ {p.preco} / {p.qtd_embalagem}{p.unidade}</span>
-                        <button onClick={e=>{e.stopPropagation();editarProduto(p);setAba('catproduto')}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>✏️ Editar</button>
-                        <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}>🗑️</button>
+                        <button onClick={e=>{e.stopPropagation();editarProduto(p);setAba('catproduto')}} className="text-xs px-2 py-1 rounded" style={{background:'#5b4fcf20',color:'#7c6fe0'}}>Editar</button>
+                        <button onClick={e=>{e.stopPropagation();excluirProduto(p.id)}} className="text-xs px-2 py-1 rounded" style={{background:'#ef444420',color:'#dc2626'}}></button>
                       </div>
                     </div>
                     {acordeaoProd===p.id&&(
@@ -4621,7 +4621,7 @@ Use números reais. Seja direto.`
           <div className="rounded-2xl border w-full max-w-2xl shadow-2xl flex flex-col" style={{background:'#faf9f7',borderColor:'#f59e0b50',maxHeight:'90vh'}}>
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:'#e8e6e0'}}>
               <div>
-                <h2 className="font-bold text-base" style={{color:'#b45309'}}>📋 Catálogo de Despesas</h2>
+                <h2 className="font-bold text-base" style={{color:'#b45309'}}>Catálogo de Despesas</h2>
                 <p className="text-xs mt-0.5" style={{color:'#767069'}}>Cadastre suas despesas para usar autocomplete em todos os campos</p>
               </div>
               <button onClick={()=>{setShowCatDespesa(false);setEditDespCat(null);setFdNome('');setFdCat('indireta');setFdObs('')}}
@@ -4630,7 +4630,7 @@ Use números reais. Seja direto.`
 
             {/* Formulário */}
             <div className="px-6 py-4 border-b" style={{borderColor:'#e8e6e0',background:'#ffffff'}}>
-              <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>{editDespCat ? '✏️ Editando despesa' : '➕ Nova despesa'}</p>
+              <p className="text-xs font-bold mb-3" style={{color:'#767069'}}>{editDespCat ? 'Editando despesa' : 'Nova despesa'}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className="text-[10px] font-bold mb-1 block" style={{color:'#767069'}}>NOME DA DESPESA</label>
@@ -4685,7 +4685,7 @@ Use números reais. Seja direto.`
                   {(['indireta','direta','outras'] as const).map(cat=>{
                     const itens = despesasCatalogo.filter(d=>d.categoria===cat)
                     if(!itens.length) return null
-                    const catLabel = cat==='indireta'?'📋 Indiretas (fixas)':cat==='direta'?'📌 Diretas':'💸 Outras / Capital'
+                    const catLabel = cat==='indireta'?'Indiretas (fixas)':cat==='direta'?'Diretas':'Outras / Capital'
                     const catCor = cat==='indireta'?'#f59e0b':cat==='direta'?'#ef4444':'#06b6d4'
                     return (
                       <div key={cat} className="mb-4">

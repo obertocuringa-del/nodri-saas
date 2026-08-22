@@ -62,7 +62,7 @@ function SIT_LABEL(sit?: string | null, prazo?: string | null) {
 }
 
 function iconeDe(nome: string) {
-  return nome === 'ADMINISTRATIVO' ? '🗂️' : nome === 'FINANCEIRO' ? '💰' : nome === 'RECEPÇÃO' ? '🛎️' : nome === 'GERÊNCIA' ? '🏢' : '🏢'
+  return nome === 'ADMINISTRATIVO' ? '' : nome === 'FINANCEIRO' ? '' : nome === 'RECEPÇÃO' ? '' : nome === 'GERÊNCIA' ? '' : ''
 }
 
 export default function DepartamentoPage() {
@@ -174,8 +174,8 @@ export default function DepartamentoPage() {
   }, [ferramentas, demandasSetor])
 
   const TITULO_GRUPO: Record<string, string> = {
-    CLT: '👤 CLT — PROFISSIONAIS',
-    CNPJ: '🏢 CNPJ — PROFISSIONAIS PJ / PARCEIROS',
+    CLT: 'CLT — PROFISSIONAIS',
+    CNPJ: 'CNPJ — PROFISSIONAIS PJ / PARCEIROS',
   }
 
   function alternarPops(slug: string) {
@@ -276,7 +276,7 @@ export default function DepartamentoPage() {
       <div style={{ background: '#fff', border: `1px solid ${d.resolvido ? '#d1fae5' : urgente ? '#fecaca' : '#e8e6e0'}`, borderLeft: `4px solid ${d.resolvido ? '#22c55e' : urgente ? '#ef4444' : cor}`, borderRadius: 12, padding: 14, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
           {d.origem === 'solicitacao' && d.solicitante_nome && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', padding: '2px 8px', borderRadius: 999 }}>👤 {d.solicitante_nome}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', padding: '2px 8px', borderRadius: 999 }}>{d.solicitante_nome}</span>
           )}
           {urgente && !d.resolvido && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>URGENTE</span>}
           {d.situacao && d.situacao !== 'aberta' && (
@@ -287,7 +287,7 @@ export default function DepartamentoPage() {
           <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{new Date(d.criado_em).toLocaleDateString('pt-BR')}</span>
         </div>
         <p style={{ fontSize: 13.5, color: '#1a1a1a', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{d.mensagem}</p>
-        {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>💬 {d.resposta}</p>}
+        {d.resposta && <p style={{ fontSize: 12, color: '#047857', margin: '8px 0 0', background: '#f0fdf4', padding: '6px 10px', borderRadius: 8 }}>{d.resposta}</p>}
 
         {/* Resolver com resposta */}
         {respondendo === d.id ? (
@@ -318,7 +318,7 @@ export default function DepartamentoPage() {
             {!d.resolvido && <button onClick={() => { setRespondendo(d.id); setRespostaTxt(''); setTransferindo(null) }} style={btn('#16a34a')}><Check size={13} /> Feito / Responder</button>}
             <button onClick={() => { setConversando(conversando === d.id ? null : d.id); setMsgTxt(''); setMsgSit(d.situacao && d.situacao !== 'aberta' ? d.situacao : 'andamento'); setMsgPrazo(d.prazo || ''); setRespondendo(null); setTransferindo(null) }}
               style={{ ...btnGhost(), color: '#5b4fcf', borderColor: '#c9c4f0' }}>
-              💬 Conversar{(d.conversa?.length || 0) > 0 ? ` (${d.conversa!.length})` : ''}
+              Conversar{(d.conversa?.length || 0) > 0 ? ` (${d.conversa!.length})` : ''}
             </button>
             {!d.resolvido && ehDono && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
             {d.resolvido && ehDono && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
@@ -382,7 +382,7 @@ export default function DepartamentoPage() {
       <nav style={{ background: '#fff', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.push('/salon/pendencias')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Setores</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontSize: 22 }}>{dep ? iconeDe(dep.nome_completo) : '🏢'}</span>
+        <span style={{ fontSize: 22 }}>{dep ? iconeDe(dep.nome_completo) : ''}</span>
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>{dep?.nome_completo || 'Departamento'}</span>
       </nav>
 
@@ -606,7 +606,7 @@ export default function DepartamentoPage() {
               style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 8 }}>
               <span style={{ fontSize: 10, color: '#b91c1c', transform: verDia ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>▼</span>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: .5 }}>
-                🔔 Pendências do dia ({doDia.length})
+                Pendências do dia ({doDia.length})
               </span>
             </button>
             {verDia && doDia.map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
@@ -640,7 +640,7 @@ export default function DepartamentoPage() {
           <p style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>Abertas ({abertas.length})</p>
           {abertas.map(d => <Fragment key={d.id}>{DemandaCard({ d })}</Fragment>)}
         </>) : (
-          <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Sem pendências abertas. Tudo resolvido. 👏</p>
+          <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', padding: '14px 0' }}>Sem pendências abertas. Tudo resolvido.</p>
         ))}
 
         {secao === 'resolvidas' && (resolvidas.length > 0 ? (<>
@@ -657,7 +657,7 @@ export default function DepartamentoPage() {
 
         {demandas.length === 0 && (
           <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
+
             <p style={{ margin: 0 }}>Sem pendências neste departamento.</p>
             <p style={{ fontSize: 12, marginTop: 6 }}>As solicitações enviadas para cá aparecem aqui.</p>
           </div>
@@ -738,7 +738,7 @@ function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
     <div style={{ background: '#fff', border: `1px solid ${borda}`, borderLeft: `4px solid ${emp.status === 'liberado' ? '#22c55e' : emp.status === 'negado' ? '#ef4444' : '#7c3aed'}`, borderRadius: 12, padding: 14, marginBottom: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 800, color: '#7c3aed', background: '#f5f3ff', padding: '2px 8px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Wallet size={12} /> EMPRÉSTIMO</span>
-        {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', background: '#f0f9ff', padding: '2px 8px', borderRadius: 999 }}>👤 {d.solicitante_nome}</span>}
+        {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', background: '#f0f9ff', padding: '2px 8px', borderRadius: 999 }}>{d.solicitante_nome}</span>}
         {emp.status === 'pendente' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>AGUARDANDO</span>}
         {emp.status === 'liberado' && <span style={{ fontSize: 10, fontWeight: 800, color: '#047857', background: '#ecfdf5', padding: '2px 8px', borderRadius: 999 }}>APROVADO</span>}
         {emp.status === 'negado' && <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '2px 8px', borderRadius: 999 }}>NEGADO</span>}
@@ -770,7 +770,7 @@ function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
           {/* Histórico dela antes de decidir emprestar */}
           {d.solicitante_id && (
             <button onClick={() => setVerComportamento(true)} style={{ ...btnGhost(), padding: '9px 14px', fontSize: 13, color: '#b45309', borderColor: '#fde68a', background: '#fffbeb' }}>
-              📋 Comportamento
+              Comportamento
             </button>
           )}
         </div>
@@ -825,7 +825,7 @@ function EmprestimoCard({ d, onDone }: { d: Demanda; onDone: () => void }) {
                   </div>
                 ))}
               </div>
-              {difere && <div style={{ fontSize: 11, color: '#b45309', marginTop: 6 }}>⚠ A soma das parcelas (R$ {fmtR(somaParcelas)}) está diferente do total (R$ {fmtR(total)}).</div>}
+              {difere && <div style={{ fontSize: 11, color: '#b45309', marginTop: 6 }}>A soma das parcelas (R$ {fmtR(somaParcelas)}) está diferente do total (R$ {fmtR(total)}).</div>}
               <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
                 <button disabled={enviando || faltaData || !parcelas.length} onClick={() => decidir('liberar')} style={{ ...btn('#16a34a'), padding: '9px 16px', fontSize: 13, opacity: (enviando || faltaData) ? .6 : 1 }}>Liberar empréstimo</button>
                 <button onClick={() => setDividir(null)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Voltar</button>

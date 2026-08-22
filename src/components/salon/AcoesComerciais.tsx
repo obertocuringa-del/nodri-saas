@@ -332,7 +332,7 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
             <Share2 size={13} /> {c.shares || 0}
           </button>
           {/* Serviços vendidos (do relatório), ao lado do compartilhar */}
-          <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>💰 {vendidos ?? 0}</span>
+          <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>{vendidos ?? 0}</span>
         </div>
       </div>
       {/* 2 botões harmônicos: Copiar e Compartilhar — cada um abre um menu de opções */}
@@ -403,7 +403,7 @@ function compartilharTexto(c: Campanha, bump?: (id: string, m: 'views' | 'shares
 // ele é COPIADO para a área de transferência e o usuário cola como legenda.
 async function compartilharArquivos(c: Campanha, ids: string[], comTexto: boolean, bump?: () => void) {
   const sel = c.arquivos.filter(a => ids.includes(a.id))
-  if (!sel.length) { toast('Selecione ao menos um arquivo', { icon: '📷' }); return }
+  if (!sel.length) { toast('Selecione ao menos um arquivo', { icon: '' }); return }
   await enviarArquivos(sel.map(a => ({ url: a.url, nome: a.nome })), comTexto ? textoCampanha(c) : '')
   bump?.()
 }
@@ -416,13 +416,13 @@ async function enviarArquivos(arqs: { url: string; nome: string }[], texto: stri
   if (nav.canShare && nav.canShare({ files })) {
     try {
       await nav.share({ files })
-      if (texto) toast('Imagem(ns) no WhatsApp. O texto foi COPIADO — cole como legenda.', { icon: '📋', duration: 6000 })
+      if (texto) toast('Imagem(ns) no WhatsApp. O texto foi COPIADO — cole como legenda.', { icon: '', duration: 6000 })
       return
     } catch { /* cancelou ou não deu → baixa */ }
   }
   // PC / sem compartilhamento de arquivo: baixa as imagens.
   arqs.forEach(a => { const link = document.createElement('a'); link.href = a.url; link.download = a.nome || 'imagem.png'; link.click() })
-  toast(texto ? 'Imagens baixadas e texto COPIADO — anexe no WhatsApp e cole o texto.' : 'Imagens baixadas — anexe no WhatsApp.', { icon: '📥', duration: 6000 })
+  toast(texto ? 'Imagens baixadas e texto COPIADO — anexe no WhatsApp e cole o texto.' : 'Imagens baixadas — anexe no WhatsApp.', { icon: '', duration: 6000 })
 }
 
 /* ─────────────── Painel/detalhe da campanha ─────────────── */
@@ -641,7 +641,7 @@ function ModalEditar({ inicial, onSalvar, onClose }: { inicial: Campanha; onSalv
         <label style={lab}>Imagens da campanha (a 1ª/estrela é a capa)</label>
         <input ref={fileRef} type="file" accept="image/*" multiple onChange={e => { addImagens(e.target.files); if (fileRef.current) fileRef.current.value = '' }} style={{ display: 'none' }} />
         <button onClick={() => fileRef.current?.click()} style={{ ...inp, border: '2px dashed #c9c4f0', background: '#f6f4ff', color: ROXO, fontWeight: 700, cursor: 'pointer' }}>
-          🖼️ Adicionar imagens (JPG/PNG/WEBP até 1,4 MB cada)
+          Adicionar imagens (JPG/PNG/WEBP até 1,4 MB cada)
         </button>
         {c.arquivos.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(88px,1fr))', gap: 8, marginTop: 10 }}>

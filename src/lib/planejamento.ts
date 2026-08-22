@@ -37,7 +37,7 @@ const VALORES = `1º Segurança — Priorizamos a segurança em todas as nossas 
 
 export const CARDS_PLANEJAMENTO: CardPlano[] = [
   {
-    id: 'estrategico', icone: '🏢', titulo: 'Planejamento Estratégico Geral', responsavel: 'Direção / Proprietário',
+    id: 'estrategico', icone: '', titulo: 'Planejamento Estratégico Geral', responsavel: 'Direção / Proprietário',
     oque: 'O planejamento "macro" do salão: para onde a empresa vai, que resultados quer e como os setores chegam lá.',
     itens: [
       it('vendemos', 'O que vendemos?', 'A essência do que o salão entrega', VENDEMOS),
@@ -67,7 +67,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'gerencial', icone: '📊', titulo: 'Planejamento Gerencial', responsavel: 'Gerência',
+    id: 'gerencial', icone: '', titulo: 'Planejamento Gerencial', responsavel: 'Gerência',
     oque: 'Transforma a estratégia da Direção em metas e planos de execução para o dia a dia.',
     itens: [
       it('meta_mensal', 'Meta mensal', 'Desdobramento da meta anual em metas mensais'),
@@ -82,7 +82,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'qualidade', icone: '📋', titulo: 'Planejamento de Processos e Qualidade', responsavel: 'Processo / Qualidade',
+    id: 'qualidade', icone: '', titulo: 'Planejamento de Processos e Qualidade', responsavel: 'Processo / Qualidade',
     oque: 'Planeja como os processos serão estruturados e controlados para a estratégia ser executada corretamente.',
     itens: [
       it('mapeamento', 'Mapeamento de processos', 'Todos os fluxos do salão documentados'),
@@ -99,7 +99,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'tecnico', icone: '🛡️', titulo: 'Planejamento Técnico', responsavel: 'Responsável Técnica',
+    id: 'tecnico', icone: '', titulo: 'Planejamento Técnico', responsavel: 'Responsável Técnica',
     oque: 'Garante a excelência e a segurança técnica dos serviços prestados.',
     itens: [
       it('padroes_tec', 'Padrões técnicos', 'Níveis de qualidade esperados em cada serviço'),
@@ -114,7 +114,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'administrativo', icone: '🗂️', titulo: 'Planejamento Administrativo', responsavel: 'Administrativo',
+    id: 'administrativo', icone: '', titulo: 'Planejamento Administrativo', responsavel: 'Administrativo',
     oque: 'Gestão documental, contratual e institucional da empresa — a coluna vertebral burocrática.',
     itens: [
       it('documentacao', 'Documentação', 'Todos os documentos da empresa organizados'),
@@ -134,7 +134,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'financeiro', icone: '💰', titulo: 'Planejamento Financeiro', responsavel: 'Financeiro + Direção',
+    id: 'financeiro', icone: '', titulo: 'Planejamento Financeiro', responsavel: 'Financeiro + Direção',
     oque: 'Toda a gestão financeira do salão — planejada separadamente.',
     itens: [
       it('orcamento', 'Orçamento', 'Planejamento de receitas e despesas'),
@@ -153,7 +153,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'compras', icone: '🛒', titulo: 'Planejamento de Compras e Estoque', responsavel: 'Compras / Estoque',
+    id: 'compras', icone: '', titulo: 'Planejamento de Compras e Estoque', responsavel: 'Compras / Estoque',
     oque: 'Aquisição e disponibilidade de produtos e materiais.',
     itens: [
       it('necessidades', 'Necessidades de compra', 'O que precisa ser comprado'),
@@ -171,7 +171,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'rh', icone: '👥', titulo: 'Planejamento de RH / Gestão de Pessoas', responsavel: 'RH',
+    id: 'rh', icone: '', titulo: 'Planejamento de RH / Gestão de Pessoas', responsavel: 'RH',
     oque: 'Gestão completa de pessoas no salão.',
     itens: [
       it('pessoas', 'Pessoas', 'Mapeamento da equipe atual'),
@@ -199,7 +199,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'marketing', icone: '📣', titulo: 'Planejamento de Marketing', responsavel: 'Marketing',
+    id: 'marketing', icone: '', titulo: 'Planejamento de Marketing', responsavel: 'Marketing',
     oque: 'Comunicação, posicionamento, atração e relacionamento com clientes.',
     itens: [
       it('anual_mkt', 'Anual', 'Planejamento estratégico anual de marketing'),
@@ -226,7 +226,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'comercial', icone: '🤝', titulo: 'Planejamento Comercial / Vendas', responsavel: 'Comercial',
+    id: 'comercial', icone: '', titulo: 'Planejamento Comercial / Vendas', responsavel: 'Comercial',
     oque: 'Vendas, conversão e faturamento. Marketing gera oportunidade; Comercial vira venda.',
     itens: [
       it('meta_vendas', 'Meta de vendas', 'Meta de volume de vendas'),
@@ -248,7 +248,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'operacional', icone: '⚙️', titulo: 'Planejamento Operacional', responsavel: 'Coordenador Operacional + Gerência',
+    id: 'operacional', icone: '', titulo: 'Planejamento Operacional', responsavel: 'Coordenador Operacional + Gerência',
     oque: 'A operação diária do salão — serviços entregues com qualidade, eficiência e boa experiência.',
     itens: [
       it('capacidade', 'Capacidade de atendimento', 'Quantos atendimentos o salão consegue realizar'),
@@ -266,7 +266,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'recepcao', icone: '🛎️', titulo: 'Planejamento da Recepção', responsavel: 'Recepção (dentro do Operacional + Comercial)',
+    id: 'recepcao', icone: '', titulo: 'Planejamento da Recepção', responsavel: 'Recepção (dentro do Operacional + Comercial)',
     oque: 'A Recepção tem duas funções que devem ser planejadas: operacional e comercial. Mantida dentro do Operacional + Comercial.',
     itens: [
       it('agenda', 'Agenda (operacional)', 'Organização e gestão da agenda'),
@@ -281,7 +281,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'profissionais', icone: '✂️', titulo: 'Planejamento dos Profissionais', responsavel: 'Cada profissional + Gerência',
+    id: 'profissionais', icone: '', titulo: 'Planejamento dos Profissionais', responsavel: 'Cada profissional + Gerência',
     oque: 'Planejamento individual de cada profissional — cada um deve ter o seu.',
     itens: [
       it('plano_ind', 'Plano mensal individual', 'Plano personalizado para o mês'),
@@ -302,7 +302,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'dosagem', icone: '🧪', titulo: 'Planejamento de Dosagem', responsavel: 'Dosagem (dentro do Operacional + Técnico)',
+    id: 'dosagem', icone: '', titulo: 'Planejamento de Dosagem', responsavel: 'Dosagem (dentro do Operacional + Técnico)',
     oque: 'Controle, padronização e segurança da dosagem de produtos químicos. Mantido dentro do Operacional + Técnico.',
     itens: [
       it('formulas', 'Controle de fórmulas', 'Registro e padronização de fórmulas'),
@@ -318,7 +318,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'gerais', icone: '🧹', titulo: 'Planejamento de Serviços Gerais', responsavel: 'Serviços Gerais (dentro do Operacional / Infraestrutura)',
+    id: 'gerais', icone: '', titulo: 'Planejamento de Serviços Gerais', responsavel: 'Serviços Gerais (dentro do Operacional / Infraestrutura)',
     oque: 'Limpeza, higienização e organização dos ambientes. Mantido dentro do Operacional / Infraestrutura.',
     itens: [
       it('limpeza', 'Limpeza', 'Plano de limpeza dos ambientes'),
@@ -333,7 +333,7 @@ export const CARDS_PLANEJAMENTO: CardPlano[] = [
     ],
   },
   {
-    id: 'manutencao', icone: '🔧', titulo: 'Planejamento de Manutenção', responsavel: 'Manutenção',
+    id: 'manutencao', icone: '', titulo: 'Planejamento de Manutenção', responsavel: 'Manutenção',
     oque: 'Manutenção preventiva e corretiva de equipamentos e instalações.',
     itens: [
       it('plano_anual', 'Plano anual de manutenção', 'Cronograma anual de manutenções'),

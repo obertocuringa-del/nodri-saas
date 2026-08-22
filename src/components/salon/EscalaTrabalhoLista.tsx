@@ -126,7 +126,7 @@ function dataLimitePJ(dataAdmissao: string): Date | null {
 function fmtDataBR(d: Date) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
 
 function textoDomingo(d: DomingoRow): string {
-  const linhas = [`📅 *Escala de Domingo — ${d.data}*`]
+  const linhas = [`*Escala de Domingo — ${d.data}*`]
   if (d.fechado) linhas.push(`Fechado${d.motivo ? ' — ' + d.motivo : ''}`)
   else {
     linhas.push(`Cabeleireiro: ${d.cabeleireiro || '—'}`)
