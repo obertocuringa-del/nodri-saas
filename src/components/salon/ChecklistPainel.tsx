@@ -11,6 +11,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { useAutoSalvar } from '@/lib/autoSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
+import { DESTINOS_CHECKLIST, CATEGORIA_RECEBIDOS, type DestinoChecklist } from '@/lib/checklistDestinos'
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean; diaMes?: number }
 interface Categoria { id: string; nome: string; demandas: Demanda[] }
@@ -102,6 +103,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
   const [modo, setModo] = useState<'fazer' | 'editar'>('fazer')
   const [diasOpen, setDiasOpen] = useState<string | null>(null)
   const [transferOpen, setTransferOpen] = useState<string | null>(null)
+  const [enviarCatOpen, setEnviarCatOpen] = useState(false)   // menu 'enviar a lista toda'
   // Posição dos menus flutuantes (fixos na tela — não são cortados pela rolagem interna dos cards)
   const [popPos, setPopPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
   function ancorarPop(e: React.MouseEvent, larguraMenu: number) {
@@ -111,7 +113,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
   // Fecha os menus ao clicar em qualquer lugar fora deles — SEM engolir o clique
   // (nada de fundo invisível bloqueando a página: o clique seguinte funciona normal)
   useEffect(() => {
-    if (!diasOpen && !transferOpen) return
+    if (!diasOpen && !transferOpen && !enviarCatOpen) return
     const h = (e: MouseEvent) => {
       const alvo = e.target as HTMLElement
       if (alvo.closest?.('[data-pop-root]')) return
@@ -119,7 +121,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
     }
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
-  }, [diasOpen, transferOpen])
+  }, [diasOpen, transferOpen, enviarCatOpen])
   // Cards por período: Diário nasce aberto (é o uso de toda hora), os demais fechados
   const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>({ 'Diário': true })
 
@@ -167,6 +169,72 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
       if (idx >= 0) dem.dias.splice(idx, 1); else dem.dias.push(dia)
     })
   }
+  // Destinos que NAO estao neste mesmo documento. Dentro do documento quem
+  // resolve e o "Mover para..." de sempre; o que faltava era atravessar para
+  // outra chave — a Coordenacao, por exemplo, nao tinha para onde mandar.
+  const destinosDeFora = DESTINOS_CHECKLIST.filter(d => d.chave !== chave)
+
+  /** Grava os itens no check list do setor escolhido e, so se der certo, tira
+   *  daqui. A ordem importa: se gravar no destino falhar, nada se perde. */
+  async function enviarParaSetor(itens: Demanda[], destino: DestinoChecklist, tirarDaqui: (d: Doc) => void) {
+    if (!itens.length) { toast.error('Nao ha nada para enviar'); return }
+    setSalvando(true)
+    try {
+      const r = await fetch(`/api/salon/grid?chave=${destino.chave}`)
+      let docDest: Doc | null = r.ok ? await r.json() : null
+
+      // Setor que nunca abriu o check list dele ainda nao tem documento. Criar
+      // um documento so com o item recebido apagaria a lista-padrao que ele
+      // receberia ao abrir — entao a lista-padrao entra junto.
+      if (!docDest || !Array.isArray(docDest.categorias)) {
+        const padrao = destino.carregarPadrao ? await destino.carregarPadrao() : null
+        docDest = padrao ? buildFromCats(padrao) : { categorias: [] }
+      }
+
+      const nomeCat = destino.categoria || CATEGORIA_RECEBIDOS
+      let alvo = docDest.categorias.find(c => norm(c.nome) === norm(nomeCat))
+      if (!alvo) { alvo = { id: rid(), nome: nomeCat, demandas: [] }; docDest.categorias.push(alvo) }
+
+      // Id novo (o do destino nao pode colidir) e sem marcacao: quem recebe
+      // ainda nao fez a tarefa.
+      alvo.demandas.push(...itens.map(it => ({
+        ...it, id: rid(), feito: false, feito_em: undefined, historico: [],
+      })))
+
+      const res = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: destino.chave, doc: docDest }),
+      })
+      if (!res.ok) { toast.error('Nao consegui gravar no check list de ' + destino.label); setSalvando(false); return }
+
+      const meuDoc: Doc = JSON.parse(JSON.stringify(doc))
+      tirarDaqui(meuDoc)
+      setDoc(meuDoc)
+      const meu = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave, doc: meuDoc }),
+      })
+      if (meu.ok) setDirty(false)
+      toast.success(`${itens.length === 1 ? 'Item enviado' : itens.length + ' itens enviados'} para ${destino.label}`)
+    } catch { toast.error('Erro de conexao') }
+    setTransferOpen(null); setEnviarCatOpen(false); setSalvando(false)
+  }
+
+  function enviarUmItem(dem: Demanda, destino: DestinoChecklist) {
+    enviarParaSetor([dem], destino, d => {
+      for (const c of d.categorias) {
+        const i = c.demandas.findIndex(x => x.id === dem.id)
+        if (i >= 0) { c.demandas.splice(i, 1); return }
+      }
+    })
+  }
+
+  function enviarCategoriaInteira(destino: DestinoChecklist) {
+    const atual = doc.categorias[catSel]
+    if (!atual) return
+    enviarParaSetor([...atual.demandas], destino, d => { d.categorias[catSel].demandas = [] })
+  }
+
   async function transferirDemanda(demandaId: string, categoriaDestinoId: string) {
     const novoDoc: Doc = JSON.parse(JSON.stringify(doc))
     let item: Demanda | null = null
@@ -318,6 +386,16 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                     <button key={c.id} onClick={() => transferirDemanda(dem.id, c.id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{c.nome}</button>
                   ))}
+                  {destinosDeFora.length > 0 && (
+                    <>
+                      <div style={{ borderTop: '1px solid #f0eee8', margin: '6px 0 2px' }} />
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Enviar para o check list de...</div>
+                      {destinosDeFora.map(d => (
+                        <button key={d.id} onClick={() => enviarUmItem(dem, d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{d.label}</button>
+                      ))}
+                    </>
+                  )}
                 </div>
               </>)}
             </div>
@@ -620,6 +698,23 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
                 <Pencil size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
                 <input value={cat.nome} readOnly={soLeitura || soExecuta} onChange={e => renCategoria(catSel, e.target.value)} style={{ flex: 1, minWidth: 100, fontSize: 16, fontWeight: 800, color: '#5b4fcf', border: 'none', borderBottom: '1px solid #eee', outline: 'none', padding: '2px 0' }} />
                 {!soLeitura && !soExecuta && <button onClick={() => organizarAZ(catSel)} title="Organizar em ordem alfabética (ajuda a achar duplicadas)" style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><ArrowDownAZ size={14} />{!isMobile && ' Organizar A-Z'}</button>}
+                {!soLeitura && !soExecuta && destinosDeFora.length > 0 && (
+                  <div data-pop-root style={{ position: 'relative', flexShrink: 0 }}>
+                    <button onClick={e => { ancorarPop(e, 250); setEnviarCatOpen(v => !v) }} title="Enviar esta lista inteira para o check list de outro setor"
+                      style={{ border: '1px solid #c9c4f0', background: '#f6f4ff', color: '#5b4fcf', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <ArrowRightLeft size={13} />{!isMobile && ' Enviar lista'}
+                    </button>
+                    {enviarCatOpen && (
+                      <div style={{ position: 'fixed', top: popPos.top, left: popPos.left, zIndex: 60, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', minWidth: 240, maxHeight: 280, overflowY: 'auto', padding: 6 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', padding: '4px 8px' }}>Enviar os {doc.categorias[catSel]?.demandas.length || 0} itens para...</div>
+                        {destinosDeFora.map(d => (
+                          <button key={d.id} onClick={() => enviarCategoriaInteira(d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, borderRadius: 6 }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{d.label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!soLeitura && !soExecuta && <button onClick={() => delCategoria(catSel)} title="Excluir categoria" style={{ border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', borderRadius: 8, padding: isMobile ? '7px 9px' : '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Trash2 size={13} />{!isMobile && ' Categoria'}</button>}
               </div>
 
