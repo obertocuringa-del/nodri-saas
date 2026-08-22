@@ -222,7 +222,7 @@ export default function CalendarioEditavel({ chave, titulo, camposGrandes, corTe
     setCopiarOpen(false)
   }
 
-  async function imprimir() {
+  async function imprimir(comDescricao = true) {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const escBr = (v: any) => esc(v).replace(/\n/g, '<br>')
@@ -310,13 +310,13 @@ ${cab('')}
 <table class="cal"><thead><tr>${SEM.map(s => `<th>${s}</th>`).join('')}</tr></thead><tbody>${linhas}</tbody></table>
 ${legendaHtml}
 <div class="rod">Emitido em ${new Date().toLocaleDateString('pt-BR')}</div>
-<div class="pg2">
+${!comDescricao ? '' : `<div class="pg2">
 ${cab(' · descrição dos compromissos')}
 ${doMes.length
   ? `<table class="lista"><thead><tr><th>Data</th><th>Categoria</th><th>Compromisso</th><th>Responsável</th></tr></thead><tbody>${corpo}</tbody></table>`
   : '<div class="vazio-msg">Nenhum compromisso neste mês.</div>'}
 <div class="rod">${doMes.length} compromisso${doMes.length === 1 ? '' : 's'} em ${esc(mesTitulo)}</div>
-</div>
+</div>`}
 <script>window.onload=function(){window.print()}</script></body></html>`
 
     const w = window.open('', '_blank', 'width=1100,height=760'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
@@ -331,12 +331,14 @@ ${doMes.length
     }
     return (
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-        <button onClick={imprimir} style={bt}><Printer size={14} /> Imprimir</button>
+        {/* Imprimir leva as duas folhas (mes + descricao). O PDF leva so o
+            mes: e o que se manda para alguem ver, nao o dossie de papel. */}
+        <button onClick={() => imprimir(true)} style={bt}><Printer size={14} /> Imprimir</button>
 
         {/* Mesma folha da impressao. O navegador e quem grava o arquivo: por
             isso o aviso — sem ele a pessoa procura um download que nao vem. */}
         <button
-          onClick={() => { toast('Na janela que abrir, escolha "Salvar como PDF" no destino.', { duration: 5000 }); imprimir() }}
+          onClick={() => { toast('Na janela que abrir, escolha "Salvar como PDF" no destino.', { duration: 5000 }); imprimir(false) }}
           style={{ ...bt, borderColor: `${corTema}55`, color: corTema, background: `${corTema}0f` }}>
           <FileDown size={14} /> PDF
         </button>
