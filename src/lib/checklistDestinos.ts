@@ -74,6 +74,27 @@ export const DESTINOS_CHECKLIST: DestinoChecklist[] = [
     id: 'ck_financeiro', label: 'Financeiro / Contabilidade', chave: 'checklist_financeiro',
     carregarPadrao: () => import('@/lib/checklistFinanceiroDefaults').then(m => m.CHECKLIST_FINANCEIRO as CatPadrao[]),
   },
+
+  {
+    id: 'ck_rh', label: 'RH', chave: 'checklist_rh',
+    carregarPadrao: () => import('@/lib/checklistSetoresDefaults').then(m => m.CHECKLIST_RH as CatPadrao[]),
+  },
+  {
+    id: 'ck_comercial', label: 'Comercial', chave: 'checklist_comercial',
+    carregarPadrao: () => import('@/lib/checklistSetoresDefaults').then(m => m.CHECKLIST_COMERCIAL as CatPadrao[]),
+  },
+  {
+    id: 'ck_marketing', label: 'Marketing', chave: 'checklist_marketing',
+    carregarPadrao: () => import('@/lib/checklistSetoresDefaults').then(m => m.CHECKLIST_MARKETING as CatPadrao[]),
+  },
+  {
+    id: 'ck_tecnica', label: 'Responsável Técnica', chave: 'checklist_tecnica',
+    carregarPadrao: () => import('@/lib/checklistSetoresDefaults').then(m => m.CHECKLIST_TECNICA as CatPadrao[]),
+  },
+  {
+    id: 'ck_profissionais', label: 'Profissionais', chave: 'checklist_profissionais',
+    carregarPadrao: () => import('@/lib/checklistSetoresDefaults').then(m => m.CHECKLIST_PROFISSIONAIS as CatPadrao[]),
+  },
   // A copa nasce vazia de propósito (a rotina muda de salão para salão).
   { id: 'ck_cafe', label: 'Café / Copa', chave: 'checklist_cafe', carregarPadrao: async () => [] },
   {

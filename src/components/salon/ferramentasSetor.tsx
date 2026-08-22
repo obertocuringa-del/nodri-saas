@@ -43,6 +43,7 @@ import { CHECKLIST_MANUTENCAO } from '@/lib/checklistManutencaoDefaults'
 import { CHECKLIST_COORDENACAO } from '@/lib/checklistCoordenacaoDefaults'
 import { CHECKLIST_PROCESSOS } from '@/lib/checklistProcessosDefaults'
 import { CHECKLIST_FINANCEIRO } from '@/lib/checklistFinanceiroDefaults'
+import { CHECKLIST_RH, CHECKLIST_COMERCIAL, CHECKLIST_MARKETING, CHECKLIST_TECNICA, CHECKLIST_PROFISSIONAIS } from '@/lib/checklistSetoresDefaults'
 import ManualSetorPainel from '@/components/salon/ManualSetorPainel'
 import ContasBancariasLista from '@/components/salon/ContasBancariasLista'
 import ProfissionaisPainel from '@/components/salon/ProfissionaisPainel'
@@ -116,6 +117,11 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'ck_coordenacao':      return <ChecklistPainel key="ck_coordenacao" chave="checklist_coordenacao" defaultCategorias={CHECKLIST_COORDENACAO} semGerencia embutido />
     case 'ck_processos':        return <ChecklistPainel key="ck_processos" chave="checklist_processos" defaultCategorias={CHECKLIST_PROCESSOS} semGerencia embutido />
     case 'ck_financeiro':       return <ChecklistPainel key="ck_financeiro" chave="checklist_financeiro" defaultCategorias={CHECKLIST_FINANCEIRO} semGerencia embutido />
+    case 'ck_rh':                  return <ChecklistPainel key="ck_rh" chave="checklist_rh" defaultCategorias={CHECKLIST_RH} semGerencia embutido />
+    case 'ck_comercial':           return <ChecklistPainel key="ck_comercial" chave="checklist_comercial" defaultCategorias={CHECKLIST_COMERCIAL} semGerencia embutido />
+    case 'ck_marketing':           return <ChecklistPainel key="ck_marketing" chave="checklist_marketing" defaultCategorias={CHECKLIST_MARKETING} semGerencia embutido />
+    case 'ck_tecnica':             return <ChecklistPainel key="ck_tecnica" chave="checklist_tecnica" defaultCategorias={CHECKLIST_TECNICA} semGerencia embutido />
+    case 'ck_profissionais':       return <ChecklistPainel key="ck_profissionais" chave="checklist_profissionais" defaultCategorias={CHECKLIST_PROFISSIONAIS} semGerencia embutido />
     // Nasce sem demanda nenhuma de propósito: a rotina da copa muda de salão
     // para salão, e lista pronta de outro lugar viraria trabalho de apagar.
     case 'ck_cafe':             return <ChecklistPainel key="ck_cafe" chave="checklist_cafe" defaultCategorias={[]} semGerencia embutido />

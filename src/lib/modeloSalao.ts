@@ -49,6 +49,12 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'checklist_processos', como: 'checklist', rotulo: 'Check list — Processos & Qualidade' },
   { chave: 'checklist_contabilidade', como: 'checklist', rotulo: 'Check list — Contabilidade' },
   { chave: 'checklist_cafe', como: 'checklist', rotulo: 'Check list — Café' },
+  { chave: 'checklist_financeiro', como: 'checklist', rotulo: 'Check list — Financeiro' },
+  { chave: 'checklist_rh', como: 'checklist', rotulo: 'Check list — RH' },
+  { chave: 'checklist_comercial', como: 'checklist', rotulo: 'Check list — Comercial' },
+  { chave: 'checklist_marketing', como: 'checklist', rotulo: 'Check list — Marketing' },
+  { chave: 'checklist_tecnica', como: 'checklist', rotulo: 'Check list — Responsável Técnica' },
+  { chave: 'checklist_profissionais', como: 'checklist', rotulo: 'Check list — Profissionais' },
   { chave: 'demanda_checklist_administrativo', como: 'checklist', rotulo: 'Check list — Administrativo' },
 
   // Páginas de procedimento (manual_<setor>)
