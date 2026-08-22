@@ -132,6 +132,14 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .nodri-hero-texto { justify-content: space-between !important; }
         }
 
+        /* Os quatro selos do afiliado eram caixas mortas. Reagem ao mouse
+           (sobem, ganham a cor da marca e uma sombra) e afundam no clique —
+           quem passa por cima entende que aquilo ali e clicavel. */
+        .nodri-chip { cursor: default; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease; }
+        .nodri-chip:hover { transform: translateY(-3px); border-color: ${CIANO} !important; color: ${MARINHO} !important; box-shadow: 0 10px 22px rgba(13,42,86,.13); }
+        .nodri-chip:active { transform: translateY(-1px) scale(.98); box-shadow: 0 4px 10px rgba(13,42,86,.12); }
+        @media (prefers-reduced-motion: reduce) { .nodri-chip { transition: none } .nodri-chip:hover, .nodri-chip:active { transform: none } }
+
         /* Faixa que rola para o lado, uma pagina de cada vez. O scroll-snap
            faz o dedo (ou o trackpad) parar sempre no comeco de uma pagina,
            nunca no meio de um item. */
@@ -614,7 +622,7 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           <p style={{ color: '#767069', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>{cfg.afiliados_subtitulo}</p>
           <div className="nodri-chips" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', margin: '24px 0' }}>
             {(cfg.afiliados_chips || []).map((b: any, i: number) => (
-              <div key={i} style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={i} className="nodri-chip" style={{ background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '12px 20px', color: '#1a1a1a', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {b.texto}
               </div>
             ))}

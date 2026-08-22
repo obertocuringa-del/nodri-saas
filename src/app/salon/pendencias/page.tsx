@@ -317,45 +317,55 @@ export default function PendenciasPage() {
       {/* Header — acima de 640px a barra global (Voltar/Início/Busca) flutua no
           canto superior direito por cima da página; o respiro à direita evita
           que os botões daqui fiquem escondidos embaixo dela. */}
-      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3 flex-wrap sm:pr-[340px]">
+      <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-x-4 gap-y-3 flex-wrap sm:pr-[340px]">
         <button onClick={() => router.push('/salon')} className="flex items-center gap-1.5 text-nodri-t2 hover:text-nodri-t1 transition-colors text-sm">
           <ArrowLeft size={15} /> Início
         </button>
         <div className="w-px h-4 bg-nodri-border" />
-        <div className="flex-1">
-          <h1 className="font-syne font-bold text-[15px] text-nodri-t1">Pendências Profissionais</h1>
+        <div className="flex-1 min-w-[180px]">
+          <h1 className="font-syne font-bold text-[15px] text-nodri-t1 leading-tight">Pendências Profissionais</h1>
           <p className="text-[10px] text-nodri-t3">Gerencie tarefas e compromissos da equipe</p>
         </div>
-        {/* Abre a caixa de Nova Pendência (fica aqui em cima para não ocupar a tela) */}
-        <button
-          onClick={() => setModalAberto(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 transition-all">
-          <Plus size={13}/> Nova Pendência
-        </button>
-        {/* Atalho para o calendário do salão. Sai maior e colorido de
-            propósito: no organograma a pessoa entra para resolver pendência e
-            esquece que a data do compromisso mora em outra tela. */}
-        <button
-          onClick={() => router.push('/salon/calendario')}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#5b4fcf] to-[#0891b2] text-white text-[12.5px] font-extrabold tracking-wide shadow-lg shadow-[#5b4fcf]/25 hover:brightness-110 hover:shadow-xl transition-all">
-          <Calendar size={15}/> CALENDÁRIO
-        </button>
-        <button
-          onClick={() => setNovoDepAberto(v => !v)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] font-bold hover:bg-black/5 transition-all">
-          <Plus size={13}/> Novo departamento
-        </button>
-        {salaoId && (
+        {/* Os botões viviam com alturas e cantos diferentes — o Calendário
+            chegou a ficar uma cabeça acima dos outros. Agora todos têm a mesma
+            altura e o mesmo raio: o que separa um do outro é a cor, não o
+            tamanho. Ficam num grupo próprio para quebrarem juntos na tela
+            estreita, em vez de um de cada vez. */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => {
-              const link = urlPublica(`/pendencia-prof/${salaoId}`)
-              navigator.clipboard.writeText(link)
-              toast.success('Link copiado! Envie para os profissionais.')
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[11px] font-semibold hover:bg-nodri-cyan/20 transition-colors">
-            <Link2 size={13}/> Copiar Link do Profissional
+            onClick={() => setModalAberto(true)}
+            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11.5px] font-bold hover:brightness-110 active:scale-[.97] transition-all">
+            <Plus size={14}/> Nova Pendência
           </button>
-        )}
+
+          {/* Atalho para o calendário: quem entra aqui para resolver pendência
+              esquece que a data do compromisso mora em outra tela. Destaque
+              pela cor e por um pouco mais de largura, não pela altura. */}
+          <button
+            onClick={() => router.push('/salon/calendario')}
+            className="h-9 inline-flex items-center gap-2 px-5 rounded-lg bg-gradient-to-r from-[#5b4fcf] to-[#0891b2] text-white text-[11.5px] font-extrabold tracking-wide shadow-md shadow-[#5b4fcf]/25 hover:brightness-110 hover:shadow-lg active:scale-[.97] transition-all">
+            <Calendar size={14}/> CALENDÁRIO
+          </button>
+
+          <div className="w-px h-5 bg-nodri-border mx-0.5 hidden sm:block" />
+
+          <button
+            onClick={() => setNovoDepAberto(v => !v)}
+            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg border border-nodri-border bg-nodri-card text-nodri-t2 text-[11.5px] font-bold hover:bg-black/5 active:scale-[.97] transition-all">
+            <Plus size={14}/> Novo departamento
+          </button>
+          {salaoId && (
+            <button
+              onClick={() => {
+                const link = urlPublica(`/pendencia-prof/${salaoId}`)
+                navigator.clipboard.writeText(link)
+                toast.success('Link copiado! Envie para os profissionais.')
+              }}
+              className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[11.5px] font-semibold hover:bg-nodri-cyan/20 active:scale-[.97] transition-all">
+              <Link2 size={14}/> Copiar Link do Profissional
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── ORGANOGRAMA (só no computador) ──
