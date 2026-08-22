@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
+import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, Loader2, Save, Plus, Trash2, Check, X, BarChart3, Copy, RotateCcw, Pencil, Calendar, ArrowRightLeft, ArrowDownAZ, ChevronDown, CheckCircle2, HandCoins, Circle, Star, Route, Settings2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { CHECKLIST_DEFAULT, FREQUENCIAS } from '@/components/salon/checklistDefaults'
@@ -355,7 +356,7 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
           da página só aparece no computador (sem duplicação). */}
       {!isMobile && !embutido && (
       <nav style={{ background: temAlerta ? '#fdf1f1' : '#faf9f7', borderBottom: temAlerta ? '1px solid #f3c8c8' : '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
-        <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
+        <button onClick={() => voltar(router, '/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>Check List Diário</span>
         {!soLeitura && (

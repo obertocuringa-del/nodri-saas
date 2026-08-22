@@ -1,13 +1,16 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Home } from 'lucide-react'
+import { voltar } from '@/lib/historicoNav'
 import AcoesComerciais from '@/components/salon/AcoesComerciais'
 
 export default function AcoesComerciaisPage() {
+  const router = useRouter()
   return (
     <div className="min-h-screen bg-nodri-bg">
       <header className="nodri-linha-1 flex items-center gap-3 px-4 py-3 border-b border-nodri-border bg-nodri-card sticky top-0 z-30">
-        <a href="/salon" className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><ArrowLeft size={16} /> Voltar</a>
+        <button onClick={() => voltar(router)} className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><ArrowLeft size={16} /> Voltar</button>
         <a href="/salon" className="flex items-center gap-1 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><Home size={15} /> Início</a>
         <span className="text-nodri-border">|</span>
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Ações Comerciais</h1>

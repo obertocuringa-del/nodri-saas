@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, Sparkles, Loader2, Printer, RefreshCw } from 'lucide-react'
 import { useModulos } from '@/lib/useModulos'
 import AvisoPlano from '@/components/salon/AvisoPlano'
@@ -60,7 +61,7 @@ export default function ConsultoriaIAPage() {
   return (
     <div className="nodri-salon-bg" style={{ minHeight: '100vh' }}>
       <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
-        <button onClick={() => router.push('/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
+        <button onClick={() => voltar(router, '/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}><Sparkles size={15} style={{ display: 'inline', verticalAlign: -2, marginRight: 6, color: '#5b4fcf' }} />Consultoria IA</span>
         {texto && !loading && <button onClick={imprimir} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir</button>}

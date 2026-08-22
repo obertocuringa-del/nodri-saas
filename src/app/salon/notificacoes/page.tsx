@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, Bell, Send, Trash2, Pencil, Check, X, Loader2, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -64,7 +65,7 @@ export default function NotificacoesPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3fb' }}>
       <nav style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', borderBottom: '1px solid #ece9e2', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => router.push('/salon')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
+        <button onClick={() => voltar(router, '/salon')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', display: 'inline-flex', alignItems: 'center', gap: 7 }}><Bell size={17} color="#5b4fcf" /> Central de Notificações</span>
       </nav>

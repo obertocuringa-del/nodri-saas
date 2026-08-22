@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, Save, Copy, Trash2, Plus, ArrowUp, ArrowDown, Eye, EyeOff, Settings, Link2, MessageCircle, ListChecks, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { LojistaServico } from '@/lib/lojistasServicosPadrao'
@@ -180,7 +181,7 @@ export default function LojistasConfigPage() {
       )}
 
       <nav style={{ background: 'white', borderBottom: '1px solid #ece9f7', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
-        <button onClick={() => router.push('/salon/lojistas')} className="ljc-btn" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}><ArrowLeft size={16} /> Voltar</button>
+        <button onClick={() => voltar(router, '/salon/lojistas')} className="ljc-btn" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}><ArrowLeft size={16} /> Voltar</button>
         <span style={{ width: 1, height: 18, background: '#e0ddd8' }} />
         <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${COR}, ${COR2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Settings size={16} color="white" />

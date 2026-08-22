@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings } from 'lucide-react'
 import { EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculosShared'
+import { useRouter } from 'next/navigation'
+import { voltar } from '@/lib/historicoNav'
 
 const COR = '#5b4fcf'
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const nomeUF = (uf: string) => ESTADOS_BR.find(e => e.uf === uf)?.nome || uf
 
 export default function CurriculosPage() {
+  const router = useRouter()
   const [itens, setItens] = useState<Curriculo[]>([])
   // A lista de vagas e GLOBAL do NODRI e vem do servidor: o que um salao
   // acrescenta vale para todos, no formulario publico e nesta tela.
@@ -110,7 +113,7 @@ export default function CurriculosPage() {
   return (
     <div className="min-h-screen bg-nodri-dark text-nodri-t1">
       <div className="sticky top-0 z-20 bg-nodri-surface border-b border-nodri-border px-5 py-3 flex items-center gap-3">
-        <a href="/salon" className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><ArrowLeft size={16} /> Voltar</a>
+        <button onClick={() => voltar(router)} className="flex items-center gap-2 text-nodri-t2 hover:text-nodri-cyan text-sm font-medium"><ArrowLeft size={16} /> Voltar</button>
         <div className="w-px h-5 bg-nodri-border" />
         <a href="/salon" className="flex items-center gap-1.5 text-nodri-t3 hover:text-nodri-cyan text-[12px]"><Home size={14} /> Início</a>
         <div className="w-px h-5 bg-nodri-border" />

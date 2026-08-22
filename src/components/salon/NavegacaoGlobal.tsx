@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Home, ArrowLeft, Search, Loader2, FileText, User, Layers, AlertTriangle, Save } from 'lucide-react'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { haNaoSalvo, nomesNaoSalvos } from '@/lib/guardaSalvar'
+import { registrarPagina, voltar } from '@/lib/historicoNav'
 import TituloDaAba from './TituloDaAba'
 import { ROTAS_DESCOBERTAS } from '@/lib/rotasDescobertas'
 import { CATALOGO as FERRAMENTAS, FERRAMENTAS_POR_SETOR } from '@/lib/ferramentasCatalogo'
@@ -235,6 +236,15 @@ function tituloDaRota(pathname: string): string {
 export default function NavegacaoGlobal() {
   const router = useRouter()
   const pathname = usePathname()
+
+  // Toda tela do salao passa por aqui (a barra fica no layout), entao e o
+  // lugar certo para anotar o caminho que o Voltar vai desfazer. A busca da
+  // URL entra junto: aba e o mesmo endereco com ?aba=, e voltar para a aba
+  // anterior e o que a pessoa espera.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    registrarPagina(window.location.pathname + window.location.search)
+  }, [pathname])
   const isMobile = useIsMobile()
   const [role, setRole] = useState<string | null>(null)
   const [perms, setPerms] = useState<string[] | null>(null)
@@ -437,7 +447,7 @@ export default function NavegacaoGlobal() {
           (canto direito) — o CSS global reserva o espaço nos <nav>. */}
       {!naHome && !isMobile && (
       <div style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6 }}>
-        <button onClick={() => navegarComGuarda(() => router.back())} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
+        <button onClick={() => navegarComGuarda(() => voltar(router))} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <ArrowLeft size={15} />
         </button>
@@ -467,7 +477,7 @@ export default function NavegacaoGlobal() {
             <Save size={13} /> Salvar
           </button>
         )}
-        <button onClick={() => navegarComGuarda(() => router.back())} aria-label="Voltar" title="Voltar" style={pillSt}><ArrowLeft size={15} /></button>
+        <button onClick={() => navegarComGuarda(() => voltar(router))} aria-label="Voltar" title="Voltar" style={pillSt}><ArrowLeft size={15} /></button>
         <button onClick={() => navegarComGuarda(() => router.push('/salon'))} aria-label="Ir para a página inicial" title="Início" style={pillSt}><Home size={15} /></button>
         <button onClick={() => setBuscaAberta(true)} aria-label="Buscar no sistema" title="Buscar" style={pillSt}><Search size={15} /></button>
       </div>
