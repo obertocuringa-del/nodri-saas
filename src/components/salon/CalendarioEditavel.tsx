@@ -455,10 +455,10 @@ ${doMes.length
 
         {/* Grade do mês */}
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 'clamp(6px,1vw,12px)' }}>
-          <div className="ncal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, marginBottom: 5 }}>
+          <div className="ncal-grid nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, marginBottom: 5 }}>
             {SEM.map((s, i) => <div key={s} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: i === 0 || i === 6 ? '#c0bab0' : '#9ca3af', padding: '5px 0', textTransform: 'uppercase', letterSpacing: '.6px' }}>{s}</div>)}
           </div>
-          <div className="ncal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
+          <div className="ncal-grid nodri-cal-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
             {semanas.flat().map((d, idx) => {
               if (!d) return <div key={'v' + idx} className="ncal-vazio" style={{ minHeight: 46, borderRadius: 9, background: '#fbfaf8' }} />
               const data = mesStr(d)
