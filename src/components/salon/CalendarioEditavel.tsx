@@ -281,17 +281,23 @@ ${doMes.length
         .ncal-dia { min-height: max(76px, calc((100vh - 250px) / ${semanas.length})); }
         .ncal-chip { font-size: ${fonte}px; }
         @media (max-width: 900px) { .ncal-dia { min-height: max(64px, calc((100vh - 300px) / ${semanas.length})); } }
-        /* CELULAR — cela compacta com o texto dentro, cabendo na largura da
-           tela sem rolar de lado. As bolinhas de cor saem: com o texto ali,
-           elas so tiravam espaco. Responsavel e do 3o compromisso em diante
-           ficam para a lista do mes, logo abaixo. */
+        /* CELULAR — cela compacta com o texto ESCRITO dentro dela, sem a
+           moldura que o computador usa. Numa cela de 70px a caixinha branca
+           com borda comia a largura toda e sobrava lugar para duas palavras.
+           Aqui o compromisso e so texto, na cor dele; a cor tambem vai para o
+           numero do dia, que e o que se enxerga de longe. */
         @media (max-width: 640px) {
           .ncal-grid { gap: 3px !important; }
           .ncal-dia { min-height: 70px !important; padding: 4px 4px !important; }
           .ncal-num { font-size: 11.5px !important; }
+          .ncal-dia[data-tem] .ncal-num { color: var(--cor-dia) !important; }
           .ncal-pontos { display: none !important; }
-          .ncal-chip { display: flex !important; font-size: ${Math.max(7, fonte - 2)}px; margin-top: 3px !important; gap: 2px !important; }
-          .ncal-chip > span { padding: 1px 3px !important; border-left-width: 2px !important; }
+          .ncal-chip { display: flex !important; font-size: ${Math.max(7, fonte - 2)}px; margin-top: 2px !important; gap: 1px !important; }
+          .ncal-chip > span {
+            padding: 0 !important; border: none !important; background: transparent !important;
+            border-radius: 0 !important; color: var(--cor-ev) !important; font-weight: 700 !important;
+          }
+          .ncal-chip em { color: var(--cor-ev) !important; opacity: .75; }
           .ncal-vazio { min-height: 70px !important; }
           .ncal-legenda-grid { grid-template-columns: 1fr !important; }
           .ncal-topo-mes { gap: 8px !important; }
@@ -363,7 +369,8 @@ ${doMes.length
               const fundo = cores.length === 1 ? corDe(cores[0]).fundo : evs.length ? '#fffdf9' : '#fff'
               return (
                 <button key={d} onClick={() => abrirDia(data)} className="ncal-dia"
-                  style={{ borderRadius: 9, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: fundo, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'stretch', padding: '6px 7px', textAlign: 'left', transition: 'border-color .12s' }}>
+                  data-tem={evs.length ? '1' : undefined}
+                  style={{ ['--cor-dia' as any]: cores.length ? corDe(cores[0]).hex : undefined, borderRadius: 9, border: sel ? `2px solid ${corTema}` : '1px solid #ece9e2', background: fundo, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'stretch', padding: '6px 7px', textAlign: 'left', transition: 'border-color .12s' }}>
                   {/* Faixa das cores do dia, lado a lado: tres compromissos de
                       cores diferentes aparecem como tres faixas. */}
                   {cores.length > 1 && (
@@ -383,7 +390,7 @@ ${doMes.length
                     {evs.map(e => {
                       const c = corDe(e.cor)
                       return (
-                        <span key={e.id} style={{ borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                        <span key={e.id} style={{ ['--cor-ev' as any]: c.hex, borderLeft: `3px solid ${c.hex}`, background: '#ffffffcc', borderRadius: 4, padding: '2px 5px', color: '#374151', fontWeight: 600, lineHeight: 1.25, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                           {e.texto}
                           {e.responsavel && <em style={{ display: 'block', fontStyle: 'normal', color: '#8b95a5', fontWeight: 500 }}>{e.responsavel}</em>}
                         </span>
