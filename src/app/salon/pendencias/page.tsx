@@ -332,6 +332,14 @@ export default function PendenciasPage() {
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 transition-all">
           <Plus size={13}/> Nova Pendência
         </button>
+        {/* Atalho para o calendário do salão. Sai maior e colorido de
+            propósito: no organograma a pessoa entra para resolver pendência e
+            esquece que a data do compromisso mora em outra tela. */}
+        <button
+          onClick={() => router.push('/salon/calendario')}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#5b4fcf] to-[#0891b2] text-white text-[12.5px] font-extrabold tracking-wide shadow-lg shadow-[#5b4fcf]/25 hover:brightness-110 hover:shadow-xl transition-all">
+          <Calendar size={15}/> CALENDÁRIO
+        </button>
         <button
           onClick={() => setNovoDepAberto(v => !v)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] font-bold hover:bg-black/5 transition-all">
