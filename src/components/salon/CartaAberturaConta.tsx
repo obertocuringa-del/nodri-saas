@@ -20,10 +20,14 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
   const [selId, setSelId] = useState('')
   // Config (salva): logo + dados da empresa + banco/cidade
   const [logo, setLogo] = useState('')
-  const [empresa, setEmpresa] = useState('OLIVEIRA E SCHNEIDER INSTITUTO DE BELEZA LTDA')
+  // Comecam vazios de proposito. Antes o nome, a cidade e o banco de UM salao
+  // vinham escritos aqui no codigo, entao todo salao novo abria a carta com os
+  // dados de outra empresa ja preenchidos. O que falta e buscado do cadastro do
+  // proprio salao logo abaixo.
+  const [empresa, setEmpresa] = useState('')
   const [cnpj, setCnpj] = useState('')
-  const [banco, setBanco] = useState('Bradesco')
-  const [cidade, setCidade] = useState('Brasília')
+  const [banco, setBanco] = useState('')
+  const [cidade, setCidade] = useState('')
   const [salvandoCfg, setSalvandoCfg] = useState(false)
   // Salário (NÃO salva — editar a cada carta)
   const [salario, setSalario] = useState('')
@@ -31,14 +35,24 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
 
   const carregar = useCallback(async () => {
     try {
-      const [p, cfg] = await Promise.all([
+      const [p, cfg, perfil] = await Promise.all([
         fetch('/api/profissionais').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch(`/api/salon/grid?chave=${CHAVE}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        // Cadastro do proprio salao: e daqui que sai o nome/CNPJ/cidade da carta
+        // quando ninguem configurou nada ainda.
+        fetch('/api/salon/perfil').then(r => r.ok ? r.json() : null).catch(() => null),
       ])
       // Setor mora na mesma tabela de profissionais — carta de abertura de conta
       // é documento de pessoa, setor não entra.
       setProfs((Array.isArray(p) ? p : []).filter((x: any) => !x.is_departamento))
-      if (cfg) { setLogo(cfg.logo || ''); setEmpresa(cfg.empresa || ''); setCnpj(cfg.cnpj || ''); setBanco(cfg.banco || 'Bradesco'); setCidade(cfg.cidade || 'Brasília (DF)') }
+      // O que o salao salvou vale mais que o cadastro; o cadastro so preenche
+      // o que estiver em branco. Assim quem ja ajustou a carta nao perde nada,
+      // e quem nunca abriu ja encontra os proprios dados no lugar.
+      setLogo(cfg?.logo || '')
+      setEmpresa(cfg?.empresa || perfil?.nome || '')
+      setCnpj(cfg?.cnpj || perfil?.cnpj || '')
+      setBanco(cfg?.banco || '')
+      setCidade(cfg?.cidade || perfil?.cidade || '')
     } catch { /* */ }
     setLoading(false)
   }, [])
