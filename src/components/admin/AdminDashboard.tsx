@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key, Mail, Video } from 'lucide-react'
+import { LogOut, Bell, Plus, Building, CreditCard, Puzzle, Users, BarChart3, Settings, RefreshCw, X, Send, Edit, Lock, Unlock, Loader2, ChevronDown, Check, Link, Save, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Search, Zap, Tag, FolderOpen, Wrench, LogIn, Bot, GraduationCap, ClipboardList, DollarSign, Home, CheckCircle, AlertCircle, Clock, ShoppingBag, Key, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Salao, Modulo, Notificacao, Plano, Cupom } from '@/types'
 import Contatos from './Contatos'
@@ -1070,8 +1070,6 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
-    // Também página própria: monta o salão de demonstração para gravar vídeo
-    { id: 'gravacao', icon: <Video size={14} />, label: 'Salão de gravação', rota: '/admin/gravacao' },
     { id: 'contatos', icon: <Mail size={14} />, label: 'Contatos do site' },
     { id: 'funcionalidades', icon: <Zap size={14} />, label: 'Funcionalidades' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
