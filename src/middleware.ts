@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyJWT } from '@/lib/auth'
 import { chaveDoModulo, moduloExigidoPelaRota } from '@/lib/planosModulos'
 
-export async function middleware(request: NextRequest) {
+async function roteador(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('nodri_token')?.value
 
@@ -270,6 +270,20 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next()
+}
+
+// Toda resposta de API passa por aqui antes de sair. O motivo: 156 rotas
+// logadas nao tinham `force-dynamic`, e o cache guardava a resposta de um
+// salao e entregava para o proximo que pedisse a mesma URL - quem muda por
+// salao e o cookie, nao o endereco, entao o cache nao tinha como saber que
+// eram inquilinos diferentes. Corrigir rota por rota deixaria a proxima
+// rota nova vulneravel de novo; aqui pega tudo de uma vez, para sempre.
+export async function middleware(request: NextRequest) {
+  const response = await roteador(request)
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    response.headers.set('Cache-Control', 'no-store, must-revalidate')
+  }
+  return response
 }
 
 export const config = {
