@@ -17,6 +17,7 @@ import KitsAdminLista from '@/components/salon/KitsAdminLista'
 import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
 import AtaReuniaoLista from '@/components/salon/AtaReuniaoLista'
+import ProdutosVencidos from '@/components/salon/ProdutosVencidos'
 import EscalaTrabalhoLista from '@/components/salon/EscalaTrabalhoLista'
 import EscalaFeriadosLista from '@/components/salon/EscalaFeriadosLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
@@ -102,6 +103,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pagamento_va_vt':     return <EscalaTrabalhoLista key="va_vt" chave="escala" blocos="vavt" />
     case 'feriados':            return <EscalaFeriadosLista key="feriados" chave="feriados" />
     case 'ata':                 return <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />
+    case 'produtos_vencidos':   return <ProdutosVencidos key="prod_venc" chave="produtos_vencidos" />
     case 'senhas':              return <SenhasLista key="senhas" chave="senhas" />
     case 'telefones':           return <ListaTelefones key="telefones" />
     case 'desconto_profissional': return <ConsolidadoDescontos key="descprof" open embutido onClose={() => { }} />

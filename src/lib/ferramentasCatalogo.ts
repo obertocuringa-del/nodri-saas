@@ -39,6 +39,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   esterilizacao_fluxo: { id: 'esterilizacao_fluxo', label: 'ESTERILIZAÇÃO',          perm: 'adm_esterilizacao' },
   kits:                { id: 'kits',                label: 'KITS PÉ E MÃO',          perm: 'adm_kits' },
   enxovais:            { id: 'enxovais',            label: 'CONTROLE DE ENXOVAIS',   perm: 'adm_enxovais' },
+  produtos_vencidos:   { id: 'produtos_vencidos',   label: 'PRODUTOS VENCIDOS',      perm: 'adm_listas' },
   cadastrar_produto:   { id: 'cadastrar_produto',   label: 'CADASTRAR PRODUTO',      perm: 'adm_cadastrar_produto' },
   etiquetas:           { id: 'etiquetas',           label: 'ETIQUETAS',              perm: 'adm_etiquetas' },
   // Licenças e Contratos Administrativos viraram uma página só, em cards
@@ -124,7 +125,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // "Arquivos para Envio" saiu da sidebar da Recepção. Segue no catálogo/banco.
   { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
-  { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais'] },
+  { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais', 'produtos_vencidos'] },
   // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
   // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
