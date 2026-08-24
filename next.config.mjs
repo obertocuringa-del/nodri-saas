@@ -19,8 +19,14 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  // Supabase (banco/storage) e as APIs de IA usadas pelo servidor
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://generativelanguage.googleapis.com https://api.tavily.com",
+  // Supabase (banco/storage) e as APIs de IA usadas pelo servidor.
+  //
+  // viacep: o CEP e consultado pelo NAVEGADOR, no formulario de cadastro do
+  // profissional (link publico, cadastro manual e edicao do perfil). Sem estar
+  // nesta lista o browser bloqueia a chamada antes de sair, e o campo para de
+  // preencher bairro/cidade/UF sozinho - sem erro visivel na tela, que foi
+  // exatamente como o preenchimento automatico "parou de funcionar".
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://generativelanguage.googleapis.com https://api.tavily.com https://viacep.com.br",
   "frame-ancestors 'none'",      // ninguém embute o sistema num iframe (clickjacking)
   // YouTube liberado para os vídeos das páginas de funcionalidade. Sem isto o
   // player aparece como "Este conteúdo está bloqueado" — a política recusava
