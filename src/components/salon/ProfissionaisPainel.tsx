@@ -6,7 +6,6 @@ import { ArrowLeft, Plus, Search, UserCheck, UserX, Edit2, Trash2, Upload, X, Ch
 import toast from 'react-hot-toast'
 import MateriaisTrabalho from '@/components/salon/MateriaisTrabalho'
 import ProcessoContratacao from '@/components/salon/ProcessoContratacao'
-import CartaAberturaConta from '@/components/salon/CartaAberturaConta'
 import { PJ_CONTRATACAO, PJ_DESLIGAMENTO } from '@/components/salon/processoDefaults'
 import EditorAvaliacao from '@/components/salon/EditorAvaliacao'
 import DescricaoCargo from '@/components/salon/DescricaoCargo'
@@ -226,10 +225,6 @@ export default function ProfissionaisPainel({ secaoFixa = '', embutido = false, 
   const [formCidade, setFormCidade] = useState('')
   const [formUf, setFormUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
-  // Carta de abertura de conta: so o CLT usa. Fica FORA do processo de
-  // contratacao, logo abaixo dele, porque nao e um passo do processo - e um
-  // documento que se emite quando precisa, em qualquer momento.
-  const [cartaCltAberta, setCartaCltAberta] = useState(false)
 
   // ── DISTRATO ──
   const [distratoProf, setDistratoProf] = useState<Profissional | null>(null)
@@ -1925,26 +1920,7 @@ ${montarContratoHTML()}
                 {subFixa ? null : <button onClick={() => setCltSub('processo')} style={{ padding: '8px 16px', borderRadius: 8, border: cltSub === 'processo' ? '1px solid #0ea5e9' : '1px solid #e0ddd8', background: cltSub === 'processo' ? '#0ea5e9' : '#fff', color: cltSub === 'processo' ? '#fff' : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Processo de Contratação</button>}
               </div>
               {cltSub === 'processo' ? (
-                <>
-                  <ProcessoContratacao comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
-
-                  {/* A carta sai do cabecalho do processo e vira um bloco proprio
-                      aqui embaixo: ela nao e uma etapa da contratacao, e um
-                      documento avulso que o salao emite quando o banco pede. */}
-                  <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #ece9e2' }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Documentação bancária</h3>
-                    <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 12px' }}>
-                      Emita a carta para o profissional abrir a conta salário. A carta vem preenchida com os dados do cadastro; você só completa o salário.
-                    </p>
-                    <button onClick={() => setCartaCltAberta(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 8,
-                               border: '1px solid #16a34a', background: '#fff', color: '#16a34a',
-                               fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
-                      <FileText size={15} /> Carta de Abertura de Conta
-                    </button>
-                  </div>
-                  {cartaCltAberta && <CartaAberturaConta onClose={() => setCartaCltAberta(false)} />}
-                </>
+                <ProcessoContratacao comCarta={false} pessoas={profissionais.map(p => ({ nome: p.apelido || p.nome_completo || '—', telefone: (p as any).telefone || (() => { try { return JSON.parse((p as any).contato_responsavel || '{}').tel || '' } catch { return '' } })() }))} />
               ) : (<div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <div>

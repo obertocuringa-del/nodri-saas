@@ -118,6 +118,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pj_desligamento: { id: 'pj_desligamento', label: 'PJ · PROCESSO DE DESLIGAMENTO', perm: 'profissionais', grupo: 'CNPJ' },
   clt_profs:       { id: 'clt_profs',       label: 'CLT · PROFISSIONAIS (FÉRIAS)',  perm: 'profissionais', grupo: 'CLT' },
   clt_contratacao: { id: 'clt_contratacao', label: 'CLT · PROCESSO DE CONTRATAÇÃO', perm: 'profissionais', grupo: 'CLT' },
+  clt_carta_conta: { id: 'clt_carta_conta', label: 'CLT · CARTA DE ABERTURA DE CONTA', perm: 'profissionais', grupo: 'CLT' },
 }
 
 // Quais ferramentas pertencem a cada setor. A chave é o nome do setor
@@ -139,7 +140,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['MARKETING'], itens: ['ck_marketing'] },
   { chave: ['RESPONSAVEL TECNICA', 'TECNICA'], itens: ['ck_tecnica'] },
   { chave: ['PROFISSIONAIS'], itens: ['ck_profissionais'] },
-  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['ck_rh', 'pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_materiais', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
+  { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['ck_rh', 'pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'clt_carta_conta', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_materiais', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
   { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
   { chave: ['CAFE', 'COPA'], itens: ['ck_cafe', 'compras_cafe'] },

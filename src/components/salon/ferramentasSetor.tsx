@@ -18,6 +18,7 @@ import EnxovaisLista from '@/components/salon/EnxovaisLista'
 import SenhasLista from '@/components/salon/SenhasLista'
 import AtaReuniaoLista from '@/components/salon/AtaReuniaoLista'
 import ProdutosVencidos from '@/components/salon/ProdutosVencidos'
+import CartaAberturaConta from '@/components/salon/CartaAberturaConta'
 import EscalaTrabalhoLista from '@/components/salon/EscalaTrabalhoLista'
 import EscalaFeriadosLista from '@/components/salon/EscalaFeriadosLista'
 import ListaBebidas from '@/components/salon/ListaBebidas'
@@ -143,6 +144,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'pj_desligamento':       return <ProfissionaisPainel key="pj_desligamento" secaoFixa="cnpj" subFixa="desligamento" embutido />
     case 'clt_profs':             return <ProfissionaisPainel key="clt_profs" secaoFixa="clt" subFixa="clt" embutido />
     case 'clt_contratacao':       return <ProfissionaisPainel key="clt_contratacao" secaoFixa="clt" subFixa="processo" embutido />
+    case 'clt_carta_conta':       return <CartaAberturaConta key="clt_carta" embutido />
     case 'pr_entrevista':         return <ProfissionaisPainel key="pr_entrevista" secaoFixa="entrevista" embutido />
     case 'pr_materiais':          return <ProfissionaisPainel key="pr_materiais" secaoFixa="materiais" embutido />
     case 'pr_perfil':             return <ProfissionaisPainel key="pr_perfil" secaoFixa="perfil" embutido />

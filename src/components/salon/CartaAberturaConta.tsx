@@ -13,7 +13,11 @@ const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&l
 const MESES_EXT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 const dataExtenso = () => { const d = new Date(); return `${d.getDate()} de ${MESES_EXT[d.getMonth()]} de ${d.getFullYear()}` }
 
-export default function CartaAberturaConta({ onClose }: { onClose: () => void }) {
+// `embutido` desenha a carta como PAGINA (item proprio da sidebar), sem o
+// fundo escuro nem o X de fechar. Sem ele o componente continua sendo o
+// modal de antes — os dois modos usam o mesmo miolo, entao nao existe
+// versao da carta que fica para tras quando a outra muda.
+export default function CartaAberturaConta({ onClose, embutido = false }: { onClose?: () => void; embutido?: boolean }) {
   const [profs, setProfs] = useState<Prof[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
@@ -102,12 +106,14 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
 
   const filtradas = profs.filter(p => norm(p.nome_completo || p.apelido || '').includes(norm(busca)))
 
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
+  const miolo = (
+    <>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f0eee8', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Carta de Abertura de Conta</h3>
-          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={20} /></button>
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Carta de Abertura de Conta</h3>
+            {embutido && <p style={{ fontSize: 12.5, color: '#6b6860', margin: '3px 0 0' }}>Escolha o funcionário, preencha o salário e imprima. Os dados da empresa ficam salvos.</p>}
+          </div>
+          {!embutido && <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}><X size={20} /></button>}
         </div>
 
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={26} className="animate-spin" style={{ color: '#5b4fcf' }} /></div> : (
@@ -160,6 +166,23 @@ export default function CartaAberturaConta({ onClose }: { onClose: () => void })
             <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>Abre a carta pronta com a logo e os dados. Para baixar em PDF, escolha “Salvar como PDF” na janela de impressão.</p>
           </div>
         )}
+    </>
+  )
+
+  // Pagina: o miolo ocupa a area de conteudo do setor, com moldura de card.
+  if (embutido) {
+    return (
+      <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, overflow: 'hidden', maxWidth: 720 }}>
+        {miolo}
+      </div>
+    )
+  }
+
+  // Modal: comportamento antigo, para quem abre a carta por um botao.
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 70px rgba(0,0,0,.35)' }}>
+        {miolo}
       </div>
     </div>
   )
