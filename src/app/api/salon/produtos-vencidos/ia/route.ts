@@ -115,9 +115,17 @@ Responda APENAS com JSON válido, sem markdown:
 }`
 
   try {
-    const text = await iaGerar(cfg.api_key, modelo, prompt, { maxTokens: 2600 })
+    // thinkingBudget 0: no Gemini o "pensar" consome o mesmo orcamento de
+    // tokens da resposta. Com ele ligado o JSON sai cortado no meio e o
+    // extrairJSON devolve null — que foi como esta rota falhou no primeiro
+    // teste em producao. As outras rotas de IA do sistema ja zeram isso.
+    const text = await iaGerar(cfg.api_key, modelo, prompt, { maxTokens: 6000, geminiThinkingBudget: 0 })
     const parsed = extrairJSON(text)
-    if (!parsed) return NextResponse.json({ error: 'A IA respondeu num formato inesperado. Tente de novo.' }, { status: 500 })
+    if (!parsed) {
+      return NextResponse.json(
+        { error: 'A IA respondeu num formato inesperado. Tente de novo.', raw: String(text || '').slice(0, 400) },
+        { status: 500 })
+    }
     return NextResponse.json({ ...parsed, escopo, analisados: lista.length })
   } catch {
     return NextResponse.json({ error: 'A IA está sobrecarregada. Tente novamente em instantes.' }, { status: 503 })
