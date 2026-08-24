@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { supabaseAdmin } from '@/lib/supabase'
 import { iaGerar, extrairJSON } from '@/lib/iaClient'
 
 export const dynamic = 'force-dynamic'
@@ -35,8 +36,20 @@ export async function POST(req: NextRequest) {
   if (!payload || !['salon', 'sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
+  // A chave vive na tabela ia_config_global, não em variável de ambiente:
+  // é de lá que as outras telas de IA do sistema leem, e é lá que o dono
+  // troca o modelo sem precisar de deploy. Usar process.env aqui deixaria
+  // esta tela como a única que não funciona.
+  const { data: cfg } = await supabaseAdmin
+    .from('ia_config_global')
+    .select('api_key, modelo, ativo')
+    .limit(1)
+    .maybeSingle()
+
+  if (!cfg?.api_key || !cfg.ativo)
+    return NextResponse.json({ error: 'A IA não está configurada no sistema.' }, { status: 422 })
+
+  const modelo = cfg.modelo || 'gemini-2.5-flash'
 
   const body = await req.json().catch(() => null)
   const itens: ItemEntrada[] = Array.isArray(body?.itens) ? body.itens : []
@@ -102,7 +115,7 @@ Responda APENAS com JSON válido, sem markdown:
 }`
 
   try {
-    const text = await iaGerar(apiKey, 'claude-haiku-4-5-20251001', prompt, { maxTokens: 2600 })
+    const text = await iaGerar(cfg.api_key, modelo, prompt, { maxTokens: 2600 })
     const parsed = extrairJSON(text)
     if (!parsed) return NextResponse.json({ error: 'A IA respondeu num formato inesperado. Tente de novo.' }, { status: 500 })
     return NextResponse.json({ ...parsed, escopo, analisados: lista.length })
