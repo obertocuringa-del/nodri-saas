@@ -49,16 +49,12 @@ export const DEMANDAS_POR_SETOR: { chave: string[]; demandas: string[] }[] = [
     ]
   },
   {
-    chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], demandas: [
-      'Documentação', 'Pastas individuais', 'Admissão', 'Desligamento',
-      'Acompanhamento de desempenho', 'Solicitações dos profissionais',
-      'Controle de benefícios', 'Férias', 'VT', 'VA', 'Apoio à consultoria de RH',
-      'Treinamentos', 'Onboarding', 'Desenvolvimento da equipe',
-      'Cálculo de VT e VA', 'Períodos aquisitivos e férias',
-      'Cadastro dos profissionais PJ', 'Contrato de parceria',
-      'Categorias dos profissionais PJ', 'Documentação dos profissionais PJ',
-      'Regularidade cadastral',
-    ]
+    // As demandas do RH sairam da sidebar a pedido do dono: o setor passa a
+    // trabalhar so pelas ferramentas (lista de profissionais, admissao,
+    // desligamento e afins), que ja cobrem o mesmo assunto com tela propria.
+    // O que ja foi escrito nas folhas dessas demandas continua salvo no banco,
+    // sob a chave de cada slug - some da tela, nao do banco.
+    chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], demandas: []
   },
   {
     chave: ['COMERCIAL', 'VENDAS'], demandas: [
