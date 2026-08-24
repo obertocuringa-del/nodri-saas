@@ -7,7 +7,7 @@ import { getLogoSalao } from '@/lib/logoSalao'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
-interface PautaItem { id: string; ponto: string; responsavel: string; decisao: string }
+interface PautaItem { id: string; ponto: string; responsavel: string; acontecimento?: string; decisao: string; feito?: boolean; feitoEm?: string }
 interface Assinatura { id: string; nome: string; assinado: boolean; assinadoEm: string }
 interface Ata { id: string; titulo: string; data: string; pauta: PautaItem[]; assinaturas: Assinatura[] }
 
@@ -22,7 +22,7 @@ function isoToBr(s: string) { const m = String(s || '').match(/^(\d{4})-(\d{2})-
 function novaAta(): Ata {
   return {
     id: rid(), titulo: 'Reunião de Equipe', data: hojeBR(),
-    pauta: Array.from({ length: 3 }, () => ({ id: rid(), ponto: '', responsavel: '', decisao: '' })),
+    pauta: Array.from({ length: 3 }, () => ({ id: rid(), ponto: '', responsavel: '', acontecimento: '', decisao: '', feito: false, feitoEm: '' })),
     assinaturas: [],
   }
 }
@@ -63,10 +63,15 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
   function excluirAta(id: string) { if (!confirm('Excluir esta ata inteira?')) return; mut(as => as.filter(a => a.id !== id)) }
   function editarAta(id: string, patch: Partial<Ata>) { mut(as => as.map(a => a.id === id ? { ...a, ...patch } : a)) }
 
-  function addPauta(ataId: string) { mut(as => as.map(a => a.id === ataId ? { ...a, pauta: [...a.pauta, { id: rid(), ponto: '', responsavel: '', decisao: '' }] } : a)) }
+  function addPauta(ataId: string) { mut(as => as.map(a => a.id === ataId ? { ...a, pauta: [...a.pauta, { id: rid(), ponto: '', responsavel: '', acontecimento: '', decisao: '', feito: false, feitoEm: '' }] } : a)) }
   function delPauta(ataId: string, itemId: string) { mut(as => as.map(a => a.id === ataId ? { ...a, pauta: a.pauta.filter(p => p.id !== itemId) } : a)) }
   function editPauta(ataId: string, itemId: string, patch: Partial<PautaItem>) {
     mut(as => as.map(a => a.id === ataId ? { ...a, pauta: a.pauta.map(p => p.id === itemId ? { ...p, ...patch } : p) } : a))
+  }
+  // "Foi feito" segue o mesmo padrão de assinar/desfazer: carimba data e hora
+  // ao marcar, e apaga o carimbo se desmarcar — nunca guarda os dois estados.
+  function marcarFeito(ataId: string, itemId: string, valor: boolean) {
+    editPauta(ataId, itemId, { feito: valor, feitoEm: valor ? `${hojeBR()} ${agoraHM()}` : '' })
   }
 
   function addAssinatura(ataId: string, nome: string) {
@@ -84,11 +89,13 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
   async function imprimirAta(a: Ata) {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const linhasPauta = a.pauta.map((p, i) => `<tr><td class="c">${i + 1}</td><td>${esc(p.ponto)}</td><td>${esc(p.responsavel)}</td><td>${esc(p.decisao)}</td></tr>`).join('')
+    const linhasPauta = a.pauta.map((p, i) => `<tr><td class="c">${i + 1}</td><td>${esc(p.ponto)}</td><td>${esc(p.responsavel)}</td><td>${esc(p.acontecimento || '')}</td><td>${esc(p.decisao)}</td><td class="c">${p.feito ? `✓ ${esc(p.feitoEm || '')}` : ''}</td></tr>`).join('')
     const linhasAssin = a.assinaturas.map(s => `<tr><td>${esc(s.nome)}</td><td class="sig"></td><td class="c">${s.assinado ? `✓ ${esc(s.assinadoEm)}` : ''}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
-    const css = `@page{size:A4 portrait;margin:14mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:14px}.logo{max-height:56px;max-width:200px;object-fit:contain}.brand{font-size:22px;font-weight:900;color:${COR}}h1{font-size:17px;margin-bottom:2px;text-transform:uppercase}.sub{font-size:11px;color:#888;margin-bottom:18px}h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;border-bottom:1.5px solid ${COR};padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th,td{border:1px solid #f0ede6;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase}td.c,th.c{text-align:center}td.sig{width:180px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(a.titulo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(a.titulo)}</h1><div class="sub">Data da reunião: ${esc(a.data)}</div><h2>Pauta</h2><table><thead><tr><th class="c">Nº</th><th>Ponto</th><th>Responsável</th><th>Decisão / Encaminhamento</th></tr></thead><tbody>${linhasPauta}</tbody></table><h2>Assinaturas</h2><table><thead><tr><th>Profissional</th><th>Assinatura</th><th class="c">Confirmado no sistema</th></tr></thead><tbody>${linhasAssin}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
+    // Paisagem: com Acontecimento e Foi feito a pauta passou a ter 6 colunas,
+    // e em retrato o texto de cada uma quebrava em tira estreita.
+    const css = `@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;font-size:11px}.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${COR};padding-bottom:10px;margin-bottom:14px}.logo{max-height:56px;max-width:200px;object-fit:contain}.brand{font-size:22px;font-weight:900;color:${COR}}h1{font-size:17px;margin-bottom:2px;text-transform:uppercase}.sub{font-size:11px;color:#888;margin-bottom:18px}h2{font-size:12.5px;color:${COR};margin:16px 0 6px;text-transform:uppercase;border-bottom:1.5px solid ${COR};padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th,td{border:1px solid #f0ede6;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f6f4ff;color:${COR};border-bottom:2px solid ${COR};font-size:9.5px;text-transform:uppercase}td.c,th.c{text-align:center}td.sig{width:180px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(a.titulo)}</title><style>${css}</style></head><body><div class="hd">${cab}<span style="font-size:10px;color:#777">${new Date().toLocaleDateString('pt-BR')}</span></div><h1>${esc(a.titulo)}</h1><div class="sub">Data da reunião: ${esc(a.data)}</div><h2>Pauta</h2><table><thead><tr><th class="c">Nº</th><th>Ponto</th><th>Responsável</th><th>Acontecimento</th><th>Decisão / Encaminhamento</th><th class="c">Foi feito</th></tr></thead><tbody>${linhasPauta}</tbody></table><h2>Assinaturas</h2><table><thead><tr><th>Profissional</th><th>Assinatura</th><th class="c">Confirmado no sistema</th></tr></thead><tbody>${linhasAssin}</tbody></table><script>window.onload=function(){window.print()}</script></body></html>`
     const w = window.open('', '_blank', 'width=1000,height=700'); if (!w) return; w.document.write(html); w.document.close(); w.focus()
   }
 
@@ -133,9 +140,17 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
                 <div style={{ padding: 18 }}>
                   <h4 style={{ fontSize: 12.5, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: '.3px', margin: '0 0 8px' }}>Pauta</h4>
                   <div style={{ overflowX: 'auto' }}>
-                    <table className="ata-pauta-table" style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse' }}>
+                    <table className="ata-pauta-table" style={{ width: '100%', minWidth: 900, borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr><th style={{ width: 36 }}>Nº</th><th>Ponto a apresentar</th><th style={{ width: 140 }}>Responsável</th><th>Decisão / Encaminhamento</th><th style={{ width: 30 }}></th></tr>
+                        <tr>
+                          <th style={{ width: 36 }}>Nº</th>
+                          <th>Ponto a apresentar</th>
+                          <th style={{ width: 130 }}>Responsável</th>
+                          <th style={{ width: 160 }}>Acontecimento</th>
+                          <th>Decisão / Encaminhamento</th>
+                          <th style={{ width: 175 }}>Foi feito</th>
+                          <th style={{ width: 30 }}></th>
+                        </tr>
                       </thead>
                       <tbody>
                         {a.pauta.map((p, i) => (
@@ -143,7 +158,16 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
                             <td style={{ textAlign: 'center', color: '#9ca3af', fontWeight: 700, fontSize: 12.5 }}>{i + 1}</td>
                             <td><input value={p.ponto} onChange={e => editPauta(a.id, p.id, { ponto: e.target.value })} className="ata-input" placeholder="Assunto discutido..." style={{ fontSize: 13 }} /></td>
                             <td><input value={p.responsavel} onChange={e => editPauta(a.id, p.id, { responsavel: e.target.value })} className="ata-input" placeholder="Quem" style={{ fontSize: 13 }} /></td>
+                            <td><input value={p.acontecimento || ''} onChange={e => editPauta(a.id, p.id, { acontecimento: e.target.value })} className="ata-input" placeholder="O que aconteceu..." style={{ fontSize: 13 }} /></td>
                             <td><input value={p.decisao} onChange={e => editPauta(a.id, p.id, { decisao: e.target.value })} className="ata-input" placeholder="O que ficou definido..." style={{ fontSize: 13 }} /></td>
+                            <td>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 4px', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={!!p.feito} onChange={e => marcarFeito(a.id, p.id, e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer', accentColor: COR, flexShrink: 0 }} />
+                                {p.feito && p.feitoEm && (
+                                  <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', whiteSpace: 'nowrap' }}>{p.feitoEm}</span>
+                                )}
+                              </label>
+                            </td>
                             <td><button onClick={() => delPauta(a.id, p.id)} style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer' }}><X size={14} /></button></td>
                           </tr>
                         ))}
