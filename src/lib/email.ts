@@ -11,11 +11,33 @@ const FROM_NAME = 'NODRI Estilo & Beleza'
 //
 // Para valer, verifique o domínio nodri.com.br no Resend (uns registros DNS) e
 // cadastre EMAIL_REMETENTE=contato@nodri.com.br no Vercel.
-const FROM_EMAIL = process.env.EMAIL_REMETENTE || 'onboarding@resend.dev'
+const REMETENTE_TESTE = 'onboarding@resend.dev'
 
-/** Está usando o remetente de teste? Então só o dono da conta recebe. */
+// EMAIL_REMETENTE pode chegar nos dois formatos que o Resend aceita: só o
+// endereço (`contato@nodri.com.br`) ou já com o nome (`NODRI <contato@...>`).
+// Colar o nome por cima do segundo formato produz `Nome <Nome <email>>`, que o
+// Resend recusa com "Invalid `from` field" — e aí NENHUM e-mail sai, nem a
+// senha de quem acabou de comprar. Por isso o nome só entra quando falta.
+function montarRemetente(): string {
+  const bruto = (process.env.EMAIL_REMETENTE || '').trim()
+  if (!bruto) return `${FROM_NAME} <${REMETENTE_TESTE}>`
+  return bruto.includes('<') ? bruto : `${FROM_NAME} <${bruto}>`
+}
+
+/** Só o endereço, sem o nome — para decidir de qual domínio está saindo. */
+function enderecoDoRemetente(): string {
+  const m = montarRemetente().match(/<([^>]+)>/)
+  return (m ? m[1] : montarRemetente()).trim().toLowerCase()
+}
+
+/**
+ * Está usando o remetente de teste? Então só o dono da conta recebe.
+ * A pergunta é sobre o domínio de onde sai, não sobre a variável existir:
+ * cadastrar EMAIL_REMETENTE apontando para o próprio resend.dev continuava
+ * sendo envio de teste, e a checagem antiga dizia que não era.
+ */
 export function remetenteEhDeTeste(): boolean {
-  return !process.env.EMAIL_REMETENTE
+  return enderecoDoRemetente().endsWith('@resend.dev')
 }
 
 /** O envio de e-mail chega a acontecer? Sem chave, nada sai. */
@@ -25,7 +47,7 @@ export function emailConfigurado(): boolean {
 
 /** De qual endereco o sistema esta enviando agora. */
 export function remetenteAtual(): string {
-  return `${FROM_NAME} <${FROM_EMAIL}>`
+  return montarRemetente()
 }
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 const WHATSAPP = '5561982195214'
@@ -40,7 +62,7 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        from: montarRemetente(),
         to,
         subject,
         html,
