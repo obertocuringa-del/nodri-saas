@@ -26,6 +26,24 @@ const inp: React.CSSProperties = {
 }
 const lbl: React.CSSProperties = { fontSize: 12, color: '#6b6860', marginBottom: 6, display: 'block' }
 
+const soDigitos = (v: string) => (v || '').replace(/\D/g, '')
+
+// Mascara enquanto digita: CPF ate 11 digitos, CNPJ acima disso. O Asaas
+// recebe so os numeros; a formatacao aqui e para a pessoa conferir o que
+// digitou sem contar digito na tela.
+function mascaraCpfCnpj(v: string): string {
+  const d = soDigitos(v).slice(0, 14)
+  if (d.length <= 11) {
+    return d.replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+  }
+  return d.replace(/^(\d{2})(\d)/, '$1.$2')
+          .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+          .replace(/\.(\d{3})(\d)/, '.$1/$2')
+          .replace(/(\d{4})(\d)/, '$1-$2')
+}
+
 function CadastroInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -47,7 +65,7 @@ function CadastroInner() {
 
   const [form, setForm] = useState({
     nome_salao: '', responsavel: '', cidade: '',
-    email: '', telefone: '', dia_vencimento: '5', cupom: '',
+    email: '', telefone: '', cpf_cnpj: '', dia_vencimento: '5', cupom: '',
   })
   const [cupomStatus, setCupomStatus] = useState<null | { valido: boolean; percentual: number; mensagem: string }>(null)
   const [validandoCupom, setValidandoCupom] = useState(false)
@@ -71,7 +89,10 @@ function CadastroInner() {
     setValidandoCupom(false)
   }
 
-  const formValido = () => form.nome_salao && form.responsavel && form.cidade && form.email && form.telefone && form.dia_vencimento
+  // CPF/CNPJ entra na validacao porque o Asaas RECUSA criar cobranca de cartao
+  // sem ele. Sem este campo o cliente preenchia tudo, clicava em assinar e
+  // recebia um erro tecnico do Asaas sem saber o que fazer.
+  const formValido = () => form.nome_salao && form.responsavel && form.cidade && form.email && form.telefone && soDigitos(form.cpf_cnpj).length >= 11 && form.dia_vencimento
 
   async function pagar(metodoPag: 'cartao' | 'pix') {
     // Trava dupla: o botão já fica desabilitado sem plano, mas cobrar valor
@@ -91,6 +112,7 @@ function CadastroInner() {
           cidade: form.cidade,
           email: form.email,
           telefone: form.telefone,
+          cpf_cnpj: form.cpf_cnpj,
           dia_vencimento: parseInt(form.dia_vencimento),
           cupom: cupomStatus?.valido ? form.cupom : null,
           desconto_percentual: desconto,
@@ -194,6 +216,15 @@ function CadastroInner() {
                 <label style={lbl}>Telefone com DDD *</label>
                 <input style={inp} placeholder="(11) 99999-9999" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} />
               </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={lbl}>CPF ou CNPJ do responsável *</label>
+              <input style={inp} placeholder="000.000.000-00" value={form.cpf_cnpj}
+                onChange={e => setForm(p => ({ ...p, cpf_cnpj: mascaraCpfCnpj(e.target.value) }))} />
+              <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>
+                Exigido pelo banco para emitir a cobrança. Não aparece para mais ninguém.
+              </p>
             </div>
 
             <div style={{ marginBottom: 14 }}>

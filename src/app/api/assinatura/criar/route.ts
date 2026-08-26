@@ -32,10 +32,18 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null)
-  const { plano, nome_salao, responsavel, cidade, email, telefone, dia_vencimento, cupom } = body || {}
+  const { plano, nome_salao, responsavel, cidade, email, telefone, cpf_cnpj, dia_vencimento, cupom } = body || {}
 
   if (!plano || !email || !nome_salao) {
     return NextResponse.json({ erro: 'Dados incompletos' }, { status: 400 })
+  }
+
+  // O Asaas recusa criar cobranca de cartao sem CPF/CNPJ do titular. Barrar
+  // aqui devolve uma mensagem que a pessoa entende; sem isso ela recebia o
+  // texto tecnico do proprio Asaas no meio do checkout.
+  const doc = String(cpf_cnpj || '').replace(/\D/g, '')
+  if (doc.length !== 11 && doc.length !== 14) {
+    return NextResponse.json({ erro: 'Informe um CPF ou CNPJ válido do responsável.' }, { status: 400 })
   }
 
   // ── Preço: do banco, nunca do navegador ─────────────────────────────────
@@ -81,6 +89,7 @@ export async function POST(req: NextRequest) {
       nome: responsavel || nome_salao,
       email: String(email).toLowerCase(),
       telefone,
+      cpfCnpj: doc,
     })
 
     // A assinatura nasce com o valor COM desconto. Quando o desconto vale só
