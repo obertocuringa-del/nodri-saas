@@ -6,6 +6,16 @@ import { sendEmailAfiliado } from '@/lib/email'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 
+// O link de divulgacao fica gravado na linha do afiliado, congelado no dia do
+// cadastro. Quem se cadastrou enquanto NEXT_PUBLIC_SITE_URL ainda apontava para
+// o endereco .vercel.app ficou com esse endereco no e-mail e no painel — e o
+// afiliado divulga o link que ele recebeu. Montar sempre a partir do cupom
+// deixa o dominio atual valer para todo mundo, inclusive para quem ja estava
+// cadastrado.
+function linkAfiliado(cupom: string): string {
+  return `${SITE_URL}/?ref=${cupom}`
+}
+
 function gerarCupom(nome: string): string {
   const primeiroNome = nome.trim().split(' ')[0].toUpperCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -28,7 +38,17 @@ export async function GET(req: NextRequest) {
     .order('criado_em', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data || [])
+
+  // Corrige de uma vez os links que ficaram com o dominio antigo: o painel
+  // passa a mostrar o certo e a linha no banco para de mentir.
+  const lista = (data || []).map(af => ({ ...af, link: linkAfiliado(af.cupom) }))
+  const desatualizados = (data || []).filter(af => af.link !== linkAfiliado(af.cupom))
+  if (desatualizados.length) {
+    await Promise.all(desatualizados.map(af =>
+      supabaseAdmin.from('afiliados').update({ link: linkAfiliado(af.cupom) }).eq('id', af.id)))
+  }
+
+  return NextResponse.json(lista)
 }
 
 // POST — cadastrar novo afiliado (público)
@@ -65,7 +85,7 @@ export async function POST(req: NextRequest) {
     tentativas++
   }
 
-  const link = `${SITE_URL}/?ref=${cupom}`
+  const link = linkAfiliado(cupom)
 
   const { data: afiliado, error } = await supabaseAdmin
     .from('afiliados')
@@ -123,9 +143,10 @@ export async function PATCH(req: NextRequest) {
       .from('afiliados').select('nome, email, cupom, link').eq('id', id).maybeSingle()
     if (!af) return NextResponse.json({ error: 'Afiliado não encontrado' }, { status: 404 })
     try {
-      await sendEmailAfiliado({ nome: af.nome, email: af.email, cupom: af.cupom, link: af.link })
+      const link = linkAfiliado(af.cupom)
+      await sendEmailAfiliado({ nome: af.nome, email: af.email, cupom: af.cupom, link })
       await supabaseAdmin.from('afiliados')
-        .update({ email_enviado_em: new Date().toISOString(), email_erro: null }).eq('id', id)
+        .update({ email_enviado_em: new Date().toISOString(), email_erro: null, link }).eq('id', id)
       return NextResponse.json({ ok: true, enviado: true })
     } catch (e: any) {
       const erro = String(e?.message || e).slice(0, 300)

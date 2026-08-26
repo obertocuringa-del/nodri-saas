@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
+
 export async function POST(req: NextRequest) {
   const { email, cpf } = await req.json()
   if (!email || !cpf) return NextResponse.json({ error: 'Email e CPF são obrigatórios' }, { status: 400 })
@@ -30,5 +32,13 @@ export async function POST(req: NextRequest) {
     total_cliques: (afiliado.total_cliques || 0)
   }).eq('id', afiliado.id)
 
-  return NextResponse.json({ afiliado, ranking: ranking || [] })
+  // O link gravado pode ter congelado um dominio antigo no dia do cadastro.
+  // Quem entra aqui copia esse link para divulgar, entao ele e montado na hora
+  // a partir do cupom — e a linha no banco e acertada junto.
+  const link = `${SITE_URL}/?ref=${afiliado.cupom}`
+  if (afiliado.link !== link) {
+    await supabaseAdmin.from('afiliados').update({ link }).eq('id', afiliado.id)
+  }
+
+  return NextResponse.json({ afiliado: { ...afiliado, link }, ranking: ranking || [] })
 }
