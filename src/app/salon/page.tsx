@@ -42,9 +42,14 @@ export default async function SalonPage() {
   }
 
   // Verifica status do salão
+  //
+  // O plano vem daqui, e nao do token. O token e emitido no login e nunca mais
+  // muda: quem trocava de plano ganhava os modulos na hora e continuava lendo
+  // "Plano Inicial" no rodape ate sair e entrar de novo — pagando R$ 300 e
+  // vendo o nome do plano de R$ 50.
   const { data: salaoStatus } = await supabaseAdmin
     .from('saloes')
-    .select('status, licenca_vencimento, nome')
+    .select('status, licenca_vencimento, nome, planos(nome)')
     .eq('id', payload.salaoId)
     .maybeSingle()
 
@@ -85,10 +90,16 @@ export default async function SalonPage() {
 
   const totalAtivos = modulosComStatus.filter((m: any) => m.habilitado).length
 
+  // Nome do plano vigente; o token so entra se o salão estiver sem plano.
+  const planoDoBanco = (salaoStatus as any).planos
+  const planoAtual =
+    (Array.isArray(planoDoBanco) ? planoDoBanco[0]?.nome : planoDoBanco?.nome)
+    || payload.plano || ''
+
   return (
     <SalonDashboard
       salaoNome={payload.salaoNome || salaoStatus.nome || 'Meu Salão'}
-      plano={payload.plano || 'basico'}
+      plano={planoAtual}
       modulos={modulosComStatus}
       notificacoes={notificacoes || []}
       totalAtivos={totalAtivos}
