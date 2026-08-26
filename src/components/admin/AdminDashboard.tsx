@@ -1032,6 +1032,111 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     )
   }
 
+  // ── Saude do envio de e-mail ──
+  //
+  // O envio da senha para o cliente novo acontece uma vez so, no momento da
+  // venda. Se falhar, o salao existe e o dono dele nao consegue entrar — e
+  // ninguem fica sabendo. Esta tela mostra de onde o sistema esta enviando e
+  // deixa disparar um envio real para conferir antes de vender.
+  function EmailSection() {
+    const [estado, setEstado] = useState<any>(null)
+    const [para, setPara] = useState('')
+    const [enviando, setEnviando] = useState(false)
+    const [resultado, setResultado] = useState<{ ok: boolean; texto: string } | null>(null)
+
+    useEffect(() => {
+      fetch('/api/admin/email').then(r => r.json()).then(setEstado).catch(() => setEstado({ erro: true }))
+    }, [])
+
+    async function testar() {
+      if (!para.trim()) return toast.error('Digite o e-mail que vai receber o teste')
+      setEnviando(true); setResultado(null)
+      try {
+        const r = await fetch('/api/admin/email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ para: para.trim() }),
+        })
+        const d = await r.json()
+        if (r.ok) { setResultado({ ok: true, texto: 'Enviado para ' + d.para + '. Confira a caixa de entrada e o spam.' }); toast.success('E-mail enviado') }
+        else { setResultado({ ok: false, texto: d.error || 'Falhou sem mensagem' }); toast.error('Falhou') }
+      } catch (e: any) {
+        setResultado({ ok: false, texto: String(e?.message || e) }); toast.error('Falhou')
+      } finally { setEnviando(false) }
+    }
+
+    const semChave = estado && estado.configurado === false
+    const deTeste = estado && estado.remetenteDeTeste === true
+
+    return (
+      <div className="nodri-card p-4 max-w-2xl">
+        <div className="font-syne font-bold text-[13px] text-nodri-cyan mb-4 flex items-center gap-2">
+          <Mail size={14} /> Envio de e-mail
+        </div>
+
+        {!estado && <p className="text-[12px] text-nodri-t3">Carregando...</p>}
+
+        {estado && (
+          <>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-nodri-t3 w-24">Remetente</span>
+                <span className="font-mono text-[11px] text-gray-900">{estado.remetente}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-nodri-t3 w-24">Chave Resend</span>
+                {semChave
+                  ? <span className="text-red-600 font-semibold">ausente — nenhum e-mail sai</span>
+                  : <span className="text-green-700 font-semibold">configurada</span>}
+              </div>
+            </div>
+
+            {semChave && (
+              <div className="flex gap-2 p-3 rounded-lg bg-red-50 border border-red-200 mb-4">
+                <AlertTriangle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-red-800 leading-relaxed">
+                  Sem RESEND_API_KEY na Vercel nada e enviado — nem a senha do cliente que acabou de comprar.
+                </p>
+              </div>
+            )}
+
+            {!semChave && deTeste && (
+              <div className="flex gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 mb-4">
+                <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-amber-900 leading-relaxed">
+                  Este e o remetente de teste do Resend: ele so entrega para o e-mail dono da conta.
+                  Para um cliente de verdade o envio falha calado. Verifique o dominio no Resend e
+                  cadastre EMAIL_REMETENTE na Vercel.
+                </p>
+              </div>
+            )}
+
+            <div className="border-t border-nodri-border pt-4">
+              <p className="text-[11px] text-nodri-t3 mb-2">Dispare um envio de verdade e veja o que o provedor responde:</p>
+              <div className="flex gap-2">
+                <input value={para} onChange={e => setPara(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') testar() }}
+                  placeholder="para qual e-mail enviar"
+                  className="flex-1 nodri-input text-[12px]" />
+                <button onClick={testar} disabled={enviando}
+                  className="bg-nodri-cyan hover:brightness-110 disabled:opacity-50 text-black font-semibold px-4 py-2 rounded-lg text-[12px] flex items-center gap-1.5">
+                  {enviando ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                  {enviando ? 'Enviando' : 'Enviar teste'}
+                </button>
+              </div>
+
+              {resultado && (
+                <div className={'mt-3 p-3 rounded-lg border text-[12px] leading-relaxed ' +
+                  (resultado.ok ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800')}>
+                  {resultado.texto}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   function LogsSection() {
     const [logs, setLogs] = useState<any[]>([])
     const [loadingLogs, setLoadingLogs] = useState(false)
@@ -1079,6 +1184,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'notifs', icon: <Bell size={14} />, label: 'Notificações', badge: localNotifs.filter(n => !n.lida).length, badgeRed: true },
     { id: 'pagamentos', icon: <CreditCard size={14} />, label: 'Pagamentos' },
     { id: 'afiliados', icon: <Users size={14} />, label: 'Afiliados' },
+    { id: 'email', icon: <Mail size={14} />, label: 'Envio de e-mail' },
     { id: 'logs', icon: <BarChart3 size={14} />, label: 'Logs do Sistema' },
     { id: 'relatorios', icon: <BarChart3 size={14} />, label: 'Relatórios' },
     { id: 'config', icon: <Settings size={14} />, label: 'Configurações' },
@@ -1251,6 +1357,9 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
           {/* AFILIADOS */}
           {activeSection === 'afiliados' && <AfiliadosSection />}
+
+          {/* ENVIO DE E-MAIL */}
+          {activeSection === 'email' && <EmailSection />}
 
           {/* LOGS DO SISTEMA */}
           {activeSection === 'logs' && <LogsSection />}

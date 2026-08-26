@@ -22,6 +22,11 @@ export function remetenteEhDeTeste(): boolean {
 export function emailConfigurado(): boolean {
   return !!process.env.RESEND_API_KEY
 }
+
+/** De qual endereco o sistema esta enviando agora. */
+export function remetenteAtual(): string {
+  return `${FROM_NAME} <${FROM_EMAIL}>`
+}
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 const WHATSAPP = '5561982195214'
 
@@ -256,5 +261,27 @@ export async function sendEmailComissao({ nome, email, cupom, valorCompra, valor
         </div>
       </div>
     `,
+  })
+}
+
+// ── E-MAIL DE TESTE (painel master) ──
+//
+// Nao tem conteudo util de proposito: serve so para o envio acontecer de
+// verdade e o erro do provedor aparecer, em vez de descobrir que o e-mail
+// estava quebrado no dia em que um cliente comprou e ficou sem a senha.
+export async function enviarEmailTeste(para: string) {
+  const agora = new Date().toLocaleString('pt-BR')
+  return sendEmail({
+    to: para,
+    subject: 'NODRI — teste de envio',
+    html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+      <h2 style="color:#5b4fcf;margin:0 0 12px">Teste de envio do NODRI</h2>
+      <p style="color:#333;line-height:1.6;margin:0 0 12px">
+        Se esta mensagem chegou, o envio de e-mail do sistema esta funcionando.
+      </p>
+      <p style="color:#666;font-size:13px;margin:0">
+        Remetente: ${remetenteAtual()}<br>Disparado em: ${agora}
+      </p>
+    </div>`,
   })
 }
