@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
-import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
+import { chavesDoPlano, chaveDoModulo } from '@/lib/planosModulos'
 import { atualizarAssinatura } from '@/lib/asaas'
 
 // ── Troca de plano ──────────────────────────────────────────────────────────
@@ -34,7 +34,16 @@ export interface ResultadoTroca {
   mensagem?: string
 }
 
-/** Liga os módulos do plano que o salão tem AGORA no banco. */
+/**
+ * Liga os módulos do plano que o salão tem AGORA no banco.
+ *
+ * O casamento e por CHAVE do modulo, nao por nome exato. Antes era
+ * `.in('nome', [...])`, e o modulo estava cadastrado como
+ * `'CALCULADORA / FINANCEIRA '` — com um espaço no fim. O nome nunca batia,
+ * entao quem assinava Essencial ou mais pagava pela Calculadora e nao recebia,
+ * sem erro nenhum aparecer. `chaveDoModulo()` normaliza (corta espaço, tira
+ * acento) e ainda reconhece os nomes antigos do cadastro.
+ */
 export async function ligarModulosDoPlano(salaoId: string): Promise<void> {
   const { data: salao } = await supabaseAdmin
     .from('saloes').select('plano_id, planos(nome)').eq('id', salaoId).maybeSingle()
@@ -43,15 +52,19 @@ export async function ligarModulosDoPlano(salaoId: string): Promise<void> {
   const nomePlano = Array.isArray(plano) ? plano[0]?.nome : plano?.nome
   if (!nomePlano) return
 
-  const nomes = nomesDeBancoDoPlano(nomePlano)
-  if (!nomes.length) return
+  const chaves = chavesDoPlano(nomePlano)
+  if (!chaves.length) return
 
-  const { data: modulos } = await supabaseAdmin.from('modulos').select('id').in('nome', nomes)
-  if (!modulos?.length) return
+  const { data: todos } = await supabaseAdmin.from('modulos').select('id, nome')
+  const doPlano = (todos || []).filter((m: any) => {
+    const c = chaveDoModulo(m.nome)
+    return c !== null && chaves.includes(c)
+  })
+  if (!doPlano.length) return
 
   await supabaseAdmin.from('salao_modulos').delete().eq('salao_id', salaoId)
   await supabaseAdmin.from('salao_modulos').insert(
-    modulos.map((m: any) => ({ salao_id: salaoId, modulo_id: m.id, ativo: true })),
+    doPlano.map((m: any) => ({ salao_id: salaoId, modulo_id: m.id, ativo: true })),
   )
 }
 
@@ -113,14 +126,17 @@ export async function trocarPlanoDoSalao(
     .from('saloes').update({ plano_id: novo.id }).eq('id', salaoId)
   if (error) return { ok: false, erro: error.message }
 
-  // Só a subida libera agora. Na descida os módulos ficam como estão e o
-  // webhook acerta quando o próximo pagamento confirmar.
-  const liberaAgora = direcao === 'subiu' || direcao === 'igual'
-  if (liberaAgora) await ligarModulosDoPlano(salaoId)
+  // Subida sempre aplica agora. Descida espera o fim do mês pago — mas só
+  // faz sentido esperar quando existe uma fatura para chegar: em salão sem
+  // assinatura no Asaas (cortesia, cadastro manual, teste) nenhum pagamento
+  // vai confirmar nunca, e o acesso do plano antigo ficaria para sempre.
+  const esperaAFatura = direcao === 'desceu' && !!salao.asaas_subscription_id
+  const aplicaAgora = !esperaAFatura
+  if (aplicaAgora) await ligarModulosDoPlano(salaoId)
 
   const mensagem = !salao.asaas_subscription_id
-    ? `Plano alterado para ${novo.nome}. Este salão não tem assinatura no Asaas, então não há cobrança a atualizar.`
-    : liberaAgora
+    ? `Plano alterado para ${novo.nome}. O acesso já vale agora. Este salão não tem assinatura no Asaas, então não há cobrança a atualizar.`
+    : aplicaAgora
       ? `Plano alterado para ${novo.nome} (R$ ${novo.preco}/mês). O acesso novo já está liberado e o valor entra na próxima fatura — o cartão continua o mesmo.`
       : `Plano alterado para ${novo.nome} (R$ ${novo.preco}/mês). O acesso maior continua até o fim do mês já pago; na próxima fatura entram juntos o valor menor e o acesso do novo plano.`
 
@@ -129,7 +145,7 @@ export async function trocarPlanoDoSalao(
     planoNome: novo.nome,
     valor: novo.preco,
     direcao,
-    acessoLiberadoAgora: liberaAgora,
+    acessoLiberadoAgora: aplicaAgora,
     mensagem,
   }
 }

@@ -128,24 +128,30 @@ export function moduloPorChave(chave: ChaveModulo): ModuloNodri | undefined {
   return MODULOS_NODRI.find(m => m.chave === chave)
 }
 
+/** Chaves dos módulos que o plano dá direito. */
+export function chavesDoPlano(slugOuNome: string): ChaveModulo[] {
+  const alvo = normalizar(slugOuNome)
+  const plano =
+    PLANOS_NODRI.find(p => p.slug === alvo || normalizar(p.nome) === alvo) ||
+    // Planos antigos (Básico / Profissional / Premium) ainda aparecem em
+    // salões cadastrados antes da troca de nomes.
+    (alvo.includes('premium') ? PLANOS_NODRI.find(p => p.slug === 'completo') : undefined) ||
+    (alvo.includes('profission') ? PLANOS_NODRI.find(p => p.slug === 'gestao') : undefined) ||
+    (alvo.includes('basic') ? PLANOS_NODRI.find(p => p.slug === 'inicial') : undefined)
+  return plano ? plano.modulos : []
+}
+
 // Menor plano que inclui o módulo — é o que a tela mostra quando falta acesso.
 export function planoMinimoPara(chave: ChaveModulo): PlanoNodri | undefined {
   return PLANOS_NODRI.find(p => p.modulos.includes(chave))
 }
 
-// Nomes de banco a gravar em `salao_modulos` quando alguém compra/renova.
-export function nomesDeBancoDoPlano(slugOuNome: string): string[] {
-  const alvo = normalizar(slugOuNome)
-  const plano =
-    PLANOS_NODRI.find(p => p.slug === alvo || normalizar(p.nome) === alvo) ||
-    // Planos antigos (Básico / Profissional / Premium) ainda chegam pelo
-    // webhook enquanto os links de pagamento velhos estiverem no ar.
-    (alvo.includes('premium') ? PLANOS_NODRI.find(p => p.slug === 'completo') : undefined) ||
-    (alvo.includes('profission') ? PLANOS_NODRI.find(p => p.slug === 'gestao') : undefined) ||
-    (alvo.includes('basic') ? PLANOS_NODRI.find(p => p.slug === 'inicial') : undefined)
-  if (!plano) return []
-  return plano.modulos.flatMap(c => moduloPorChave(c)?.nomesNoBanco ?? [])
-}
+// Removida daqui a antiga `nomesDeBancoDoPlano()`. Ela devolvia os nomes
+// canônicos dos módulos para procurar no banco por nome exato, e foi assim
+// que a Calculadora ficou sem ser liberada: no cadastro ela está gravada como
+// 'CALCULADORA / FINANCEIRA ', com um espaço no fim, e a comparação exata
+// nunca batia. Quem precisa saber o que um plano contém usa `chavesDoPlano()`
+// e casa cada linha do banco com `chaveDoModulo()`, que normaliza o texto.
 
 // ── Rotas protegidas ────────────────────────────────────────────────────────
 //
