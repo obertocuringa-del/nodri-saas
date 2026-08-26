@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { asaasAtivo, criarOuAcharCliente, criarAssinatura, atualizarAssinatura, linkDePagamento, cancelarAssinatura } from '@/lib/asaas'
+import { asaasAtivo, criarOuAcharCliente, criarAssinatura, linkDePagamento, cancelarAssinatura } from '@/lib/asaas'
+import { trocarPlanoDoSalao } from '@/lib/planoDoSalao'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,19 +80,17 @@ export async function POST(req: NextRequest) {
     // guarda o cartão na assinatura; atualizar o valor preserva a cobrança
     // automática e não interrompe nada.
     if (acao === 'trocar' && salao.asaas_subscription_id) {
-      const atualizada = await atualizarAssinatura(salao.asaas_subscription_id, {
-        valor: plano.preco,
-        descricao: `NODRI ${plano.nome}`,
-      })
-      await supabaseAdmin.from('saloes').update({
-        plano_id: plano.id,
-        asaas_status: atualizada.status || 'ACTIVE',
-      }).eq('id', salaoId)
+      // Antes esta rota atualizava o valor no Asaas e o plano no banco, mas
+      // nao mexia em `salao_modulos` — quem subia de plano pagava mais e so
+      // ganhava acesso quando o pagamento seguinte confirmasse. A troca
+      // agora e uma coisa so, em trocarPlanoDoSalao.
+      const r = await trocarPlanoDoSalao(salaoId, plano.slug || plano.id)
+      if (!r.ok) return NextResponse.json({ erro: r.erro }, { status: 400 })
       return NextResponse.json({
         ok: true,
-        plano: plano.nome,
-        valor: plano.preco,
-        mensagem: `Plano alterado para ${plano.nome} (R$ ${plano.preco}/mês). O cartão do cliente continua o mesmo — nada precisa ser refeito.`,
+        plano: r.planoNome,
+        valor: r.valor,
+        mensagem: r.mensagem,
       })
     }
 

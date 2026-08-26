@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { nomesDeBancoDoPlano } from '@/lib/planosModulos'
+import { ligarModulosDoPlano } from '@/lib/planoDoSalao'
 import { hashPassword } from '@/lib/auth'
 import { enviarEmailBoasVindas } from '@/lib/email'
 import { buscarAssinatura, atualizarAssinatura } from '@/lib/asaas'
@@ -284,26 +284,6 @@ async function tratarAfiliado(dados: {
   })
 }
 
-/** Liga os módulos do plano contratado, do mesmo jeito que o Mercado Pago já fazia. */
-async function ligarModulosDoPlano(salaoId: string) {
-  const { data: salao } = await supabase
-    .from('saloes').select('plano_id, planos(nome)').eq('id', salaoId).maybeSingle()
-
-  const plano = (salao as any)?.planos
-  const nomePlano = Array.isArray(plano) ? plano[0]?.nome : plano?.nome
-  if (!nomePlano) return
-
-  const nomes = nomesDeBancoDoPlano(nomePlano)
-  if (!nomes.length) return
-
-  const { data: modulos } = await supabase.from('modulos').select('id').in('nome', nomes)
-  if (!modulos?.length) return
-
-  await supabase.from('salao_modulos').delete().eq('salao_id', salaoId)
-  await supabase.from('salao_modulos').insert(
-    modulos.map((m: any) => ({ salao_id: salaoId, modulo_id: m.id, ativo: true })),
-  )
-}
 
 /**
  * Cria o salão a partir da compra que gerou esta assinatura.

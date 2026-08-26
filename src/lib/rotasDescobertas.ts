@@ -32,6 +32,7 @@ export const ROTAS_DESCOBERTAS: RotaDescoberta[] = [
   { rota: '/salon/notificacoes', label: "NOTIFICACOES" },
   { rota: '/salon/pendencias', label: "PENDENCIAS" },
   { rota: '/salon/perfil', label: "PERFIL" },
+  { rota: '/salon/plano', label: "PLANO" },
   { rota: '/salon/profissionais', label: "PROFISSIONAIS" },
   { rota: '/salon/relatorios', label: "RELATORIOS" },
   { rota: '/salon/relatorios/importar-excel', label: "RELATORIOS — IMPORTAR EXCEL" },

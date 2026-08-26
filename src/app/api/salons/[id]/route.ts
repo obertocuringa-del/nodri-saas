@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { trocarPlanoDoSalao } from '@/lib/planoDoSalao'
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const token = cookies().get('nodri_token')?.value
@@ -14,6 +15,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   // Normaliza email para minúsculas (mesmo padrão do login)
   const emailNormalizado = dadosSalao.email?.trim().toLowerCase() || dadosSalao.email
 
+  // ── Plano: mudar aqui é mudar dinheiro ────────────────────────────────────
+  //
+  // Este formulário gravava `plano_id` direto e não falava com o Asaas. Quem
+  // subisse um cliente de plano por aqui liberava o acesso e continuava
+  // cobrando o valor antigo — o prejuízo só apareceria meses depois, na
+  // conferência. O campo continua nesta tela, mas a troca passa pelo mesmo
+  // caminho de todo mundo, que atualiza a cobrança e o acesso juntos.
+  const { data: antes } = await supabaseAdmin
+    .from('saloes').select('plano_id').eq('id', params.id).maybeSingle()
+
+  const planoNovo = dadosSalao.plano_id || null
+  const planoMudou = antes && planoNovo && planoNovo !== antes.plano_id
+  let avisoPlano: string | null = null
+
+  if (planoMudou) {
+    const r = await trocarPlanoDoSalao(params.id, planoNovo)
+    if (!r.ok) return NextResponse.json({ error: r.erro }, { status: 400 })
+    avisoPlano = r.mensagem || null
+  }
+
   const { data, error } = await supabaseAdmin
     .from('saloes')
     .update({
@@ -21,7 +42,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       responsavel: dadosSalao.responsavel,
       email: emailNormalizado,
       telefone: dadosSalao.telefone || null,
-      plano_id: dadosSalao.plano_id || null,
+      // `plano_id` já foi gravado por trocarPlanoDoSalao quando mudou; repetir
+      // o valor aqui é inofensivo e mantém o caso de tirar o plano (null).
+      plano_id: planoNovo,
       licenca_vencimento: dadosSalao.licenca_vencimento || null,
       status: dadosSalao.status,
       observacoes: dadosSalao.observacoes || null,
@@ -42,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     await supabaseAdmin.from('usuarios').update({ senha_hash: senhaHash }).eq('salao_id', params.id)
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json(avisoPlano ? { ...data, avisoPlano } : data)
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {

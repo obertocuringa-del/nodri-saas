@@ -46,6 +46,7 @@ const CATALOGO: PaginaCat[] = [
   { rota: '/salon/usuarios', label: 'USUÁRIOS E PERMISSÕES', grupo: 'Página', chave: 'usuarios', palavras: 'sub login acesso senha liberar ocultar' },
   { rota: '/salon/auditoria', label: 'LOG DE AUDITORIA', grupo: 'Página', chave: 'auditoria', palavras: 'historico quem alterou registro seguranca' },
   { rota: '/salon/perfil', label: 'MEU PERFIL', grupo: 'Página', chave: null, palavras: 'logo salao conta dados' },
+  { rota: '/salon/plano', label: 'MEU PLANO', grupo: 'Página', chave: null, palavras: 'assinatura mensalidade cobranca upgrade trocar plano valor cartao' },
   { rota: '/salon/notificacoes', label: 'NOTIFICAÇÕES', grupo: 'Página', chave: null, palavras: 'avisos alertas sino' },
   { rota: '/salon/atualizacoes', label: 'ATUALIZAÇÕES DO SISTEMA', grupo: 'Página', chave: null, palavras: 'novidade modelo aplicar melhorias versao atualizar' },
   // ── Salão Administrativo (ferramentas) ──

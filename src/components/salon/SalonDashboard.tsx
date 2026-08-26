@@ -5,7 +5,7 @@ import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRi
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
-import { chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
+import { chaveDoModulo, planoMinimoPara, PLANOS_NODRI } from '@/lib/planosModulos'
 import ChatWidget from './ChatWidget'
 import AvisoModelo from './AvisoModelo'
 import TituloDaAba from './TituloDaAba'
@@ -102,6 +102,10 @@ if (typeof document !== 'undefined') {
     .nodri-salon-bg { background-color: #edeef0 !important; }
   `
   if (!document.getElementById('nodri-animations')) { style.id = 'nodri-animations'; document.head.appendChild(style) }
+}
+
+function normalizarPlano(s: string): string {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 }
 
 export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes, totalAtivos, totalModulos, permissoes = null, nomeUsuario = null }: Props) {
@@ -478,7 +482,20 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     fetch(`http://127.0.0.1:47200/launch/${slug}`, { mode: 'no-cors' }).catch(() => {})
   }
 
-  const planoLabel = plano === 'premium' ? 'Plano Premium' : plano === 'profissional' ? 'Plano Profissional' : 'Plano Básico'
+  // O rótulo ficou preso nos planos antigos (Básico/Profissional/Premium) e
+  // mostrava "Plano Básico" para quem assinava Gestão. Agora sai o nome que o
+  // salão realmente contratou, e os nomes velhos ainda têm tradução porque
+  // existem salões gravados assim.
+  const planoLabel = (() => {
+    const atual = PLANOS_NODRI.find(
+      x => x.slug === normalizarPlano(plano) || normalizarPlano(x.nome) === normalizarPlano(plano))
+    if (atual) return `Plano ${atual.nome}`
+    const n = normalizarPlano(plano)
+    if (n.includes('premium')) return 'Plano Completo'
+    if (n.includes('profission')) return 'Plano Gestão'
+    if (n.includes('basic')) return 'Plano Inicial'
+    return plano ? `Plano ${plano}` : 'Sem plano'
+  })()
   const initials = salaoNome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const TABS = [...TABS_FIXAS, ...tabsExtras]
 
@@ -666,7 +683,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)' }}>{initials}</div>
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] font-medium truncate">{salaoNome}</div>
-                <div className="text-[9px] text-nodri-purple">{planoLabel}</div>
+                {/* Sub-usuário não troca plano: mexe no cartão do dono. */}
+                {ehSub ? (
+                  <div className="text-[9px] text-nodri-purple">{planoLabel}</div>
+                ) : (
+                  <a href="/salon/plano" title="Ver ou trocar de plano"
+                    className="text-[9px] text-nodri-purple hover:underline block truncate">
+                    {planoLabel}
+                  </a>
+                )}
               </div>
             </div>
             <div className="flex gap-1">
