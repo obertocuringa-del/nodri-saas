@@ -25,6 +25,21 @@ export default function TrabalheConoscoPage() {
       .catch(() => { /* fica com os textos do código */ })
   }, [])
 
+  // A comissão prometida nesta página tem de ser a mesma que o afiliado vai
+  // receber de verdade. Escrever "40%" no texto congela um número que o dono
+  // pode ter mudado no painel — por isso o texto usa {comissao} e o valor vem
+  // da configuração, aqui e no e-mail de boas-vindas.
+  const [comissao, setComissao] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/afiliados/comissao-publica')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (typeof d?.comissao === 'number') setComissao(d.comissao) })
+      .catch(() => { /* o marcador sai vazio em vez de mentir um número */ })
+  }, [])
+
+  const comValor = (t: string) =>
+    String(t || '').replace(/\{comissao\}/g, comissao === null ? '' : String(comissao))
+
   const [form, setForm] = useState({ nome: '', cpf: '', email: '', telefone: '', chave_pix: '' })
   const [loading, setLoading] = useState(false)
   const [resultado, setResultado] = useState<{ cupom: string; link: string } | null>(null)
@@ -203,7 +218,7 @@ export default function TrabalheConoscoPage() {
               <p className="text-[12px] font-bold text-nodri-cyan mb-2">{cfg.afiliado_pg_como_usar_titulo}</p>
               <ul className="text-[11px] text-nodri-t2 space-y-1 leading-relaxed">
                 {(cfg.afiliado_pg_como_usar || []).map((t: string, i: number) => (
-                  <li key={i}>• {comDestaque(t)}</li>
+                  <li key={i}>• {comDestaque(comValor(t))}</li>
                 ))}
               </ul>
             </div>

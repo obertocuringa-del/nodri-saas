@@ -121,7 +121,7 @@ export const LANDING_PADRAO = {
   afiliado_pg_como_usar_titulo: 'Como usar:',
   afiliado_pg_como_usar: [
     'Compartilhe o link ou cupom com seus contatos',
-    'Quando comprarem usando seu cupom, você ganha **40%**',
+    'Quando comprarem usando seu cupom, você ganha **{comissao}%**',
     'O pagamento é feito via Pix automaticamente',
   ],
 

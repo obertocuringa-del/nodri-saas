@@ -1,7 +1,17 @@
 // Serviço de email usando Resend (gratuito até 3000 emails/mês)
 // Ou fallback para SMTP Gmail quando configurado
 
+import { configAfiliado, preencherTexto } from '@/lib/afiliados'
+
 const FROM_NAME = 'NODRI Estilo & Beleza'
+
+// Texto vindo do painel entra dentro de HTML. Sem escapar, um `<` digitado
+// por engano quebraria o e-mail inteiro do afiliado.
+function escaparHtml(txt: string): string {
+  return String(txt || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 // ── Remetente ───────────────────────────────────────────────────────────────
 //
@@ -220,9 +230,15 @@ export async function enviarEmailPagamento({
 export async function sendEmailAfiliado({ nome, email, cupom, link }: {
   nome: string; email: string; cupom: string; link: string
 }) {
+  // Os textos vem do painel (Afiliados > Config). O layout continua aqui: o
+  // dono edita o que o afiliado LE, sem poder quebrar o HTML do e-mail.
+  const cfg = await configAfiliado()
+  const t = cfg.email
+  const p = (txt: string) => escaparHtml(preencherTexto(txt, { nome, cupom, link, comissao: cfg.comissao }))
+
   await sendEmail({
     to: email,
-    subject: 'Bem-vindo ao Programa de Afiliados NODRI!',
+    subject: preencherTexto(t.assunto, { nome, cupom, comissao: cfg.comissao }),
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#1a1a1a;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#5b4fcf,#5b4fcf);padding:32px;text-align:center">
@@ -230,8 +246,8 @@ export async function sendEmailAfiliado({ nome, email, cupom, link }: {
           <p style="margin:8px 0 0;color:#000;font-size:13px">Programa de Afiliados</p>
         </div>
         <div style="padding:32px">
-          <h2 style="color:#5b4fcf;margin-top:0">Parabéns, ${nome}!</h2>
-          <p style="color:#767069;line-height:1.6">Você foi cadastrado no <strong style="color:#1a1a1a">Programa de Afiliados NODRI</strong>. Agora você pode indicar nosso sistema e ganhar comissão em cada venda!</p>
+          <h2 style="color:#5b4fcf;margin-top:0">${p(t.titulo)}</h2>
+          <p style="color:#767069;line-height:1.6">${p(t.intro)}</p>
           <div style="background:#161820;border:1px solid #e8e6e0;border-radius:10px;padding:20px;margin:24px 0">
             <h3 style="color:#5b4fcf;margin-top:0;font-size:14px">SEU CUPOM EXCLUSIVO:</h3>
             <div style="background:#ffffff;border:2px dashed #5b4fcf;border-radius:8px;padding:16px;text-align:center;margin:12px 0">
@@ -245,13 +261,11 @@ export async function sendEmailAfiliado({ nome, email, cupom, link }: {
           <div style="background:#161820;border:1px solid #e8e6e0;border-radius:10px;padding:20px;margin:24px 0">
             <h3 style="color:#1a1a1a;margin-top:0;font-size:13px">COMO FUNCIONA:</h3>
             <ol style="color:#767069;line-height:1.8;padding-left:20px;font-size:13px">
-              <li>Compartilhe seu cupom ou link com seus contatos</li>
-              <li>Quando alguém comprar usando seu cupom, você ganha <strong style="color:#5b4fcf">40% do valor</strong></li>
-              <li>O pagamento é feito via Pix diretamente para você</li>
+              ${t.passos.map(passo => `<li>${p(passo)}</li>`).join('')}
             </ol>
           </div>
           <div style="text-align:center">
-            <a href="https://wa.me/${WHATSAPP}" style="color:#5b4fcf;font-size:13px">Dúvidas? Fale conosco no WhatsApp</a>
+            <a href="https://wa.me/${WHATSAPP}" style="color:#5b4fcf;font-size:13px">${p(t.rodape)}</a>
           </div>
         </div>
       </div>

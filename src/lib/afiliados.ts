@@ -22,17 +22,76 @@ export interface ConfigAfiliado {
   percentual: number
   /** Desconto só na primeira cobrança? Depois disso o cliente paga cheio. */
   apenas_primeira: boolean
+  /**
+   * Comissão padrão de quem indica, em %. Vale para todo afiliado que não
+   * tenha um percentual próprio em `afiliados.comissao_percentual`.
+   *
+   * Mudar aqui vale para as vendas SEGUINTES. Comissão já gerada não se
+   * mexe: a linha em `comissoes` guarda o percentual do dia da venda, que é
+   * o que foi combinado com o afiliado naquele momento.
+   */
+  comissao: number
+  /** Textos do e-mail de boas-vindas do afiliado, editáveis no painel. */
+  email: TextosEmailAfiliado
 }
 
-export const CONFIG_AFILIADO_PADRAO: ConfigAfiliado = { percentual: 10, apenas_primeira: false }
+export interface TextosEmailAfiliado {
+  assunto: string
+  titulo: string
+  intro: string
+  passos: string[]
+  rodape: string
+}
+
+export const EMAIL_AFILIADO_PADRAO: TextosEmailAfiliado = {
+  assunto: 'Bem-vindo ao Programa de Afiliados NODRI!',
+  titulo: 'Parabéns, {nome}!',
+  intro: 'Você foi cadastrado no Programa de Afiliados NODRI. Agora você pode indicar nosso sistema e ganhar comissão em cada venda!',
+  passos: [
+    'Compartilhe seu cupom ou link com seus contatos',
+    'Quando alguém comprar usando seu cupom, você ganha {comissao}% do valor',
+    'O pagamento é feito via Pix diretamente para você',
+  ],
+  rodape: 'Dúvidas? Fale conosco no WhatsApp',
+}
+
+export const CONFIG_AFILIADO_PADRAO: ConfigAfiliado = {
+  percentual: 10,
+  apenas_primeira: false,
+  comissao: 40,
+  email: EMAIL_AFILIADO_PADRAO,
+}
+
+/** Troca {nome}, {cupom}, {link} e {comissao} pelos valores de verdade. */
+export function preencherTexto(
+  texto: string,
+  dados: { nome?: string; cupom?: string; link?: string; comissao?: number },
+): string {
+  return String(texto || '')
+    .replace(/\{nome\}/g, dados.nome ?? '')
+    .replace(/\{cupom\}/g, dados.cupom ?? '')
+    .replace(/\{link\}/g, dados.link ?? '')
+    .replace(/\{comissao\}/g, String(dados.comissao ?? ''))
+}
 
 export async function configAfiliado(): Promise<ConfigAfiliado> {
   const { data } = await supabaseAdmin
     .from('configuracoes').select('valor').eq('chave', 'afiliado_desconto_cliente').maybeSingle()
   const v = (data?.valor || {}) as any
+  const e = (v.email || {}) as any
   return {
     percentual: Number(v.percentual) >= 0 ? Number(v.percentual) : CONFIG_AFILIADO_PADRAO.percentual,
     apenas_primeira: !!v.apenas_primeira,
+    comissao: Number(v.comissao) >= 0 ? Number(v.comissao) : CONFIG_AFILIADO_PADRAO.comissao,
+    // Campo a campo: se o dono editou só o título, o resto continua no padrão
+    // em vez de sair em branco no e-mail do afiliado.
+    email: {
+      assunto: e.assunto || EMAIL_AFILIADO_PADRAO.assunto,
+      titulo: e.titulo || EMAIL_AFILIADO_PADRAO.titulo,
+      intro: e.intro || EMAIL_AFILIADO_PADRAO.intro,
+      passos: Array.isArray(e.passos) && e.passos.length ? e.passos : EMAIL_AFILIADO_PADRAO.passos,
+      rodape: e.rodape || EMAIL_AFILIADO_PADRAO.rodape,
+    },
   }
 }
 

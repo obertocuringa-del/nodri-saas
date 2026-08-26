@@ -4,7 +4,7 @@ import { ligarModulosDoPlano } from '@/lib/planoDoSalao'
 import { hashPassword } from '@/lib/auth'
 import { enviarEmailBoasVindas } from '@/lib/email'
 import { buscarAssinatura, atualizarAssinatura } from '@/lib/asaas'
-import { registrarComissao, assinaturaJaPagouComissao } from '@/lib/afiliados'
+import { registrarComissao, assinaturaJaPagouComissao, configAfiliado } from '@/lib/afiliados'
 import { sendEmailComissao } from '@/lib/email'
 import { randomBytes } from 'crypto'
 import { ehChaveDoModelo, sanitizar, versaoDoModelo, marcarOrigem } from '@/lib/modeloSalao'
@@ -248,7 +248,9 @@ async function tratarAfiliado(dados: {
     .from('afiliados').select('id, nome, email, cupom, comissao_percentual, ativo').eq('id', afiliadoId).maybeSingle()
   if (!afiliado || !afiliado.ativo) return
 
-  const percentual = Number(afiliado.comissao_percentual) || 40
+  // Percentual proprio do afiliado; sem ele, o padrao configurado no painel.
+  const cfgAfiliado = await configAfiliado()
+  const percentual = Number(afiliado.comissao_percentual) || cfgAfiliado.comissao
   const planoNome = compra?.plano
     || (Array.isArray((salao as any)?.planos) ? (salao as any).planos[0]?.nome : (salao as any)?.planos?.nome)
     || ''

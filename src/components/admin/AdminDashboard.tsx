@@ -722,6 +722,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     const [savingComissao, setSavingComissao] = useState<string | null>(null)
     const [descontoCliente, setDescontoCliente] = useState(10)
     const [apenasPrimeira, setApenasPrimeira] = useState(false)
+    const [comissaoPadrao, setComissaoPadrao] = useState(40)
+    // Textos do e-mail de boas-vindas do afiliado, e o padrao que a API
+    // devolve junto — e dele que sai o botao "voltar ao texto padrao".
+    const [emailAf, setEmailAf] = useState<any>(null)
+    const [emailPadraoAf, setEmailPadraoAf] = useState<any>({})
     const [savingConfig, setSavingConfig] = useState(false)
     // Comissões geradas por cobrança paga. É delas que sai a fila de Pix.
     const [comissoes, setComissoes] = useState<any[]>([])
@@ -739,16 +744,27 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       fetch('/api/afiliados').then(r => r.json()).then(d => { setAfiliados(Array.isArray(d) ? d : []); setLoadingAf(false) })
       fetch('/api/afiliados/config').then(r => r.json()).then(d => {
         if (typeof d?.percentual === 'number') setDescontoCliente(d.percentual)
+        if (typeof d?.comissao === 'number') setComissaoPadrao(d.comissao)
         setApenasPrimeira(!!d?.apenas_primeira)
+        if (d?.email) setEmailAf(d.email)
+        if (d?.email_padrao) setEmailPadraoAf(d.email_padrao)
       })
       carregarComissoes()
     }, [])
 
     async function salvarConfig() {
       setSavingConfig(true)
-      await fetch('/api/afiliados/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ percentual: descontoCliente, apenas_primeira: apenasPrimeira }) })
+      await fetch('/api/afiliados/config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          percentual: descontoCliente,
+          apenas_primeira: apenasPrimeira,
+          comissao: comissaoPadrao,
+          email: emailAf || undefined,
+        }),
+      })
       setSavingConfig(false)
-      toast.success('Desconto do cliente atualizado!')
+      toast.success('Configuracao do programa atualizada!')
     }
 
     async function toggleAtivo(af: any) {
@@ -858,7 +874,16 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   Desconto vale <strong className="text-nodri-t1">só na primeira cobrança</strong> (depois volta ao preço de tabela)
                 </span>
               </label>
-              <div className="text-[10px] text-nodri-t3 mb-2">Comissão padrão do afiliado: <strong className="text-nodri-cyan">40%</strong> sobre o valor pago pelo cliente (já com desconto)</div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] text-nodri-t3">Comissão padrão do afiliado:</span>
+                <input type="number" min={0} max={100} value={comissaoPadrao}
+                  onChange={e => setComissaoPadrao(Number(e.target.value))}
+                  className="w-16 bg-nodri-surface border border-nodri-border rounded-lg px-2 py-1 text-[12px] font-bold outline-none focus:border-nodri-cyan text-center" />
+                <span className="text-[10px] text-nodri-t3">% sobre o valor pago (já com desconto)</span>
+              </div>
+              <div className="text-[10px] text-nodri-t3 mb-2">
+                Vale para as vendas seguintes. Comissão já gerada mantém o percentual do dia da venda.
+              </div>
               <button onClick={salvarConfig} disabled={savingConfig}
                 className="flex items-center gap-2 bg-nodri-cyan text-black px-4 py-2 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50">
                 {savingConfig ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
@@ -867,13 +892,83 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </div>
           </div>
           <div className="mt-3 p-3 bg-nodri-surface rounded-lg border border-nodri-border text-[11px] text-nodri-t2">
-            <strong className="text-nodri-t1">Exemplo:</strong> Plano R$200 → Cliente paga <strong className="text-nodri-cyan">R${(200 * (1 - descontoCliente / 100)).toFixed(2)}</strong> ({descontoCliente}% off) → Afiliado ganha <strong className="text-nodri-green">R${(200 * (1 - descontoCliente / 100) * 0.4).toFixed(2)}</strong> (40% do valor pago)
+            <strong className="text-nodri-t1">Exemplo:</strong> Plano R$200 → Cliente paga <strong className="text-nodri-cyan">R${(200 * (1 - descontoCliente / 100)).toFixed(2)}</strong> ({descontoCliente}% off) → Afiliado ganha <strong className="text-nodri-green">R${(200 * (1 - descontoCliente / 100) * (comissaoPadrao / 100)).toFixed(2)}</strong> ({comissaoPadrao}% do valor pago)
             {apenasPrimeira && <><br />Da 2ª mensalidade em diante o cliente volta a pagar <strong className="text-nodri-t1">R$200,00</strong> — e essa mensalidade fica <strong className="text-nodri-t1">inteira</strong> para a NODRI.</>}
             <br /><span className="text-nodri-t3">
               A comissão sai <strong className="text-nodri-t2">uma vez só</strong>, na mensalidade de estreia — nunca todo mês.
               Quem paga o afiliado é a NODRI, por Pix; o Asaas só recebe do cliente.
             </span>
           </div>
+
+          {/* ── E-mail que o afiliado recebe ──
+              O layout do e-mail fica no código; aqui se edita o TEXTO. O
+              número da comissão nunca é digitado: escreve-se {comissao} e o
+              sistema troca pelo valor configurado acima, para a promessa do
+              e-mail nunca divergir do que o afiliado recebe. */}
+          {emailAf && (
+            <div className="mt-4 pt-4 border-t border-nodri-border">
+              <div className="font-syne font-bold text-[12px] text-nodri-cyan mb-1 flex items-center gap-2">
+                <Mail size={13} /> E-mail de boas-vindas do afiliado
+              </div>
+              <p className="text-[10px] text-nodri-t3 mb-3">
+                Use <code className="text-nodri-cyan">{'{nome}'}</code>, <code className="text-nodri-cyan">{'{cupom}'}</code>,
+                {' '}<code className="text-nodri-cyan">{'{link}'}</code> e <code className="text-nodri-cyan">{'{comissao}'}</code> —
+                o sistema troca pelos valores de cada afiliado na hora de enviar.
+              </p>
+
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Assunto</label>
+                  <input value={emailAf.assunto || ''}
+                    onChange={e => setEmailAf({ ...emailAf, assunto: e.target.value })}
+                    className="w-full nodri-input text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Título dentro do e-mail</label>
+                  <input value={emailAf.titulo || ''}
+                    onChange={e => setEmailAf({ ...emailAf, titulo: e.target.value })}
+                    className="w-full nodri-input text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Texto de abertura</label>
+                  <textarea value={emailAf.intro || ''}
+                    onChange={e => setEmailAf({ ...emailAf, intro: e.target.value })}
+                    className="w-full nodri-input text-[12px] resize-none h-16" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Como funciona (um passo por linha)</label>
+                  <textarea value={(emailAf.passos || []).join('\n')}
+                    onChange={e => setEmailAf({ ...emailAf, passos: e.target.value.split('\n') })}
+                    className="w-full nodri-input text-[12px] resize-none h-20" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Linha final (link do WhatsApp)</label>
+                  <input value={emailAf.rodape || ''}
+                    onChange={e => setEmailAf({ ...emailAf, rodape: e.target.value })}
+                    className="w-full nodri-input text-[12px]" />
+                </div>
+              </div>
+
+              <div className="mt-3 p-3 bg-nodri-surface rounded-lg border border-nodri-border">
+                <p className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1.5">Como o afiliado vai ler</p>
+                <p className="text-[12px] font-semibold text-gray-900">
+                  {String(emailAf.titulo || '').replace('{nome}', 'Maria').replace('{comissao}', String(comissaoPadrao))}
+                </p>
+                <ul className="mt-1.5 space-y-0.5">
+                  {(emailAf.passos || []).filter(Boolean).map((x: string, i: number) => (
+                    <li key={i} className="text-[11px] text-nodri-t2">
+                      • {String(x).replace('{comissao}', String(comissaoPadrao)).replace('{cupom}', 'AFIL-MARIA-1234')}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button onClick={() => setEmailAf({ ...emailAf, ...emailPadraoAf })}
+                className="mt-2 text-[10px] text-nodri-t3 hover:text-nodri-cyan underline">
+                voltar ao texto padrão
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Cards resumo */}

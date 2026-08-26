@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       // Tem que ser a MESMA regra de /api/assinatura/criar, senão a tela
       // promete um valor e a cobrança sai com outro.
       let descontoCliente = 10
+      let comissaoPadrao = 40
       try {
         const { data: config } = await supabaseAdmin
           .from('configuracoes')
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
           .eq('chave', 'afiliado_desconto_cliente')
           .maybeSingle()
         descontoCliente = Number((config?.valor as any)?.percentual) || 10
+        comissaoPadrao = Number((config?.valor as any)?.comissao) || comissaoPadrao
       } catch {}
 
       return NextResponse.json({
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
         afiliado_id: afiliado.id,
         afiliado_nome: afiliado.nome,
         percentual: descontoCliente,
-        comissao_afiliado: afiliado.comissao_percentual || 40,
+        comissao_afiliado: afiliado.comissao_percentual || comissaoPadrao,
         mensagem: `Cupom do afiliado ${afiliado.nome.split(' ')[0]}! Você ganhou ${descontoCliente}% de desconto!`,
       })
     }

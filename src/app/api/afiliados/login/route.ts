@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { configAfiliado } from '@/lib/afiliados'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nodri.com.br'
 
@@ -40,5 +41,14 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('afiliados').update({ link }).eq('id', afiliado.id)
   }
 
-  return NextResponse.json({ afiliado: { ...afiliado, link }, ranking: ranking || [] })
+  // Comissao efetiva: a propria do afiliado, ou o padrao do painel. A tela
+  // mostrava 40% fixo, e continuaria mostrando 40% mesmo depois de o dono
+  // mudar o padrao — prometendo ao afiliado um numero que nao vale mais.
+  const cfg = await configAfiliado()
+  const comissao_percentual = Number(afiliado.comissao_percentual) || cfg.comissao
+
+  return NextResponse.json({
+    afiliado: { ...afiliado, link, comissao_percentual },
+    ranking: ranking || [],
+  })
 }
