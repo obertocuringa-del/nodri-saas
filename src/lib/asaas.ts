@@ -72,7 +72,32 @@ export async function criarOuAcharCliente(dados: {
   const achados = await chamar<{ data: ClienteAsaas[] }>(
     `/customers?email=${encodeURIComponent(dados.email)}`,
   )
-  if (achados?.data?.length) return achados.data[0]
+
+  const doc = (dados.cpfCnpj || '').replace(/\D/g, '')
+
+  if (achados?.data?.length) {
+    const atual = achados.data[0]
+
+    // Reusar o cliente antigo TAL COMO ESTA descartava o CPF que a pessoa
+    // acabou de digitar. Quem tinha cadastro antigo sem CPF ficava preso: o
+    // Asaas recusava a cobranca no cartao, ela preenchia o campo de novo e o
+    // valor era jogado fora outra vez. Se falta documento la e temos um aqui,
+    // completamos o cadastro antes de seguir.
+    if (doc && !(atual as any).cpfCnpj) {
+      try {
+        return await chamar<ClienteAsaas>(`/customers/${atual.id}`, {
+          method: 'POST',
+          body: JSON.stringify({ cpfCnpj: doc }),
+        })
+      } catch {
+        // Se a atualizacao falhar, seguimos com o cliente que ja existe: a
+        // cobranca pode falhar depois, mas com a mensagem do Asaas — melhor
+        // do que derrubar o checkout aqui.
+        return atual
+      }
+    }
+    return atual
+  }
 
   return chamar<ClienteAsaas>('/customers', {
     method: 'POST',
@@ -80,7 +105,7 @@ export async function criarOuAcharCliente(dados: {
       name: dados.nome,
       email: dados.email,
       mobilePhone: (dados.telefone || '').replace(/\D/g, '') || undefined,
-      cpfCnpj: (dados.cpfCnpj || '').replace(/\D/g, '') || undefined,
+      cpfCnpj: doc || undefined,
     }),
   })
 }
