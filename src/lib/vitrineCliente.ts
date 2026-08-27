@@ -114,8 +114,10 @@ export function mensagemAgendamento(dados: {
   }
 
   linhas.push('')
-  linhas.push(`*Data: ${dataPorExtenso(dados.data)}*`)
-  linhas.push(`*Horário: ${dados.hora}*`)
+  // Negrito só no rótulo: a linha inteira em negrito perde o destaque, e o
+  // que precisa saltar é o que se procura de relance ("Data", "Horário").
+  linhas.push(`*Data:* ${dataPorExtenso(dados.data)}`)
+  linhas.push(`*Horário:* ${dados.hora}`)
   linhas.push('')
   linhas.push('Tem disponibilidade para esses agendamentos?')
   return linhas.join('\n')
