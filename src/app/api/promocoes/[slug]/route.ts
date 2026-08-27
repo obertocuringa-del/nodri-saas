@@ -24,8 +24,8 @@ interface AcaoPublica {
   dataFim?: string
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
-  const salao = await getSalaoPorToken(params.token)
+export async function GET(_req: NextRequest, { params }: { params: { slug: string } }) {
+  const salao = await getSalaoPorToken(params.slug)
   if (!salao) return NextResponse.json({ error: 'Link indisponível' }, { status: 404 })
 
   // ── Ações comerciais ──
@@ -74,15 +74,23 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
   // (documento, telefone, contrato) não tem por que sair do salão.
   const { data: profs } = await supabaseAdmin
     .from('profissionais')
-    .select('id, nome_completo, apelido, servicos_habilitados, ativo')
+    .select('id, nome_completo, apelido, servicos_habilitados, ativo, is_departamento, vinculo')
     .eq('salao_id', salao.salaoId)
 
-  // Vao TODOS os ativos, mesmo sem servico habilitado: ao pedir uma promocao o
-  // cliente escolhe da lista inteira (promocao nao tem servico vinculado, entao
-  // nao ha como filtrar por habilidade). Quem filtra por servico e a tela, na
-  // hora de escolher um servico especifico.
+  // Quem atende cliente, e so isso:
+  //
+  // - `is_departamento` marca SETOR (RH, Comercial). Setor nao atende ninguem,
+  //   e estava aparecendo na lista de "quem voce prefere".
+  // - `vinculo` CLT e a equipe interna; quem atende na cadeira e CNPJ.
+  //
+  // Sem servico habilitado o profissional continua na lista: promocao nao tem
+  // servico vinculado, entao nao ha como filtrar por habilidade nesse caso.
+  // Quem filtra por servico e a tela, ao escolher um servico especifico.
   const profissionais = (profs || [])
-    .filter((p: any) => p.ativo !== false)
+    .filter((p: any) =>
+      p.ativo !== false
+      && !p.is_departamento
+      && String(p.vinculo || '').toUpperCase() !== 'CLT')
     .map((p: any) => ({
       id: p.id,
       nome: p.apelido || p.nome_completo || 'Profissional',

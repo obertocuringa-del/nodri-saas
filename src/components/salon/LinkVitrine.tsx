@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2 } from 'lucide-react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Painel do link público do cliente, no topo de Ações Comerciais.
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 // Fica aqui de propósito: é desta tela que sai o conteúdo que o cliente vê, e
 // quem acabou de cadastrar uma promoção é quem quer mandar o link.
 
-interface Cfg { token: string; ativo: boolean; criadoEm: number }
+interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number }
 
 export default function LinkVitrine() {
   const [cfg, setCfg] = useState<Cfg | null>(null)
@@ -16,6 +16,8 @@ export default function LinkVitrine() {
   const [ocupado, setOcupado] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [confirmandoTroca, setConfirmandoTroca] = useState(false)
+  const [editandoSlug, setEditandoSlug] = useState(false)
+  const [novoSlug, setNovoSlug] = useState('')
 
   useEffect(() => {
     fetch('/api/salon/vitrine')
@@ -25,19 +27,29 @@ export default function LinkVitrine() {
       .finally(() => setCarregando(false))
   }, [])
 
-  const url = cfg ? `${typeof window !== 'undefined' ? window.location.origin : ''}/vitrine/${cfg.token}` : ''
+  // O endereço divulgado é o slug legível; o token só aparece se por algum
+  // motivo o slug ainda não existir.
+  const origem = typeof window !== 'undefined' ? window.location.origin : ''
+  const url = cfg ? `${origem}/promocoes/${cfg.slug || cfg.token}` : ''
 
-  async function acao(acao: string) {
+  async function acao(acao: string, extra?: Record<string, any>) {
     setOcupado(true)
     try {
       const r = await fetch('/api/salon/vitrine', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao }),
+        body: JSON.stringify({ acao, ...extra }),
       })
       const d = await r.json()
       if (!r.ok) { toast.error(d.error || 'Não foi possível'); return }
       setCfg(d.config)
       setConfirmandoTroca(false)
+      setEditandoSlug(false)
+      if (acao === 'slug') {
+        toast.success(d.ajustado
+          ? `Esse endereço já estava em uso. Salvamos como /${d.config.slug}`
+          : 'Endereço do link atualizado.')
+        return
+      }
       if (acao === 'criar') toast.success('Link criado! Já pode enviar para suas clientes.')
       if (acao === 'ligar') toast.success('Link no ar de novo.')
       if (acao === 'desligar') toast.success('Link fora do ar.')
@@ -118,11 +130,41 @@ export default function LinkVitrine() {
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           {cfg.ativo ? <EyeOff size={13} /> : <Eye size={13} />} {cfg.ativo ? 'Tirar do ar' : 'Colocar no ar'}
         </button>
+        <button onClick={() => { setNovoSlug(cfg.slug || ''); setEditandoSlug(true) }} disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
+          <Pencil size={13} /> Editar endereço
+        </button>
         <button onClick={() => setConfirmandoTroca(true)} disabled={ocupado}
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t3 disabled:opacity-50">
-          <RefreshCw size={13} /> Trocar endereço
+          <RefreshCw size={13} /> Gerar código novo
         </button>
       </div>
+
+      {editandoSlug && (
+        <div className="mt-3 p-3 rounded-lg bg-nodri-surface border border-nodri-border">
+          <p className="text-[11px] text-nodri-t3 mb-2">
+            Escolha um endereço fácil de falar e digitar — é o que a cliente vê.
+          </p>
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-[11px] text-nodri-t3 font-mono">{origem}/promocoes/</span>
+            <input value={novoSlug} onChange={e => setNovoSlug(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') acao('slug', { slug: novoSlug }) }}
+              placeholder="rouge-hair" autoFocus
+              className="flex-1 min-w-0 nodri-input text-[12px] font-mono" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setEditandoSlug(false)}
+              className="px-3 py-1.5 rounded-lg border border-nodri-border text-[12px] text-nodri-t2">Cancelar</button>
+            <button onClick={() => acao('slug', { slug: novoSlug })} disabled={ocupado || novoSlug.trim().length < 3}
+              className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[12px] font-bold disabled:opacity-50">
+              Salvar endereço
+            </button>
+          </div>
+          <p className="text-[10px] text-nodri-t3 mt-2">
+            O endereço anterior para de funcionar assim que você salvar.
+          </p>
+        </div>
+      )}
 
       {confirmandoTroca && (
         <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">

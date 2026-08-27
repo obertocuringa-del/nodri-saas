@@ -19,9 +19,27 @@ export const CHAVE_VOTOS = 'vitrine_votos'
 
 export interface VitrineConfig {
   token: string
+  /**
+   * Parte legível do endereço: /promocoes/rouge-hair.
+   *
+   * O token aleatório continua valendo por trás — quem recebeu o link antigo
+   * não fica na mão —, mas o que se divulga é o slug: um endereço com
+   * "yZc1ffjtrYwx" no meio ninguém digita nem lê em voz alta.
+   */
+  slug?: string
   /** Link no ar? Desligar tira do ar sem perder o token. */
   ativo: boolean
   criadoEm: number
+}
+
+/** Texto vira endereço: sem acento, sem espaço, sem símbolo. */
+export function paraSlug(texto: string): string {
+  return String(texto || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
 }
 
 /** Token do link. Curto o bastante para caber num WhatsApp, longo o bastante
@@ -36,7 +54,7 @@ export async function getConfig(salaoId: string): Promise<VitrineConfig | null> 
     .eq('salao_id', salaoId).eq('chave', CHAVE_CONFIG).maybeSingle()
   const v = (data as any)?.valor
   if (!v?.token) return null
-  return { token: v.token, ativo: v.ativo !== false, criadoEm: Number(v.criadoEm) || 0 }
+  return { token: v.token, slug: v.slug || undefined, ativo: v.ativo !== false, criadoEm: Number(v.criadoEm) || 0 }
 }
 
 export async function salvarConfig(salaoId: string, cfg: VitrineConfig): Promise<void> {
@@ -49,10 +67,40 @@ export async function salvarConfig(salaoId: string, cfg: VitrineConfig): Promise
 /** Config existente ou uma nova já gravada — para o botão "gerar link". */
 export async function garantirConfig(salaoId: string): Promise<VitrineConfig> {
   const atual = await getConfig(salaoId)
-  if (atual) return atual
-  const nova: VitrineConfig = { token: gerarToken(), ativo: true, criadoEm: Date.now() }
-  await salvarConfig(salaoId, nova)
-  return nova
+  if (atual?.slug) return atual
+
+  // Slug de partida vem do nome do salão. Sai feio quando o nome é razão
+  // social ("oliveira-e-schneider-intituto-de-beleza-ltda"), e por isso o
+  // painel deixa trocar — mas nascer com algo legível é melhor que nascer com
+  // o token no meio do endereço.
+  const { data: salao } = await supabaseAdmin
+    .from('saloes').select('nome').eq('id', salaoId).maybeSingle()
+  const base = paraSlug((salao as any)?.nome || '') || 'salao'
+  const slug = await slugLivre(base, salaoId)
+
+  const cfg: VitrineConfig = atual
+    ? { ...atual, slug }
+    : { token: gerarToken(), slug, ativo: true, criadoEm: Date.now() }
+  await salvarConfig(salaoId, cfg)
+  return cfg
+}
+
+/**
+ * Um slug que ainda não é de outro salão.
+ *
+ * Dois salões com o mesmo nome existem, e sem esta checagem o segundo roubaria
+ * o endereço do primeiro — as clientes de um cairiam na página do outro.
+ */
+export async function slugLivre(base: string, salaoId: string): Promise<string> {
+  const limpo = paraSlug(base) || 'salao'
+  for (let i = 0; i < 20; i++) {
+    const tentativa = i === 0 ? limpo : `${limpo}-${i + 1}`
+    const { data } = await supabaseAdmin
+      .from('salao_config').select('salao_id')
+      .eq('chave', CHAVE_CONFIG).eq('valor->>slug', tentativa).maybeSingle()
+    if (!data || data.salao_id === salaoId) return tentativa
+  }
+  return `${limpo}-${Date.now().toString(36).slice(-4)}`
 }
 
 export interface SalaoDaVitrine {
@@ -74,13 +122,12 @@ export async function getSalaoPorToken(token: string): Promise<SalaoDaVitrine | 
   const limpo = String(token || '').replace(/[^A-Za-z0-9_-]/g, '')
   if (!limpo) return null
 
-  // Filtro dentro do JSON no formato que o resto do sistema ja usa e que
-  // comprovadamente funciona aqui (mesmo padrao do link de lojistas). A forma
-  // `.eq('valor->>token', x)` nao devolveu linha nenhuma em producao.
+  // Aceita o slug legível e o token antigo: o endereço divulgado é o slug, mas
+  // quem já recebeu o link com token continua entrando.
   const { data } = await supabaseAdmin
     .from('salao_config').select('salao_id, valor')
     .eq('chave', CHAVE_CONFIG)
-    .or(`valor->>token.eq.${limpo}`)
+    .or(`valor->>slug.eq.${limpo},valor->>token.eq.${limpo}`)
     .maybeSingle()
   if (!data) return null
 

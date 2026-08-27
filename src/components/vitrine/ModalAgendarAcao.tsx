@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { X, Send, Check, ChevronRight, ChevronDown, Plus } from 'lucide-react'
+import { X, Send, Check, ChevronRight, ChevronDown } from 'lucide-react'
 import SeletorQuando from './SeletorQuando'
 import type { ServicoPublico, ProfissionalPublico, EscolhaAgendamento } from '@/lib/vitrineCliente'
 import {
@@ -15,8 +15,10 @@ import {
 // o que falta; assim ele sempre vê só a pergunta da vez.
 //
 // A promoção NÃO tem serviço vinculado, então a preferência aqui é escolhida
-// entre todos os profissionais do salão. Já nos serviços avulsos que ele possa
-// somar depois, a lista é filtrada por quem está habilitado naquele serviço.
+// entre quem atende cliente — a rota já tira setores e a equipe CLT. E dá para
+// marcar mais de um: um combo pode juntar cabelo, mão e massagem, cada parte
+// com uma pessoa. Já nos serviços avulsos somados depois, a lista é filtrada
+// por quem está habilitado naquele serviço.
 
 type Etapa = 'quando' | 'profissional' | 'mais' | 'servicos'
 
@@ -33,7 +35,9 @@ export default function ModalAgendarAcao({
   const [etapa, setEtapa] = useState<Etapa>('quando')
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
-  const [profPromo, setProfPromo] = useState<string | null>(null)
+  // Vários profissionais: uma promoção pode juntar cabelo, mão e massagem,
+  // e cada parte ser de uma pessoa diferente.
+  const [profsPromo, setProfsPromo] = useState<string[]>([])
 
   // Serviços somados depois da promoção
   const [abertas, setAbertas] = useState<Record<string, boolean>>({})
@@ -66,8 +70,9 @@ export default function ModalAgendarAcao({
   }
 
   function enviar() {
+    const comQuem = profsPromo.length ? profsPromo.join(', ') : null
     const escolhas: EscolhaAgendamento[] = [
-      ...titulos.map(t => ({ chave: `acao:${t}`, nome: t, preco: null, profissional: profPromo })),
+      ...titulos.map(t => ({ chave: `acao:${t}`, nome: t, preco: null, profissional: comQuem })),
       ...listaExtras,
     ]
     const texto = mensagemAgendamento({ data, hora, escolhas, descricao })
@@ -113,29 +118,46 @@ export default function ModalAgendarAcao({
               <p className="font-bold text-[14px] text-gray-900 mb-1">Tem preferência por profissional?</p>
               <p className="text-[12px] text-gray-500 mb-4">{titulos[0]}</p>
 
-              {profPromo === null ? (
-                <>
-                  <button onClick={() => setEtapa('mais')}
-                    className="w-full py-2.5 mb-2 rounded-xl border border-gray-200 text-[13px] text-gray-600">
-                    Não tenho preferência
-                  </button>
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                    {profissionais.map(p => (
-                      <button key={p.id} onClick={() => { setProfPromo(p.nome); setEtapa('mais') }}
-                        className="w-full py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
-                        {p.nome}
-                      </button>
-                    ))}
-                    {profissionais.length === 0 && (
-                      <p className="text-[12px] text-gray-400 text-center py-3">
-                        Nenhum profissional cadastrado. Siga sem preferência.
-                      </p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-[13px] text-gray-700">com <b>{profPromo}</b></p>
-              )}
+              <p className="text-[11px] text-gray-400 mb-3">
+                Pode escolher mais de um — marque quem você quer para cada parte.
+              </p>
+
+              <div className="space-y-1.5 max-h-64 overflow-y-auto mb-3">
+                {profissionais.map(p => {
+                  const marcado = profsPromo.includes(p.nome)
+                  return (
+                    <button key={p.id}
+                      onClick={() => setProfsPromo(prev =>
+                        prev.includes(p.nome) ? prev.filter(x => x !== p.nome) : [...prev, p.nome])}
+                      className={'w-full flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-[13px] font-semibold border transition-all '
+                        + (marcado
+                          ? 'bg-[var(--vt-cor)] text-white border-transparent'
+                          : 'bg-white text-gray-700 border-gray-200')}>
+                      <span className={'w-5 h-5 shrink-0 rounded-md border flex items-center justify-center '
+                        + (marcado ? 'bg-white/25 border-white/40' : 'border-gray-300')}>
+                        {marcado && <Check size={13} className="text-white" />}
+                      </span>
+                      {p.nome}
+                    </button>
+                  )
+                })}
+                {profissionais.length === 0 && (
+                  <p className="text-[12px] text-gray-400 text-center py-3">
+                    Nenhum profissional disponível. Siga sem preferência.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => { setProfsPromo([]); setEtapa('mais') }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-600">
+                  Não tenho preferência
+                </button>
+                <button onClick={() => setEtapa('mais')} disabled={profsPromo.length === 0}
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold disabled:opacity-40">
+                  Continuar
+                </button>
+              </div>
             </div>
           )}
 

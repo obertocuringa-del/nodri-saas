@@ -29,7 +29,7 @@ export default function VitrineVotacao({ servicos, token }: {
   }, [])
 
   function carregarRanking() {
-    fetch(`/api/vitrine/${token}/votos`)
+    fetch(`/api/promocoes/${token}/votos`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (Array.isArray(d?.ranking)) setRanking(d.ranking) })
       .catch(() => { /* o ranking é extra; sem ele a votação segue */ })
@@ -46,7 +46,7 @@ export default function VitrineVotacao({ servicos, token }: {
     if (!escolhidos.length && !livre.trim()) return
     setEnviando(true)
     try {
-      const r = await fetch(`/api/vitrine/${token}/votos`, {
+      const r = await fetch(`/api/promocoes/${token}/votos`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ servicos: escolhidos, livre: livre.trim() }),
       })

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessao } from '@/lib/apiAuth'
-import { garantirConfig, getConfig, salvarConfig, gerarToken } from '@/lib/vitrineConfig'
+import { garantirConfig, getConfig, salvarConfig, gerarToken, paraSlug, slugLivre } from '@/lib/vitrineConfig'
 import { registrarAuditoria } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
 
-  const { acao } = await req.json().catch(() => ({ acao: 'criar' }))
+  const body = await req.json().catch(() => ({ acao: 'criar' }))
+  const acao = body?.acao || 'criar'
 
   if (acao === 'criar') {
     const cfg = await garantirConfig(sess.salaoId)
@@ -39,7 +40,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ config: cfg })
   }
 
-  // Trocar o endereço invalida o link antigo na hora — é o que se usa quando
+  // Endereço legível escolhido pelo dono: /promocoes/rouge-hair.
+  //
+  // O slug antigo para de funcionar assim que o novo entra — e por isso a tela
+  // avisa antes. O token continua valendo por trás, então quem tem o link
+  // velho com token não fica sem acesso.
+  if (acao === 'slug') {
+    const pedido = paraSlug(String(body?.slug || ''))
+    if (pedido.length < 3) {
+      return NextResponse.json({ error: 'O endereço precisa de pelo menos 3 letras.' }, { status: 400 })
+    }
+    const livre = await slugLivre(pedido, sess.salaoId)
+    const cfg = { ...atual, slug: livre }
+    await salvarConfig(sess.salaoId, cfg)
+    await registrarAuditoria('editar', 'Link da vitrine', `Endereco do link agora e /${livre}`)
+    return NextResponse.json({
+      config: cfg,
+      // Quando o pedido ja estava em uso, o salvo sai com sufixo: dizer isso
+      // evita o dono achar que digitou e nao salvou.
+      ajustado: livre !== pedido,
+    })
+  }
+
+  // Trocar o token invalida o link antigo na hora — é o que se usa quando
   // o link vazou para quem não devia.
   if (acao === 'novo-endereco') {
     const cfg = { ...atual, token: gerarToken() }

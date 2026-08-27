@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic'
 // ranking serve para o salão sentir a preferência da clientela — não para
 // decidir nada sozinho.
 
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
-  const salao = await getSalaoPorToken(params.token)
+export async function GET(_req: NextRequest, { params }: { params: { slug: string } }) {
+  const salao = await getSalaoPorToken(params.slug)
   if (!salao) return NextResponse.json({ error: 'Link indisponível' }, { status: 404 })
 
   const votos = await getVotos(salao.salaoId)
@@ -23,8 +23,8 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
   return NextResponse.json({ ranking, total: ranking.reduce((s, r) => s + r.votos, 0) })
 }
 
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
-  const salao = await getSalaoPorToken(params.token)
+export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+  const salao = await getSalaoPorToken(params.slug)
   if (!salao) return NextResponse.json({ error: 'Link indisponível' }, { status: 404 })
 
   const body = await req.json().catch(() => null)
