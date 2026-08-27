@@ -176,7 +176,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
       {/* ── Enviar ── */}
       {podeEnviar && (
         <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-lg z-30">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <p className="text-[11px] text-gray-500 mb-2">
               {marcados.length} procedimento{marcados.length > 1 ? 's' : ''} · <span className="capitalize">{dataPorExtenso(data)}</span> às {hora}
             </p>

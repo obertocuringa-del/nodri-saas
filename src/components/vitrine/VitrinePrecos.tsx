@@ -42,7 +42,9 @@ export default function VitrinePrecos({ servicos }: { servicos: ServicoPublico[]
         <p className="text-center text-gray-500 text-[13px] py-10">Nenhum serviço encontrado.</p>
       )}
 
-      <div className="space-y-2">
+      {/* Em tela larga as categorias ficam lado a lado: uma coluna única
+          deixaria a lista longa demais para percorrer. */}
+      <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
         {grupos.map(([cat, itens]) => {
           const aberta = buscando || abertas[cat]
           return (

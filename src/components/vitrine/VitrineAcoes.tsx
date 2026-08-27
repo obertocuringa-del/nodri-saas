@@ -91,7 +91,7 @@ export default function VitrineAcoes({ acoes, whatsapp }: {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {lista.map(a => {
           const c = CORES[a.status] || CORES.ativa
           const marcada = selecionadas.includes(a.id)
@@ -140,7 +140,7 @@ export default function VitrineAcoes({ acoes, whatsapp }: {
           manda todas numa mensagem só em vez de uma conversa por promoção. */}
       {selecionadas.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-lg z-30">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <div className="max-w-5xl mx-auto flex items-center gap-3">
             <span className="text-[13px] text-gray-600">
               {selecionadas.length} selecionada{selecionadas.length > 1 ? 's' : ''}
             </span>

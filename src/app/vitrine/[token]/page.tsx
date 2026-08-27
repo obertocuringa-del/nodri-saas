@@ -63,31 +63,35 @@ export default function VitrinePage({ params }: { params: { token: string } }) {
   return (
     // A cor da marca fica numa variável para os quatro blocos usarem a mesma.
     <div className="min-h-screen bg-[#f7f7f8]" style={{ ['--vt-cor' as any]: '#5b4fcf' }}>
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-3xl mx-auto px-4 py-5 text-center">
+      {/* A logo é a identidade que a cliente reconhece — a razão social não diz
+          nada para ela. Por isso a logo vem primeiro e o nome só aparece
+          quando não há logo cadastrada. */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-4 py-4 sm:py-5 text-center">
           {salao.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={salao.logo} alt={salao.nome} className="h-14 mx-auto object-contain" />
+            <img src={salao.logo} alt={salao.nome}
+              className="h-11 sm:h-16 mx-auto object-contain" />
           ) : (
-            <h1 className="font-bold text-[20px] text-gray-900">{salao.nome}</h1>
+            <h1 className="font-bold text-[17px] sm:text-[21px] text-gray-900">{salao.nome}</h1>
           )}
         </div>
 
-        <nav className="max-w-3xl mx-auto px-2 flex">
+        <nav className="max-w-5xl mx-auto px-2 flex">
           {ABAS.map(({ id, label, icone: Icone }) => (
             <button key={id} onClick={() => setAba(id)}
-              className={'flex-1 flex flex-col items-center gap-1 py-2.5 border-b-2 transition-all '
+              className={'flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 sm:py-3 border-b-2 transition-all '
                 + (aba === id
                   ? 'border-[var(--vt-cor)] text-[var(--vt-cor)]'
-                  : 'border-transparent text-gray-400')}>
+                  : 'border-transparent text-gray-400 hover:text-gray-600')}>
               <Icone size={18} />
-              <span className="text-[11px] font-semibold">{label}</span>
+              <span className="text-[11px] sm:text-[13px] font-semibold">{label}</span>
             </button>
           ))}
         </nav>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5">
+      <main className="max-w-5xl mx-auto px-4 py-5 sm:py-7">
         {aba === 'acoes' && (
           <VitrineAcoes acoes={dados.acoes} whatsapp={salao.whatsapp} />
         )}
@@ -107,7 +111,7 @@ export default function VitrinePage({ params }: { params: { token: string } }) {
         )}
       </main>
 
-      <footer className="max-w-3xl mx-auto px-4 pb-8 pt-2 text-center">
+      <footer className="max-w-5xl mx-auto px-4 pb-8 pt-2 text-center">
         <p className="text-[11px] text-gray-400">{salao.nome}</p>
       </footer>
     </div>

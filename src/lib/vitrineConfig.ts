@@ -96,9 +96,12 @@ export async function getSalaoPorToken(token: string): Promise<SalaoDaVitrine | 
   // quem está fora do ar não deve seguir com uma página no ar em seu nome.
   if (salao.status === 'bloqueado' || salao.status === 'vencido') return null
 
+  // A logo do perfil e gravada pela rota /api/salon/grid, que prefixa a chave
+  // com `grid_`. Procurar por 'logo_salao' puro nao acha nada — o salão tem
+  // logo cadastrada e a vitrine mostrava o nome da empresa no lugar dela.
   const { data: logoRow } = await supabaseAdmin
     .from('salao_config').select('valor')
-    .eq('salao_id', data.salao_id).eq('chave', 'logo_salao').maybeSingle()
+    .eq('salao_id', data.salao_id).eq('chave', 'grid_logo_salao').maybeSingle()
 
   return {
     salaoId: data.salao_id,
