@@ -12,7 +12,16 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const cfg = await getConfig(sess.salaoId)
+
+  // Todo salão já nasce com o endereço pronto, sem precisar descobrir que
+  // existe um botão "Gerar link" — quem não sabe que a página existe nunca a
+  // usa. Mas nasce FORA DO AR: a página abre a tabela de preços para qualquer
+  // um com o endereço, e publicar isso é decisão da dona, não nossa. O painel
+  // mostra o link com o botão "Colocar no ar" do lado.
+  //
+  // Vale também para salão antigo: basta abrir Ações Comerciais uma vez.
+  let cfg = await getConfig(sess.salaoId)
+  if (!cfg && sess.role === 'salon') cfg = await garantirConfig(sess.salaoId, false)
   return NextResponse.json({ config: cfg })
 }
 

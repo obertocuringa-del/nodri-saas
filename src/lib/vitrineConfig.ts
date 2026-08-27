@@ -91,7 +91,7 @@ export async function salvarConfig(salaoId: string, cfg: VitrineConfig): Promise
 }
 
 /** Config existente ou uma nova já gravada — para o botão "gerar link". */
-export async function garantirConfig(salaoId: string): Promise<VitrineConfig> {
+export async function garantirConfig(salaoId: string, nasceNoAr = true): Promise<VitrineConfig> {
   const atual = await getConfig(salaoId)
   if (atual?.slug) return atual
 
@@ -106,7 +106,7 @@ export async function garantirConfig(salaoId: string): Promise<VitrineConfig> {
 
   const cfg: VitrineConfig = atual
     ? { ...atual, slug }
-    : { token: gerarToken(), slug, ativo: true, criadoEm: Date.now() }
+    : { token: gerarToken(), slug, ativo: nasceNoAr, criadoEm: Date.now() }
   await salvarConfig(salaoId, cfg)
   return cfg
 }

@@ -7,6 +7,12 @@ import { agruparPorCategoria } from '@/lib/vitrineCliente'
 // Enquete: o cliente marca o que gostaria de ver em promoção. Aqui NÃO se
 // mostra preço de propósito — a pergunta é "o que você quer", e um valor ao
 // lado empurra a resposta para o mais barato.
+//
+// Vota-se uma vez por DIA, não uma vez na vida. Travar para sempre calava a
+// cliente que lembrou de outro procedimento na semana seguinte; liberar sem
+// limite deixaria uma pessoa só empilhar votos e torcer o ranking. O dia é o
+// do relógio do aparelho — a trava mora no navegador, então é o mesmo
+// relógio que a cliente enxerga.
 
 interface Ranking { nome: string; votos: number }
 
@@ -25,8 +31,17 @@ export default function VitrineVotacao({ servicos, token }: {
 
   const chaveLocal = `nodri_voto_${token}`
 
+  /** AAAA-MM-DD no fuso do aparelho. */
+  function hoje(): string {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   useEffect(() => {
-    try { if (localStorage.getItem(chaveLocal)) setJaVotou(true) } catch { /* modo privado */ }
+    // Guardava um timestamp e só checava se existia — qualquer valor travava
+    // para sempre. Agora guarda o dia e só trava se for o dia de hoje; a marca
+    // de ontem simplesmente não bate mais.
+    try { if (localStorage.getItem(chaveLocal) === hoje()) setJaVotou(true) } catch { /* modo privado */ }
     carregarRanking()
   }, [])
 
@@ -55,7 +70,7 @@ export default function VitrineVotacao({ servicos, token }: {
       const d = await r.json()
       if (r.ok) {
         if (Array.isArray(d.ranking)) setRanking(d.ranking)
-        try { localStorage.setItem(chaveLocal, String(Date.now())) } catch { /* modo privado */ }
+        try { localStorage.setItem(chaveLocal, hoje()) } catch { /* modo privado */ }
         setJaVotou(true)
         setEscolhidos([])
         setLivre('')
@@ -72,6 +87,9 @@ export default function VitrineVotacao({ servicos, token }: {
           <p className="text-[14px] font-semibold text-gray-900">Obrigado pelo seu voto!</p>
           <p className="text-[12px] text-gray-500 mt-1">
             Sua sugestão foi registrada e ajuda a decidir as próximas promoções.
+          </p>
+          <p className="text-[12px] text-gray-400 mt-2">
+            Amanhã você pode sugerir de novo.
           </p>
         </div>
       ) : (

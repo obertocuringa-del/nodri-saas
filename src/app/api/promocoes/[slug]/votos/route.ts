@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 // Enquete de promoção: o cliente marca os serviços que gostaria de ver em
 // promoção e pode escrever um que não achou na lista.
 //
-// A trava de "um voto por aparelho" mora no navegador do cliente, não aqui.
+// A trava de "um voto por dia, por aparelho" mora no navegador do cliente, não aqui.
 // É trava de conveniência, não de segurança: quem quiser burlar, burla. O
 // ranking serve para o salão sentir a preferência da clientela — não para
 // decidir nada sozinho.
@@ -46,6 +46,26 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
   }
 
   if (livre) {
+    // O texto também entra no ranking, e não só numa lista à parte: quem
+    // escreveu "modelagem" enviava e não via nada aparecer em Mais pedidos,
+    // e a sugestão parecia perdida.
+    //
+    // O nome curto vira voto; texto longo é recado, não nome de serviço, e
+    // engordaria o ranking com uma frase inteira.
+    const nome = livre.replace(/\s+/g, ' ').slice(0, 60).trim()
+    if (nome && nome.length <= 40) {
+      // "modelagem", "Modelagem" e "MODELAGEM" são o mesmo pedido: sem juntar,
+      // o ranking mostra três linhas de um voto no lugar de uma de três.
+      const igual = (a: string) =>
+        a.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+      const alvo = igual(nome)
+      const existente = Object.keys(votos.servicos).find(k => igual(k) === alvo)
+      const chave = existente || (nome.charAt(0).toUpperCase() + nome.slice(1))
+      votos.servicos[chave] = (votos.servicos[chave] || 0) + 1
+    }
+
+    // O texto cru fica guardado de qualquer jeito — inclusive o longo, que é
+    // onde costuma estar a ideia que o salão quer ler.
     votos.livres.unshift({ texto: livre.slice(0, 300), em: Date.now() })
     votos.livres = votos.livres.slice(0, 300)
   }
