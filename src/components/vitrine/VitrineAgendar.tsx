@@ -129,7 +129,6 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
                                 {marcado && <Check size={13} className="text-white" />}
                               </span>
                               <span className="text-[13px] text-gray-800 flex-1">{s.nome}</span>
-                              {preco && <span className="text-[12px] font-semibold text-gray-700 whitespace-nowrap">{preco}</span>}
                             </button>
                             {marcado && esc?.profissional && (
                               <p className="px-4 pb-2 -mt-1 ml-8 text-[11px] text-[var(--vt-cor)]">

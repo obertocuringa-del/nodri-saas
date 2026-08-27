@@ -51,11 +51,17 @@ export function agruparPorCategoria<T extends { categoria: string }>(itens: T[])
 }
 
 /** Horários de 30 em 30, das 00:00 às 23:30 — o salão acerta na conversa. */
+// Salão nenhum atende de madrugada. A lista inteira do dia obrigava a rolar
+// por doze horários impossíveis antes de chegar no primeiro que serve.
+const PRIMEIRA_HORA = 7
+const ULTIMA_HORA = 23
+
 export function horariosDoDia(): string[] {
   const out: string[] = []
-  for (let h = 0; h < 24; h++) {
+  for (let h = PRIMEIRA_HORA; h <= ULTIMA_HORA; h++) {
     out.push(`${String(h).padStart(2, '0')}:00`)
-    out.push(`${String(h).padStart(2, '0')}:30`)
+    // 23:30 fica de fora: o último horário é 23h em ponto.
+    if (h < ULTIMA_HORA) out.push(`${String(h).padStart(2, '0')}:30`)
   }
   return out
 }

@@ -117,6 +117,13 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   // um objeto `{ registros: [...] }` passaria inteiro, levando os dados das
   // pessoas de um salão para o modelo e, dali, para todo salão novo.
   { chave: 'emissao_guias_mei_hist', motivo: 'nomes e CNPJs dos profissionais' },
+  // O endereço da página do cliente é identidade, como o link do Google acima:
+  // token e slug (`/promocoes/rouge-hair`) apontam para UM salão. Copiado, o
+  // salão novo nasceria dono do endereço do outro, e `getSalaoPorToken` acha o
+  // slug repetido por `maybeSingle()` — dois donos, nenhuma página abre.
+  { chave: 'vitrine_config', motivo: 'o endereço do link é de cada salão' },
+  // Votos são das clientes daquele salão; o ranking do vizinho não diz nada.
+  { chave: 'vitrine_votos', motivo: 'votos das clientes do salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 

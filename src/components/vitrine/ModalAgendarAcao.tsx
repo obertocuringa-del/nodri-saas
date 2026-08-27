@@ -223,7 +223,6 @@ export default function ModalAgendarAcao({
                       <div className="border-t border-gray-100">
                         {itens.map(s => {
                           const marcado = !!extras[s.id]
-                          const preco = precoDoServico(s)
                           return (
                             <div key={s.id} className="border-b border-gray-50 last:border-0">
                               <button onClick={() => alternarServico(s)}
@@ -233,7 +232,6 @@ export default function ModalAgendarAcao({
                                   {marcado && <Check size={13} className="text-white" />}
                                 </span>
                                 <span className="text-[13px] text-gray-800 flex-1">{s.nome}</span>
-                                {preco && <span className="text-[12px] font-semibold text-gray-700 whitespace-nowrap">{preco}</span>}
                               </button>
                               {marcado && extras[s.id]?.profissional && (
                                 <p className="px-4 pb-2 -mt-1 ml-8 text-[11px] text-[var(--vt-cor)]">
