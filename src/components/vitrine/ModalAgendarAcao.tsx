@@ -38,11 +38,15 @@ export default function ModalAgendarAcao({
   // Vários profissionais: uma promoção pode juntar cabelo, mão e massagem,
   // e cada parte ser de uma pessoa diferente.
   const [profsPromo, setProfsPromo] = useState<string[]>([])
+  // A lista de nomes só abre depois do "Sim". Mostrando os nomes junto com a
+  // pergunta, a tela já respondia por quem não tinha preferencia nenhuma.
+  const [querPreferencia, setQuerPreferencia] = useState(false)
 
   // Serviços somados depois da promoção
   const [abertas, setAbertas] = useState<Record<string, boolean>>({})
   const [extras, setExtras] = useState<Record<string, EscolhaAgendamento>>({})
   const [perguntando, setPerguntando] = useState<string | null>(null)
+  const [mostrarNomes, setMostrarNomes] = useState(false)
 
   const grupos = useMemo(() => agruparPorCategoria(servicos), [servicos])
   const listaExtras = Object.values(extras)
@@ -67,6 +71,7 @@ export default function ModalAgendarAcao({
   function definirProfExtra(id: string, nome: string | null) {
     setExtras(prev => prev[id] ? { ...prev, [id]: { ...prev[id], profissional: nome } } : prev)
     setPerguntando(null)
+    setMostrarNomes(false)
   }
 
   function enviar() {
@@ -118,6 +123,19 @@ export default function ModalAgendarAcao({
               <p className="font-bold text-[14px] text-gray-900 mb-1">Tem preferência por profissional?</p>
               <p className="text-[12px] text-gray-500 mb-4">{titulos[0]}</p>
 
+              {!querPreferencia ? (
+                <div className="flex gap-2">
+                  <button onClick={() => { setProfsPromo([]); setEtapa('mais') }}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600">
+                    Não tenho preferência
+                  </button>
+                  <button onClick={() => setQuerPreferencia(true)}
+                    className="flex-1 py-3 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
+                    Sim
+                  </button>
+                </div>
+              ) : (
+                <>
               <p className="text-[11px] text-gray-400 mb-3">
                 Pode escolher mais de um — marque quem você quer para cada parte.
               </p>
@@ -149,15 +167,17 @@ export default function ModalAgendarAcao({
               </div>
 
               <div className="flex gap-2">
-                <button onClick={() => { setProfsPromo([]); setEtapa('mais') }}
+                <button onClick={() => { setQuerPreferencia(false); setProfsPromo([]) }}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-600">
-                  Não tenho preferência
+                  Voltar
                 </button>
                 <button onClick={() => setEtapa('mais')} disabled={profsPromo.length === 0}
                   className="flex-1 py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold disabled:opacity-40">
                   Continuar
                 </button>
               </div>
+                </>
+              )}
             </div>
           )}
 
@@ -240,27 +260,36 @@ export default function ModalAgendarAcao({
       {/* Preferência de profissional para um serviço avulso */}
       {perguntando && servicoEmPergunta && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center p-3"
-          onClick={e => { e.stopPropagation(); setPerguntando(null) }}>
+          onClick={e => { e.stopPropagation(); setPerguntando(null); setMostrarNomes(false) }}>
           <div className="bg-white rounded-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-start gap-2 mb-1">
               <h3 className="font-bold text-[15px] text-gray-900 flex-1">Tem preferência por profissional?</h3>
-              <button onClick={() => setPerguntando(null)} className="text-gray-400"><X size={18} /></button>
+              <button onClick={() => { setPerguntando(null); setMostrarNomes(false) }} className="text-gray-400"><X size={18} /></button>
             </div>
             <p className="text-[12px] text-gray-500 mb-4">{servicoEmPergunta.nome}</p>
 
-            <button onClick={() => definirProfExtra(perguntando, null)}
-              className="w-full py-2.5 mb-2 rounded-xl border border-gray-200 text-[13px] text-gray-600">
-              Não tenho preferência
-            </button>
-
-            <div className="space-y-1.5 max-h-56 overflow-y-auto">
-              {quemFaz(servicoEmPergunta.id).map(p => (
-                <button key={p.id} onClick={() => definirProfExtra(perguntando, p.nome)}
-                  className="w-full py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
-                  {p.nome}
+            {/* Mesma regra da promoção: os nomes só aparecem depois do "Sim". */}
+            {!mostrarNomes ? (
+              <div className="flex gap-2">
+                <button onClick={() => definirProfExtra(perguntando, null)}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600">
+                  Não tenho preferência
                 </button>
-              ))}
-            </div>
+                <button onClick={() => setMostrarNomes(true)}
+                  className="flex-1 py-3 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
+                  Sim
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {quemFaz(servicoEmPergunta.id).map(p => (
+                  <button key={p.id} onClick={() => definirProfExtra(perguntando, p.nome)}
+                    className="w-full py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
+                    {p.nome}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

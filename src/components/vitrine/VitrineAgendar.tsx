@@ -28,6 +28,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
   const [abertas, setAbertas] = useState<Record<string, boolean>>({})
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaAgendamento>>({})
   const [perguntando, setPerguntando] = useState<string | null>(null)
+  const [mostrarNomes, setMostrarNomes] = useState(false)
 
   // Promoções vigentes entram como uma categoria a mais, para o cliente pedir
   // o combo sem sair da tela.
@@ -60,6 +61,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
   function definirProfissional(chave: string, nome: string | null) {
     setEscolhas(prev => prev[chave] ? { ...prev, [chave]: { ...prev[chave], profissional: nome } } : prev)
     setPerguntando(null)
+    setMostrarNomes(false)
   }
 
   function enviar() {
@@ -148,27 +150,37 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
       {/* ── Preferência de profissional ── */}
       {perguntando && servicoEmPergunta && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3"
-          onClick={() => setPerguntando(null)}>
+          onClick={() => { setPerguntando(null); setMostrarNomes(false) }}>
           <div className="bg-white rounded-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-start gap-2 mb-1">
               <h3 className="font-bold text-[15px] text-gray-900 flex-1">Tem preferência por profissional?</h3>
-              <button onClick={() => setPerguntando(null)} className="text-gray-400"><X size={18} /></button>
+              <button onClick={() => { setPerguntando(null); setMostrarNomes(false) }} className="text-gray-400"><X size={18} /></button>
             </div>
             <p className="text-[12px] text-gray-500 mb-4">{servicoEmPergunta.nome}</p>
 
-            <button onClick={() => definirProfissional(perguntando, null)}
-              className="w-full py-2.5 mb-2 rounded-xl border border-gray-200 text-[13px] text-gray-600">
-              Não tenho preferência
-            </button>
-
-            <div className="space-y-1.5 max-h-56 overflow-y-auto">
-              {quemFaz(servicoEmPergunta.id).map(p => (
-                <button key={p.id} onClick={() => definirProfissional(perguntando, p.nome)}
-                  className="w-full py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
-                  {p.nome}
+            {/* A lista de nomes só abre depois do "Sim": mostrar os nomes junto
+                com a pergunta já responde por quem não tem preferência. */}
+            {!mostrarNomes ? (
+              <div className="flex gap-2">
+                <button onClick={() => definirProfissional(perguntando, null)}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600">
+                  Não tenho preferência
                 </button>
-              ))}
-            </div>
+                <button onClick={() => setMostrarNomes(true)}
+                  className="flex-1 py-3 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
+                  Sim
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {quemFaz(servicoEmPergunta.id).map(p => (
+                  <button key={p.id} onClick={() => definirProfissional(perguntando, p.nome)}
+                    className="w-full py-2.5 rounded-xl bg-[var(--vt-cor)] text-white text-[13px] font-semibold">
+                    {p.nome}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
