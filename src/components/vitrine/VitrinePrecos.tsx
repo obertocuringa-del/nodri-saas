@@ -17,7 +17,9 @@ import { agruparPorCategoria } from '@/lib/vitrineCliente'
 // ninguém lia.
 
 export default function VitrinePrecos({ servicos }: { servicos: ServicoPublico[] }) {
-  const [abertas, setAbertas] = useState<Record<string, boolean>>({})
+  // Uma categoria aberta por vez: com várias abertas a tela vira uma lista
+  // longa demais e o cliente perde de vista onde estava.
+  const [categoriaAberta, setAberta] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
 
   const filtrados = useMemo(() => {
@@ -49,12 +51,12 @@ export default function VitrinePrecos({ servicos }: { servicos: ServicoPublico[]
 
       <div className="space-y-3">
         {grupos.map(([cat, itens]) => {
-          const aberta = buscando || abertas[cat]
+          const aberta = buscando || categoriaAberta === cat
           return (
             <div key={cat}>
               {/* A categoria é o botão graúdo; os serviços descem por baixo
                   dela como itens soltos, e não dentro de outra caixa. */}
-              <button onClick={() => setAbertas(p => ({ ...p, [cat]: !p[cat] }))}
+              <button onClick={() => setAberta(a => (a === cat ? null : cat))}
                 className={'w-full flex items-center gap-3 px-4 py-3.5 text-left bg-white rounded-2xl border transition-all shadow-sm '
                   + (aberta ? 'border-[var(--vt-cor)]' : 'border-gray-200')}>
                 <span className="font-bold text-[13px] text-gray-900 uppercase tracking-wide flex-1">{cat}</span>

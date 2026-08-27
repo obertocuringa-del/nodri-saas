@@ -25,7 +25,9 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
 }) {
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
-  const [abertas, setAbertas] = useState<Record<string, boolean>>({})
+  // Uma categoria aberta por vez: com várias abertas a tela vira uma lista
+  // longa demais e o cliente perde de vista onde estava.
+  const [aberta, setAberta] = useState<string | null>(null)
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaAgendamento>>({})
   const [perguntando, setPerguntando] = useState<string | null>(null)
   const [mostrarNomes, setMostrarNomes] = useState(false)
@@ -86,15 +88,15 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
               const qtd = ehAcoes ? acoesVigentes.length : itens.length
               return (
                 <div key={cat} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <button onClick={() => setAbertas(p => ({ ...p, [cat]: !p[cat] }))}
+                  <button onClick={() => setAberta(x => (x === cat ? null : cat))}
                     className="w-full flex items-center gap-2 px-4 py-3.5 text-left">
-                    {abertas[cat] ? <ChevronDown size={16} className="text-gray-400 shrink-0" />
+                    {aberta === cat ? <ChevronDown size={16} className="text-gray-400 shrink-0" />
                                   : <ChevronRight size={16} className="text-gray-400 shrink-0" />}
                     <span className="font-bold text-[13px] text-gray-900 uppercase tracking-wide flex-1">{cat}</span>
                     <span className="text-[11px] text-gray-400">{qtd}</span>
                   </button>
 
-                  {abertas[cat] && (
+                  {aberta === cat && (
                     <div className="border-t border-gray-100">
                       {ehAcoes && acoesVigentes.map(a => {
                         const chave = `acao:${a.id}`
