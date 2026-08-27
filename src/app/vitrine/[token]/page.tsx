@@ -89,7 +89,7 @@ export default function VitrinePage({ params }: { params: { token: string } }) {
 
       <main className="max-w-3xl mx-auto px-4 py-5">
         {aba === 'acoes' && (
-          <VitrineAcoes acoes={dados.acoes} salao={salao.nome} whatsapp={salao.whatsapp} />
+          <VitrineAcoes acoes={dados.acoes} whatsapp={salao.whatsapp} />
         )}
         {aba === 'sugestao' && (
           <VitrineVotacao servicos={dados.servicos} token={params.token} />
@@ -102,7 +102,6 @@ export default function VitrinePage({ params }: { params: { token: string } }) {
             servicos={dados.servicos}
             profissionais={dados.profissionais}
             acoes={dados.acoes}
-            salao={salao.nome}
             whatsapp={salao.whatsapp}
           />
         )}

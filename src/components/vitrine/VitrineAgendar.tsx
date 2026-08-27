@@ -1,13 +1,12 @@
 'use client'
 import { useState, useMemo } from 'react'
-import {
-  ChevronRight, ChevronDown, ChevronLeft, Check, Clock, CalendarDays, Send, X,
-} from 'lucide-react'
+import { ChevronRight, ChevronDown, Check, Send, X } from 'lucide-react'
 import type { ServicoPublico, ProfissionalPublico, AcaoPublica, EscolhaAgendamento } from '@/lib/vitrineCliente'
 import {
-  precoDoServico, agruparPorCategoria, horariosDoDia, dataPorExtenso,
+  precoDoServico, agruparPorCategoria, dataPorExtenso,
   mensagemAgendamento, linkWhatsapp,
 } from '@/lib/vitrineCliente'
+import SeletorQuando from './SeletorQuando'
 
 // Agendar agora: data → hora → serviços (com preferência de profissional) →
 // mensagem pronta no WhatsApp do salão.
@@ -18,23 +17,17 @@ import {
 
 const CAT_ACOES = 'Combos e promoções'
 
-export default function VitrineAgendar({ servicos, profissionais, acoes, salao, whatsapp }: {
+export default function VitrineAgendar({ servicos, profissionais, acoes, whatsapp }: {
   servicos: ServicoPublico[]
   profissionais: ProfissionalPublico[]
   acoes: AcaoPublica[]
-  salao: string
   whatsapp: string | null
 }) {
-  const hoje = new Date()
-  const [mes, setMes] = useState(() => new Date(hoje.getFullYear(), hoje.getMonth(), 1))
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
-  const [abertaHora, setAbertaHora] = useState(false)
   const [abertas, setAbertas] = useState<Record<string, boolean>>({})
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaAgendamento>>({})
   const [perguntando, setPerguntando] = useState<string | null>(null)
-
-  const hojeISO = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
 
   // Promoções vigentes entram como uma categoria a mais, para o cliente pedir
   // o combo sem sair da tela.
@@ -47,18 +40,6 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, salao, 
   const acoesVigentes = useMemo(() => acoes.filter(a => a.status === 'ativa'), [acoes])
   const marcados = Object.values(escolhas)
   const podeEnviar = !!data && !!hora && marcados.length > 0
-
-  // ── Calendário do mês ──
-  const diasDoMes = useMemo(() => {
-    const ano = mes.getFullYear(), m = mes.getMonth()
-    const primeiro = new Date(ano, m, 1).getDay()
-    const total = new Date(ano, m + 1, 0).getDate()
-    const celulas: Array<string | null> = Array(primeiro).fill(null)
-    for (let d = 1; d <= total; d++) {
-      celulas.push(`${ano}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
-    }
-    return celulas
-  }, [mes])
 
   function quemFaz(servicoId: string): ProfissionalPublico[] {
     return profissionais.filter(p => p.servicos.includes(servicoId))
@@ -83,7 +64,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, salao, 
 
   function enviar() {
     if (!podeEnviar) return
-    const texto = mensagemAgendamento({ salao, data, hora, escolhas: marcados })
+    const texto = mensagemAgendamento({ data, hora, escolhas: marcados })
     window.open(linkWhatsapp(whatsapp, texto), '_blank')
   }
 
@@ -91,86 +72,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, salao, 
 
   return (
     <div className="pb-28">
-      {/* ── 1. Data ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarDays size={16} className="text-[var(--vt-cor)]" />
-          <span className="font-bold text-[13px] text-gray-900">Escolha o dia</span>
-          {data && (
-            <span className="ml-auto text-[12px] font-semibold text-[var(--vt-cor)] capitalize">
-              {dataPorExtenso(data)}
-            </span>
-          )}
-        </div>
-
-        {/* Depois de escolher, o calendário recolhe e sobra espaço para o resto */}
-        {!data ? (
-          <>
-            <div className="flex items-center justify-between mb-2">
-              <button onClick={() => setMes(new Date(mes.getFullYear(), mes.getMonth() - 1, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400">
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-[13px] font-semibold text-gray-800 capitalize">
-                {mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-              </span>
-              <button onClick={() => setMes(new Date(mes.getFullYear(), mes.getMonth() + 1, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-                <div key={i} className="text-[10px] text-gray-400 py-1">{d}</div>
-              ))}
-              {diasDoMes.map((iso, i) => {
-                if (!iso) return <div key={i} />
-                const passado = iso < hojeISO
-                return (
-                  <button key={iso} disabled={passado} onClick={() => setData(iso)}
-                    className={'aspect-square rounded-lg text-[13px] transition-all '
-                      + (passado ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100')}>
-                    {Number(iso.slice(-2))}
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        ) : (
-          <button onClick={() => { setData(''); setHora('') }}
-            className="text-[12px] text-gray-500 underline">trocar data</button>
-        )}
-      </div>
-
-      {/* ── 2. Hora ── */}
-      {data && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-          <button onClick={() => setAbertaHora(v => !v)} className="w-full flex items-center gap-2">
-            <Clock size={16} className="text-[var(--vt-cor)]" />
-            <span className="font-bold text-[13px] text-gray-900">Horário desejado</span>
-            <span className="ml-auto text-[13px] font-semibold text-[var(--vt-cor)]">{hora || 'escolher'}</span>
-            {abertaHora ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
-          </button>
-
-          {abertaHora && (
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mt-3 max-h-56 overflow-y-auto">
-              {horariosDoDia().map(h => (
-                <button key={h} onClick={() => { setHora(h); setAbertaHora(false) }}
-                  className={'py-2 rounded-lg text-[12px] transition-all border '
-                    + (hora === h ? 'bg-[var(--vt-cor)] text-white border-transparent'
-                                  : 'border-gray-200 text-gray-600')}>
-                  {h}
-                </button>
-              ))}
-            </div>
-          )}
-          {abertaHora && (
-            <p className="text-[11px] text-gray-400 mt-2">
-              A confirmação do horário é feita pelo salão no WhatsApp.
-            </p>
-          )}
-        </div>
-      )}
+      <SeletorQuando data={data} hora={hora} onData={setData} onHora={setHora} />
 
       {/* ── 3. Serviços ── */}
       {data && hora && (

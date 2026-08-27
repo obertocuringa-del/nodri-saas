@@ -63,7 +63,10 @@ export function horariosDoDia(): string[] {
 export function dataPorExtenso(iso: string): string {
   const [a, m, d] = iso.split('-').map(Number)
   const dt = new Date(a, m - 1, d)
-  return dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+  const txt = dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+  // O pt-BR devolve o dia da semana em minúscula ("quinta-feira"). No começo
+  // da linha isso parece erro de digitação, então a primeira letra sobe.
+  return txt.charAt(0).toUpperCase() + txt.slice(1)
 }
 
 export interface EscolhaAgendamento {
@@ -83,34 +86,73 @@ export interface EscolhaAgendamento {
  * agendamento pelo link deixa de economizar tempo.
  */
 export function mensagemAgendamento(dados: {
-  salao: string
   data: string
   hora: string
   escolhas: EscolhaAgendamento[]
 }): string {
   const linhas: string[] = []
-  linhas.push(`Olá, ${dados.salao}! Gostaria de agendar:`)
+  linhas.push('Olá! Gostaria de agendar:')
   linhas.push('')
 
-  for (const e of dados.escolhas) {
-    const preco = e.preco ? ` — ${e.preco}` : ''
-    linhas.push(`• ${e.nome}${preco}`)
+  // O `*` é o negrito do WhatsApp. Serviço e valor em negrito; o profissional
+  // fica em texto normal e recuado — o contraste é o que faz ele se destacar
+  // sem competir com o procedimento. Linha em branco entre os itens para a
+  // recepção separar um do outro de relance.
+  dados.escolhas.forEach((e, i) => {
+    const preco = e.preco ? ` — *${e.preco}*` : ''
+    linhas.push(`• *${e.nome}*${preco}`)
     linhas.push(e.profissional
       ? `   com ${e.profissional}`
       : '   sem preferência de profissional')
-  }
+    if (i < dados.escolhas.length - 1) linhas.push('')
+  })
 
   linhas.push('')
-  linhas.push(`Data: ${dataPorExtenso(dados.data)}`)
-  linhas.push(`Horário: ${dados.hora}`)
+  linhas.push(`*Data: ${dataPorExtenso(dados.data)}*`)
+  linhas.push(`*Horário: ${dados.hora}*`)
   linhas.push('')
-  linhas.push('Enviado pela página do salão.')
+  linhas.push('Tem disponibilidade para esses agendamentos?')
   return linhas.join('\n')
 }
 
-export function mensagemInteresseAcao(salao: string, titulo: string, descricao: string): string {
-  const linhas = [`Olá, ${salao}! Vi esta promoção na página de vocês e gostaria de agendar:`, '', titulo]
-  if (descricao?.trim()) linhas.push('', descricao.trim())
+/**
+ * Interesse numa promocão, com o mesmo formato do agendamento.
+ *
+ * A promoção não tem serviço vinculado, então não dá para oferecer a lista de
+ * quem está habilitado: aqui o cliente digita o nome de quem prefere, e o
+ * texto sai igual ao do outro caminho para a recepção ler sempre do mesmo
+ * jeito.
+ */
+export function mensagemInteresseAcao(dados: {
+  titulos: string[]
+  descricao?: string
+  data: string
+  hora: string
+  profissional: string | null
+}): string {
+  const varias = dados.titulos.length > 1
+  const linhas: string[] = []
+  linhas.push(varias
+    ? 'Olá! Vi estas promoções na página de vocês e gostaria de agendar:'
+    : 'Olá! Vi esta promoção na página de vocês e gostaria de agendar:')
+  linhas.push('')
+
+  for (const t of dados.titulos) linhas.push(`• *${t}*`)
+
+  if (!varias && dados.descricao?.trim()) {
+    linhas.push('', dados.descricao.trim())
+  }
+
+  linhas.push('')
+  linhas.push(dados.profissional
+    ? `   com ${dados.profissional}`
+    : '   sem preferência de profissional')
+
+  linhas.push('')
+  linhas.push(`*Data: ${dataPorExtenso(dados.data)}*`)
+  linhas.push(`*Horário: ${dados.hora}*`)
+  linhas.push('')
+  linhas.push('Tem disponibilidade?')
   return linhas.join('\n')
 }
 

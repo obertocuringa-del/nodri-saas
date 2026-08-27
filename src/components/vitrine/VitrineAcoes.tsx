@@ -2,7 +2,8 @@
 import { useState, useMemo } from 'react'
 import { Share2, CalendarCheck, Check } from 'lucide-react'
 import type { AcaoPublica } from '@/lib/vitrineCliente'
-import { mensagemInteresseAcao, linkWhatsapp } from '@/lib/vitrineCliente'
+import { linkWhatsapp } from '@/lib/vitrineCliente'
+import ModalAgendarAcao from './ModalAgendarAcao'
 
 // Ações comerciais como o cliente vê: os mesmos filtros da tela interna
 // (todas / ativas / futuras / encerradas + categoria), mas o card mostra só
@@ -22,14 +23,15 @@ const CORES: Record<string, { bg: string; cor: string; label: string }> = {
   encerrada: { bg: '#6b728022', cor: '#4b5563', label: 'Encerrada' },
 }
 
-export default function VitrineAcoes({ acoes, salao, whatsapp }: {
+export default function VitrineAcoes({ acoes, whatsapp }: {
   acoes: AcaoPublica[]
-  salao: string
   whatsapp: string | null
 }) {
   const [filtro, setFiltro] = useState<string>('ativa')
   const [categoria, setCategoria] = useState('')
   const [selecionadas, setSelecionadas] = useState<string[]>([])
+  // O que o cliente vai agendar: uma promoção ou o pacote marcado.
+  const [agendando, setAgendando] = useState<AcaoPublica[] | null>(null)
 
   const categorias = useMemo(
     () => [...new Set(acoes.map(a => a.categoria).filter(Boolean))].sort(),
@@ -44,15 +46,11 @@ export default function VitrineAcoes({ acoes, salao, whatsapp }: {
     setSelecionadas(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
   }
 
-  /** Uma promoção só, ou o pacote que o cliente marcou. */
+  /** Abre o fluxo de dia/hora/profissional para uma promoção ou para o
+   *  pacote marcado — o mesmo caminho do "Agendar agora". */
   function agendar(alvo?: AcaoPublica) {
     const itens = alvo ? [alvo] : acoes.filter(a => selecionadas.includes(a.id))
-    if (!itens.length) return
-    const texto = itens.length === 1
-      ? mensagemInteresseAcao(salao, itens[0].titulo, itens[0].descricao)
-      : [`Olá, ${salao}! Vi estas promoções na página de vocês e gostaria de agendar:`, '',
-         ...itens.map(i => `• ${i.titulo}${i.descricao ? ` — ${i.descricao}` : ''}`)].join('\n')
-    window.open(linkWhatsapp(whatsapp, texto), '_blank')
+    if (itens.length) setAgendando(itens)
   }
 
   function compartilhar(a: AcaoPublica) {
@@ -153,6 +151,15 @@ export default function VitrineAcoes({ acoes, salao, whatsapp }: {
             </button>
           </div>
         </div>
+      )}
+
+      {agendando && (
+        <ModalAgendarAcao
+          titulos={agendando.map(a => a.titulo)}
+          descricao={agendando.length === 1 ? agendando[0].descricao : undefined}
+          whatsapp={whatsapp}
+          onFechar={() => { setAgendando(null); setSelecionadas([]) }}
+        />
       )}
     </div>
   )
