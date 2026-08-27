@@ -30,6 +30,23 @@ export interface VitrineConfig {
   /** Link no ar? Desligar tira do ar sem perder o token. */
   ativo: boolean
   criadoEm: number
+  /**
+   * O que o cliente NÃO vê na página.
+   *
+   * Ocultar, e não excluir: o serviço continua inteiro no salão, com preço,
+   * comissão e histórico — só não aparece no link. Nem tudo que o salão faz
+   * se anuncia, e apagar de verdade para esconder da vitrine seria destruir
+   * cadastro por causa de uma decisão de vitrine.
+   *
+   * Vale para a tabela de preços E para o agendamento: o cliente não pode
+   * pedir o que não vê no cardápio.
+   */
+  ocultos?: {
+    /** ids de `salao_servicos` */
+    servicos?: string[]
+    /** nomes de categoria */
+    categorias?: string[]
+  }
 }
 
 /** Texto vira endereço: sem acento, sem espaço, sem símbolo. */
@@ -54,7 +71,16 @@ export async function getConfig(salaoId: string): Promise<VitrineConfig | null> 
     .eq('salao_id', salaoId).eq('chave', CHAVE_CONFIG).maybeSingle()
   const v = (data as any)?.valor
   if (!v?.token) return null
-  return { token: v.token, slug: v.slug || undefined, ativo: v.ativo !== false, criadoEm: Number(v.criadoEm) || 0 }
+  return {
+    token: v.token,
+    slug: v.slug || undefined,
+    ativo: v.ativo !== false,
+    criadoEm: Number(v.criadoEm) || 0,
+    ocultos: {
+      servicos: Array.isArray(v.ocultos?.servicos) ? v.ocultos.servicos : [],
+      categorias: Array.isArray(v.ocultos?.categorias) ? v.ocultos.categorias : [],
+    },
+  }
 }
 
 export async function salvarConfig(salaoId: string, cfg: VitrineConfig): Promise<void> {

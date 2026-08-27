@@ -9,6 +9,12 @@ const SUPORTE_NODRI = '5561982195214' // fallback quando o salão não tem telef
 // verde flutuando por cima disso só tampava conteúdo em tela de celular.
 const SEM_BOTAO = ['/', '/landing']
 
+// Este botão leva ao suporte do NODRI. Na página pública do salão quem está
+// olhando é CLIENTE DO SALÃO: mandar essa pessoa falar com o suporte do
+// sistema é pior do que não ter botão nenhum. Lá o contato certo já sai
+// pelos botões de agendar, que abrem o WhatsApp do próprio salão.
+const PREFIXOS_SEM_BOTAO = ['/promocoes/', '/vitrine/']
+
 export default function WhatsAppButton() {
   const rota = usePathname()
   // Usa o telefone cadastrado do salão logado; se não houver, cai no suporte NODRI.
@@ -20,7 +26,9 @@ export default function WhatsAppButton() {
       .catch(() => {})
   }, [])
 
-  if (SEM_BOTAO.includes(rota || '')) return null
+  const caminho = rota || ''
+  if (SEM_BOTAO.includes(caminho)) return null
+  if (PREFIXOS_SEM_BOTAO.some(p => caminho.startsWith(p))) return null
 
   return (
     <a

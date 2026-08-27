@@ -56,8 +56,16 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
     .eq('salao_id', salao.salaoId)
     .order('categoria').order('nome')
 
+  // O salão escolhe o que aparece no link. Isso vale aqui e só aqui: o
+  // serviço segue inteiro no sistema. E como o agendamento sai desta mesma
+  // lista, o que está oculto também não pode ser pedido — nao da para
+  // agendar o que nao esta no cardapio.
+  const ocultosServ = new Set(salao.config.ocultos?.servicos || [])
+  const ocultasCat = new Set(salao.config.ocultos?.categorias || [])
+
   const servicosPublicos = (servicos || [])
     .filter((s: any) => s.ativo !== false)
+    .filter((s: any) => !ocultosServ.has(s.id) && !ocultasCat.has(s.categoria || 'Outros'))
     .map((s: any) => ({
       id: s.id,
       categoria: s.categoria || 'Outros',

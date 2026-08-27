@@ -62,6 +62,16 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // O que fica de fora do link. Chega a lista inteira do que está oculto — a
+  // tela manda o estado completo, então desmarcar também grava.
+  if (acao === 'ocultos') {
+    const servicos = Array.isArray(body?.servicos) ? body.servicos.map(String).slice(0, 2000) : []
+    const categorias = Array.isArray(body?.categorias) ? body.categorias.map(String).slice(0, 200) : []
+    const cfg = { ...atual, ocultos: { servicos, categorias } }
+    await salvarConfig(sess.salaoId, cfg)
+    return NextResponse.json({ config: cfg })
+  }
+
   // Trocar o token invalida o link antigo na hora — é o que se usa quando
   // o link vazou para quem não devia.
   if (acao === 'novo-endereco') {

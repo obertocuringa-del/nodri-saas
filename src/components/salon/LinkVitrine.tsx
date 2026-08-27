@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil } from 'lucide-react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal } from 'lucide-react'
 import toast from 'react-hot-toast'
+import VitrineOcultar from './VitrineOcultar'
 
 // Painel do link público do cliente, no topo de Ações Comerciais.
 //
@@ -18,6 +19,7 @@ export default function LinkVitrine() {
   const [confirmandoTroca, setConfirmandoTroca] = useState(false)
   const [editandoSlug, setEditandoSlug] = useState(false)
   const [novoSlug, setNovoSlug] = useState('')
+  const [escolhendo, setEscolhendo] = useState(false)
 
   useEffect(() => {
     fetch('/api/salon/vitrine')
@@ -130,6 +132,10 @@ export default function LinkVitrine() {
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           {cfg.ativo ? <EyeOff size={13} /> : <Eye size={13} />} {cfg.ativo ? 'Tirar do ar' : 'Colocar no ar'}
         </button>
+        <button onClick={() => setEscolhendo(v => !v)} disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
+          <SlidersHorizontal size={13} /> O que aparece
+        </button>
         <button onClick={() => { setNovoSlug(cfg.slug || ''); setEditandoSlug(true) }} disabled={ocupado}
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           <Pencil size={13} /> Editar endereço
@@ -139,6 +145,12 @@ export default function LinkVitrine() {
           <RefreshCw size={13} /> Gerar código novo
         </button>
       </div>
+
+      {escolhendo && (
+        <div className="mt-3 pt-3 border-t border-nodri-border">
+          <VitrineOcultar aoFechar={() => setEscolhendo(false)} />
+        </div>
+      )}
 
       {editandoSlug && (
         <div className="mt-3 p-3 rounded-lg bg-nodri-surface border border-nodri-border">
