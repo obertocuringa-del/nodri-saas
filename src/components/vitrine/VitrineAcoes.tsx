@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { Share2, CalendarCheck, Check } from 'lucide-react'
-import type { AcaoPublica } from '@/lib/vitrineCliente'
+import type { AcaoPublica, ServicoPublico, ProfissionalPublico } from '@/lib/vitrineCliente'
 import { linkWhatsapp } from '@/lib/vitrineCliente'
 import ModalAgendarAcao from './ModalAgendarAcao'
 
@@ -23,8 +23,10 @@ const CORES: Record<string, { bg: string; cor: string; label: string }> = {
   encerrada: { bg: '#6b728022', cor: '#4b5563', label: 'Encerrada' },
 }
 
-export default function VitrineAcoes({ acoes, whatsapp }: {
+export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp }: {
   acoes: AcaoPublica[]
+  servicos: ServicoPublico[]
+  profissionais: ProfissionalPublico[]
   whatsapp: string | null
 }) {
   const [filtro, setFiltro] = useState<string>('ativa')
@@ -157,6 +159,8 @@ export default function VitrineAcoes({ acoes, whatsapp }: {
         <ModalAgendarAcao
           titulos={agendando.map(a => a.titulo)}
           descricao={agendando.length === 1 ? agendando[0].descricao : undefined}
+          servicos={servicos}
+          profissionais={profissionais}
           whatsapp={whatsapp}
           onFechar={() => { setAgendando(null); setSelecionadas([]) }}
         />

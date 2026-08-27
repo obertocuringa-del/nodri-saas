@@ -77,12 +77,16 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     .select('id, nome_completo, apelido, servicos_habilitados, ativo')
     .eq('salao_id', salao.salaoId)
 
+  // Vao TODOS os ativos, mesmo sem servico habilitado: ao pedir uma promocao o
+  // cliente escolhe da lista inteira (promocao nao tem servico vinculado, entao
+  // nao ha como filtrar por habilidade). Quem filtra por servico e a tela, na
+  // hora de escolher um servico especifico.
   const profissionais = (profs || [])
-    .filter((p: any) => p.ativo !== false && Array.isArray(p.servicos_habilitados) && p.servicos_habilitados.length)
+    .filter((p: any) => p.ativo !== false)
     .map((p: any) => ({
       id: p.id,
       nome: p.apelido || p.nome_completo || 'Profissional',
-      servicos: p.servicos_habilitados as string[],
+      servicos: Array.isArray(p.servicos_habilitados) ? (p.servicos_habilitados as string[]) : [],
     }))
 
   return NextResponse.json({

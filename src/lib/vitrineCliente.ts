@@ -89,6 +89,8 @@ export function mensagemAgendamento(dados: {
   data: string
   hora: string
   escolhas: EscolhaAgendamento[]
+  /** Detalhe da promocão, quando o pedido nasceu de uma. */
+  descricao?: string
 }): string {
   const linhas: string[] = []
   linhas.push('Olá! Gostaria de agendar:')
@@ -107,52 +109,15 @@ export function mensagemAgendamento(dados: {
     if (i < dados.escolhas.length - 1) linhas.push('')
   })
 
+  if (dados.descricao?.trim()) {
+    linhas.push('', dados.descricao.trim())
+  }
+
   linhas.push('')
   linhas.push(`*Data: ${dataPorExtenso(dados.data)}*`)
   linhas.push(`*Horário: ${dados.hora}*`)
   linhas.push('')
   linhas.push('Tem disponibilidade para esses agendamentos?')
-  return linhas.join('\n')
-}
-
-/**
- * Interesse numa promocão, com o mesmo formato do agendamento.
- *
- * A promoção não tem serviço vinculado, então não dá para oferecer a lista de
- * quem está habilitado: aqui o cliente digita o nome de quem prefere, e o
- * texto sai igual ao do outro caminho para a recepção ler sempre do mesmo
- * jeito.
- */
-export function mensagemInteresseAcao(dados: {
-  titulos: string[]
-  descricao?: string
-  data: string
-  hora: string
-  profissional: string | null
-}): string {
-  const varias = dados.titulos.length > 1
-  const linhas: string[] = []
-  linhas.push(varias
-    ? 'Olá! Vi estas promoções na página de vocês e gostaria de agendar:'
-    : 'Olá! Vi esta promoção na página de vocês e gostaria de agendar:')
-  linhas.push('')
-
-  for (const t of dados.titulos) linhas.push(`• *${t}*`)
-
-  if (!varias && dados.descricao?.trim()) {
-    linhas.push('', dados.descricao.trim())
-  }
-
-  linhas.push('')
-  linhas.push(dados.profissional
-    ? `   com ${dados.profissional}`
-    : '   sem preferência de profissional')
-
-  linhas.push('')
-  linhas.push(`*Data: ${dataPorExtenso(dados.data)}*`)
-  linhas.push(`*Horário: ${dados.hora}*`)
-  linhas.push('')
-  linhas.push('Tem disponibilidade?')
   return linhas.join('\n')
 }
 
