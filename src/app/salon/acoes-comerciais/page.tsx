@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Home } from 'lucide-react'
 import { voltar } from '@/lib/historicoNav'
 import AcoesComerciais from '@/components/salon/AcoesComerciais'
+import LinkVitrine from '@/components/salon/LinkVitrine'
 
 export default function AcoesComerciaisPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function AcoesComerciaisPage() {
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Ações Comerciais</h1>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
+        <LinkVitrine />
         <AcoesComerciais />
       </main>
     </div>

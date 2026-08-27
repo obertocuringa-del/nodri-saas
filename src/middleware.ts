@@ -66,6 +66,9 @@ async function roteador(request: NextRequest) {
     pathname.startsWith('/trabalhe-conosco') ||
     pathname.startsWith('/afiliado') ||
     // Autocadastro público de lojistas parceiros
+    // Vitrine do cliente: pagina publica aberta por link, sem login.
+    pathname.startsWith('/vitrine/') ||
+    pathname.startsWith('/api/vitrine/') ||
     pathname.startsWith('/lojista/') ||
     pathname.startsWith('/api/lojistas/public') ||
     // Formulário público de currículos (candidatos ainda sem login)

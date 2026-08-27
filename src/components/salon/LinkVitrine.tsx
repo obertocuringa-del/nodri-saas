@@ -1,0 +1,151 @@
+'use client'
+import { useState, useEffect } from 'react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+// Painel do link público do cliente, no topo de Ações Comerciais.
+//
+// Fica aqui de propósito: é desta tela que sai o conteúdo que o cliente vê, e
+// quem acabou de cadastrar uma promoção é quem quer mandar o link.
+
+interface Cfg { token: string; ativo: boolean; criadoEm: number }
+
+export default function LinkVitrine() {
+  const [cfg, setCfg] = useState<Cfg | null>(null)
+  const [carregando, setCarregando] = useState(true)
+  const [ocupado, setOcupado] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  const [confirmandoTroca, setConfirmandoTroca] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/salon/vitrine')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setCfg(d?.config || null))
+      .catch(() => { /* sem link ainda */ })
+      .finally(() => setCarregando(false))
+  }, [])
+
+  const url = cfg ? `${typeof window !== 'undefined' ? window.location.origin : ''}/vitrine/${cfg.token}` : ''
+
+  async function acao(acao: string) {
+    setOcupado(true)
+    try {
+      const r = await fetch('/api/salon/vitrine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao }),
+      })
+      const d = await r.json()
+      if (!r.ok) { toast.error(d.error || 'Não foi possível'); return }
+      setCfg(d.config)
+      setConfirmandoTroca(false)
+      if (acao === 'criar') toast.success('Link criado! Já pode enviar para suas clientes.')
+      if (acao === 'ligar') toast.success('Link no ar de novo.')
+      if (acao === 'desligar') toast.success('Link fora do ar.')
+      if (acao === 'novo-endereco') toast.success('Endereço novo gerado. O link antigo parou de funcionar.')
+    } catch { toast.error('Erro de conexão') }
+    finally { setOcupado(false) }
+  }
+
+  function copiar() {
+    navigator.clipboard.writeText(url)
+      .then(() => { setCopiado(true); setTimeout(() => setCopiado(false), 2000) })
+      .catch(() => toast.error('Não consegui copiar'))
+  }
+
+  function compartilhar() {
+    const texto = `Confira nossas promoções e agende pelo link:\n${url}`
+    if (navigator.share) navigator.share({ text: texto }).catch(() => { /* cancelou */ })
+    else window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+  }
+
+  if (carregando) {
+    return <div className="nodri-card p-4 mb-4 flex items-center gap-2 text-nodri-t3 text-[12px]">
+      <Loader2 size={13} className="animate-spin" /> Carregando link do cliente...
+    </div>
+  }
+
+  if (!cfg) {
+    return (
+      <div className="nodri-card p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <Link2 size={18} className="text-nodri-cyan shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-syne font-bold text-[13px] text-gray-900">Página do cliente</p>
+            <p className="text-[12px] text-nodri-t3 mt-0.5 leading-relaxed">
+              Gere um link para suas clientes verem as promoções, a tabela de preços,
+              sugerirem promoções e pedirem agendamento pelo WhatsApp. Elas não
+              precisam de login.
+            </p>
+            <button onClick={() => acao('criar')} disabled={ocupado}
+              className="mt-3 flex items-center gap-1.5 bg-nodri-cyan text-black px-4 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50">
+              {ocupado ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />} Gerar link
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="nodri-card p-4 mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Link2 size={15} className="text-nodri-cyan" />
+        <p className="font-syne font-bold text-[13px] text-gray-900">Página do cliente</p>
+        <span className={'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ml-1 '
+          + (cfg.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+          {cfg.ativo ? 'No ar' : 'Fora do ar'}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 mb-2">
+        <span className="flex-1 font-mono text-[11px] text-nodri-purple break-all">{url}</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button onClick={copiar}
+          className="flex items-center gap-1.5 bg-nodri-cyan text-black px-3 py-2 rounded-lg text-[12px] font-bold">
+          {copiado ? <Check size={13} /> : <Copy size={13} />} {copiado ? 'Copiado' : 'Copiar'}
+        </button>
+        <button onClick={compartilhar}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2">
+          <Share2 size={13} /> Compartilhar
+        </button>
+        <a href={url} target="_blank" rel="noreferrer"
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2">
+          <ExternalLink size={13} /> Ver como cliente
+        </a>
+        <button onClick={() => acao(cfg.ativo ? 'desligar' : 'ligar')} disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
+          {cfg.ativo ? <EyeOff size={13} /> : <Eye size={13} />} {cfg.ativo ? 'Tirar do ar' : 'Colocar no ar'}
+        </button>
+        <button onClick={() => setConfirmandoTroca(true)} disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t3 disabled:opacity-50">
+          <RefreshCw size={13} /> Trocar endereço
+        </button>
+      </div>
+
+      {confirmandoTroca && (
+        <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <p className="text-[12px] text-amber-900 leading-relaxed mb-2">
+            Gerar um endereço novo faz o link atual <b>parar de funcionar na hora</b>.
+            Quem já recebeu o antigo não vai mais conseguir abrir. Use quando o link
+            chegou a quem não devia.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmandoTroca(false)}
+              className="px-3 py-1.5 rounded-lg border border-nodri-border text-[12px] text-nodri-t2">Cancelar</button>
+            <button onClick={() => acao('novo-endereco')} disabled={ocupado}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-[12px] font-semibold disabled:opacity-50">
+              Gerar endereço novo
+            </button>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-nodri-t3 mt-2.5 leading-relaxed">
+        A página mostra as promoções <b>publicadas</b>, a tabela de preços e os
+        profissionais habilitados em cada serviço. Rascunho não aparece.
+      </p>
+    </div>
+  )
+}
