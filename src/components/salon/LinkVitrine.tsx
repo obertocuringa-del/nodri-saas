@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal } from 'lucide-react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import VitrineOcultar from './VitrineOcultar'
 
@@ -20,6 +20,10 @@ export default function LinkVitrine() {
   const [editandoSlug, setEditandoSlug] = useState(false)
   const [novoSlug, setNovoSlug] = useState('')
   const [escolhendo, setEscolhendo] = useState(false)
+  // No celular este card fica recolhido: aberto, ele empurra as campanhas para
+  // fora da tela, e o que se vem fazer aqui e cuidar das campanhas. No desktop
+  // ha espaco de sobra e ele fica sempre aberto (ver `sm:` nas classes).
+  const [aberto, setAberto] = useState(false)
 
   useEffect(() => {
     fetch('/api/salon/vitrine')
@@ -102,14 +106,23 @@ export default function LinkVitrine() {
 
   return (
     <div className="nodri-card p-4 mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Link2 size={15} className="text-nodri-cyan" />
-        <p className="font-syne font-bold text-[13px] text-gray-900">Página do cliente</p>
+      {/* No celular o cabeçalho é o botão que abre; no desktop é só título. */}
+      <button onClick={() => setAberto(v => !v)}
+        className="w-full flex items-center gap-2 mb-2 text-left sm:cursor-default">
+        <Link2 size={15} className="text-nodri-cyan shrink-0" />
+        <p className="font-syne font-bold text-[13px] text-gray-900">
+          <span className="sm:hidden">{aberto ? 'Página do cliente' : 'Configurar página do cliente'}</span>
+          <span className="hidden sm:inline">Página do cliente</span>
+        </p>
         <span className={'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ml-1 '
           + (cfg.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
           {cfg.ativo ? 'No ar' : 'Fora do ar'}
         </span>
-      </div>
+        <ChevronDown size={15}
+          className={'ml-auto text-nodri-t3 shrink-0 sm:hidden transition-transform ' + (aberto ? 'rotate-180' : '')} />
+      </button>
+
+      <div className={(aberto ? 'block' : 'hidden') + ' sm:block'}>
 
       <div className="flex items-center gap-2 bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2 mb-2">
         <span className="flex-1 font-mono text-[11px] text-nodri-purple break-all">{url}</span>
@@ -200,6 +213,8 @@ export default function LinkVitrine() {
         A página mostra as promoções <b>publicadas</b>, a tabela de preços e os
         profissionais habilitados em cada serviço. Rascunho não aparece.
       </p>
+
+      </div>
     </div>
   )
 }
