@@ -74,9 +74,14 @@ export async function getSalaoPorToken(token: string): Promise<SalaoDaVitrine | 
   const limpo = String(token || '').replace(/[^A-Za-z0-9_-]/g, '')
   if (!limpo) return null
 
+  // Filtro dentro do JSON no formato que o resto do sistema ja usa e que
+  // comprovadamente funciona aqui (mesmo padrao do link de lojistas). A forma
+  // `.eq('valor->>token', x)` nao devolveu linha nenhuma em producao.
   const { data } = await supabaseAdmin
     .from('salao_config').select('salao_id, valor')
-    .eq('chave', CHAVE_CONFIG).eq('valor->>token', limpo).maybeSingle()
+    .eq('chave', CHAVE_CONFIG)
+    .or(`valor->>token.eq.${limpo}`)
+    .maybeSingle()
   if (!data) return null
 
   const cfg = data.valor as VitrineConfig
