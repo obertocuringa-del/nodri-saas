@@ -93,43 +93,59 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp 
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Duas colunas já no celular: um card por linha ocupava a tela inteira
+          para uma promoção só, e era preciso rolar muito para ver o que existe.
+          Com metade da largura o card muda de forma — selecionar vira uma
+          marca sobre a imagem, e só sobram dois botões embaixo, que é o que
+          cabe em ~180px. */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         {lista.map(a => {
           const c = CORES[a.status] || CORES.ativa
           const marcada = selecionadas.includes(a.id)
           return (
             <div key={a.id}
-              className={'bg-white rounded-2xl overflow-hidden border transition-all '
+              className={'bg-white rounded-2xl overflow-hidden border transition-all flex flex-col '
                 + (marcada ? 'border-[var(--vt-cor)] ring-2 ring-[var(--vt-cor)]/20' : 'border-gray-200')}>
-              {a.capa && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={a.capa} alt={a.titulo} className="w-full aspect-[4/3] object-cover" />
-              )}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+
+              <div className="relative">
+                {a.capa && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.capa} alt={a.titulo} className="w-full aspect-[4/3] object-cover" />
+                )}
+                <button onClick={() => alternar(a.id)} title="Selecionar"
+                  className={'absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full border shadow-sm transition-all '
+                    + (marcada
+                      ? 'bg-[var(--vt-cor)] border-transparent text-white'
+                      : 'bg-white/90 border-gray-200 text-gray-400')}>
+                  <Check size={15} />
+                </button>
+              </div>
+
+              <div className="p-3 sm:p-4 flex flex-col flex-1">
+                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                     style={{ background: c.bg, color: c.cor }}>{c.label}</span>
-                  {a.categoria && <span className="text-[11px] text-gray-500">{a.categoria}</span>}
+                  {a.categoria && <span className="text-[10px] sm:text-[11px] text-gray-500 truncate">{a.categoria}</span>}
                 </div>
 
-                <h3 className="font-bold text-[15px] text-gray-900 mb-1">{a.titulo}</h3>
+                <h3 className="font-bold text-[13px] sm:text-[15px] text-gray-900 mb-1 leading-snug">{a.titulo}</h3>
                 {a.descricao && (
-                  <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">{a.descricao}</p>
+                  <p className="text-[11.5px] sm:text-[13px] text-gray-600 leading-relaxed whitespace-pre-line line-clamp-4">
+                    {a.descricao}
+                  </p>
                 )}
 
-                <div className="flex items-center gap-2 mt-4">
+                {/* mt-auto: com cards de alturas diferentes na mesma linha, os
+                    botões ficam alinhados no pé em vez de flutuarem no meio. */}
+                <div className="flex items-center gap-1.5 mt-auto pt-3">
                   <button onClick={() => agendar(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-[var(--vt-cor)] text-white py-2.5 rounded-xl text-[13px] font-semibold">
-                    <CalendarCheck size={15} /> Quero agendar
+                    className="flex-1 min-w-0 flex items-center justify-center gap-1 bg-[var(--vt-cor)] text-white py-2.5 rounded-xl text-[11.5px] sm:text-[13px] font-semibold">
+                    <CalendarCheck size={14} className="shrink-0" />
+                    <span className="truncate">Quero agendar</span>
                   </button>
                   <button onClick={() => compartilhar(a)} title="Compartilhar"
-                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500">
-                    <Share2 size={16} />
-                  </button>
-                  <button onClick={() => alternar(a.id)} title="Selecionar"
-                    className={'w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border transition-all '
-                      + (marcada ? 'bg-[var(--vt-cor)] border-transparent text-white' : 'border-gray-200 text-gray-400')}>
-                    <Check size={16} />
+                    className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500">
+                    <Share2 size={15} />
                   </button>
                 </div>
               </div>
