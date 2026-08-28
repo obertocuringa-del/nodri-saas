@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { normalizar } from './conferenciaServicos'
+import { ehCnpj } from './vinculoProfissional'
 
 // Confere quem fez o quê contra o que cada profissional tem habilitado.
 //
@@ -78,24 +79,19 @@ export async function conferirProfissionais(salaoId: string): Promise<Profission
 async function calcularProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
   const [{ data: profs }, { data: servicos }, { data: periodos }] = await Promise.all([
     supabaseAdmin.from('profissionais')
-      .select('id, nome_completo, apelido, servicos_habilitados, ativo, is_departamento, vinculo')
+      .select('id, nome_completo, apelido, cargo, servicos_habilitados, ativo, is_departamento, vinculo')
       .eq('salao_id', salaoId),
     supabaseAdmin.from('salao_servicos').select('id, nome').eq('salao_id', salaoId),
     supabaseAdmin.from('relatorio_periodos').select('prof_servicos').eq('salao_id', salaoId),
   ])
 
-  // Só CNPJ.
+  // Só CNPJ — pela mesma regra da aba CNPJ, e não por uma minha.
   //
-  // Serviço habilitado governa comissão e quem a cliente vê no agendamento —
-  // as duas coisas são de quem atende na cadeira. CLT e administrativo
-  // apareciam na lista sem ter o que fazer com isso.
-  //
-  // Quem está sem vínculo preenchido também fica de fora: o campo é o único
-  // jeito de saber, e adivinhar traria de volta justamente quem se quis tirar.
-  const pessoas = (profs || []).filter((p: any) =>
-    p.ativo !== false
-    && !p.is_departamento
-    && String(p.vinculo || '').toUpperCase().trim() === 'CNPJ')
+  // Serviço habilitado governa comissão e quem a cliente vê no agendamento: as
+  // duas coisas são de quem atende na cadeira. Procurar `vinculo = 'CNPJ'`
+  // não funciona — esse valor não existe gravado, e a lista inteira sumiu
+  // quando tentei. Ver lib/vinculoProfissional.
+  const pessoas = (profs || []).filter((p: any) => p.ativo !== false && ehCnpj(p))
   if (!pessoas.length) return []
 
   const servicoPorNome = new Map<string, { id: string; nome: string }>()

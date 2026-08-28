@@ -16,6 +16,7 @@ import EmissaoGuiasMEI from '@/components/salon/EmissaoGuiasMEI'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 import ConferenciaProfissionais from './ConferenciaProfissionais'
+import { ehCnpj } from '@/lib/vinculoProfissional'
 
 // Aviso de demanda nos cards de setor: vermelho sobre o rosa claro do card.
 // (Ja foi marrom escuro; pesou demais nesta tela e voltou ao discreto.)
@@ -366,14 +367,10 @@ export default function ProfissionaisPainel({ secaoFixa = '', embutido = false, 
   }
   // Categorias administrativas que NÃO são profissionais reais (só buckets de ocorrência)
   const CATS_ADMIN = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA']
-  // Exclui do painel CNPJ: admin, recepção (é CLT) e quem é CLT
-  const excluiCnpj = (p: Profissional) => {
-    // Setor não é pessoa: departamento mora na mesma tabela de profissionais,
-    // mas não tem CNPJ nem emite guia — só poluía a tela com card vazio.
-    if (p.is_departamento) return true
-    const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
-    return CATS_ADMIN.includes(cg) || CATS_ADMIN.includes(nm) || cg.startsWith('RECEP') || nm.startsWith('RECEP') || norm((p as any).vinculo || '') === 'CLT'
-  }
+  // Exclui do painel CNPJ: admin, recepção (é CLT) e quem é CLT.
+  // A regra mora em lib/vinculoProfissional para que esta aba e o aviso de
+  // habilitação não possam discordar sobre quem é da cadeira.
+  const excluiCnpj = (p: Profissional) => !ehCnpj(p as any)
   // CLT = somente quem tem vínculo CLT, EXCETO as categorias administrativas
   const ehClt = (p: Profissional) => {
     const cg = norm(p.cargo || ''), nm = norm(p.nome_completo || '')
