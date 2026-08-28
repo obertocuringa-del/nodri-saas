@@ -4,7 +4,7 @@ import { X, Send, Check, ChevronRight, ChevronDown } from 'lucide-react'
 import SeletorQuando from './SeletorQuando'
 import type { ServicoPublico, ProfissionalPublico, EscolhaAgendamento } from '@/lib/vitrineCliente'
 import {
-  precoDoServico, agruparPorCategoria, mensagemAgendamento, linkWhatsapp,
+  agruparPorCategoria, mensagemAgendamento, linkWhatsapp,
 } from '@/lib/vitrineCliente'
 
 // Pedir uma promoção, passo a passo.
@@ -64,7 +64,7 @@ export default function ModalAgendarAcao({
     setExtras(prev => {
       const novo = { ...prev }
       if (novo[s.id]) { delete novo[s.id]; return novo }
-      novo[s.id] = { chave: s.id, nome: s.nome, preco: precoDoServico(s), profissional: null }
+      novo[s.id] = { chave: s.id, nome: s.nome, profissional: null, observacao: s.observacao }
       return novo
     })
     if (!jaTinha) setPerguntando(s.id)
@@ -79,7 +79,7 @@ export default function ModalAgendarAcao({
   function enviar() {
     const comQuem = profsPromo.length ? profsPromo.join(', ') : null
     const escolhas: EscolhaAgendamento[] = [
-      ...titulos.map(t => ({ chave: `acao:${t}`, nome: t, preco: null, profissional: comQuem })),
+      ...titulos.map(t => ({ chave: `acao:${t}`, nome: t, profissional: comQuem })),
       ...listaExtras,
     ]
     const texto = mensagemAgendamento({ data, hora, escolhas, descricao })

@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { ChevronRight, ChevronDown, Check, Send, X } from 'lucide-react'
 import type { ServicoPublico, ProfissionalPublico, AcaoPublica, EscolhaAgendamento } from '@/lib/vitrineCliente'
 import {
-  precoDoServico, agruparPorCategoria, dataPorExtenso,
+  agruparPorCategoria, dataPorExtenso,
   mensagemAgendamento, linkWhatsapp,
 } from '@/lib/vitrineCliente'
 import SeletorQuando from './SeletorQuando'
@@ -48,11 +48,11 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
     return profissionais.filter(p => p.servicos.includes(servicoId))
   }
 
-  function alternarServico(chave: string, nome: string, preco: string | null, servicoId?: string) {
+  function alternarServico(chave: string, nome: string, servicoId?: string, observacao?: string | null) {
     setEscolhas(prev => {
       const novo = { ...prev }
       if (novo[chave]) { delete novo[chave]; return novo }
-      novo[chave] = { chave, nome, preco, profissional: null }
+      novo[chave] = { chave, nome, profissional: null, observacao }
       return novo
     })
     // Só pergunta por profissional quando alguém está habilitado para o
@@ -102,7 +102,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
                         const chave = `acao:${a.id}`
                         const marcado = !!escolhas[chave]
                         return (
-                          <button key={a.id} onClick={() => alternarServico(chave, a.titulo, null)}
+                          <button key={a.id} onClick={() => alternarServico(chave, a.titulo)}
                             className="w-full flex items-start gap-3 px-4 py-3 text-left border-b border-gray-50 last:border-0">
                             <span className={'w-5 h-5 shrink-0 mt-0.5 rounded-md border flex items-center justify-center '
                               + (marcado ? 'bg-[var(--vt-cor)] border-transparent' : 'border-gray-300')}>
@@ -118,11 +118,10 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
 
                       {!ehAcoes && itens.map(s => {
                         const marcado = !!escolhas[s.id]
-                        const preco = precoDoServico(s)
                         const esc = escolhas[s.id]
                         return (
                           <div key={s.id} className="border-b border-gray-50 last:border-0">
-                            <button onClick={() => alternarServico(s.id, s.nome, preco, s.id)}
+                            <button onClick={() => alternarServico(s.id, s.nome, s.id, s.observacao)}
                               className="w-full flex items-center gap-3 px-4 py-2.5 text-left">
                               <span className={'w-5 h-5 shrink-0 rounded-md border flex items-center justify-center '
                                 + (marcado ? 'bg-[var(--vt-cor)] border-transparent' : 'border-gray-300')}>

@@ -79,8 +79,9 @@ export interface EscolhaAgendamento {
   /** id do serviço, ou `acao:<id>` quando é uma ação comercial */
   chave: string
   nome: string
-  preco: string | null
   profissional: string | null
+  /** A ressalva do serviço, quando existe: o que muda o valor ou fica de fora. */
+  observacao?: string | null
 }
 
 /**
@@ -102,13 +103,16 @@ export function mensagemAgendamento(dados: {
   linhas.push('Olá! Gostaria de agendar:')
   linhas.push('')
 
-  // O `*` é o negrito do WhatsApp. Serviço e valor em negrito; o profissional
+  // O `*` é o negrito do WhatsApp. O procedimento em negrito; o profissional
   // fica em texto normal e recuado — o contraste é o que faz ele se destacar
   // sem competir com o procedimento. Linha em branco entre os itens para a
   // recepção separar um do outro de relance.
+  //
+  // O valor NÃO vai na mensagem, mesma razão de ele não aparecer na hora de
+  // escolher: preço só na aba Preços, onde vem com o "a partir de" e a
+  // ressalva que explica a variação. Solto no pedido ele vira combinado.
   dados.escolhas.forEach((e, i) => {
-    const preco = e.preco ? ` — *${e.preco}*` : ''
-    linhas.push(`• *${e.nome}*${preco}`)
+    linhas.push(`• *${e.nome}*`)
     linhas.push(e.profissional
       ? `   com ${e.profissional}`
       : '   sem preferência de profissional')
@@ -125,6 +129,34 @@ export function mensagemAgendamento(dados: {
   linhas.push(`*Data:* ${dataPorExtenso(dados.data)}`)
   linhas.push(`*Horário:* ${dados.hora}`)
   linhas.push('')
+  // "Estou ciente de" — as ressalvas dos serviços escolhidos, escritas na
+  // mensagem que a própria cliente manda.
+  //
+  // A observação já aparece na tabela de preços, mas ler lá e concordar aqui
+  // são coisas diferentes: é aí que mora a discussão no caixa ("ninguém me
+  // falou que a higienização era à parte"). Repetida no pedido, a ressalva sai
+  // da boca da cliente, e não do salão.
+  //
+  // Fica depois de data e horário e antes da pergunta final: o que se lê por
+  // último é o que se responde, e a pergunta é o fecho da mensagem.
+  const ressalvas: string[] = []
+  const jaDito = new Set<string>()
+  for (const e of dados.escolhas) {
+    const obs = (e.observacao || '').replace(/\s+/g, ' ').trim()
+    if (!obs) continue
+    // A mesma ressalva em dois serviços (a regra costuma valer para a
+    // categoria inteira) rende uma linha só.
+    const marca = `${e.nome}|${obs}`.toLowerCase()
+    if (jaDito.has(marca)) continue
+    jaDito.add(marca)
+    ressalvas.push(`• ${e.nome}: ${obs}`)
+  }
+  if (ressalvas.length) {
+    linhas.push('')
+    linhas.push('Estou ciente de:')
+    linhas.push(...ressalvas)
+  }
+
   linhas.push('Tem disponibilidade para esses agendamentos?')
   return linhas.join('\n')
 }
