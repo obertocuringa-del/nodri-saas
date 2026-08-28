@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Loader2, Trash2, Plus, ArrowLeft, Pencil, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import ConferenciaServicos, { PreenchimentoServico } from '@/components/salon/ConferenciaServicos'
 
 interface Servico {
   id: string
@@ -63,6 +64,19 @@ export default function ServicosPage() {
     setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
     setEditando(null)
     setNovo(true)
+  }
+
+  // Vindo do aviso da planilha: nome, categoria e preço já preenchidos. O que
+  // a planilha não sabe — comissão e observação — fica em branco de propósito,
+  // porque chutar comissão daria número errado pago a alguém.
+  function iniciarNovoPreenchido(d: PreenchimentoServico) {
+    setForm({
+      categoria: d.categoria || CATEGORIAS[0], nome: d.nome, preco_tipo: 'fixo', preco: d.preco,
+      comissao_valor: '', observacao: '', ciclo_retorno_dias: '',
+    })
+    setEditando(null)
+    setNovo(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function iniciarEdicao(s: Servico) {
@@ -164,6 +178,12 @@ export default function ServicosPage() {
             Novo Serviço
           </button>
         </div>
+
+        <ConferenciaServicos
+          categorias={CATEGORIAS}
+          aoCadastrar={iniciarNovoPreenchido}
+          recarregar={servicos.length}
+        />
 
         {/* Formulário novo / edição */}
         {(novo || editando) && (

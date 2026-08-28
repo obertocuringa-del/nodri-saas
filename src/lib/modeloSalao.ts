@@ -124,6 +124,10 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   { chave: 'vitrine_config', motivo: 'o endereço do link é de cada salão' },
   // Votos são das clientes daquele salão; o ranking do vizinho não diz nada.
   { chave: 'vitrine_votos', motivo: 'votos das clientes do salão' },
+  // Os nomes que o dono mandou parar de cobrar na conferência da planilha são
+  // os nomes DAQUELA planilha. Num salão novo só calariam avisos que ele
+  // precisa ver.
+  { chave: 'servicos_conferencia_ignorados', motivo: 'nomes da planilha de cada salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 
