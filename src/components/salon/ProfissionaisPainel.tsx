@@ -15,6 +15,7 @@ import AcessoGlobalProfissionais from '@/components/salon/AcessoGlobalProfission
 import EmissaoGuiasMEI from '@/components/salon/EmissaoGuiasMEI'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
+import ConferenciaProfissionais from './ConferenciaProfissionais'
 
 // Aviso de demanda nos cards de setor: vermelho sobre o rosa claro do card.
 // (Ja foi marrom escuro; pesou demais nesta tela e voltou ao discreto.)
@@ -1011,6 +1012,8 @@ ${montarContratoHTML()}
                 <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar profissional..."
                   style={{ width: '100%', background: '#ffffff', border: '1px solid #e8e6e0', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', color: '#1a1a1a', outline: 'none' }} />
               </div>
+
+              <ConferenciaProfissionais />
 
               {/* ── CARD SOLICITAÇÃO (só no celular) ── */}
               {isMobile && (
