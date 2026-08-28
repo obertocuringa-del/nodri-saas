@@ -85,14 +85,23 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
     supabaseAdmin.from('relatorio_periodos').select('prof_servicos').eq('salao_id', salaoId),
   ])
 
-  // Só CNPJ — pela mesma regra da aba CNPJ, e não por uma minha.
+  // Duas listas, e a diferença entre elas é o coração disto.
   //
-  // Serviço habilitado governa comissão e quem a cliente vê no agendamento: as
-  // duas coisas são de quem atende na cadeira. Procurar `vinculo = 'CNPJ'`
-  // não funciona — esse valor não existe gravado, e a lista inteira sumiu
-  // quando tentei. Ver lib/vinculoProfissional.
-  const pessoas = (profs || []).filter((p: any) => p.ativo !== false && ehCnpj(p))
-  if (!pessoas.length) return []
+  // `todos` é quem DISPUTA um nome da planilha. `daCadeira` é quem aparece no
+  // aviso. Filtrar CNPJ antes de comparar nomes quebrou a trava de ambiguidade:
+  // ao tirar a dona verdadeira de uma linha do páreo, a colega de nome parecido
+  // virava candidata única e herdava os serviços dela. Foi assim que uma
+  // manicure apareceu pedindo habilitação em higienização e modelagem.
+  //
+  // Quem é da cadeira sai de lib/vinculoProfissional, a mesma regra da aba
+  // CNPJ: procurar `vinculo = 'CNPJ'` não acha ninguém, esse valor não existe
+  // gravado.
+  // A disputa inclui quem saiu do salão: as linhas antigas continuam sendo
+  // dela, e tirá-la da comparação entregaria o histórico dela à colega de nome
+  // parecido que ficou.
+  const todos = (profs || []).filter((p: any) => !p.is_departamento)
+  const pessoas = todos.filter((p: any) => p.ativo !== false && ehCnpj(p))
+  if (!pessoas.length || !todos.length) return []
 
   const servicoPorNome = new Map<string, { id: string; nome: string }>()
   for (const s of servicos || []) servicoPorNome.set(normalizar(s.nome), { id: s.id, nome: s.nome })
@@ -118,7 +127,7 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
   // uma manicure em coloracao — e quem vê isso deixa de confiar no aviso.
   const donoDoTexto = new Map<string, any>()
   for (const texto of feitos.keys()) {
-    const candidatos = pessoas.filter((p: any) =>
+    const candidatos = todos.filter((p: any) =>
       mesmaPessoa(texto, p.nome_completo || p.apelido || '', p.apelido || ''))
     if (candidatos.length === 1) donoDoTexto.set(texto, candidatos[0])
   }
