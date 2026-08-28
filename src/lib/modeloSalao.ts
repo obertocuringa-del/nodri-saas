@@ -131,6 +131,9 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   // Mesma coisa do lado dos profissionais: são pares pessoa+serviço DESTE
   // salão, e num salão novo só calariam avisos que ele precisa ver.
   { chave: 'profissionais_conferencia_ignorados', motivo: 'dispensas de cada salão' },
+  // Resultado calculado em cima da planilha de UM salão. Cairia na regra 4 e
+  // viajaria; num salão novo seria a foto da conferência de outro.
+  { chave: 'servicos_conferencia_cache', motivo: 'conferência calculada de cada salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 
