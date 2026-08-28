@@ -1,9 +1,14 @@
 import { supabaseAdmin } from './supabase'
-import { getAtendimentosRaw, assinaturaAtendimentos } from './atendimentosCache'
 import { normalizar } from './conferenciaServicos'
 
-// Confere quem fez o quê na planilha contra o que cada profissional tem
-// habilitado no NODRI.
+// Confere quem fez o quê contra o que cada profissional tem habilitado.
+//
+// Lê `relatorio_periodos.prof_servicos`, e NÃO `atendimentos_raw`. A primeira
+// versão disto usou a tabela crua e creditou a uma manicure coloracao,
+// nutricao e terapia capilar: lá a coluna do profissional é de quem lançou a
+// comanda, não de quem executou. `prof_servicos` já vem atribuído por
+// profissional — é a fonte que o perfil usa, e a que estava certa. O aviso do
+// profServicosMatch.ts dizia isso e foi ignorado.
 //
 // Serviço não habilitado não é detalhe de cadastro: o profissional some da
 // lista de "quem faz" no agendamento da página do cliente, e a comissão dele
@@ -56,56 +61,27 @@ function mesmaPessoa(texto: string, nomeCompleto: string, apelido: string): bool
 //
 // Aqui a assinatura sozinha não basta: habilitar alguém muda o resultado sem
 // tocar na planilha. Por isso `limparMemoProfissionais` é chamada ao habilitar.
-// Guardado também no banco, e não só em memória: na nuvem o servidor troca o
-// tempo todo, e a cada troca a página voltava a esperar a leitura de dezenas de
-// milhares de linhas. Quem chega depois só confere a assinatura e lê uma linha.
-const CHAVE_CACHE = 'profissionais_conferencia_cache'
-const memo = new Map<string, { chave: string; valor: ProfissionalPendente[] }>()
-
-export function limparMemoProfissionais(salaoId: string) {
-  memo.delete(salaoId)
-  // O guardado no banco também sai: habilitar alguém muda o resultado sem
-  // tocar na planilha, então a assinatura sozinha não denunciaria a mudança.
-  supabaseAdmin.from('salao_config').delete()
-    .eq('salao_id', salaoId).eq('chave', CHAVE_CACHE)
-    .then(() => undefined, () => undefined)
+// Não guarda nada.
+//
+// A versão anterior varria dezenas de milhares de linhas e precisava de cache
+// em dois níveis para não travar a página. `prof_servicos` é uma linha por mês,
+// com os serviços já somados: a conta inteira cabe em três consultas. Trocar a
+// fonte deixou o cache sem propósito — e cache que sobra e ninguém limpa é o
+// jeito mais comum de mostrar número velho.
+export function limparMemoProfissionais(_salaoId: string) {
+  // Guardado por compatibilidade: nada mais a limpar.
 }
 
 export async function conferirProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
-  const chave = await assinaturaAtendimentos(salaoId)
-
-  const daMemoria = memo.get(salaoId)
-  if (daMemoria && daMemoria.chave === chave) return daMemoria.valor
-
-  const { data } = await supabaseAdmin
-    .from('salao_config').select('valor')
-    .eq('salao_id', salaoId).eq('chave', CHAVE_CACHE).maybeSingle()
-  const v = (data as any)?.valor
-  if (v && v.chave === chave && Array.isArray(v.pendentes)) {
-    memo.set(salaoId, { chave, valor: v.pendentes })
-    return v.pendentes
-  }
-
-  const valor = await calcularProfissionais(salaoId)
-  memo.set(salaoId, { chave, valor })
-  await supabaseAdmin.from('salao_config').upsert(
-    {
-      salao_id: salaoId, chave: CHAVE_CACHE,
-      valor: { chave, pendentes: valor },
-      atualizado_em: new Date().toISOString(),
-    },
-    { onConflict: 'salao_id,chave' },
-  ).then(() => undefined, () => undefined)
-  return valor
+  return calcularProfissionais(salaoId)
 }
-
 async function calcularProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
-  const [{ data: profs }, { data: servicos }, linhas] = await Promise.all([
+  const [{ data: profs }, { data: servicos }, { data: periodos }] = await Promise.all([
     supabaseAdmin.from('profissionais')
       .select('id, nome_completo, apelido, servicos_habilitados, ativo, is_departamento')
       .eq('salao_id', salaoId),
     supabaseAdmin.from('salao_servicos').select('id, nome').eq('salao_id', salaoId),
-    getAtendimentosRaw(salaoId),
+    supabaseAdmin.from('relatorio_periodos').select('prof_servicos').eq('salao_id', salaoId),
   ])
 
   // Setor não atende cliente: cobrar habilitação de RH ou Comercial seria
@@ -116,28 +92,42 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
   const servicoPorNome = new Map<string, { id: string; nome: string }>()
   for (const s of servicos || []) servicoPorNome.set(normalizar(s.nome), { id: s.id, nome: s.nome })
 
-  // Quem fez o quê, e quantas vezes.
+  // Quem fez o quê, agrupado pelo TEXTO do profissional como vem na planilha.
   const feitos = new Map<string, Map<string, number>>()
-  for (const l of linhas || []) {
-    const quem = String((l as any).profissional || '').trim()
-    const oque = normalizar(String((l as any).servico || ''))
-    if (!quem || !oque) continue
-    if (!feitos.has(quem)) feitos.set(quem, new Map())
-    const m = feitos.get(quem)!
-    m.set(oque, (m.get(oque) || 0) + 1)
+  for (const linha of (periodos || []) as any[]) {
+    const itens = Array.isArray(linha.prof_servicos) ? linha.prof_servicos : []
+    for (const it of itens) {
+      const quem = String(it.profissional || it.profissional_original || '').trim()
+      const oque = normalizar(String(it.servico || ''))
+      if (!quem || !oque) continue
+      if (!feitos.has(quem)) feitos.set(quem, new Map())
+      const m = feitos.get(quem)!
+      m.set(oque, (m.get(oque) || 0) + (Number(it.quantidade) || 1))
+    }
+  }
+
+  // De quem é cada texto da planilha — e só quando NÃO há dúvida.
+  //
+  // Um texto que casa com duas pessoas é descartado inteiro em vez de ser
+  // creditado às duas. Creditar errado aqui faz o sistema pedir para habilitar
+  // uma manicure em coloracao — e quem vê isso deixa de confiar no aviso.
+  const donoDoTexto = new Map<string, any>()
+  for (const texto of feitos.keys()) {
+    const candidatos = pessoas.filter((p: any) =>
+      mesmaPessoa(texto, p.nome_completo || p.apelido || '', p.apelido || ''))
+    if (candidatos.length === 1) donoDoTexto.set(texto, candidatos[0])
   }
 
   const saida: ProfissionalPendente[] = []
 
   for (const p of pessoas) {
-    const nome = p.nome_completo || p.apelido || ''
     const habilitados = new Set<string>(Array.isArray(p.servicos_habilitados) ? p.servicos_habilitados : [])
 
-    // Junta todos os textos da planilha que são esta pessoa: o mesmo
-    // profissional aparece escrito de formas diferentes entre importações.
+    // Junta os textos que são desta pessoa: o mesmo profissional aparece
+    // escrito de formas diferentes entre importações.
     const conta = new Map<string, number>()
     for (const [texto, servicosFeitos] of feitos) {
-      if (!mesmaPessoa(texto, nome, p.apelido || '')) continue
+      if (donoDoTexto.get(texto)?.id !== p.id) continue
       for (const [chave, n] of servicosFeitos) conta.set(chave, (conta.get(chave) || 0) + n)
     }
 
@@ -153,13 +143,12 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
 
     if (!faltando.length) continue
     faltando.sort((a, b) => b.atendimentos - a.atendimentos)
-    saida.push({ profissionalId: p.id, nome: p.apelido || nome, servicos: faltando })
+    saida.push({ profissionalId: p.id, nome: p.apelido || p.nome_completo || '', servicos: faltando })
   }
 
   saida.sort((a, b) => b.servicos.length - a.servicos.length)
   return saida
 }
-
 /** Acrescenta serviços ao que a pessoa já tem — nunca substitui a lista. */
 export async function habilitarServicos(
   salaoId: string, profissionalId: string, servicoIds: string[],
