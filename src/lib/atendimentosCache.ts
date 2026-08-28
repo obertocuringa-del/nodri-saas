@@ -86,6 +86,18 @@ export async function getAtendimentosRaw(salaoId: string): Promise<any[]> {
   return rows
 }
 
+/**
+ * A assinatura de frescor dos dados deste salão.
+ *
+ * Quem faz uma conta cara em cima dos atendimentos guarda o RESULTADO com
+ * esta chave: enquanto ela não muda, nada foi importado e a conta anterior
+ * continua valendo. Sem isso, uma conta pesada pendurada num endereço que
+ * toda tela consulta rodaria a cada abertura de página.
+ */
+export async function assinaturaAtendimentos(salaoId: string): Promise<string> {
+  return assinatura(salaoId)
+}
+
 /** Invalida o cache (ex.: após importar atendimentos). */
 export function limparCacheAtendimentos(salaoId?: string) {
   if (salaoId) cache.delete(salaoId)

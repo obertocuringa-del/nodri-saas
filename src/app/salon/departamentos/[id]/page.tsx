@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import BoletosFinanceiro from '@/components/salon/BoletosFinanceiro'
 import ComportamentoProfissional from '@/components/salon/ComportamentoProfissional'
 import { ferramentasDoSetor, ConteudoFerramenta } from '@/components/salon/ferramentasSetor'
+import { useAlertas } from '@/lib/useAlertas'
 import { listarPopsDoConteudo, type PopDeConteudo } from '@/components/salon/ConteudoPopPainel'
 import { EVENTO_MANUAIS } from '@/components/salon/ManualSetorPainel'
 import { demandasDoSetor, slugDemanda, SUBDEMANDAS } from '@/components/salon/demandasSetor'
@@ -134,6 +135,10 @@ export default function DepartamentoPage() {
   // Setor sem ferramentas segue exatamente como era, só com as demandas.
   const isMobileSetor = useIsMobile(900)
   const ferramentas = useMemo(() => ferramentasDoSetor(dep?.nome_completo || ''), [dep?.nome_completo])
+  // Quantos avisos cada ferramenta tem. O card do setor no organograma já
+  // piscava dizendo que havia ALGO; sem isto era preciso abrir uma a uma para
+  // achar qual.
+  const alertas = useAlertas()
   const [ferramentaAberta, setFerramentaAberta] = useState('')
   const [abaPopSetor, setAbaPopSetor] = useState('cafe')
   const [menuFerrOpen, setMenuFerrOpen] = useState(false)
@@ -413,6 +418,11 @@ export default function DepartamentoPage() {
                     }}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 8, background: ativo ? '#f0eefb' : 'transparent', color: ativo ? '#5b4fcf' : '#4b5563', fontSize: 11.5, fontWeight: ativo ? 900 : 700, letterSpacing: '.3px', cursor: 'pointer', borderLeft: ativo ? '3px solid #5b4fcf' : '3px solid transparent' }}>
                     <span>{f.label}{f.rota ? ' →' : ''}</span>
+                    {!!alertas.porFerramenta[f.id] && (
+                      <span style={{ background: '#f59e0b', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '1px 6px', flexShrink: 0 }}>
+                        {alertas.porFerramenta[f.id]}
+                      </span>
+                    )}
                     {f.conteudoSlug && <span style={{ fontSize: 10, color: '#9ca3af', transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>}
                   </button>
                   {aberto && (
@@ -530,6 +540,11 @@ export default function DepartamentoPage() {
                         }}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: ferramentaAberta === f.id ? '#f0eefb' : 'transparent', color: ferramentaAberta === f.id ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: ferramentaAberta === f.id ? 900 : 700, cursor: 'pointer' }}>
                         <span>{f.label}{f.rota ? ' →' : ''}</span>
+                        {!!alertas.porFerramenta[f.id] && (
+                          <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 900, borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
+                            {alertas.porFerramenta[f.id]}
+                          </span>
+                        )}
                         {f.conteudoSlug && <span style={{ fontSize: 10, color: '#9ca3af' }}>{aberto ? '▲' : '▼'}</span>}
                       </button>
                       {aberto && (

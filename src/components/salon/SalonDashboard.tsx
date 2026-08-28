@@ -140,10 +140,14 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
   const [kitsPendentes, setKitsPendentes] = useState(0)
   const [esterPendentes, setEsterPendentes] = useState(0)
   const [solicAbertas, setSolicAbertas] = useState(0)
+  const [porPagina, setPorPagina] = useState<Record<string, number>>({})
   useEffect(() => {
+    // porPagina traz quantos avisos cada página do menu tem. Antes o menu só
+    // avisava do que era do Administrativo; o resto ficava escondido até
+    // alguém abrir a página por acaso.
     const buscar = () => fetch('/api/salon/alertas', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setKitsPendentes(Number(d.kitsPendentes) || 0); setEsterPendentes(Number(d.esterPendentes) || 0); setSolicAbertas(Number(d.solicitacoes) || 0) } })
+      .then(d => { if (d) { setKitsPendentes(Number(d.kitsPendentes) || 0); setEsterPendentes(Number(d.esterPendentes) || 0); setSolicAbertas(Number(d.solicitacoes) || 0); setPorPagina(d.porPagina && typeof d.porPagina === 'object' ? d.porPagina : {}) } })
       .catch(() => {})
     buscar()
     const t = setInterval(buscar, 60000)   // renova sozinho a cada minuto
@@ -654,6 +658,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               // precisam avisar, senão ela fica esperando sem ninguém saber.
               const alertaKits = item.chave === 'administrativo' && (kitsPendentes > 0 || esterPendentes > 0)
               const novoCur = item.chave === 'curriculos' && curriculosNovos > 0
+              // Da conferência da planilha. Número parado, sem piscar: com vários
+              // itens do menu chamando ao mesmo tempo a barra fica inquieta, e
+              // estes aqui não são urgência — são cadastro atrasado.
+              const daPagina = Number(porPagina[item.chave] || 0)
               const destaque = alerta || novoCur || alertaKits
               const cor = (alerta || alertaKits) ? '#dc2626' : '#5b4fcf'
               const badgeAdm = [
@@ -670,6 +678,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <span className={destaque ? '' : 'text-nodri-t2 hover:text-nodri-t1'} style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
                 {destaque && (
                   <span style={{ background: cor, color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap', animation: 'pulseDot 1.2s infinite' }}>{badgeTxt}</span>
+                )}
+                {!destaque && daPagina > 0 && (
+                  <span title="Conferência da planilha"
+                    style={{ background: '#f59e0b', color: '#fff', fontSize: 9.5, fontWeight: 900, borderRadius: 99, padding: '2px 7px', whiteSpace: 'nowrap' }}>{daPagina}</span>
                 )}
               </a>
               )

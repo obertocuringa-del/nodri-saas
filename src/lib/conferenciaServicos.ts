@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabase'
-import { getAtendimentosRaw } from './atendimentosCache'
+import { getAtendimentosRaw, assinaturaAtendimentos } from './atendimentosCache'
 
 // Confere a planilha importada contra os serviços cadastrados.
 //
@@ -91,13 +91,35 @@ export async function ignorarNome(salaoId: string, nome: string): Promise<void> 
   )
 }
 
+// A conferência varre a planilha inteira. Enquanto ela só rodava ao abrir
+// Serviços, tudo bem; agora o contador do menu também pergunta, e o menu
+// aparece em toda tela. Guardar o resultado presa à assinatura dos dados faz
+// a conta pesada acontecer uma vez por importação, e não por página aberta.
+//
+// A lista de ignorados entra na chave: clicar em "Já tenho" muda o resultado
+// sem que nenhuma planilha tenha sido importada.
+const memo = new Map<string, { chave: string; valor: Conferencia }>()
+
 export async function conferir(salaoId: string): Promise<Conferencia> {
-  const [{ data: cadastrados }, linhas, ignorados] = await Promise.all([
+  const [sig, ign] = await Promise.all([
+    assinaturaAtendimentos(salaoId),
+    nomesIgnorados(salaoId),
+  ])
+  const chave = `${sig}|${[...ign].sort().join(',')}`
+  const guardado = memo.get(salaoId)
+  if (guardado && guardado.chave === chave) return guardado.valor
+
+  const valor = await calcular(salaoId, ign)
+  memo.set(salaoId, { chave, valor })
+  return valor
+}
+
+async function calcular(salaoId: string, ignorados: Set<string>): Promise<Conferencia> {
+  const [{ data: cadastrados }, linhas] = await Promise.all([
     supabaseAdmin.from('salao_servicos')
       .select('id, nome, categoria, preco_fixo, preco_min')
       .eq('salao_id', salaoId),
     getAtendimentosRaw(salaoId),
-    nomesIgnorados(salaoId),
   ])
 
   const porNome = new Map<string, any>()
@@ -142,24 +164,26 @@ export async function conferir(salaoId: string): Promise<Conferencia> {
     const fixo = Number(cad.preco_fixo) || 0
     const minimo = Number(cad.preco_min) || 0
 
+    // Só avisa quando a planilha traz valor MAIOR que o cadastrado.
+    //
+    // Preço se ajusta para cima. Quando o cadastrado está acima do que a
+    // planilha mostra, isso é apenas o aumento que já foi feito aqui e ainda
+    // não apareceu no histórico — nada a corrigir. Avisar disso enchia a lista
+    // com 52 serviços, todos pelo mesmo motivo, e enterrava o que importa.
+    //
+    // O contrário é que pede olhada: cobraram mais do que está cadastrado, ou
+    // seja, o preço daqui ficou para trás.
     if (fixo > 0) {
-      if (Math.abs(cobrado - fixo) >= 0.01) {
+      if (cobrado > fixo + 0.01) {
         divergentes.push({
           nome: cad.nome, servicoId: cad.id, cadastrado: fixo,
           tipo: 'fixo', cobrado, atendimentos: vezes,
         })
       }
-    } else if (minimo > 0) {
-      // "A partir de" varia de propósito — Mechas custa conforme a quantidade.
-      // Cobrar acima do mínimo é o esperado; abaixo é que é sinal de que o
-      // mínimo cadastrado está errado.
-      if (cobrado < minimo - 0.01) {
-        divergentes.push({
-          nome: cad.nome, servicoId: cad.id, cadastrado: minimo,
-          tipo: 'minimo', cobrado, atendimentos: vezes,
-        })
-      }
     }
+    // Serviço "a partir de" fica fora: o valor cadastrado é um piso, e cobrar
+    // acima dele é exatamente o que se espera — Mechas varia com a quantidade.
+    // Pela mesma regra, cobrar abaixo do piso também não avisa.
   }
 
   ausentes.sort((a, b) => b.atendimentos - a.atendimentos)

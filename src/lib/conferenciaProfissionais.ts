@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabase'
-import { getAtendimentosRaw } from './atendimentosCache'
+import { getAtendimentosRaw, assinaturaAtendimentos } from './atendimentosCache'
 import { normalizar } from './conferenciaServicos'
 
 // Confere quem fez o quê na planilha contra o que cada profissional tem
@@ -51,7 +51,27 @@ function mesmaPessoa(texto: string, nomeCompleto: string, apelido: string): bool
   return acertos >= Math.min(alvo.length, 2)
 }
 
+// Mesma razão da conferência de serviços: o contador do menu pergunta o tempo
+// todo, e varrer a planilha a cada pergunta deixaria o sistema arrastado.
+//
+// Aqui a assinatura sozinha não basta: habilitar alguém muda o resultado sem
+// tocar na planilha. Por isso `limparMemoProfissionais` é chamada ao habilitar.
+const memo = new Map<string, { chave: string; valor: ProfissionalPendente[] }>()
+
+export function limparMemoProfissionais(salaoId: string) {
+  memo.delete(salaoId)
+}
+
 export async function conferirProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
+  const chave = await assinaturaAtendimentos(salaoId)
+  const guardado = memo.get(salaoId)
+  if (guardado && guardado.chave === chave) return guardado.valor
+  const valor = await calcularProfissionais(salaoId)
+  memo.set(salaoId, { chave, valor })
+  return valor
+}
+
+async function calcularProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
   const [{ data: profs }, { data: servicos }, linhas] = await Promise.all([
     supabaseAdmin.from('profissionais')
       .select('id, nome_completo, apelido, servicos_habilitados, ativo, is_departamento')
@@ -135,5 +155,6 @@ export async function habilitarServicos(
   await supabaseAdmin.from('profissionais')
     .update({ servicos_habilitados: [...novos] })
     .eq('id', profissionalId).eq('salao_id', salaoId)
+  limparMemoProfissionais(salaoId)
   return true
 }

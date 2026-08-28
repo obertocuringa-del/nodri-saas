@@ -150,11 +150,11 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
             <div className="flex-1">
               <p className="text-[13px] font-semibold text-nodri-t1">
                 {divergentes.length === 1
-                  ? '1 serviço foi cobrado por valor diferente do cadastrado'
-                  : `${divergentes.length} serviços foram cobrados por valor diferente do cadastrado`}
+                  ? '1 serviço foi cobrado ACIMA do valor cadastrado'
+                  : `${divergentes.length} serviços foram cobrados ACIMA do valor cadastrado`}
               </p>
               <p className="text-[11px] text-nodri-t3 mt-0.5">
-                Só um aviso — pode ser desconto. Confira se o preço mudou de verdade.
+                Estes serviços <b>existem no cadastro</b> — não é falta de cadastro. Cobraram mais do que o preço daqui, então o preço cadastrado pode ter ficado para trás. Cobrança abaixo do cadastrado não entra: é o aumento que você já fez e o histórico ainda não mostra.
               </p>
             </div>
             <ChevronDown size={15}
@@ -168,10 +168,13 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
                   className="flex items-center gap-2 bg-nodri-surface border border-nodri-border rounded-lg px-3 py-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-nodri-t1 truncate">{d.nome}</p>
+                    {/* "Está cadastrado" na frente de propósito: sem isso a linha
+                        se parece com a do aviso de cima e já foi lida como "não
+                        tenho esse serviço", quando diz o contrário. */}
                     <p className="text-[10.5px] text-nodri-t3">
-                      cobrado {reais(d.cobrado)} em {d.atendimentos} atendimento{d.atendimentos === 1 ? '' : 's'}
-                      {' · '}
-                      {d.tipo === 'fixo' ? 'cadastrado' : 'mínimo cadastrado'} {reais(d.cadastrado)}
+                      <span className="text-green-700 font-semibold">Está cadastrado</span>
+                      {d.tipo === 'fixo' ? ' por ' : ' a partir de '}{reais(d.cadastrado)}
+                      {' — cobrado '}{reais(d.cobrado)} em {d.atendimentos} atendimento{d.atendimentos === 1 ? '' : 's'}.
                     </p>
                   </div>
                 </div>
