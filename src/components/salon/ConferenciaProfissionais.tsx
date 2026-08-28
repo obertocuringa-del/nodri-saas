@@ -44,7 +44,18 @@ export default function ConferenciaProfissionais() {
     finally { setOcupado(null) }
   }
 
-  if (carregando || !pendentes.length) return null
+  // Enquanto carrega, DIZ que está carregando. Desenhar nada fazia a página
+  // parecer sem o aviso — e a pergunta virava "cadê o botão de habilitar?".
+  // A conta lê a planilha inteira na primeira vez depois de cada importação.
+  if (carregando) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1px solid #e8e6e0', borderRadius: 12, padding: '12px 16px', marginBottom: 16, color: '#767069', fontSize: 12 }}>
+        <Loader2 size={14} className="animate-spin" />
+        Conferindo a planilha para ver quem fez serviço sem estar habilitado…
+      </div>
+    )
+  }
+  if (!pendentes.length) return null
 
   const totalServicos = pendentes.reduce((s, p) => s + p.servicos.length, 0)
 

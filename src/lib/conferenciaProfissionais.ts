@@ -56,18 +56,46 @@ function mesmaPessoa(texto: string, nomeCompleto: string, apelido: string): bool
 //
 // Aqui a assinatura sozinha não basta: habilitar alguém muda o resultado sem
 // tocar na planilha. Por isso `limparMemoProfissionais` é chamada ao habilitar.
+// Guardado também no banco, e não só em memória: na nuvem o servidor troca o
+// tempo todo, e a cada troca a página voltava a esperar a leitura de dezenas de
+// milhares de linhas. Quem chega depois só confere a assinatura e lê uma linha.
+const CHAVE_CACHE = 'profissionais_conferencia_cache'
 const memo = new Map<string, { chave: string; valor: ProfissionalPendente[] }>()
 
 export function limparMemoProfissionais(salaoId: string) {
   memo.delete(salaoId)
+  // O guardado no banco também sai: habilitar alguém muda o resultado sem
+  // tocar na planilha, então a assinatura sozinha não denunciaria a mudança.
+  supabaseAdmin.from('salao_config').delete()
+    .eq('salao_id', salaoId).eq('chave', CHAVE_CACHE)
+    .then(() => undefined, () => undefined)
 }
 
 export async function conferirProfissionais(salaoId: string): Promise<ProfissionalPendente[]> {
   const chave = await assinaturaAtendimentos(salaoId)
-  const guardado = memo.get(salaoId)
-  if (guardado && guardado.chave === chave) return guardado.valor
+
+  const daMemoria = memo.get(salaoId)
+  if (daMemoria && daMemoria.chave === chave) return daMemoria.valor
+
+  const { data } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', CHAVE_CACHE).maybeSingle()
+  const v = (data as any)?.valor
+  if (v && v.chave === chave && Array.isArray(v.pendentes)) {
+    memo.set(salaoId, { chave, valor: v.pendentes })
+    return v.pendentes
+  }
+
   const valor = await calcularProfissionais(salaoId)
   memo.set(salaoId, { chave, valor })
+  await supabaseAdmin.from('salao_config').upsert(
+    {
+      salao_id: salaoId, chave: CHAVE_CACHE,
+      valor: { chave, pendentes: valor },
+      atualizado_em: new Date().toISOString(),
+    },
+    { onConflict: 'salao_id,chave' },
+  ).then(() => undefined, () => undefined)
   return valor
 }
 

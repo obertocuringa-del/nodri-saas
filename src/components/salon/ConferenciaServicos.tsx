@@ -75,7 +75,17 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
     return categorias.find(c => igual(c) === igual(cat)) || ''
   }
 
-  if (carregando || (!ausentes.length && !divergentes.length)) return null
+  // Mesmo motivo do cartão dos profissionais: sumir enquanto carrega parece
+  // que o aviso não existe.
+  if (carregando) {
+    return (
+      <div className="mb-6 flex items-center gap-2 bg-nodri-surface border border-nodri-border rounded-xl px-4 py-3 text-[12px] text-nodri-t3">
+        <Loader2 size={14} className="animate-spin" />
+        Conferindo a planilha contra os serviços cadastrados…
+      </div>
+    )
+  }
+  if (!ausentes.length && !divergentes.length) return null
 
   const mostrados = verTodos ? ausentes : ausentes.slice(0, 5)
 

@@ -12,6 +12,7 @@ import { getAtendimentosRaw, assinaturaAtendimentos } from './atendimentosCache'
 // valor de cada atendimento. Aqui só se compara.
 
 export const CHAVE_IGNORADOS = 'servicos_conferencia_ignorados'
+const CHAVE_CACHE = 'servicos_conferencia_cache'
 
 export interface ServicoAusente {
   nome: string
@@ -98,7 +99,34 @@ export async function ignorarNome(salaoId: string, nome: string): Promise<void> 
 //
 // A lista de ignorados entra na chave: clicar em "Já tenho" muda o resultado
 // sem que nenhuma planilha tenha sido importada.
+// Dois níveis de guarda, e o segundo é o que importa.
+//
+// Em memória é o mais rápido, mas morre junto com o servidor — e na nuvem
+// isso acontece o tempo todo. Sozinho, ele deixava a página esperar a leitura
+// de dezenas de milhares de linhas, de mil em mil, sempre que caía num
+// servidor novo. Por isso o resultado também vai para o banco: quem chega
+// depois só confere a assinatura (duas consultas baratas) e lê uma linha.
 const memo = new Map<string, { chave: string; valor: Conferencia }>()
+
+async function lerGuardado(salaoId: string, chave: string): Promise<Conferencia | null> {
+  const { data } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', CHAVE_CACHE).maybeSingle()
+  const v = (data as any)?.valor
+  if (!v || v.chave !== chave || !Array.isArray(v.ausentes)) return null
+  return { ausentes: v.ausentes, divergentes: v.divergentes || [], linhasLidas: v.linhasLidas || 0 }
+}
+
+async function guardar(salaoId: string, chave: string, valor: Conferencia): Promise<void> {
+  await supabaseAdmin.from('salao_config').upsert(
+    {
+      salao_id: salaoId, chave: CHAVE_CACHE,
+      valor: { chave, ...valor },
+      atualizado_em: new Date().toISOString(),
+    },
+    { onConflict: 'salao_id,chave' },
+  ).then(() => undefined, () => undefined)
+}
 
 export async function conferir(salaoId: string): Promise<Conferencia> {
   const [sig, ign] = await Promise.all([
@@ -106,11 +134,16 @@ export async function conferir(salaoId: string): Promise<Conferencia> {
     nomesIgnorados(salaoId),
   ])
   const chave = `${sig}|${[...ign].sort().join(',')}`
-  const guardado = memo.get(salaoId)
-  if (guardado && guardado.chave === chave) return guardado.valor
+
+  const daMemoria = memo.get(salaoId)
+  if (daMemoria && daMemoria.chave === chave) return daMemoria.valor
+
+  const doBanco = await lerGuardado(salaoId, chave)
+  if (doBanco) { memo.set(salaoId, { chave, valor: doBanco }); return doBanco }
 
   const valor = await calcular(salaoId, ign)
   memo.set(salaoId, { chave, valor })
+  await guardar(salaoId, chave, valor)
   return valor
 }
 
