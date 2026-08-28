@@ -20,6 +20,10 @@ export default function ConferenciaProfissionais() {
   const [carregando, setCarregando] = useState(true)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [aberto, setAberto] = useState<string | null>(null)
+  // Recolhido de saída: com 16 pessoas a lista empurrava os cartões dos
+  // profissionais para fora da tela, e quem entra aqui vem ver os cartões. O
+  // título com o número já diz se vale a pena abrir.
+  const [mostrarLista, setMostrarLista] = useState(false)
 
   useEffect(() => {
     fetch('/api/profissionais/conferencia')
@@ -61,9 +65,10 @@ export default function ConferenciaProfissionais() {
 
   return (
     <div style={{ background: '#eef6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+      <button onClick={() => setMostrarLista(v => !v)}
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', marginBottom: mostrarLista ? 12 : 0 }}>
         <UserCheck size={16} style={{ color: '#2563eb', flexShrink: 0, marginTop: 2 }} />
-        <div>
+        <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1e3a8a' }}>
             {pendentes.length === 1
               ? `1 profissional fez serviço em que não está habilitado`
@@ -75,8 +80,11 @@ export default function ConferenciaProfissionais() {
             cliente escolher no agendamento e a comissão do serviço não entra na conta.
           </p>
         </div>
-      </div>
+        <ChevronDown size={16}
+          style={{ color: '#2563eb', flexShrink: 0, marginTop: 2, transform: mostrarLista ? '' : 'rotate(-90deg)', transition: 'transform .15s' }} />
+      </button>
 
+      {mostrarLista && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {pendentes.map(p => {
           const todos = p.servicos.map(s => s.servicoId)
@@ -136,6 +144,7 @@ export default function ConferenciaProfissionais() {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
