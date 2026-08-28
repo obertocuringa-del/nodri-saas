@@ -1303,23 +1303,73 @@ export default function CalculadoraCusto() {
         porMes.get(key)!.itens.push({ nome, valor: l.valor, dica: '', parcela: `${i + 1}/${N}`, obs, grupo, venc: l.venc, cod: l.cod || '', data: dataQuinzena, pix: parcPix.trim() })
       })
 
+      // Salvar por `salvarPeriodo`, e não por um fetch solto.
+      //
+      // Antes era `await fetch(...)` sem olhar a resposta — e resposta de erro
+      // do servidor (403, 500) NÃO estoura um fetch, só queda de internet
+      // estoura. O código seguia, fechava o formulário e escrevia "lançada e
+      // salva", com o servidor tendo recusado. O lançamento sumia sem deixar
+      // rastro e a tela jurava que tinha salvo.
+      //
+      // `salvarPeriodo` confere a resposta, mostra o motivo que o servidor deu
+      // e guarda o mês em `pendenteFalho` para reenviar. Já estava pronta.
+      let falhou = false
       for (const { ano, mes, itens } of porMes.values()) {
+        const paraGravar = itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '', pix: it.pix || '' }))
+
         if (ano === anoSel && mes === mesSel) {
           // Mês atual: soma no formulário aberto e salva o mês inteiro
           const base = coletarDados()
-          const novo = { ...base, extrasDespInd: [...base.extrasDespInd, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '', pix: it.pix || '' })) ] }
-          await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
+          const novo = { ...base, extrasDespInd: [...(base.extrasDespInd || []), ...paraGravar] }
+          if (!await salvarPeriodo(ano, mes, novo, false)) { falhou = true; break }
           setExtrasDespInd(prev => [...prev, ...itens])
           setDirtyCalc(false)
         } else {
-          // Outro mês: carrega o que já existe, SOMA e salva
-          const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' }).then(x => x.ok ? x.json() : { dados: null }).catch(() => ({ dados: null }))
+          // Outro mês: carrega o que já existe, SOMA e salva.
+          //
+          // Se a leitura falhar, PARA. Antes ela caía para `{}` e o que fosse
+          // salvo em cima apagaria o mês inteiro — um erro de rede num mês
+          // que nem está na tela levaria junto tudo que ele tinha.
+          const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include' })
+            .then(x => x.ok ? x.json() : null).catch(() => null)
+          if (!r) {
+            alert(`Não consegui ler ${MESES_NOMES[mes]}/${ano} para somar a parcela. Nada foi alterado nesse mês — tente de novo.`)
+            falhou = true; break
+          }
           const base = (r?.dados && typeof r.dados === 'object') ? r.dados : {}
           const extras = Array.isArray(base.extrasDespInd) ? base.extrasDespInd : []
-          const novo = { ...base, extrasDespInd: [...extras, ...itens.map(it => ({ nome: it.nome, valor: it.valor, parcela: it.parcela || '', obs: it.obs || '', grupo: it.grupo || '', venc: it.venc || '', cod: it.cod || '', data: it.data || '', pix: it.pix || '' })) ] }
-          await fetch('/api/salon/calculadora', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ano, mes, dados: novo }) })
+          const novo = { ...base, extrasDespInd: [...extras, ...paraGravar] }
+          if (!await salvarPeriodo(ano, mes, novo, false)) { falhou = true; break }
           setMesesComDados(prev => prev.some(mm => mm.ano === ano && mm.mes === mes) ? prev : [...prev, { ano, mes }])
         }
+      }
+
+      // Falhou: o formulário fica aberto com tudo preenchido. Limpá-lo faria
+      // perder o que foi digitado junto com o lançamento que não entrou.
+      if (falhou) return
+
+      // Confere que está mesmo lá antes de dizer que salvou.
+      //
+      // O servidor responder "ok" e o dado não aparecer já aconteceu neste
+      // sistema por outros motivos (cache de leitura, gravação em outro mês).
+      // Aqui a pergunta é direta: relemos o mês e procuramos o grupo deste
+      // lançamento. Se não achar, melhor avisar do que deixar o dono descobrir
+      // dias depois — e sem saber se pode relançar ou se vai duplicar.
+      let confirmadas = 0
+      for (const { ano, mes } of porMes.values()) {
+        try {
+          const r = await fetch(`/api/salon/calculadora?ano=${ano}&mes=${mes}`, { credentials: 'include', cache: 'no-store' })
+            .then(x => x.ok ? x.json() : null)
+          const lista = Array.isArray(r?.dados?.extrasDespInd) ? r.dados.extrasDespInd : []
+          confirmadas += lista.filter((it: any) => it?.grupo === grupo).length
+        } catch { /* a conferência é extra; o salvamento já foi conferido acima */ }
+      }
+      if (confirmadas < N) {
+        alert(`Atenção: o servidor aceitou, mas ao reler eu só encontrei ${confirmadas} de ${N} parcela(s) de "${nome}".`
+          + `
+
+Antes de lançar de novo, confira em FINANCEIRO > Contas a Pagar se a conta já está lá — para não duplicar.`)
+        return
       }
       // "Já pago": acha o que acabou de ser lançado pelo GRUPO (id único deste
       // lançamento) e dá baixa. Assim a conta nasce direto na aba Pagos do
