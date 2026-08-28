@@ -64,6 +64,21 @@ export default function ServicosPage() {
     setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
     setEditando(null)
     setNovo(true)
+    irAteOFormulario()
+  }
+
+  // Leva a tela até o formulário.
+  //
+  // Rolar para o TOPO era o contrário do necessário: o formulário nasce
+  // abaixo do cartão de avisos, que sozinho enche a tela. O formulário abria
+  // fora da vista e o botão parecia morto.
+  //
+  // Espera um quadro porque no instante do clique o formulário ainda não
+  // existe no documento — o React só o desenha depois deste `set`.
+  function irAteOFormulario() {
+    requestAnimationFrame(() => {
+      document.getElementById('form-servico')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   // Vindo do aviso da planilha: nome, categoria e preço já preenchidos. O que
@@ -76,7 +91,7 @@ export default function ServicosPage() {
     })
     setEditando(null)
     setNovo(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    irAteOFormulario()
   }
 
   function iniciarEdicao(s: Servico) {
@@ -187,7 +202,7 @@ export default function ServicosPage() {
 
         {/* Formulário novo / edição */}
         {(novo || editando) && (
-          <div className="bg-nodri-card border border-nodri-border rounded-xl p-4 mb-6 space-y-3">
+          <div id="form-servico" className="bg-nodri-card border border-nodri-border rounded-xl p-4 mb-6 space-y-3">
             <h2 className="text-[13px] font-semibold text-nodri-t1">{novo ? 'Novo Serviço' : 'Editar Serviço'}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
