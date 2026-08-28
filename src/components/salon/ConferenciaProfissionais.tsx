@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { UserCheck, Check, Loader2, ChevronDown } from 'lucide-react'
+import { UserCheck, Check, Loader2, ChevronDown, BellOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Quem fez o serviço na planilha e não está habilitado nele aqui.
@@ -33,17 +33,19 @@ export default function ConferenciaProfissionais() {
       .finally(() => setCarregando(false))
   }, [])
 
-  async function habilitar(p: Pendente, servicoIds: string[], rotulo: string) {
-    setOcupado(p.profissionalId + servicoIds.join())
+  async function agir(p: Pendente, servicoIds: string[], rotulo: string, acao: 'habilitar' | 'ignorar' = 'habilitar') {
+    setOcupado(p.profissionalId + servicoIds.join() + acao)
     try {
       const r = await fetch('/api/profissionais/conferencia', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profissionalId: p.profissionalId, servicoIds }),
+        body: JSON.stringify({ profissionalId: p.profissionalId, servicoIds, acao }),
       })
-      if (!r.ok) { toast.error('Não consegui habilitar'); return }
+      if (!r.ok) { toast.error('Não deu certo'); return }
       const d = await r.json()
       setPendentes(d.pendentes || [])
-      toast.success(`${p.nome} habilitado em ${rotulo}.`)
+      toast.success(acao === 'ignorar'
+        ? `Não aviso mais sobre ${p.nome} em ${rotulo}.`
+        : `${p.nome} habilitado em ${rotulo}.`)
     } catch { toast.error('Erro de conexão') }
     finally { setOcupado(null) }
   }
@@ -88,7 +90,7 @@ export default function ConferenciaProfissionais() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {pendentes.map(p => {
           const todos = p.servicos.map(s => s.servicoId)
-          const chaveTodos = p.profissionalId + todos.join()
+          const chaveTodos = p.profissionalId + todos.join() + 'habilitar'
           const expandido = aberto === p.profissionalId
           return (
             <div key={p.profissionalId}
@@ -106,7 +108,7 @@ export default function ConferenciaProfissionais() {
                   </span>
                 </button>
 
-                <button onClick={() => habilitar(p, todos, `${p.servicos.length} serviço${p.servicos.length === 1 ? '' : 's'}`)}
+                <button onClick={() => agir(p, todos, `${p.servicos.length} serviço${p.servicos.length === 1 ? '' : 's'}`)}
                   disabled={ocupado === chaveTodos}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: ocupado === chaveTodos ? .5 : 1 }}>
                   {ocupado === chaveTodos ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
@@ -119,7 +121,8 @@ export default function ConferenciaProfissionais() {
               {expandido && (
                 <div style={{ borderTop: '1px solid #eff6ff' }}>
                   {p.servicos.map(s => {
-                    const chave = p.profissionalId + s.servicoId
+                    const chave = p.profissionalId + s.servicoId + 'habilitar'
+                    const chaveIgnorar = p.profissionalId + s.servicoId + 'ignorar'
                     return (
                       <div key={s.servicoId}
                         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 34px', borderBottom: '1px solid #f8fafc' }}>
@@ -129,11 +132,21 @@ export default function ConferenciaProfissionais() {
                             {s.atendimentos} atendimento{s.atendimentos === 1 ? '' : 's'} na planilha
                           </p>
                         </div>
-                        <button onClick={() => habilitar(p, [s.servicoId], s.nome)}
+                        <button onClick={() => agir(p, [s.servicoId], s.nome)}
                           disabled={ocupado === chave}
                           style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 9px', fontSize: 10.5, fontWeight: 600, cursor: 'pointer', flexShrink: 0, opacity: ocupado === chave ? .5 : 1 }}>
                           {ocupado === chave ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                           Habilitar
+                        </button>
+                        {/* Cobriu uma colega um dia e não deve ficar habilitada
+                            naquilo: sem esta saída a linha voltava em toda
+                            importação, até o aviso inteiro virar paisagem. */}
+                        <button onClick={() => agir(p, [s.servicoId], s.nome, 'ignorar')}
+                          disabled={ocupado === chaveIgnorar}
+                          title="Não avisar mais sobre este serviço para esta pessoa"
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', color: '#767069', border: '1px solid #e8e6e0', borderRadius: 6, padding: '4px 9px', fontSize: 10.5, fontWeight: 600, cursor: 'pointer', flexShrink: 0, opacity: ocupado === chaveIgnorar ? .5 : 1 }}>
+                          {ocupado === chaveIgnorar ? <Loader2 size={11} className="animate-spin" /> : <BellOff size={11} />}
+                          Não avisar
                         </button>
                       </div>
                     )

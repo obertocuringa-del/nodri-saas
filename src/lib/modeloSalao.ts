@@ -128,6 +128,9 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   // os nomes DAQUELA planilha. Num salão novo só calariam avisos que ele
   // precisa ver.
   { chave: 'servicos_conferencia_ignorados', motivo: 'nomes da planilha de cada salão' },
+  // Mesma coisa do lado dos profissionais: são pares pessoa+serviço DESTE
+  // salão, e num salão novo só calariam avisos que ele precisa ver.
+  { chave: 'profissionais_conferencia_ignorados', motivo: 'dispensas de cada salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 

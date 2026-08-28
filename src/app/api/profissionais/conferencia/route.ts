@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessao } from '@/lib/apiAuth'
-import { conferirProfissionais, habilitarServicos } from '@/lib/conferenciaProfissionais'
+import { conferirProfissionais, habilitarServicos, ignorarPar } from '@/lib/conferenciaProfissionais'
 import { registrarAuditoria } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
@@ -31,8 +31,16 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const profissionalId = String(body?.profissionalId || '')
   const servicoIds: string[] = Array.isArray(body?.servicoIds) ? body.servicoIds.map(String) : []
+  const acao = String(body?.acao || 'habilitar')
   if (!profissionalId || !servicoIds.length) {
     return NextResponse.json({ error: 'Informe o profissional e os serviços' }, { status: 400 })
+  }
+
+  // Dispensar não habilita nada: só cala o aviso daquele par. É o caso de quem
+  // cobriu uma colega um dia e não deve ficar habilitada naquilo.
+  if (acao === 'ignorar') {
+    for (const id of servicoIds.slice(0, 200)) await ignorarPar(sess.salaoId, profissionalId, id)
+    return NextResponse.json({ pendentes: await conferirProfissionais(sess.salaoId) })
   }
 
   const ok = await habilitarServicos(sess.salaoId, profissionalId, servicoIds)

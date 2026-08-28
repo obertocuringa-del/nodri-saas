@@ -16,6 +16,36 @@ import { ehCnpj } from './vinculoProfissional'
 // naquele serviço não entra na conta. A planilha prova que ele fez — então o
 // cadastro é que está atrasado.
 
+// Pares (profissional + serviço) que o dono mandou parar de cobrar.
+//
+// Sem isso a lista só tinha uma saída: habilitar. Quem cobriu uma colega um
+// dia não deve ficar habilitada naquilo — e a linha voltava em toda
+// importação, até o dono parar de olhar o aviso inteiro.
+const CHAVE_IGNORADOS = 'profissionais_conferencia_ignorados'
+
+const par = (profissionalId: string, servicoId: string) => `${profissionalId}|${servicoId}`
+
+async function paresIgnorados(salaoId: string): Promise<Set<string>> {
+  const { data } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', CHAVE_IGNORADOS).maybeSingle()
+  const lista = (data as any)?.valor?.pares
+  return new Set(Array.isArray(lista) ? lista.map(String) : [])
+}
+
+export async function ignorarPar(salaoId: string, profissionalId: string, servicoId: string): Promise<void> {
+  const atuais = await paresIgnorados(salaoId)
+  atuais.add(par(profissionalId, servicoId))
+  await supabaseAdmin.from('salao_config').upsert(
+    {
+      salao_id: salaoId, chave: CHAVE_IGNORADOS,
+      valor: { pares: [...atuais] },
+      atualizado_em: new Date().toISOString(),
+    },
+    { onConflict: 'salao_id,chave' },
+  )
+}
+
 export interface ServicoNaoHabilitado {
   servicoId: string
   nome: string
@@ -84,6 +114,7 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
     supabaseAdmin.from('salao_servicos').select('id, nome').eq('salao_id', salaoId),
     supabaseAdmin.from('relatorio_periodos').select('prof_servicos').eq('salao_id', salaoId),
   ])
+  const dispensados = await paresIgnorados(salaoId)
 
   // Duas listas, e a diferença entre elas é o coração disto.
   //
@@ -152,6 +183,7 @@ async function calcularProfissionais(salaoId: string): Promise<ProfissionalPende
       // página de Serviços. Aqui só entra o que dá para habilitar.
       if (!s) continue
       if (habilitados.has(s.id)) continue
+      if (dispensados.has(par(p.id, s.id))) continue
       faltando.push({ servicoId: s.id, nome: s.nome, atendimentos: n })
     }
 
