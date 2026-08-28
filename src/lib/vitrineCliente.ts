@@ -128,7 +128,6 @@ export function mensagemAgendamento(dados: {
   // que precisa saltar é o que se procura de relance ("Data", "Horário").
   linhas.push(`*Data:* ${dataPorExtenso(dados.data)}`)
   linhas.push(`*Horário:* ${dados.hora}`)
-  linhas.push('')
   // "Estou ciente de" — as ressalvas dos serviços escolhidos, escritas na
   // mensagem que a própria cliente manda.
   //
@@ -157,6 +156,7 @@ export function mensagemAgendamento(dados: {
     linhas.push(...ressalvas)
   }
 
+  linhas.push('')
   linhas.push('Tem disponibilidade para esses agendamentos?')
   return linhas.join('\n')
 }
