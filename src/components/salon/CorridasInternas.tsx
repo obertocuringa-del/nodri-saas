@@ -32,6 +32,9 @@ export default function CorridasInternas() {
   const [medalhas, setMedalhas] = useState<{ profId: string; nome: string; total: number; corridas: { id: string; titulo: string }[] }[]>([])
   const [profs, setProfs] = useState<ProfLeve[]>([])
   const [servicosRel, setServicosRel] = useState<{ nome: string; quantidade: number }[]>([])
+  // Tipos de ocorrência que o salão cadastrou no Feedback Profissional — a
+  // corrida oferece o que existe, em vez de pedir o nome digitado igual.
+  const [ocorridos, setOcorridos] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [edit, setEdit] = useState<CorridaInterna | null>(null)
   const [saving, setSaving] = useState(false)
@@ -51,6 +54,13 @@ export default function CorridasInternas() {
   }
   useEffect(() => { carregar() }, [])
   useEffect(() => {
+    fetch('/api/feedback-prof/ocorridos').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
+      setOcorridos((Array.isArray(arr) ? arr : [])
+        .filter((o: any) => o?.ativo !== false)
+        .map((o: any) => String(o.descricao || '').trim())
+        .filter(Boolean))
+    }).catch(() => { /* salão sem feedback profissional configurado */ })
+
     fetch('/api/profissionais?leve=1').then(r => r.ok ? r.json() : []).then((arr: any[]) => {
       const lista = (Array.isArray(arr) ? arr : [])
         .filter(p => p.ativo !== false && !p.is_departamento)
@@ -86,6 +96,7 @@ export default function CorridasInternas() {
   async function salvarCorrida(c: CorridaInterna) {
     if (!c.titulo.trim()) { toast.error('Dê um nome à corrida'); return }
     if (metricaInfo(c.metrica).precisaServico && !c.servico?.trim()) { toast.error('Informe o nome do serviço'); return }
+    if (metricaInfo(c.metrica).precisaOcorrido && !c.ocorrido?.trim()) { toast.error('Escolha o tipo de ocorrência'); return }
     if (c.de > c.ate) { toast.error('O período final não pode ser antes do inicial'); return }
     const existe = corridas.some(x => x.id === c.id)
     const lista = existe ? corridas.map(x => x.id === c.id ? c : x) : [c, ...corridas]
@@ -172,7 +183,7 @@ export default function CorridasInternas() {
       )}
 
       {edit && (
-        <FormCorrida corrida={edit} profs={profs} servicosRel={servicosRel} saving={saving}
+        <FormCorrida corrida={edit} profs={profs} servicosRel={servicosRel} ocorridos={ocorridos} saving={saving}
           onCancel={() => setEdit(null)} onSalvar={salvarCorrida} />
       )}
     </div>
@@ -259,8 +270,8 @@ function Ranking({ ranking, c, destacarId }: { ranking: LinhaRanking[]; c: Corri
 export { Ranking }
 
 // ── Formulário (modal) ──
-function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }: {
-  corrida: CorridaInterna; profs: ProfLeve[]; servicosRel: { nome: string; quantidade: number }[]; saving: boolean
+function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel, onSalvar }: {
+  corrida: CorridaInterna; profs: ProfLeve[]; servicosRel: { nome: string; quantidade: number }[]; ocorridos: string[]; saving: boolean
   onCancel: () => void; onSalvar: (c: CorridaInterna) => void
 }) {
   const [c, setC] = useState<CorridaInterna>(corrida)
@@ -303,6 +314,24 @@ function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }
             <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>{info.desc}</div>
           </div>
 
+          {info.precisaOcorrido && (
+            <div>
+              <label className="ci-lbl">Tipo de ocorrência *</label>
+              <select className="ci-inp" value={c.ocorrido || ''} onChange={e => set({ ocorrido: e.target.value })}>
+                <option value="">Escolha…</option>
+                {ocorridos.map(o => <option key={o} value={o}>{o}</option>)}
+                {/* A ocorrência desta corrida pode ter sido desativada depois;
+                    sem esta linha, editar trocaria a regra da disputa sozinho. */}
+                {c.ocorrido && !ocorridos.includes(c.ocorrido) && <option value={c.ocorrido}>{c.ocorrido} (desativada)</option>}
+              </select>
+              <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>
+                {ocorridos.length === 0
+                  ? 'Nenhum tipo cadastrado ainda. Cadastre em Feedback Profissional para escolher aqui.'
+                  : 'Ganha quem MENOS teve esta ocorrência no período. Quem não teve nenhuma fica em 1º.'}
+              </div>
+            </div>
+          )}
+
           {info.precisaServico && (
             <div>
               <label className="ci-lbl">Nome do serviço *</label>
@@ -332,8 +361,10 @@ function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }
 
           <div className="ci-form-grid">
             <div>
-              <label className="ci-lbl">Meta a bater (opcional)</label>
-              <input type="number" className="ci-inp" value={c.meta ?? ''} onChange={e => set({ meta: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder={info.unidade === 'R$' ? 'Ex.: 15000' : 'Ex.: 50'} />
+              {/* Na corrida inversa a meta é um TETO, e chamar de "meta a bater"
+                  faria o dono digitar o contrário do que quer. */}
+              <label className="ci-lbl">{info.inversa ? 'Máximo aceito (opcional)' : 'Meta a bater (opcional)'}</label>
+              <input type="number" min={info.inversa ? 0 : undefined} className="ci-inp" value={c.meta ?? ''} onChange={e => set({ meta: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder={info.inversa ? 'Ex.: 0 (nenhuma)' : (info.unidade === 'R$' ? 'Ex.: 15000' : 'Ex.: 50')} />
             </div>
             <div>
               <label className="ci-lbl">Pódio destacado</label>

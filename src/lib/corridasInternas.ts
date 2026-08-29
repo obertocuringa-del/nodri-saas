@@ -16,6 +16,7 @@ export type MetricaCorrida =
   | 'novos'
   | 'serv_cliente'
   | 'pct_meta'
+  | 'feedback_neg'
 
 export interface MetricaInfo {
   chave: MetricaCorrida
@@ -23,6 +24,18 @@ export interface MetricaInfo {
   unidade: 'R$' | 'qtd' | '%'
   desc: string
   precisaServico?: boolean
+  /** Pede escolher um tipo de ocorrência do Feedback Profissional. */
+  precisaOcorrido?: boolean
+  /**
+   * Menos é melhor.
+   *
+   * Vira a corrida do avesso em três pontos: ordena crescente, o "bateu" passa
+   * a ser `valor <= meta` (aí a meta é um TETO, não um alvo) e quem não tem
+   * nenhum registro entra no ranking em vez de ficar de fora — zero ocorrência
+   * é o melhor resultado possível, e some-lo esconderia justo quem se quer
+   * premiar.
+   */
+  inversa?: boolean
   /**
    * Sai do menu de corrida nova, mas continua calculando.
    *
@@ -45,6 +58,7 @@ export const METRICAS_CORRIDA: MetricaInfo[] = [
   { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)', oculta: true },
   { chave: 'serv_cliente', label: 'Serviços por cliente',   unidade: 'qtd', emoji: '', desc: 'Venda casada: quem faz a cliente sair com mais de um procedimento' },
   { chave: 'pct_meta',    label: '% da meta batida',        unidade: '%',   emoji: '', desc: 'Cada uma contra a própria meta — quem tem ticket menor disputa de igual para igual' },
+  { chave: 'feedback_neg', label: 'Menos ocorrências (feedback)', unidade: 'qtd', emoji: '', desc: 'Ganha quem MENOS teve a ocorrência escolhida (atraso, falta…) no período', precisaOcorrido: true, inversa: true },
 ]
 
 /** As que aparecem ao criar uma corrida — as ocultas seguem só para ler. */
@@ -60,6 +74,7 @@ export interface CorridaInterna {
   descricao?: string          // regra / observação livre (opcional)
   metrica: MetricaCorrida
   servico?: string            // usado quando metrica === 'servico'
+  ocorrido?: string           // usado quando metrica === 'feedback_neg'
   de: string                  // 'YYYY-MM'
   ate: string                 // 'YYYY-MM'
   premio?: string             // texto do prêmio (opcional)
