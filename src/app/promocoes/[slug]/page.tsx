@@ -16,9 +16,9 @@ type Aba = 'acoes' | 'sugestao' | 'precos' | 'agendar'
 
 const ABAS: Array<{ id: Aba; label: string; icone: any }> = [
   { id: 'acoes', label: 'Promoções', icone: Megaphone },
-  { id: 'sugestao', label: 'Sugerir', icone: ThumbsUp },
-  { id: 'precos', label: 'Preços', icone: Tag },
-  { id: 'agendar', label: 'Agendar', icone: CalendarPlus },
+  { id: 'sugestao', label: 'Sugerir ação comercial', icone: ThumbsUp },
+  { id: 'precos', label: 'Tabela de preços', icone: Tag },
+  { id: 'agendar', label: 'Agendar procedimento', icone: CalendarPlus },
 ]
 
 export default function PromocoesPage({ params }: { params: { slug: string } }) {
@@ -80,12 +80,16 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
         <nav className="max-w-5xl mx-auto px-2 flex">
           {ABAS.map(({ id, label, icone: Icone }) => (
             <button key={id} onClick={() => setAba(id)}
-              className={'flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 sm:py-3 border-b-2 transition-all '
+              className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 border-b-2 transition-all '
                 + (aba === id
                   ? 'border-[var(--vt-cor)] text-[var(--vt-cor)]'
                   : 'border-transparent text-gray-400 hover:text-gray-600')}>
               <Icone size={18} />
-              <span className="text-[11px] sm:text-[13px] font-semibold">{label}</span>
+              {/* Os nomes por extenso não cabem numa linha no celular, com
+                  quatro abas dividindo a largura. Quebram em duas e ficam um
+                  ponto menores; cortar com reticências esconderia justamente a
+                  palavra que diferencia ("ação comercial", "procedimento"). */}
+              <span className="text-[9.5px] sm:text-[13px] font-semibold text-center leading-tight px-0.5">{label}</span>
             </button>
           ))}
         </nav>
