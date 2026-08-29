@@ -7,6 +7,8 @@ export interface AcaoPublica {
   categoria: string
   status: string
   capa: string | null
+  /** Ja formatado pelo servidor — ver precoDaCampanha em lib/acoesComerciais. */
+  preco?: { de: string | null; por: string; parcela: string | null; descontoPct: number | null } | null
   dataInicio?: string
   dataFim?: string
 }

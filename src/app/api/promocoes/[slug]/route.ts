@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSalaoPorToken, whatsappDoSalao } from '@/lib/vitrineConfig'
-import { statusCampanha, capaDaCampanha } from '@/lib/acoesComerciais'
+import { statusCampanha, capaDaCampanha, precoDaCampanha } from '@/lib/acoesComerciais'
 import type { Campanha } from '@/lib/acoesComerciais'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +20,9 @@ interface AcaoPublica {
   categoria: string
   status: string
   capa: string | null
+  // Preço já formatado no servidor: a página pública não recebe o valor cru,
+  // e as duas telas mostram o mesmo número porque a conta é uma só.
+  preco?: { de: string | null; por: string; parcela: string | null; descontoPct: number | null } | null
   dataInicio?: string
   dataFim?: string
 }
@@ -45,6 +48,7 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
       categoria: c.categoria || '',
       status: statusCampanha(c),
       capa: capaDaCampanha(c)?.url || null,
+      preco: precoDaCampanha(c),
       dataInicio: c.dataInicio,
       dataFim: c.dataFim,
     }))

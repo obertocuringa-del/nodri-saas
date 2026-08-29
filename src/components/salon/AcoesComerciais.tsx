@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import {
   CATEGORIAS_ACOES, STATUS_INFO, statusCampanha, capaDaCampanha, textoCampanha, textoCampanhas, rid,
+  precoDaCampanha,
   type Campanha, type ArquivoCampanha,
 } from '@/lib/acoesComerciais'
 import { useModulos } from '@/lib/useModulos'
@@ -617,6 +618,39 @@ function ModalEditar({ inicial, onSalvar, onClose }: { inicial: Campanha; onSalv
 
         <label style={lab}>Como lançar no sistema</label>
         <textarea value={c.comoLancar || ''} onChange={e => up('comoLancar', e.target.value)} rows={3} placeholder={'Passo a passo para o profissional lançar esta campanha no sistema.\nEx.: 1) Abrir a comanda  2) Adicionar serviço "Escova"  3) Aplicar desconto 50% na Hidratação.'} style={{ ...inp, resize: 'vertical' }} />
+
+        {/* Preço em campo próprio. Digitado no título, ele não tem como sair
+            riscado, nem virar destaque, nem calcular o desconto — e o título
+            fica comprido e desalinhado no card da cliente. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={lab}>De (valor cheio)</label>
+            <input value={c.precoDe || ''} onChange={e => up('precoDe', e.target.value)} placeholder="220,90" inputMode="decimal" style={inp} />
+          </div>
+          <div>
+            <label style={lab}>Por (valor da promoção)</label>
+            <input value={c.precoPor || ''} onChange={e => up('precoPor', e.target.value)} placeholder="176,72" inputMode="decimal" style={inp} />
+          </div>
+          <div>
+            <label style={lab}>Em quantas vezes</label>
+            <input value={c.parcelas || ''} onChange={e => up('parcelas', e.target.value)} placeholder="2" inputMode="numeric" style={inp} />
+          </div>
+        </div>
+        {(() => {
+          // Prévia do que a cliente vai ver. O desconto é calculado, e ver o
+          // número antes de salvar evita descobrir o erro na página pública.
+          const pv = precoDaCampanha(c)
+          if (!pv) return null
+          return (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 10, padding: '8px 12px' }}>
+              <span style={{ fontSize: 11, color: '#767069' }}>A cliente vê:</span>
+              {pv.de && <span style={{ fontSize: 12.5, color: '#9ca3af', textDecoration: 'line-through' }}>{pv.de}</span>}
+              <span style={{ fontSize: 16, fontWeight: 900, color: '#dc2626' }}>{pv.por}</span>
+              {pv.parcela && <span style={{ fontSize: 12, color: '#4a4560' }}>ou {pv.parcela}</span>}
+              {pv.descontoPct !== null && <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#16a34a', borderRadius: 99, padding: '2px 8px' }}>-{pv.descontoPct}%</span>}
+            </div>
+          )
+        })()}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>

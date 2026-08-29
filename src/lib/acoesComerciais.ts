@@ -18,6 +18,12 @@ export interface Campanha {
   comoFunciona: string     // texto rico simples (quebras de linha)
   comoLancar?: string      // passo a passo de como lançar no sistema (expansível no card)
   categoria: string
+  // Preço da campanha. Antes o valor ia dentro do título ("ENVELOPAMENTO 2x de
+  // R$ 110,45") porque não havia onde pôr — e título não tem como destacar
+  // desconto nem riscar o valor cheio.
+  precoDe?: string         // valor cheio, sai riscado (opcional)
+  precoPor?: string        // valor final, o que se destaca
+  parcelas?: string        // em quantas vezes (opcional); a parcela é calculada
   dataInicio?: string      // 'YYYY-MM-DD'
   dataFim?: string         // 'YYYY-MM-DD'
   ativa: boolean           // publicada (ligar/desligar)
@@ -35,6 +41,42 @@ export const CATEGORIAS_ACOES = [
   'Capilar', 'Coloração', 'Manicure', 'Pedicure', 'Estética',
   'Datas comemorativas', 'Pacotes', 'Combos', 'Vendas de produtos', 'Reativação de clientes',
 ]
+
+/** Number a partir do que a pessoa digitou: aceita '110,45' e '110.45'. */
+function num(v: any): number {
+  const n = Number(String(v ?? '').replace(/[^0-9,.-]/g, '').replace(',', '.'))
+  return isFinite(n) ? n : 0
+}
+
+const reais = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+export interface PrecoExibido {
+  de: string | null          // valor cheio, para riscar
+  por: string                // valor final
+  parcela: string | null     // '2x de R$ 110,45'
+  descontoPct: number | null // calculado, nunca digitado — conta não discorda de si mesma
+}
+
+/**
+ * Como o preço da campanha aparece. `null` quando não há preço — campanha de
+ * brinde ou de condição segue sem número, como sempre foi.
+ */
+export function precoDaCampanha(c: Pick<Campanha, 'precoDe' | 'precoPor' | 'parcelas'>): PrecoExibido | null {
+  const por = num(c.precoPor)
+  if (por <= 0) return null
+  const de = num(c.precoDe)
+  const vezes = Math.floor(num(c.parcelas))
+
+  // Só risca quando o cheio é MAIOR: 'de' menor que 'por' seria digitação
+  // trocada, e mostrar assim anuncia um aumento no lugar do desconto.
+  const temDesconto = de > por
+  return {
+    de: temDesconto ? reais(de) : null,
+    por: reais(por),
+    parcela: vezes > 1 ? `${vezes}x de ${reais(por / vezes)}` : null,
+    descontoPct: temDesconto ? Math.round(((de - por) / de) * 100) : null,
+  }
+}
 
 export type StatusCampanha = 'ativa' | 'agendada' | 'encerrada' | 'inativa'
 

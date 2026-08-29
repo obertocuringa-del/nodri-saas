@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { Share2, CalendarCheck, Check } from 'lucide-react'
+import { Share2, CalendarCheck, Check, ChevronDown } from 'lucide-react'
 import type { AcaoPublica, ServicoPublico, ProfissionalPublico } from '@/lib/vitrineCliente'
 import { linkWhatsapp } from '@/lib/vitrineCliente'
 import ModalAgendarAcao from './ModalAgendarAcao'
@@ -32,6 +32,8 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp 
   const [filtro, setFiltro] = useState<string>('ativa')
   const [categoria, setCategoria] = useState('')
   const [selecionadas, setSelecionadas] = useState<string[]>([])
+  // Uma descricao aberta por vez — varias abertas devolvem o muro de texto.
+  const [detalhe, setDetalhe] = useState<string | null>(null)
   // O que o cliente vai agendar: uma promoção ou o pacote marcado.
   const [agendando, setAgendando] = useState<AcaoPublica[] | null>(null)
 
@@ -107,11 +109,21 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp 
               className={'bg-white rounded-2xl overflow-hidden border transition-all flex flex-col '
                 + (marcada ? 'border-[var(--vt-cor)] ring-2 ring-[var(--vt-cor)]/20' : 'border-gray-200')}>
 
-              <div className="relative">
-                {a.capa && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.capa} alt={a.titulo} className="w-full aspect-[4/3] object-cover" />
-                )}
+              {/* A arte aparece INTEIRA, como o profissional já a vê.
+                  Estava em 4/3 recortando pelo centro, e a arte do salão é 4/5:
+                  o topo e o rodapé sumiam — justamente onde ficam o nome da
+                  promoção e a validade. Mesmo truque da tela do profissional: a
+                  própria arte desfocada preenche a sobra, e a de cima entra
+                  inteira por object-contain. */}
+              <div className="relative aspect-[4/5] bg-gray-900 overflow-hidden">
+                {a.capa && (<>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.capa} alt="" aria-hidden
+                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl brightness-50" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.capa} alt={a.titulo}
+                    className="relative w-full h-full object-contain" />
+                </>)}
                 <button onClick={() => alternar(a.id)} title="Selecionar"
                   className={'absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full border shadow-sm transition-all '
                     + (marcada
@@ -129,10 +141,45 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp 
                 </div>
 
                 <h3 className="font-bold text-[13px] sm:text-[15px] text-gray-900 mb-1 leading-snug">{a.titulo}</h3>
+
+                {/* Preço com hierarquia: o cheio riscado e discreto, o final
+                    grande e vermelho. Digitado dentro do título, tudo isso saía
+                    do mesmo tamanho e na mesma cor. */}
+                {a.preco && (
+                  <div className="flex items-baseline gap-1.5 flex-wrap mb-1.5">
+                    {a.preco.de && (
+                      <span className="text-[11px] sm:text-[12px] text-gray-400 line-through">{a.preco.de}</span>
+                    )}
+                    <span className="text-[16px] sm:text-[19px] font-extrabold text-red-600 leading-none">{a.preco.por}</span>
+                    {a.preco.descontoPct !== null && (
+                      <span className="text-[9.5px] sm:text-[10.5px] font-extrabold text-white bg-green-600 rounded-full px-1.5 py-0.5">
+                        -{a.preco.descontoPct}%
+                      </span>
+                    )}
+                    {a.preco.parcela && (
+                      <span className="w-full text-[10.5px] sm:text-[12px] text-gray-600">ou {a.preco.parcela}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* A descrição fica guardada atrás de um toque.
+                    Aberta em todos os cards ao mesmo tempo, cada um ficava de
+                    uma altura e a página virava um muro de texto — o que a
+                    cliente procura primeiro é a arte e o preço. */}
                 {a.descricao && (
-                  <p className="text-[11.5px] sm:text-[13px] text-gray-600 leading-relaxed whitespace-pre-line line-clamp-4">
-                    {a.descricao}
-                  </p>
+                  <div className="mb-1">
+                    <button onClick={() => setDetalhe(d => (d === a.id ? null : a.id))}
+                      className="flex items-center gap-1 text-[11px] sm:text-[12px] font-semibold text-[var(--vt-cor)]">
+                      {detalhe === a.id ? 'Ocultar detalhes' : 'Ver detalhes'}
+                      <ChevronDown size={13}
+                        className={'transition-transform ' + (detalhe === a.id ? 'rotate-180' : '')} />
+                    </button>
+                    {detalhe === a.id && (
+                      <p className="mt-1.5 text-[11.5px] sm:text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
+                        {a.descricao}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {/* mt-auto: com cards de alturas diferentes na mesma linha, os
