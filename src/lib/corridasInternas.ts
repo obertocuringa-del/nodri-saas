@@ -15,6 +15,7 @@ export type MetricaCorrida =
   | 'ocupacao'
   | 'novos'
   | 'serv_cliente'
+  | 'pct_meta'
 
 export interface MetricaInfo {
   chave: MetricaCorrida
@@ -43,6 +44,7 @@ export const METRICAS_CORRIDA: MetricaInfo[] = [
   { chave: 'ocupacao',    label: 'Taxa de ocupação',        unidade: '%',   emoji: '', desc: 'Maior ocupação da agenda no período' },
   { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)', oculta: true },
   { chave: 'serv_cliente', label: 'Serviços por cliente',   unidade: 'qtd', emoji: '', desc: 'Venda casada: quem faz a cliente sair com mais de um procedimento' },
+  { chave: 'pct_meta',    label: '% da meta batida',        unidade: '%',   emoji: '', desc: 'Cada uma contra a própria meta — quem tem ticket menor disputa de igual para igual' },
 ]
 
 /** As que aparecem ao criar uma corrida — as ocultas seguem só para ler. */

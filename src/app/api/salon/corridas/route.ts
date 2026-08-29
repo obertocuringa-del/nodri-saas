@@ -58,9 +58,9 @@ function mesesEntre(de: string, ate: string): Array<{ ano: number; mes: number }
 
 interface Acc {
   fat: number; serv: number; clientes: number; novos: number; prod: number
-  ocupSum: number; ocupCount: number; ticketSum: number; ticketCount: number; servAlvo: number
+  ocupSum: number; ocupCount: number; ticketSum: number; ticketCount: number; servAlvo: number; meta: number
 }
-const zeroAcc = (): Acc => ({ fat: 0, serv: 0, clientes: 0, novos: 0, prod: 0, ocupSum: 0, ocupCount: 0, ticketSum: 0, ticketCount: 0, servAlvo: 0 })
+const zeroAcc = (): Acc => ({ fat: 0, serv: 0, clientes: 0, novos: 0, prod: 0, ocupSum: 0, ocupCount: 0, ticketSum: 0, ticketCount: 0, servAlvo: 0, meta: 0 })
 
 function valorDaMetrica(a: Acc, metrica: MetricaCorrida): number {
   switch (metrica) {
@@ -73,6 +73,10 @@ function valorDaMetrica(a: Acc, metrica: MetricaCorrida): number {
     // Serviços por cliente: mede venda casada. Sem cliente no período dá zero
     // em vez de divisão por zero, e quem não atendeu fica fora do ranking.
     case 'serv_cliente': return a.clientes > 0 ? a.serv / a.clientes : 0
+    // % da meta: cada uma contra a própria. Sem meta lançada dá zero e a
+    // pessoa fica fora do ranking — melhor do que aparecer com 0% e parecer
+    // que não produziu, quando o que falta é a meta dela estar cadastrada.
+    case 'pct_meta': return a.meta > 0 ? (a.fat / a.meta) * 100 : 0
     case 'ocupacao': return a.ocupCount > 0 ? a.ocupSum / a.ocupCount : 0
     case 'ticket': return a.ticketCount > 0 ? a.ticketSum / a.ticketCount : (a.serv > 0 ? a.fat / a.serv : 0)
     default: return 0
@@ -130,6 +134,23 @@ export async function GET() {
   // Pré-computa o matcher de cada profissional uma vez
   const matchers = profs.map((p: any) => ({ p, match: fazMatcher(p) }))
 
+  // Metas por profissional, do próprio NODRI — e não da aba METAS da planilha,
+  // cuja meta é do salão inteiro (a importação descarta a coluna do
+  // profissional). Vem ligada por `profissional_id`, então aqui não há
+  // casamento de nome para errar.
+  const metaPorProfMes = new Map<string, number>()
+  if (anos.size > 0) {
+    const { data: metasRows } = await supabaseAdmin
+      .from('metas_profissionais')
+      .select('profissional_id, ano, mes, meta_manual, meta_redistribuida')
+      .eq('salao_id', sess.salaoId)
+      .in('ano', Array.from(anos))
+    for (const r of (metasRows || []) as any[]) {
+      const v = Number(r.meta_manual ?? r.meta_redistribuida ?? 0) || 0
+      if (v > 0) metaPorProfMes.set(`${r.profissional_id}|${r.ano}-${r.mes}`, v)
+    }
+  }
+
   const rankings: Record<string, LinhaRanking[]> = {}
   for (const c of paraCalcular) {
     const meses = mesesEntre(c.de, c.ate)
@@ -152,6 +173,9 @@ export async function GET() {
         for (const it of (row.prof_servicos || [])) if (match(it)) { a.serv += Number(it.quantidade || 0); achou = true; if (alvoServico && normalizaServico(it.servico) === alvoServico) a.servAlvo += Number(it.quantidade || 0) }
         for (const it of (row.prof_produtos || [])) if (match(it)) { a.prod += Number(it.quantidade || 0); achou = true }
       }
+      // Meta do período = soma das metas dos meses que a corrida cobre.
+      for (const m of meses) a.meta += metaPorProfMes.get(`${p.id}|${m.ano}-${m.mes}`) || 0
+
       const valor = valorDaMetrica(a, c.metrica)
       // Só entra no ranking quem teve dado no período (evita fila de zeros)
       if (!achou && valor === 0) continue
