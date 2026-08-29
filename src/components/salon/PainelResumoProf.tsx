@@ -79,9 +79,18 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
   const irAba = (aba: string) => { if (onIrAba) onIrAba(aba) }
   const oc: Record<string, boolean> = (prof?.acesso_oculto && typeof prof.acesso_oculto === 'object') ? prof.acesso_oculto : {}
 
+  // Kit pé e mão é insumo de quem faz pé e mão. Na tela de cabeleireiro,
+  // recepcionista ou administrativo era um botão que nunca teria uso — e
+  // botão sem uso ensina a ignorar a tela.
+  //
+  // Vai pelo CARGO do cadastro. Pedicure entra junto: o kit é o mesmo, e
+  // "Manicure e Pedicure" também casa por conter a palavra.
+  const cargoProf = (prof?.cargo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+  const fazPeEMao = cargoProf.includes('MANICURE') || cargoProf.includes('PEDICURE')
+
   const AREAS: { aba: string; label: string; Ic: any; ocult?: string; so?: boolean }[] = [
     { aba: 'demandas', label: 'Solicitação', Ic: Send },
-    { aba: 'kits', label: 'Kits Pé e Mão', Ic: Hand },
+    { aba: 'kits', label: 'Kits Pé e Mão', Ic: Hand, so: fazPeEMao },
     { aba: 'ester_fluxo', label: 'Esterilização', Ic: ShieldCheck },
     { aba: 'faturamento', label: 'Faturamento', Ic: DollarSign },
     { aba: 'metas', label: 'Metas', Ic: Target, ocult: 'metas' },
