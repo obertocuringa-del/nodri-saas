@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Trash2, Play, Pause, Trophy, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal } from 'lucide-react'
 import {
   type CorridaInterna, type LinhaRanking, type MetricaCorrida,
-  METRICAS_CORRIDA, metricaInfo, statusCorrida, STATUS_CORRIDA,
+  METRICAS_CORRIDA, METRICAS_ESCOLHIVEIS, metricaInfo, statusCorrida, STATUS_CORRIDA,
   periodoLabel, formataValor, MEDALHAS, ridC,
 } from '@/lib/corridasInternas'
 import { useModulos } from '@/lib/useModulos'
@@ -29,6 +29,7 @@ interface ProfLeve { id: string; nome: string }
 export default function CorridasInternas() {
   const [corridas, setCorridas] = useState<CorridaInterna[]>([])
   const [rankings, setRankings] = useState<Record<string, LinhaRanking[]>>({})
+  const [medalhas, setMedalhas] = useState<{ profId: string; nome: string; total: number; corridas: { id: string; titulo: string }[] }[]>([])
   const [profs, setProfs] = useState<ProfLeve[]>([])
   const [servicosRel, setServicosRel] = useState<{ nome: string; quantidade: number }[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +45,7 @@ export default function CorridasInternas() {
       const d = await r.json()
       setCorridas(Array.isArray(d.corridas) ? d.corridas : [])
       setRankings(d.rankings && typeof d.rankings === 'object' ? d.rankings : {})
+      setMedalhas(Array.isArray(d.medalhas) ? d.medalhas : [])
     } catch { toast.error('Não foi possível carregar as corridas') }
     setLoading(false)
   }
@@ -123,6 +125,34 @@ export default function CorridasInternas() {
           <Plus size={16} /> Nova corrida
         </button>
       </div>
+
+      {/* Quadro de medalhas — uma medalha por corrida em que a pessoa bateu a
+          meta. Fica acima das corridas porque é o acumulado do ano; cada
+          corrida abaixo é só a disputa do momento. */}
+      {!loading && medalhas.length > 0 && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: 16, marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Medal size={17} style={{ color: '#d97706' }} />
+            <span style={{ fontSize: 14, fontWeight: 900, color: '#92400e' }}>Quadro de medalhas</span>
+          </div>
+          <p style={{ fontSize: 11.5, color: '#a16207', margin: '0 0 12px', lineHeight: 1.5 }}>
+            Uma medalha por corrida em que a profissional bateu a meta. Todo mundo
+            vê este quadro no portal — inclusive as medalhas das colegas.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {medalhas.map((m, i) => (
+              <div key={m.profId} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1px solid #fef3c7', borderRadius: 10, padding: '8px 11px' }}>
+                <span style={{ width: 24, textAlign: 'center', fontSize: 12.5, fontWeight: 900, color: '#a16207' }}>{i + 1}º</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.nome}</span>
+                <span title={m.corridas.map(c => c.titulo).join(', ')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fef3c7', color: '#92400e', borderRadius: 99, padding: '3px 10px', fontSize: 12.5, fontWeight: 900, whiteSpace: 'nowrap' }}>
+                  <Medal size={13} /> {m.total}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Carregando…</div>
@@ -261,7 +291,14 @@ function FormCorrida({ corrida, profs, servicosRel, saving, onCancel, onSalvar }
           <div>
             <label className="ci-lbl">O que conta (métrica) *</label>
             <select className="ci-inp" value={c.metrica} onChange={e => set({ metrica: e.target.value as MetricaCorrida })}>
-              {METRICAS_CORRIDA.map(m => <option key={m.chave} value={m.chave}>{m.emoji} {m.label}</option>)}
+              {/* Só as escolhíveis: as ocultas seguem calculando para as corridas
+                  antigas que já as usam, mas não se cria disputa nova com elas. */}
+              {METRICAS_ESCOLHIVEIS.map(m => <option key={m.chave} value={m.chave}>{m.emoji} {m.label}</option>)}
+              {/* A métrica desta corrida, se for uma das aposentadas, precisa
+                  aparecer no menu — senão abrir para editar já trocaria a métrica
+                  dela sem ninguém pedir. */}
+              {METRICAS_CORRIDA.filter(m => m.oculta && m.chave === c.metrica)
+                .map(m => <option key={m.chave} value={m.chave}>{m.label} (aposentada)</option>)}
             </select>
             <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>{info.desc}</div>
           </div>

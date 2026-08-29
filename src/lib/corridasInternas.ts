@@ -14,6 +14,7 @@ export type MetricaCorrida =
   | 'servico'
   | 'ocupacao'
   | 'novos'
+  | 'serv_cliente'
 
 export interface MetricaInfo {
   chave: MetricaCorrida
@@ -21,19 +22,31 @@ export interface MetricaInfo {
   unidade: 'R$' | 'qtd' | '%'
   desc: string
   precisaServico?: boolean
+  /**
+   * Sai do menu de corrida nova, mas continua calculando.
+   *
+   * Apagar a métrica da lista faria `metricaInfo` cair no primeiro item, e
+   * uma corrida antiga passaria a ser exibida como se fosse de faturamento —
+   * mudando o sentido de uma disputa já rodada.
+   */
+  oculta?: boolean
   emoji: string
 }
 
 export const METRICAS_CORRIDA: MetricaInfo[] = [
   { chave: 'faturamento', label: 'Faturamento',            unidade: 'R$',  emoji: '', desc: 'Quem mais faturou no período' },
-  { chave: 'atendimentos', label: 'Atendimentos (serviços)', unidade: 'qtd', emoji: '', desc: 'Quem mais atendeu (nº de serviços realizados)' },
-  { chave: 'clientes',    label: 'Clientes atendidos',      unidade: 'qtd', emoji: '', desc: 'Total de clientes atendidos no período' },
+  { chave: 'atendimentos', label: 'Atendimentos (serviços)', unidade: 'qtd', emoji: '', desc: 'Quem mais atendeu (nº de serviços realizados)', oculta: true },
+  { chave: 'clientes',    label: 'Clientes atendidos',      unidade: 'qtd', emoji: '', desc: 'Total de clientes atendidos no período', oculta: true },
   { chave: 'ticket',      label: 'Ticket médio',            unidade: 'R$',  emoji: '', desc: 'Maior valor médio por atendimento' },
   { chave: 'produtos',    label: 'Produtos vendidos',       unidade: 'qtd', emoji: '', desc: 'Quem mais vendeu produtos de revenda' },
   { chave: 'servico',     label: 'Serviço específico',      unidade: 'qtd', emoji: '', desc: 'Quem mais vendeu UM serviço (você escolhe qual)', precisaServico: true },
   { chave: 'ocupacao',    label: 'Taxa de ocupação',        unidade: '%',   emoji: '', desc: 'Maior ocupação da agenda no período' },
-  { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)' },
+  { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)', oculta: true },
+  { chave: 'serv_cliente', label: 'Serviços por cliente',   unidade: 'qtd', emoji: '', desc: 'Venda casada: quem faz a cliente sair com mais de um procedimento' },
 ]
+
+/** As que aparecem ao criar uma corrida — as ocultas seguem só para ler. */
+export const METRICAS_ESCOLHIVEIS = METRICAS_CORRIDA.filter(m => !m.oculta)
 
 export function metricaInfo(m: MetricaCorrida): MetricaInfo {
   return METRICAS_CORRIDA.find(x => x.chave === m) || METRICAS_CORRIDA[0]

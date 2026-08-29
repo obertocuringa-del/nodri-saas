@@ -70,6 +70,9 @@ function valorDaMetrica(a: Acc, metrica: MetricaCorrida): number {
     case 'novos': return a.novos
     case 'produtos': return a.prod
     case 'servico': return a.servAlvo
+    // Serviços por cliente: mede venda casada. Sem cliente no período dá zero
+    // em vez de divisão por zero, e quem não atendeu fica fora do ranking.
+    case 'serv_cliente': return a.clientes > 0 ? a.serv / a.clientes : 0
     case 'ocupacao': return a.ocupCount > 0 ? a.ocupSum / a.ocupCount : 0
     case 'ticket': return a.ticketCount > 0 ? a.ticketSum / a.ticketCount : (a.serv > 0 ? a.fat / a.serv : 0)
     default: return 0
@@ -93,6 +96,14 @@ export async function GET() {
       (!c.participantes || c.participantes.length === 0 || (voceId && c.participantes.includes(voceId))))
   }
 
+  // O quadro de medalhas conta TODAS as corridas publicadas, e não só as que
+  // esta pessoa vê. Senão cada profissional veria um quadro diferente, e o
+  // que motiva é justamente comparar com a colega — um quadro que muda
+  // conforme quem olha não serve para isso.
+  const publicadas = todas.filter(c => c.ativa)
+  const paraCalcular = [...visiveis]
+  for (const c of publicadas) if (!paraCalcular.some(v => v.id === c.id)) paraCalcular.push(c)
+
   // Profissionais ativos (não-departamentos) para o ranking
   const { data: profsRaw } = await supabaseAdmin
     .from('profissionais')
@@ -102,7 +113,7 @@ export async function GET() {
 
   // União de todos os meses cobertos pelas corridas visíveis (uma leitura só)
   const chaveMes = new Set<string>()
-  for (const c of visiveis) for (const m of mesesEntre(c.de, c.ate)) chaveMes.add(`${m.ano}-${m.mes}`)
+  for (const c of paraCalcular) for (const m of mesesEntre(c.de, c.ate)) chaveMes.add(`${m.ano}-${m.mes}`)
   const anos = new Set<number>()
   for (const k of chaveMes) anos.add(Number(k.split('-')[0]))
 
@@ -120,7 +131,7 @@ export async function GET() {
   const matchers = profs.map((p: any) => ({ p, match: fazMatcher(p) }))
 
   const rankings: Record<string, LinhaRanking[]> = {}
-  for (const c of visiveis) {
+  for (const c of paraCalcular) {
     const meses = mesesEntre(c.de, c.ate)
     const rows = periodos.filter(r => meses.some(m => m.ano === r.ano && m.mes === r.mes))
     const alvoServico = c.metrica === 'servico' ? normalizaServico(c.servico || '') : ''
@@ -158,7 +169,38 @@ export async function GET() {
     rankings[c.id] = linhas
   }
 
-  return NextResponse.json({ corridas: visiveis, rankings, voceId })
+  // ── Medalhas ────────────────────────────────────────────────────────────
+  //
+  // Uma medalha por corrida publicada em que a pessoa bateu a meta. Não há
+  // tabela nem gravação: a medalha é a leitura do próprio ranking. Guardar
+  // exigiria decidir a hora exata de premiar e manter em dia depois de cada
+  // importação — e um número guardado que ninguém recalcula envelhece calado.
+  //
+  // Corrida sem meta não dá medalha: sem alvo não há o que bater.
+  const porProf = new Map<string, { profId: string; nome: string; corridas: { id: string; titulo: string }[] }>()
+  for (const p of profs) porProf.set(p.id, { profId: p.id, nome: p.apelido || p.nome_completo || 'Profissional', corridas: [] })
+  for (const c of publicadas) {
+    if (!(typeof c.meta === 'number' && c.meta > 0)) continue
+    for (const l of (rankings[c.id] || [])) {
+      if (!l.bateuMeta) continue
+      porProf.get(l.profId)?.corridas.push({ id: c.id, titulo: c.titulo })
+    }
+  }
+  const medalhas = [...porProf.values()]
+    .map(m => ({ ...m, total: m.corridas.length }))
+    .filter(m => m.total > 0)
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, 'pt-BR'))
+
+  // Só vai para a tela o ranking do que a pessoa pode ver.
+  //
+  // Passei a calcular corridas além das visíveis para montar o quadro de
+  // medalhas; mandar todas na resposta entregaria ao navegador do profissional
+  // os valores dos colegas em disputas das quais ele nem participa. Não basta a
+  // tela não desenhar — o dado não pode sair daqui.
+  const rankingsVisiveis: Record<string, LinhaRanking[]> = {}
+  for (const c of visiveis) if (rankings[c.id]) rankingsVisiveis[c.id] = rankings[c.id]
+
+  return NextResponse.json({ corridas: visiveis, rankings: rankingsVisiveis, voceId, medalhas })
 }
 
 // PUT — só o dono grava a lista inteira (criar/editar/excluir/reordenar).
