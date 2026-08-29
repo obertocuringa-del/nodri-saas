@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Plus, Trash2, Pencil, X, Printer, FileText, CheckCircle2, Users } from 'lucide-react'
 import { getLogoSalao } from '@/lib/logoSalao'
@@ -27,6 +27,46 @@ function novaAta(): Ata {
   }
 }
 
+// Campo da pauta que cresce com o texto.
+//
+// Era um <input>: a linha é fina, e o que passava da largura sumia para o
+// lado. Quem escrevia "foi definido o salário e os benefícios..." via só o
+// começo e não tinha como conferir o resto sem clicar e navegar com a seta.
+// Numa ata isso é grave: o texto é o registro.
+function CampoAta({ valor, aoMudar, placeholder, estilo }: {
+  valor: string
+  aoMudar: (v: string) => void
+  placeholder?: string
+  estilo?: React.CSSProperties
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  // Zera antes de medir: sem isso a altura só cresce, e apagar texto deixaria
+  // a linha alta com espaço em branco embaixo.
+  const ajustar = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [])
+
+  // Também ao montar e quando o texto vem do servidor — ata que abre com
+  // conteúdo já escrito precisa nascer no tamanho certo, sem ninguém digitar.
+  useEffect(() => { ajustar() }, [valor, ajustar])
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={valor}
+      onChange={e => aoMudar(e.target.value)}
+      onInput={ajustar}
+      placeholder={placeholder}
+      className="ata-input ata-campo"
+      style={{ fontSize: 13, ...estilo }}
+    />
+  )
+}
 export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { chave?: string; profsSalao?: ProfSalao[] }) {
   const [mes, setMes] = useState(mesAtual())
   const [atas, setAtas] = useState<Ata[]>([])
@@ -89,7 +129,10 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
   async function imprimirAta(a: Ata) {
     const logoSalao = await getLogoSalao()
     const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const linhasPauta = a.pauta.map((p, i) => `<tr><td class="c">${i + 1}</td><td>${esc(p.ponto)}</td><td>${esc(p.responsavel)}</td><td>${esc(p.acontecimento || '')}</td><td>${esc(p.decisao)}</td><td class="c">${p.feito ? `✓ ${esc(p.feitoEm || '')}` : ''}</td></tr>`).join('')
+    // Agora dá para dar Enter dentro do campo; sem isto a quebra sumia e o
+    // papel saía com tudo emendado numa linha só.
+    const escL = (v: any) => esc(v).replace(/\n/g, '<br>')
+    const linhasPauta = a.pauta.map((p, i) => `<tr><td class="c">${i + 1}</td><td>${escL(p.ponto)}</td><td>${escL(p.responsavel)}</td><td>${escL(p.acontecimento || '')}</td><td>${escL(p.decisao)}</td><td class="c">${p.feito ? `✓ ${esc(p.feitoEm || '')}` : ''}</td></tr>`).join('')
     const linhasAssin = a.assinaturas.map(s => `<tr><td>${esc(s.nome)}</td><td class="sig"></td><td class="c">${s.assinado ? `✓ ${esc(s.assinadoEm)}` : ''}</td></tr>`).join('')
     const cab = logoSalao ? `<img src="${logoSalao}" class="logo"/>` : `<div class="brand">NODRI</div>`
     // Paisagem: com Acontecimento e Foi feito a pauta passou a ter 6 colunas,
@@ -104,6 +147,9 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
       <style>{`
         .ata-input { width:100%; border:none; background:transparent; outline:none; font-family:inherit; padding:6px 4px; }
         .ata-input:focus { background:#f6f4ff; border-radius:6px; }
+        /* overflow:hidden porque a altura é ajustada no código: com barra de
+           rolagem própria a medida do conteúdo sai errada e a linha fica curta. */
+        .ata-campo { resize:none; overflow:hidden; display:block; line-height:1.45; min-height:30px; }
         .ata-pauta-table td { border-bottom:1px solid #f0eee8; vertical-align:top; }
         .ata-pauta-table th { text-align:left; font-size:11px; font-weight:800; color:#6b6860; text-transform:uppercase; letter-spacing:.3px; padding:8px 6px; background:#faf9f7; }
       `}</style>
@@ -156,10 +202,10 @@ export default function AtaReuniaoLista({ chave = 'ata', profsSalao = [] }: { ch
                         {a.pauta.map((p, i) => (
                           <tr key={p.id}>
                             <td style={{ textAlign: 'center', color: '#9ca3af', fontWeight: 700, fontSize: 12.5 }}>{i + 1}</td>
-                            <td><input value={p.ponto} onChange={e => editPauta(a.id, p.id, { ponto: e.target.value })} className="ata-input" placeholder="Assunto discutido..." style={{ fontSize: 13 }} /></td>
-                            <td><input value={p.responsavel} onChange={e => editPauta(a.id, p.id, { responsavel: e.target.value })} className="ata-input" placeholder="Quem" style={{ fontSize: 13 }} /></td>
-                            <td><input value={p.acontecimento || ''} onChange={e => editPauta(a.id, p.id, { acontecimento: e.target.value })} className="ata-input" placeholder="O que aconteceu..." style={{ fontSize: 13 }} /></td>
-                            <td><input value={p.decisao} onChange={e => editPauta(a.id, p.id, { decisao: e.target.value })} className="ata-input" placeholder="O que ficou definido..." style={{ fontSize: 13 }} /></td>
+                            <td><CampoAta valor={p.ponto} aoMudar={v => editPauta(a.id, p.id, { ponto: v })} placeholder="Assunto discutido..." /></td>
+                            <td><CampoAta valor={p.responsavel} aoMudar={v => editPauta(a.id, p.id, { responsavel: v })} placeholder="Quem" /></td>
+                            <td><CampoAta valor={p.acontecimento || ''} aoMudar={v => editPauta(a.id, p.id, { acontecimento: v })} placeholder="O que aconteceu..." /></td>
+                            <td><CampoAta valor={p.decisao} aoMudar={v => editPauta(a.id, p.id, { decisao: v })} placeholder="O que ficou definido..." /></td>
                             <td>
                               <label style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 4px', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={!!p.feito} onChange={e => marcarFeito(a.id, p.id, e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer', accentColor: COR, flexShrink: 0 }} />
