@@ -146,7 +146,15 @@ export async function GET() {
       .eq('salao_id', sess.salaoId)
       .in('ano', Array.from(anos))
     for (const r of (metasRows || []) as any[]) {
-      const v = Number(r.meta_manual ?? r.meta_redistribuida ?? 0) || 0
+      // Mesma "META MENSAL" que aparece no card do perfil: a manual manda; se
+      // estiver vazia, vale a automática da redistribuição.
+      //
+      // Testar por valor POSITIVO, e não por `??`: quem digitou uma meta manual
+      // e depois apagou o campo deixa '' gravado, que não é null — com `??` a
+      // meta virava zero e a pessoa sumia do ranking, justo depois de fazer o
+      // que o próprio campo manda ("deixe vazio para usar a automática").
+      const manual = Number(r.meta_manual) || 0
+      const v = manual > 0 ? manual : (Number(r.meta_redistribuida) || 0)
       if (v > 0) metaPorProfMes.set(`${r.profissional_id}|${r.ano}-${r.mes}`, v)
     }
   }
