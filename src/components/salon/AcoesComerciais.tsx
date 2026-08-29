@@ -324,7 +324,28 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
       </button>
       <div style={{ padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{c.titulo || 'Sem título'}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: ROSA, margin: '3px 0 8px' }}>{c.categoria}</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: ROSA, margin: '3px 0 6px' }}>{c.categoria}</div>
+
+        {/* O mesmo preço que a cliente vê no link, com a mesma hierarquia.
+            Quem está no salão ou no portal precisa enxergar o anúncio como ele
+            chega na ponta — conferir a promoção num formato e divulgá-la em
+            outro é como o valor errado passa. A conta é a mesma função. */}
+        {(() => {
+          const pv = precoDaCampanha(c)
+          if (!pv) return null
+          return (
+            <div style={{ margin: '0 0 8px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                {pv.de && <span style={{ fontSize: 12, color: '#9ca3af', textDecoration: 'line-through' }}>{pv.de}</span>}
+                <span style={{ fontSize: 19, fontWeight: 900, color: '#dc2626', lineHeight: 1 }}>{pv.por}</span>
+                {pv.descontoPct !== null && (
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: '#fff', background: '#16a34a', borderRadius: 99, padding: '2px 7px' }}>-{pv.descontoPct}%</span>
+                )}
+              </div>
+              {pv.parcela && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>ou {pv.parcela}</div>}
+            </div>
+          )
+        })()}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#8a857c', marginTop: 'auto', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Images size={13} /> {c.arquivos.length}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Eye size={13} /> {c.views || 0}</span>
