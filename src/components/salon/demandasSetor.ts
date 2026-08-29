@@ -97,14 +97,11 @@ export const DEMANDAS_POR_SETOR: { chave: string[]; demandas: string[] }[] = [
     chave: ['COORDENADOR', 'COORDENACAO'], demandas: []
   },
   {
-    chave: ['PROFISSIONAIS'], demandas: [
-      'Execução dos serviços', 'Atendimento ao cliente', 'Cumprimento dos padrões',
-      'Cumprimento dos POPs', 'Organização da estação', 'Uso correto dos materiais',
-      'Cumprimento das normas técnicas', 'Cumprimento das normas de conduta',
-      'Participação em treinamentos', 'Manutenção da qualidade do serviço',
-      'Registro correto dos serviços realizados',
-      'Comunicação de necessidades ao Coordenador',
-    ]
+    // Demandas soltas removidas da sidebar — o setor trabalha pelo Check List.
+    // Eram doze linhas de POP em branco empurrando o Check List para o fim da
+    // barra. O conteúdo já salvo segue no banco: some da navegação, não do
+    // banco, e volta se a linha for recolocada aqui.
+    chave: ['PROFISSIONAIS'], demandas: []
   },
   {
     // Demandas soltas removidas da sidebar — o setor trabalha pelas ferramentas
