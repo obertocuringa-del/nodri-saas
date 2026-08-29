@@ -6,7 +6,7 @@ import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal } from 'lucide-reac
 import {
   type CorridaInterna, type LinhaRanking, type MetricaCorrida,
   METRICAS_CORRIDA, METRICAS_ESCOLHIVEIS, metricaInfo, statusCorrida, STATUS_CORRIDA,
-  periodoLabel, formataValor, MEDALHAS, ridC,
+  periodoLabel, formataValor, ridC,
 } from '@/lib/corridasInternas'
 import { useModulos } from '@/lib/useModulos'
 import AvisoPlano from './AvisoPlano'
@@ -222,20 +222,25 @@ function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle }: {
 
       {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
+      {/* O salão sempre vê os números: é quem precisa entender a diferença. */}
       <Ranking ranking={ranking} c={c} />
     </div>
   )
 }
 
 // ── Ranking (usado no salão e reaproveitável) ──
-function Ranking({ ranking, c, destacarId }: { ranking: LinhaRanking[]; c: CorridaInterna; destacarId?: string }) {
+// `soPosicoes` esconde os números — e quem decide isso é QUEM OLHA, não a
+// corrida. `ocultarValores` promete "o profissional vê só as posições", mas era
+// lido aqui dentro e escondia do salão também: quem montou a competição via um
+// ranking sem um número sequer, sem saber por que alguém estava na frente.
+function Ranking({ ranking, c, destacarId, soPosicoes }: { ranking: LinhaRanking[]; c: CorridaInterna; destacarId?: string; soPosicoes?: boolean }) {
   if (!ranking.length) {
     return <div style={{ fontSize: 12.5, color: '#9ca3af', textAlign: 'center', padding: '14px 8px', background: '#faf9f7', borderRadius: 8 }}>
       Sem dados do período ainda — importe o relatório dos meses da corrida.
     </div>
   }
   const top = c.topPremiado || 3
-  const esconder = !!c.ocultarValores
+  const esconder = !!soPosicoes
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {ranking.map(l => {
@@ -248,7 +253,10 @@ function Ranking({ ranking, c, destacarId }: { ranking: LinhaRanking[]; c: Corri
             border: eu ? '1.5px solid #16a34a' : '1px solid #f0eee8',
           }}>
             <span style={{ width: 26, textAlign: 'center', fontSize: l.pos <= 3 ? 16 : 12.5, fontWeight: 900, color: '#6b6860' }}>
-              {l.pos <= 3 ? MEDALHAS[l.pos - 1] : `${l.pos}º`}
+              {/* Sempre o número. As três primeiras posições vinham de MEDALHAS,
+                  que virou lista de textos vazios quando os emojis saíram do
+                  sistema — o pódio ficou sem marca nenhuma, só o nome solto. */}
+              {`${l.pos}º`}
             </span>
             <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: eu || noPodio ? 800 : 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {l.nome}{eu ? ' (você)' : ''}

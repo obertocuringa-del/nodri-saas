@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Trophy, Medal } from 'lucide-react'
 import {
   type CorridaInterna, type LinhaRanking,
-  metricaInfo, statusCorrida, STATUS_CORRIDA, periodoLabel, MEDALHAS,
+  metricaInfo, statusCorrida, STATUS_CORRIDA, periodoLabel,
 } from '@/lib/corridasInternas'
 import { Ranking } from './CorridasInternas'
 
@@ -103,17 +103,24 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
 
             {minha && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,#dcfce7,#d1fae5)', border: '1.5px solid #16a34a', borderRadius: 10, padding: '10px 14px' }}>
-                <span style={{ fontSize: 22 }}>{minha.pos <= 3 ? MEDALHAS[minha.pos - 1] : ''}</span>
+                {/* Vinha de MEDALHAS, que virou lista de textos vazios quando os
+                    emojis saíram: sobrava um espaço de 22px desenhando nada. */}
+                <Trophy size={20} style={{ color: minha.pos <= 3 ? '#d97706' : '#16a34a', flexShrink: 0 }} />
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: '#15803d' }}>
                   Você está em <b>{minha.pos}º lugar</b>{ranking.length > 1 ? ` de ${ranking.length}` : ''}
-                  {typeof minha.pctMeta === 'number' && (minha.bateuMeta ? ' — meta batida! ✓' : ` — ${minha.pctMeta}% da meta`)}
+                  {/* Corrida de "menos é melhor" não tem % da meta — só o teto
+                      cumprido ou não. Sem isto, quem estava dentro do limite não
+                      via nada e parecia que a corrida não tinha alvo. */}
+                  {typeof minha.pctMeta === 'number'
+                    ? (minha.bateuMeta ? ' — meta batida!' : ` — ${minha.pctMeta}% da meta`)
+                    : (minha.bateuMeta ? ' — dentro do limite!' : '')}
                 </div>
               </div>
             )}
 
             {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
-            <Ranking ranking={ranking} c={c} destacarId={destacar} />
+            <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />
           </div>
         )
       })}

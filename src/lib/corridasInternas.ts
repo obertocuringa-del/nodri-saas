@@ -36,6 +36,8 @@ export interface MetricaInfo {
    * premiar.
    */
   inversa?: boolean
+  /** Casas decimais no ranking. Sem isto, 1,4 serviço por cliente vira 1. */
+  casas?: number
   /**
    * Sai do menu de corrida nova, mas continua calculando.
    *
@@ -56,7 +58,7 @@ export const METRICAS_CORRIDA: MetricaInfo[] = [
   { chave: 'servico',     label: 'Serviço específico',      unidade: 'qtd', emoji: '', desc: 'Quem mais vendeu UM serviço (você escolhe qual)', precisaServico: true },
   { chave: 'ocupacao',    label: 'Taxa de ocupação',        unidade: '%',   emoji: '', desc: 'Maior ocupação da agenda no período' },
   { chave: 'novos',       label: 'Clientes novos',          unidade: 'qtd', emoji: '', desc: 'Quem trouxe mais clientes novos (sem preferência)', oculta: true },
-  { chave: 'serv_cliente', label: 'Serviços por cliente',   unidade: 'qtd', emoji: '', desc: 'Venda casada: quem faz a cliente sair com mais de um procedimento' },
+  { chave: 'serv_cliente', label: 'Serviços por cliente',   unidade: 'qtd', emoji: '', desc: 'Venda casada: quem faz a cliente sair com mais de um procedimento', casas: 2 },
   { chave: 'pct_meta',    label: '% da meta batida',        unidade: '%',   emoji: '', desc: 'Cada uma contra a própria meta — quem tem ticket menor disputa de igual para igual' },
   { chave: 'feedback_neg', label: 'Menos ocorrências (feedback)', unidade: 'qtd', emoji: '', desc: 'Ganha quem MENOS teve a ocorrência escolhida (atraso, falta…) no período', precisaOcorrido: true, inversa: true },
 ]
@@ -131,7 +133,10 @@ export function formataValor(m: MetricaCorrida, v: number): string {
     return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
   if (info.unidade === '%') return `${Math.round(Number(v) || 0)}%`
-  return (Math.round(Number(v) || 0)).toLocaleString('pt-BR')
+  // Arredondar para inteiro empatava metade do ranking em "1" quando a métrica
+  // é uma média — e aí não dá para ver por que um está na frente do outro.
+  const casas = info.casas ?? 0
+  return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
 }
 
 export const MEDALHAS = ['', '', '']
