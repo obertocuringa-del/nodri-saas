@@ -81,6 +81,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ config: cfg })
   }
 
+  // Faixa de atendimento: fora dela a cliente não consegue pedir horário.
+  // Guarda 'HH:MM' cru — quem valida é `horariosDoDia`, que cai no padrão se a
+  // faixa vier invertida. Melhor abrir demais do que ficar sem horário nenhum
+  // e ninguém conseguir agendar.
+  if (acao === 'horario') {
+    const hhmm = (v: any) => (/^\d{1,2}:\d{2}$/.test(String(v || '')) ? String(v) : '')
+    const abertura = hhmm(body?.abertura)
+    const fechamento = hhmm(body?.fechamento)
+    const cfg = { ...atual, horario: (abertura && fechamento) ? { abertura, fechamento } : undefined }
+    await salvarConfig(sess.salaoId, cfg)
+    await registrarAuditoria('editar', 'Link da vitrine',
+      (abertura && fechamento) ? `Atendimento das ${abertura} as ${fechamento}` : 'Horario de atendimento voltou ao padrao')
+    return NextResponse.json({ config: cfg })
+  }
+
   // Trocar o token invalida o link antigo na hora — é o que se usa quando
   // o link vazou para quem não devia.
   if (acao === 'novo-endereco') {

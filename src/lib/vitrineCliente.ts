@@ -13,6 +13,8 @@ export interface AcaoPublica {
   dataFim?: string
 }
 
+export interface HorarioAtendimento { abertura: string; fechamento: string }
+
 export interface ServicoPublico {
   id: string
   categoria: string
@@ -33,6 +35,8 @@ export interface DadosVitrine {
   acoes: AcaoPublica[]
   servicos: ServicoPublico[]
   profissionais: ProfissionalPublico[]
+  /** Faixa de atendimento do salão; null usa o padrão. */
+  horario?: HorarioAtendimento | null
 }
 
 /** Preço como o cliente lê. Serviço sem preço não mostra "—" para ele: some. */
@@ -53,17 +57,36 @@ export function agruparPorCategoria<T extends { categoria: string }>(itens: T[])
 }
 
 /** Horários de 30 em 30, das 00:00 às 23:30 — o salão acerta na conversa. */
-// Salão nenhum atende de madrugada. A lista inteira do dia obrigava a rolar
-// por doze horários impossíveis antes de chegar no primeiro que serve.
-const PRIMEIRA_HORA = 7
-const ULTIMA_HORA = 23
+// Faixa de atendimento.
+//
+// 7h–23h era o padrão para caber qualquer salão, mas cada um abre a sua hora
+// e a cliente pedia horário que não existe. Agora vem da configuração do link;
+// estes valores ficam só para quem ainda não configurou.
+export const ABERTURA_PADRAO = '07:00'
+export const FECHAMENTO_PADRAO = '23:00'
 
-export function horariosDoDia(): string[] {
+/** 'HH:MM' em minutos desde a meia-noite; -1 quando não dá para ler. */
+function emMinutos(hhmm: string): number {
+  const m = String(hhmm || '').match(/^(\d{1,2}):(\d{2})$/)
+  if (!m) return -1
+  const h = Number(m[1]), min = Number(m[2])
+  if (h < 0 || h > 23 || min < 0 || min > 59) return -1
+  return h * 60 + min
+}
+
+export function horariosDoDia(abertura?: string, fechamento?: string): string[] {
+  let ini = emMinutos(abertura || ABERTURA_PADRAO)
+  let fim = emMinutos(fechamento || FECHAMENTO_PADRAO)
+  // Faixa impossível (invertida ou mal digitada) volta para o padrão em vez
+  // de devolver lista vazia: sem horário nenhum, ninguém consegue agendar.
+  if (ini < 0 || fim < 0 || fim <= ini) {
+    ini = emMinutos(ABERTURA_PADRAO)
+    fim = emMinutos(FECHAMENTO_PADRAO)
+  }
   const out: string[] = []
-  for (let h = PRIMEIRA_HORA; h <= ULTIMA_HORA; h++) {
-    out.push(`${String(h).padStart(2, '0')}:00`)
-    // 23:30 fica de fora: o último horário é 23h em ponto.
-    if (h < ULTIMA_HORA) out.push(`${String(h).padStart(2, '0')}:30`)
+  // De 30 em 30, começando na abertura: salão que abre 9:30 tem 9:30, 10:00…
+  for (let t = ini; t <= fim; t += 30) {
+    out.push(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`)
   }
   return out
 }

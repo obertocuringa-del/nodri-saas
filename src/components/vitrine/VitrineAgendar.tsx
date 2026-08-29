@@ -17,11 +17,13 @@ import SeletorQuando from './SeletorQuando'
 
 const CAT_ACOES = 'Combos e promoções'
 
-export default function VitrineAgendar({ servicos, profissionais, acoes, whatsapp }: {
+export default function VitrineAgendar({ servicos, profissionais, acoes, whatsapp, horario }: {
   servicos: ServicoPublico[]
   profissionais: ProfissionalPublico[]
   acoes: AcaoPublica[]
   whatsapp: string | null
+  /** Faixa de atendimento do salão; ausente cai no padrão. */
+  horario?: { abertura: string; fechamento: string } | null
 }) {
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
@@ -76,7 +78,7 @@ export default function VitrineAgendar({ servicos, profissionais, acoes, whatsap
 
   return (
     <div className="pb-28">
-      <SeletorQuando data={data} hora={hora} onData={setData} onHora={setHora} />
+      <SeletorQuando data={data} hora={hora} onData={setData} onHora={setHora} horario={horario} />
 
       {/* ── 3. Serviços ── */}
       {data && hora && (

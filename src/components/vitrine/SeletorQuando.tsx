@@ -11,11 +11,13 @@ import { horariosDoDia, dataPorExtenso } from '@/lib/vitrineCliente'
 // Depois de escolher, o calendário recolhe: em tela de celular ele ocupa quase
 // tudo, e o que vem depois ficaria fora da vista.
 
-export default function SeletorQuando({ data, hora, onData, onHora }: {
+export default function SeletorQuando({ data, hora, onData, onHora, horario }: {
   data: string
   hora: string
   onData: (v: string) => void
   onHora: (v: string) => void
+  /** Faixa de atendimento do salão; ausente cai no padrão. */
+  horario?: { abertura: string; fechamento: string } | null
 }) {
   const hoje = new Date()
   const [mes, setMes] = useState(() => new Date(hoje.getFullYear(), hoje.getMonth(), 1))
@@ -97,7 +99,7 @@ export default function SeletorQuando({ data, hora, onData, onHora }: {
           {abertaHora && (
             <>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mt-3 max-h-56 overflow-y-auto">
-                {horariosDoDia().map(h => (
+                {horariosDoDia(horario?.abertura, horario?.fechamento).map(h => (
                   <button key={h} onClick={() => { onHora(h); setAbertaHora(false) }}
                     className={'py-2 rounded-lg text-[12px] transition-all border '
                       + (hora === h ? 'bg-[var(--vt-cor)] text-white border-transparent'

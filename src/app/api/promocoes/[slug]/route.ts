@@ -116,6 +116,8 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
       whatsapp: whatsappDoSalao(salao.telefone),
     },
     acoes,
+    // Faixa de atendimento; ausente, a tela usa o padrão de 7h às 23h.
+    horario: salao.config.horario || null,
     servicos: servicosPublicos,
     profissionais,
   })

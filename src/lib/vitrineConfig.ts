@@ -47,6 +47,13 @@ export interface VitrineConfig {
     /** nomes de categoria */
     categorias?: string[]
   }
+  /**
+   * Faixa de atendimento, 'HH:MM'. Ausente = o padrão de 7h às 23h.
+   *
+   * Sem isto a cliente escolhia entre 7h e 23h em qualquer salão e pedia
+   * horário que não existe — e quem tinha de dizer não era a recepção.
+   */
+  horario?: { abertura: string; fechamento: string }
 }
 
 /** Texto vira endereço: sem acento, sem espaço, sem símbolo. */
@@ -80,6 +87,9 @@ export async function getConfig(salaoId: string): Promise<VitrineConfig | null> 
       servicos: Array.isArray(v.ocultos?.servicos) ? v.ocultos.servicos : [],
       categorias: Array.isArray(v.ocultos?.categorias) ? v.ocultos.categorias : [],
     },
+    horario: (v.horario?.abertura && v.horario?.fechamento)
+      ? { abertura: String(v.horario.abertura), fechamento: String(v.horario.fechamento) }
+      : undefined,
   }
 }
 

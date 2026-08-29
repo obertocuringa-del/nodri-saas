@@ -301,6 +301,8 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
   const si = STATUS_INFO[st]
   const [lancarOpen, setLancarOpen] = useState(false)
   const [menu, setMenu] = useState<'copiar' | 'compartilhar' | null>(null)
+  // Mesmo "Ver detalhes" da página da cliente: a descrição só quando pedida.
+  const [verDetalhe, setVerDetalhe] = useState(false)
   const copiarTxt = (t: string) => { navigator.clipboard?.writeText(t).then(() => toast.success('Copiado!')).catch(() => toast.error('Não foi possível copiar')) }
   return (
     <div style={{ background: '#fff', border: selecionada ? `2px solid ${ROXO}` : '1px solid #eceae4', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -357,6 +359,22 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
           <span title="Serviços vendidos no período (relatório)" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 800 }}>{vendidos ?? 0}</span>
         </div>
       </div>
+      {/* "Ver detalhes": a descrição guardada atrás de um toque, igual à página
+          da cliente. Aberta em todos os cards, ela deixa cada um de uma altura
+          e a grade vira um muro de texto. */}
+      {c.descricao?.trim() && (
+        <div style={{ padding: '0 14px 10px' }}>
+          <button onClick={() => setVerDetalhe(v => !v)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: ROXO, fontSize: 12.5, fontWeight: 700 }}>
+            {verDetalhe ? 'Ocultar detalhes' : 'Ver detalhes'}
+            <ChevronDown size={14} style={{ transform: verDetalhe ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+          </button>
+          {verDetalhe && (
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: '#4a4560', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{c.descricao}</p>
+          )}
+        </div>
+      )}
+
       {/* 2 botões harmônicos: Copiar e Compartilhar — cada um abre um menu de opções */}
       <div className="ac-acoes">
         <button onClick={() => setMenu(m => m === 'copiar' ? null : 'copiar')} style={{ background: menu === 'copiar' ? '#e9e7f5' : '#f4f3f8', color: '#4b5563' }}><Copy size={16} /> Copiar <ChevronDown size={14} style={{ transform: menu === 'copiar' ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} /></button>

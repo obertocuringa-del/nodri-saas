@@ -98,7 +98,7 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
       <main className="max-w-5xl mx-auto px-4 py-5 sm:py-7">
         {aba === 'acoes' && (
           <VitrineAcoes acoes={dados.acoes} servicos={dados.servicos}
-            profissionais={dados.profissionais} whatsapp={salao.whatsapp} />
+            profissionais={dados.profissionais} whatsapp={salao.whatsapp} horario={dados.horario} />
         )}
         {aba === 'sugestao' && (
           <VitrineVotacao servicos={dados.servicos} token={params.slug} />
@@ -108,6 +108,7 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
         )}
         {aba === 'agendar' && (
           <VitrineAgendar
+            horario={dados.horario}
             servicos={dados.servicos}
             profissionais={dados.profissionais}
             acoes={dados.acoes}

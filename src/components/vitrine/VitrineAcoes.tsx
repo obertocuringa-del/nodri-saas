@@ -23,11 +23,13 @@ const CORES: Record<string, { bg: string; cor: string; label: string }> = {
   encerrada: { bg: '#6b728022', cor: '#4b5563', label: 'Encerrada' },
 }
 
-export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp }: {
+export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp, horario }: {
   acoes: AcaoPublica[]
   servicos: ServicoPublico[]
   profissionais: ProfissionalPublico[]
   whatsapp: string | null
+  /** Faixa de atendimento do salão; ausente cai no padrão. */
+  horario?: { abertura: string; fechamento: string } | null
 }) {
   const [filtro, setFiltro] = useState<string>('ativa')
   const [categoria, setCategoria] = useState('')
@@ -225,6 +227,7 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp 
           servicos={servicos}
           profissionais={profissionais}
           whatsapp={whatsapp}
+          horario={horario}
           onFechar={() => { setAgendando(null); setSelecionadas([]) }}
         />
       )}

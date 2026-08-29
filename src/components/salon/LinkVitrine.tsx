@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown } from 'lucide-react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import VitrineOcultar from './VitrineOcultar'
 
@@ -9,7 +9,7 @@ import VitrineOcultar from './VitrineOcultar'
 // Fica aqui de propósito: é desta tela que sai o conteúdo que o cliente vê, e
 // quem acabou de cadastrar uma promoção é quem quer mandar o link.
 
-interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number }
+interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number; horario?: { abertura: string; fechamento: string } }
 
 export default function LinkVitrine() {
   const [cfg, setCfg] = useState<Cfg | null>(null)
@@ -20,6 +20,9 @@ export default function LinkVitrine() {
   const [editandoSlug, setEditandoSlug] = useState(false)
   const [novoSlug, setNovoSlug] = useState('')
   const [escolhendo, setEscolhendo] = useState(false)
+  const [editandoHora, setEditandoHora] = useState(false)
+  const [abre, setAbre] = useState('')
+  const [fecha, setFecha] = useState('')
   // No celular este card fica recolhido: aberto, ele empurra as campanhas para
   // fora da tela, e o que se vem fazer aqui e cuidar das campanhas. No desktop
   // ha espaco de sobra e ele fica sempre aberto (ver `sm:` nas classes).
@@ -60,6 +63,7 @@ export default function LinkVitrine() {
       if (acao === 'ligar') toast.success('Link no ar de novo.')
       if (acao === 'desligar') toast.success('Link fora do ar.')
       if (acao === 'novo-endereco') toast.success('Endereço novo gerado. O link antigo parou de funcionar.')
+      if (acao === 'horario') { setEditandoHora(false); toast.success('Horário de atendimento salvo.') }
     } catch { toast.error('Erro de conexão') }
     finally { setOcupado(false) }
   }
@@ -149,6 +153,10 @@ export default function LinkVitrine() {
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           <SlidersHorizontal size={13} /> O que aparece
         </button>
+        <button onClick={() => { setAbre(cfg.horario?.abertura || '09:00'); setFecha(cfg.horario?.fechamento || '19:00'); setEditandoHora(true) }} disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
+          <Clock size={13} /> Horário de atendimento
+        </button>
         <button onClick={() => { setNovoSlug(cfg.slug || ''); setEditandoSlug(true) }} disabled={ocupado}
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           <Pencil size={13} /> Editar endereço
@@ -162,6 +170,37 @@ export default function LinkVitrine() {
       {escolhendo && (
         <div className="mt-3 pt-3 border-t border-nodri-border">
           <VitrineOcultar aoFechar={() => setEscolhendo(false)} />
+        </div>
+      )}
+
+      {editandoHora && (
+        <div className="mt-3 p-3 rounded-lg bg-nodri-surface border border-nodri-border">
+          <p className="text-[11px] text-nodri-t3 mb-2 leading-relaxed">
+            De quando a quando a cliente pode pedir horário. Fora dessa faixa o
+            horário nem aparece para ela escolher — e ninguém precisa dizer não depois.
+          </p>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <label className="text-[11px] text-nodri-t2">Abre</label>
+            <input type="time" value={abre} onChange={e => setAbre(e.target.value)} className="nodri-input text-[12px] w-[110px]" />
+            <label className="text-[11px] text-nodri-t2">Fecha</label>
+            <input type="time" value={fecha} onChange={e => setFecha(e.target.value)} className="nodri-input text-[12px] w-[110px]" />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setEditandoHora(false)}
+              className="px-3 py-1.5 rounded-lg border border-nodri-border text-[12px] text-nodri-t2">Cancelar</button>
+            <button onClick={() => acao('horario', { abertura: abre, fechamento: fecha })} disabled={ocupado || !abre || !fecha}
+              className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[12px] font-bold disabled:opacity-50">
+              Salvar horário
+            </button>
+            {/* Limpar volta ao padrão amplo em vez de deixar o link sem
+                horário nenhum — sem faixa, ninguém consegue agendar. */}
+            <button onClick={() => acao('horario', { abertura: '', fechamento: '' })} disabled={ocupado}
+              className="px-3 py-1.5 rounded-lg border border-nodri-border text-[12px] text-nodri-t3">Voltar ao padrão (7h–23h)</button>
+          </div>
+          <p className="text-[10px] text-nodri-t3 mt-2">
+            Os horários são oferecidos de 30 em 30 minutos a partir da abertura.
+            {cfg.horario ? ` Hoje: das ${cfg.horario.abertura} às ${cfg.horario.fechamento}.` : ' Hoje: padrão de 7h às 23h.'}
+          </p>
         </div>
       )}
 

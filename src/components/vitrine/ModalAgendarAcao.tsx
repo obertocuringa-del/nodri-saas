@@ -23,7 +23,7 @@ import {
 type Etapa = 'quando' | 'profissional' | 'mais' | 'servicos'
 
 export default function ModalAgendarAcao({
-  titulos, descricao, servicos, profissionais, whatsapp, onFechar,
+  titulos, descricao, servicos, profissionais, whatsapp, onFechar, horario,
 }: {
   titulos: string[]
   descricao?: string
@@ -31,6 +31,8 @@ export default function ModalAgendarAcao({
   profissionais: ProfissionalPublico[]
   whatsapp: string | null
   onFechar: () => void
+  /** Faixa de atendimento do salão; ausente cai no padrão. */
+  horario?: { abertura: string; fechamento: string } | null
 }) {
   const [etapa, setEtapa] = useState<Etapa>('quando')
   const [data, setData] = useState('')
@@ -109,7 +111,7 @@ export default function ModalAgendarAcao({
           {/* ── 1. Dia e hora ── */}
           {etapa === 'quando' && (
             <>
-              <SeletorQuando data={data} hora={hora} onData={setData} onHora={setHora} />
+              <SeletorQuando data={data} hora={hora} onData={setData} onHora={setHora} horario={horario} />
               {data && hora && (
                 <button onClick={() => setEtapa('profissional')}
                   className="w-full bg-[var(--vt-cor)] text-white py-3 rounded-xl text-[14px] font-semibold">
