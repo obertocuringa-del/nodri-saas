@@ -212,7 +212,7 @@ export default function ModalAvaliarPop({ doc, profs = [], profFixo, onClose, on
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px]" style={{ color: msg.startsWith('') ? '#059669' : '#b91c1c' }}>{msg}</span>
               <button onClick={salvar} disabled={salvando || !profId}
-                className="flex items-center gap-2 text-sm font-bold px-5 py-2 rounded-xl transition-all"
+                className="flex items-center gap-2 text-sm font-bold px-5 py-2 rounded-xl transition"
                 style={{ background: '#5b4fcf', color: '#fff', opacity: (salvando || !profId) ? .5 : 1 }}>
                 {salvando ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />} Salvar avaliação
               </button>

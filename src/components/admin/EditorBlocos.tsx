@@ -34,7 +34,7 @@ function BarraFerramentas({ editor }: { editor: any }) {
   if (!editor) return null
   const btn = (ativo: boolean, onClick: () => void, label: string, children: React.ReactNode) => (
     <button title={label} onClick={onClick}
-      className={`px-2 py-1 rounded text-[11px] transition-all ${ativo ? 'bg-nodri-cyan text-black font-bold' : 'text-nodri-t2 hover:bg-white/10 hover:text-nodri-t1'}`}>
+      className={`px-2 py-1 rounded text-[11px] transition ${ativo ? 'bg-nodri-cyan text-black font-bold' : 'text-nodri-t2 hover:bg-white/10 hover:text-nodri-t1'}`}>
       {children}
     </button>
   )
@@ -97,7 +97,7 @@ function BlocoTexto({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => v
       <BarraFerramentas editor={editor} />
       <div className="flex gap-1 p-1 bg-nodri-card border-b border-nodri-border">
         <button onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-          className="text-[10px] px-2 py-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all">
+          className="text-[10px] px-2 py-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition">
           + Tabela
         </button>
         {editor?.isActive('table') && <>
@@ -138,7 +138,7 @@ function BlocoImagem({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) => 
           <button onClick={() => onChange({ url: '', legenda: '' })} className="mt-1 text-[10px] text-nodri-red hover:underline">Remover imagem</button>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-nodri-border rounded-lg p-8 cursor-pointer hover:border-nodri-cyan/40 transition-all">
+        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-nodri-border rounded-lg p-8 cursor-pointer hover:border-nodri-cyan/40 transition">
           {uploading ? <span className="text-nodri-t3 text-[12px]">Enviando...</span> : <>
             <ImageIcon size={28} className="text-nodri-t3" />
             <span className="text-nodri-t3 text-[12px]">Clique para enviar imagem</span>
@@ -199,7 +199,7 @@ function BlocoArquivo({ bloco, onChange, tipo }: { bloco: Bloco; onChange: (c: a
           <button onClick={() => onChange({ url: '', nome: '' })} className="text-nodri-red text-[10px] hover:underline">Remover</button>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-nodri-border rounded-lg p-8 cursor-pointer hover:border-nodri-cyan/40 transition-all">
+        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-nodri-border rounded-lg p-8 cursor-pointer hover:border-nodri-cyan/40 transition">
           {uploading ? <span className="text-nodri-t3 text-[12px]">Enviando...</span> : <>
             <Upload size={28} className="text-nodri-t3" />
             <span className="text-nodri-t3 text-[12px]">Clique para enviar {label}</span>
@@ -222,7 +222,7 @@ function BlocoColunas({ bloco, onChange }: { bloco: Bloco; onChange: (c: any) =>
         <span className="text-[10px] text-nodri-t3">Colunas:</span>
         {[2,3].map(n => (
           <button key={n} onClick={() => setCols(Array(n).fill(''))}
-            className={`text-[10px] px-2 py-1 rounded border transition-all ${cols.length === n ? 'bg-nodri-cyan text-black border-nodri-cyan' : 'border-nodri-border text-nodri-t3 hover:text-nodri-t1'}`}>
+            className={`text-[10px] px-2 py-1 rounded border transition ${cols.length === n ? 'bg-nodri-cyan text-black border-nodri-cyan' : 'border-nodri-border text-nodri-t3 hover:text-nodri-t1'}`}>
             {n} colunas
           </button>
         ))}
@@ -256,7 +256,7 @@ function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
   }
 
   return (
-    <div ref={setNodeRef} style={{ ...style, width: `${bloco.largura || 100}%` }} className="nodri-card border border-nodri-border/60 hover:border-nodri-cyan/30 transition-all">
+    <div ref={setNodeRef} style={{ ...style, width: `${bloco.largura || 100}%` }} className="nodri-card border border-nodri-border/60 hover:border-nodri-cyan/30 transition">
       {/* Header do bloco */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-nodri-border bg-nodri-surface rounded-t-xl">
         <button {...attributes} {...listeners} className="text-nodri-t3 hover:text-nodri-t1 cursor-grab active:cursor-grabbing">
@@ -269,7 +269,7 @@ function BlocoSortavel({ bloco, onRemove, onUpdate, onResize }: {
           <span className="text-[9px] text-nodri-t3">Largura:</span>
           {[25, 50, 75, 100].map(w => (
             <button key={w} onClick={() => onResize(w)}
-              className={`text-[9px] px-1.5 py-0.5 rounded transition-all ${(bloco.largura || 100) === w ? 'bg-nodri-cyan text-black font-bold' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
+              className={`text-[9px] px-1.5 py-0.5 rounded transition ${(bloco.largura || 100) === w ? 'bg-nodri-cyan text-black font-bold' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
               {w}%
             </button>
           ))}
@@ -398,14 +398,14 @@ export default function EditorBlocos({ blocos, onChange }: EditorBlocosProps) {
       {/* Menu adicionar bloco */}
       <div className="relative">
         <button onClick={() => setShowMenu(p => !p)}
-          className="flex items-center gap-2 w-full py-2.5 border-2 border-dashed border-nodri-border rounded-xl text-nodri-t3 hover:border-nodri-cyan/40 hover:text-nodri-cyan transition-all text-[12px] justify-center">
+          className="flex items-center gap-2 w-full py-2.5 border-2 border-dashed border-nodri-border rounded-xl text-nodri-t3 hover:border-nodri-cyan/40 hover:text-nodri-cyan transition text-[12px] justify-center">
           <Plus size={14} /> Adicionar bloco
         </button>
         {showMenu && (
           <div className="absolute bottom-full mb-2 left-0 right-0 bg-nodri-card border border-nodri-border rounded-xl shadow-2xl p-3 z-50 grid grid-cols-4 gap-2">
             {TIPOS_DISPONIVEIS.map(t => (
               <button key={t.tipo} onClick={() => adicionarBloco(t.tipo)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-nodri-border hover:border-nodri-cyan/30 hover:bg-nodri-cyan/5 transition-all">
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-nodri-border hover:border-nodri-cyan/30 hover:bg-nodri-cyan/5 transition">
                 <span className="text-xl">{t.icone}</span>
                 <span className="text-[10px] text-nodri-t2 text-center">{t.label}</span>
               </button>

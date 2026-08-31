@@ -73,7 +73,7 @@ export default function SeletorQuando({ data, hora, onData, onHora, horario }: {
                 const passado = iso < hojeISO
                 return (
                   <button key={iso} disabled={passado} onClick={() => onData(iso)}
-                    className={'aspect-square rounded-lg text-[13px] transition-all '
+                    className={'aspect-square rounded-lg text-[13px] transition '
                       + (passado ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100')}>
                     {Number(iso.slice(-2))}
                   </button>
@@ -101,7 +101,7 @@ export default function SeletorQuando({ data, hora, onData, onHora, horario }: {
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mt-3 max-h-56 overflow-y-auto">
                 {horariosDoDia(horario?.abertura, horario?.fechamento).map(h => (
                   <button key={h} onClick={() => { onHora(h); setAbertaHora(false) }}
-                    className={'py-2 rounded-lg text-[12px] transition-all border '
+                    className={'py-2 rounded-lg text-[12px] transition border '
                       + (hora === h ? 'bg-[var(--vt-cor)] text-white border-transparent'
                                     : 'border-gray-200 text-gray-600')}>
                     {h}

@@ -74,7 +74,7 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
         {FILTROS.map(f => (
           <button key={f.id} onClick={() => setFiltro(f.id)}
-            className={'shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border '
+            className={'shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition border '
               + (filtro === f.id
                 ? 'bg-[var(--vt-cor)] text-white border-transparent'
                 : 'bg-white text-gray-600 border-gray-200')}>
@@ -108,7 +108,7 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
           const marcada = selecionadas.includes(a.id)
           return (
             <div key={a.id}
-              className={'bg-white rounded-2xl overflow-hidden border transition-all flex flex-col '
+              className={'bg-white rounded-2xl overflow-hidden border transition flex flex-col '
                 + (marcada ? 'border-[var(--vt-cor)] ring-2 ring-[var(--vt-cor)]/20' : 'border-gray-200')}>
 
               {/* A arte aparece INTEIRA, como o profissional já a vê.
@@ -127,7 +127,7 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
                     className="relative w-full h-full object-contain" />
                 </>)}
                 <button onClick={() => alternar(a.id)} title="Selecionar"
-                  className={'absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full border shadow-sm transition-all '
+                  className={'absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full border shadow-sm transition '
                     + (marcada
                       ? 'bg-[var(--vt-cor)] border-transparent text-white'
                       : 'bg-white/90 border-gray-200 text-gray-400')}>

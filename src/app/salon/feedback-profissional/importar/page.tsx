@@ -99,11 +99,11 @@ export default function ImportarPage() {
               <label className="text-[10px] text-nodri-t3 mb-1.5 block uppercase tracking-wider">Modo de importação</label>
               <div className="flex gap-2">
                 <button onClick={() => setModo('url')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-semibold border transition-all ${modo === 'url' ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t2 border-nodri-border hover:text-nodri-t1'}`}>
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-semibold border transition ${modo === 'url' ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t2 border-nodri-border hover:text-nodri-t1'}`}>
                   <ExternalLink size={13} /> Link do Google Sheets
                 </button>
                 <button onClick={() => setModo('csv')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-semibold border transition-all ${modo === 'csv' ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t2 border-nodri-border hover:text-nodri-t1'}`}>
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-semibold border transition ${modo === 'csv' ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t2 border-nodri-border hover:text-nodri-t1'}`}>
                   <FileText size={13} /> Colar CSV
                 </button>
               </div>
@@ -145,7 +145,7 @@ export default function ImportarPage() {
 
             {/* Botão importar */}
             <button onClick={importar} disabled={loading || !formularioId}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition"
               style={{ background: 'linear-gradient(135deg,#5b4fcf,#06b6d4)', color: 'white', boxShadow: '0 8px 30px rgba(124,92,252,.3)' }}>
               {loading ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Importando...</>
@@ -221,11 +221,11 @@ export default function ImportarPage() {
 
             <div className="flex gap-2 pt-2">
               <button onClick={() => router.push('/salon/feedback-profissional')}
-                className="flex-1 py-2 rounded-xl text-[12px] font-semibold border transition-all text-nodri-t1 border-nodri-border hover:bg-nodri-surface">
+                className="flex-1 py-2 rounded-xl text-[12px] font-semibold border transition text-nodri-t1 border-nodri-border hover:bg-nodri-surface">
                 ← Voltar ao Gerenciamento
               </button>
               <button onClick={() => { setResult(null); setSheetUrl(''); setCsvTexto('') }}
-                className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all"
+                className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition"
                 style={{ background: 'rgba(34,197,94,.12)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}>
                 Importar mais dados
               </button>

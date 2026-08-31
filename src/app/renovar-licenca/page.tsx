@@ -68,7 +68,7 @@ export default function RenovarLicencaPage() {
             const cor = CORES[i % CORES.length]
             return (
             <div key={plano.slug}
-              className={`nodri-card p-5 flex flex-col transition-all ${plano.destaque ? 'border-2' : ''}`}
+              className={`nodri-card p-5 flex flex-col transition ${plano.destaque ? 'border-2' : ''}`}
               style={{ borderColor: plano.destaque ? cor : undefined }}>
               {plano.destaque && (
                 <div className="text-center mb-3">
@@ -93,7 +93,7 @@ export default function RenovarLicencaPage() {
                 ))}
               </ul>
               <button onClick={() => renovar(plano.slug)} disabled={!!loading}
-                className="w-full py-3 font-bold rounded-xl text-white flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[13px]"
+                className="w-full py-3 font-bold rounded-xl text-white flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition text-[13px]"
                 style={{ background: cor }}>
                 {loading === plano.slug ? <><Loader2 size={15} className="animate-spin" /> Aguarde...</> : <><RefreshCw size={14} /> Assinar — R${plano.preco}/mês</>}
               </button>
@@ -116,11 +116,11 @@ export default function RenovarLicencaPage() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a href="https://wa.me/5561982195214?text=Preciso renovar minha licença NODRI"
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all text-[13px]">
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition text-[13px]">
             <MessageCircle size={15} /> Falar com Suporte
           </a>
           <a href="/logout"
-            className="flex items-center justify-center gap-2 px-6 py-3 border border-nodri-border text-nodri-t2 font-bold rounded-xl hover:text-nodri-red hover:border-nodri-red/30 transition-all text-[13px]">
+            className="flex items-center justify-center gap-2 px-6 py-3 border border-nodri-border text-nodri-t2 font-bold rounded-xl hover:text-nodri-red hover:border-nodri-red/30 transition text-[13px]">
             <LogOut size={15} /> Sair
           </a>
         </div>

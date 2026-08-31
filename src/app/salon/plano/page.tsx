@@ -129,7 +129,7 @@ export default function PlanoDoSalaoPage() {
                       </button>
                     ) : (
                       <button onClick={() => setConfirmar(p)} disabled={salvando}
-                        className={'w-full py-2.5 rounded-lg text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 '
+                        className={'w-full py-2.5 rounded-lg text-[12px] font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-50 '
                           + (sobe ? 'bg-nodri-cyan text-black hover:brightness-110'
                                   : 'bg-nodri-surface text-nodri-t2 border border-nodri-border hover:border-nodri-cyan')}>
                         {sobe ? <ArrowUp size={13} /> : <ArrowDown size={13} />}

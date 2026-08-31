@@ -117,7 +117,7 @@ export default function VitrineVotacao({ servicos, token }: {
                       return (
                         <button key={s.id} onClick={() => alternar(s.nome)}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-left border-b border-gray-50 last:border-0">
-                          <span className={'w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition-all '
+                          <span className={'w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition '
                             + (marcado ? 'bg-[var(--vt-cor)] border-transparent' : 'border-gray-300')}>
                             {marcado && <Check size={13} className="text-white" />}
                           </span>

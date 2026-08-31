@@ -334,7 +334,7 @@ export default function PendenciasPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setModalAberto(true)}
-            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11.5px] font-bold hover:brightness-110 active:scale-[.97] transition-all">
+            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11.5px] font-bold hover:brightness-110 active:scale-[.97] transition">
             <Plus size={14}/> Nova Pendência
           </button>
 
@@ -343,7 +343,7 @@ export default function PendenciasPage() {
               pela cor e por um pouco mais de largura, não pela altura. */}
           <button
             onClick={() => router.push('/salon/calendario')}
-            className="h-9 inline-flex items-center gap-2 px-5 rounded-lg bg-gradient-to-r from-[#5b4fcf] to-[#0891b2] text-white text-[11.5px] font-extrabold tracking-wide shadow-md shadow-[#5b4fcf]/25 hover:brightness-110 hover:shadow-lg active:scale-[.97] transition-all">
+            className="h-9 inline-flex items-center gap-2 px-5 rounded-lg bg-gradient-to-r from-[#5b4fcf] to-[#0891b2] text-white text-[11.5px] font-extrabold tracking-wide shadow-md shadow-[#5b4fcf]/25 hover:brightness-110 hover:shadow-lg active:scale-[.97] transition">
             <Calendar size={14}/> CALENDÁRIO
           </button>
 
@@ -351,7 +351,7 @@ export default function PendenciasPage() {
 
           <button
             onClick={() => setNovoDepAberto(v => !v)}
-            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg border border-nodri-border bg-nodri-card text-nodri-t2 text-[11.5px] font-bold hover:bg-black/5 active:scale-[.97] transition-all">
+            className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg border border-nodri-border bg-nodri-card text-nodri-t2 text-[11.5px] font-bold hover:bg-black/5 active:scale-[.97] transition">
             <Plus size={14}/> Novo departamento
           </button>
           {salaoId && (
@@ -361,7 +361,7 @@ export default function PendenciasPage() {
                 navigator.clipboard.writeText(link)
                 toast.success('Link copiado! Envie para os profissionais.')
               }}
-              className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[11.5px] font-semibold hover:bg-nodri-cyan/20 active:scale-[.97] transition-all">
+              className="h-9 inline-flex items-center gap-2 px-3.5 rounded-lg bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan text-[11.5px] font-semibold hover:bg-nodri-cyan/20 active:scale-[.97] transition">
               <Link2 size={14}/> Copiar Link do Profissional
             </button>
           )}
@@ -416,7 +416,7 @@ export default function PendenciasPage() {
                 return (
                   <div key={d.id}
                     onClick={() => router.push(`/salon/departamentos/${d.id}`)}
-                    className={`cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
+                    className={`cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
                     style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${doPortal > 0 ? '#dc2626' : temPend ? '#7f1d1d' : cor + '40'}` }}>
                     <div className="text-3xl">{icone}</div>
                     <div>

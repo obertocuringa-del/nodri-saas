@@ -101,7 +101,7 @@ export function PopsEAvaliacao({ cargo, profId, profNome }: { cargo?: string | n
   const [sub, setSub] = useState<'processos' | 'avaliacoes'>('processos')
   const Pill = ({ id, label }: { id: 'processos' | 'avaliacoes'; label: string }) => (
     <button onClick={() => setSub(id)}
-      className="text-[13px] font-bold px-4 py-2 rounded-lg transition-all"
+      className="text-[13px] font-bold px-4 py-2 rounded-lg transition"
       style={{ background: sub === id ? '#5b4fcf' : '#fff', color: sub === id ? '#fff' : '#5b4fcf', border: '1.5px solid #5b4fcf40' }}>
       {label}
     </button>
@@ -307,7 +307,7 @@ Seja específico e use os itens reais listados acima.`
                           <span className="font-bold shrink-0" style={{ color: corPct(s.pct) }}>{s.ok}/{s.total} · {s.pct}%</span>
                         </div>
                         <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(128,128,150,.18)' }}>
-                          <div className="h-full rounded-full transition-all" style={{ width: `${s.pct}%`, background: corPct(s.pct) }} />
+                          <div className="h-full rounded-full transition" style={{ width: `${s.pct}%`, background: corPct(s.pct) }} />
                         </div>
                       </div>
                     ))}
@@ -348,7 +348,7 @@ Seja específico e use os itens reais listados acima.`
                 {/* Como melhorar (IA) */}
                 <div>
                   <button onClick={() => comoMelhorar(av)} disabled={iaLoading === av.id}
-                    className="flex items-center gap-2 text-[12px] font-bold px-4 py-2 rounded-lg transition-all"
+                    className="flex items-center gap-2 text-[12px] font-bold px-4 py-2 rounded-lg transition"
                     style={{ background: '#5b4fcf', color: '#fff', opacity: iaLoading === av.id ? .7 : 1 }}>
                     {iaLoading === av.id ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                     Como melhorar

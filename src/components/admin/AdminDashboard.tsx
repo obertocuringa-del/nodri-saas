@@ -671,7 +671,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             <div className="flex gap-1.5 flex-wrap">
               {(['todos','pago','pendente','vencido','cancelado'] as const).map(f => (
                 <button key={f} onClick={() => setFiltro(f)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-bold capitalize border transition-all ${filtro === f ? 'bg-nodri-cyan text-black border-nodri-cyan' : 'border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold capitalize border transition ${filtro === f ? 'bg-nodri-cyan text-black border-nodri-cyan' : 'border-nodri-border text-nodri-t2 hover:text-nodri-t1'}`}>
                   {f}
                 </button>
               ))}
@@ -685,7 +685,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           ) : (
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {pags.map(p => (
-                <div key={p.id} className="flex items-center gap-3 p-3 bg-nodri-surface rounded-xl border border-nodri-border hover:border-nodri-cyan/20 transition-all flex-wrap">
+                <div key={p.id} className="flex items-center gap-3 p-3 bg-nodri-surface rounded-xl border border-nodri-border hover:border-nodri-cyan/20 transition flex-wrap">
                   <div className="flex-1 min-w-[180px]">
                     <div className="font-medium text-[12px]">{p.salao?.nome || 'Salão'}</div>
                     <div className="text-[10px] text-nodri-t3">{p.salao?.email} · {p.plano?.nome}</div>
@@ -1101,7 +1101,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
 
                   {(af.valor_acumulado || 0) > 0 && (
                     <button onClick={() => marcarPago(af)} disabled={savingComissao === af.id}
-                      className="mt-3 w-full py-2 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[12px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all flex items-center justify-center gap-2">
+                      className="mt-3 w-full py-2 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[12px] font-bold rounded-lg hover:bg-nodri-green/20 transition flex items-center justify-center gap-2">
                       {savingComissao === af.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
                       Marcar R${(af.valor_acumulado || 0).toFixed(2)} como pago (Pix: {af.chave_pix})
                     </button>
@@ -1110,11 +1110,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   {/* Ações: bloquear/desbloquear e excluir */}
                   <div className="mt-2 flex gap-2">
                     <button onClick={() => toggleAtivo(af)}
-                      className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg border transition-all flex items-center justify-center gap-1.5 ${af.ativo !== false ? 'bg-nodri-amber/10 border-nodri-amber/30 text-nodri-amber hover:bg-nodri-amber/20' : 'bg-nodri-green/10 border-nodri-green/30 text-nodri-green hover:bg-nodri-green/20'}`}>
+                      className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg border transition flex items-center justify-center gap-1.5 ${af.ativo !== false ? 'bg-nodri-amber/10 border-nodri-amber/30 text-nodri-amber hover:bg-nodri-amber/20' : 'bg-nodri-green/10 border-nodri-green/30 text-nodri-green hover:bg-nodri-green/20'}`}>
                       {af.ativo !== false ? <><Lock size={11} /> Bloquear cupom</> : <><Unlock size={11} /> Desbloquear cupom</>}
                     </button>
                     <button onClick={() => excluirAfiliado(af)}
-                      className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-nodri-red/30 bg-nodri-red/5 text-nodri-red hover:bg-nodri-red/15 transition-all flex items-center gap-1.5">
+                      className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-nodri-red/30 bg-nodri-red/5 text-nodri-red hover:bg-nodri-red/15 transition flex items-center gap-1.5">
                       <Trash2 size={11} /> Excluir
                     </button>
                   </div>
@@ -1299,7 +1299,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-1">Painel</p>
           {navItems.slice(0, 7).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${item.badgeRed ? 'bg-nodri-red text-gray-900' : 'bg-nodri-cyan text-black'}`}>{item.badge}</span>
@@ -1309,7 +1309,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
           <p className="text-[9px] text-nodri-t3 uppercase tracking-widest px-2.5 py-1.5 font-medium mt-2">Sistema</p>
           {navItems.slice(7).map(item => (
             <button key={item.id} onClick={() => { if ((item as any).rota) window.location.href = (item as any).rota; else setActiveSection(item.id) }}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition-all ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11.5px] border transition ${activeSection === item.id ? 'bg-nodri-cyan/9 text-nodri-cyan border-nodri-cyan/17' : 'text-nodri-t2 border-transparent hover:bg-white/4 hover:text-nodri-t1'}`}>
               {item.icon}<span className="flex-1 text-left">{item.label}</span>
             </button>
           ))}
@@ -1334,24 +1334,24 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             </div>
           </div>
           <div className="ml-auto flex gap-2">
-            <button className="relative w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
+            <button className="relative w-8 h-8 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition">
               <Bell size={14} />
               {localNotifs.filter(n => !n.lida).length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
             </button>
             {activeSection === 'planos' && (
               <button onClick={() => { setEditPlano(null); setPlanoForm({ nome: '', slug: '', descricao: '', preco: '', max_usuarios: '' }); setShowNovoPlano(true) }}
-                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
+                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition">
                 <Plus size={13} /> Novo Plano
               </button>
             )}
             {activeSection === 'modulos' && (
               <button onClick={() => { resetModuloForm(); setEditModulo(null); setShowNovoModulo(true) }}
-                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
+                className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition">
                 <Plus size={13} /> Novo Módulo
               </button>
             )}
             {activeSection !== 'planos' && activeSection !== 'modulos' && activeSection !== 'ia' && activeSection !== 'contatos' && activeSection !== 'funcionalidades' && (
-              <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">
+              <button onClick={() => setShowNovoSalao(true)} className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11.5px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 transition">
                 <Plus size={13} /> Novo Salão
               </button>
             )}
@@ -1380,7 +1380,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       setLocalModulos(prev => prev.map(m => ({ ...m, em_manutencao: false })))
                       toast.success('Manutenção encerrada em todos os módulos!')
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[11px] font-bold rounded-lg hover:bg-nodri-green/20 transition-all">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-nodri-green/10 border border-nodri-green/30 text-nodri-green text-[11px] font-bold rounded-lg hover:bg-nodri-green/20 transition">
                       <CheckCircle size={12} /> Encerrar Todos
                     </button>
                   )}
@@ -1388,7 +1388,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 <p className="text-[11px] text-nodri-t3 mb-4">Ative o modo manutenção para bloquear temporariamente um módulo para todos os salões</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {modulosSuite.length > 0 && (
-                    <div className={`p-3 border rounded-xl transition-all ${suiteEmManutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-cyan/40 bg-nodri-cyan/5'}`}>
+                    <div className={`p-3 border rounded-xl transition ${suiteEmManutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-cyan/40 bg-nodri-cyan/5'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
                         <div className="min-w-0">
                           <div className="font-bold text-[10px] uppercase leading-tight truncate">Suite NODRI</div>
@@ -1398,14 +1398,14 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </div>
                       <div className="flex gap-1 mt-2">
                         <button onClick={toggleManutencaoSuite}
-                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!suiteEmManutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
+                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition ${!suiteEmManutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
                           {!suiteEmManutencao ? <><Wrench size={9} /> Manutenção</> : <><CheckCircle size={9} /> Encerrar</>}
                         </button>
                       </div>
                     </div>
                   )}
                   {modulosSemSuite.map(m => (
-                    <div key={m.id} className={`p-3 border rounded-xl transition-all ${m.em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
+                    <div key={m.id} className={`p-3 border rounded-xl transition ${m.em_manutencao ? 'border-nodri-red/40 bg-nodri-red/5' : 'border-nodri-border bg-nodri-surface'}`}>
                       <div className="flex items-start justify-between mb-2 gap-1">
                         <div className="min-w-0">
                           <div className="font-bold text-[10px] uppercase leading-tight truncate">{m.nome}</div>
@@ -1415,11 +1415,11 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </div>
                       <div className="flex gap-1 mt-2">
                         <button onClick={() => toggleManutencao(m)}
-                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition-all ${!m.em_manutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
+                          className={`flex-1 py-1 text-[9px] font-bold rounded border transition ${!m.em_manutencao ? 'border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15' : 'border-nodri-green/30 text-nodri-green bg-nodri-green/5 hover:bg-nodri-green/15'}`}>
                           {!m.em_manutencao ? <><Wrench size={9} /> Manutenção</> : <><CheckCircle size={9} /> Encerrar</>}
                         </button>
-                        <button onClick={() => openEditModulo(m)} title="Editar" className="p-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Edit size={10} /></button>
-                        <button onClick={() => deleteModulo(m.id)} title="Excluir" className="p-1 border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={10} /></button>
+                        <button onClick={() => openEditModulo(m)} title="Editar" className="p-1 border border-nodri-border rounded text-nodri-t3 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition"><Edit size={10} /></button>
+                        <button onClick={() => deleteModulo(m.id)} title="Excluir" className="p-1 border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition"><Trash2 size={10} /></button>
                       </div>
                     </div>
                   ))}
@@ -1465,7 +1465,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
               <Wrench size={64} className="text-nodri-cyan" />
               <h2 className="text-xl font-bold text-gray-900">Programas — Configuração Remota</h2>
               <p className="text-gray-500 text-sm text-center max-w-md">XPaths, links de relatórios e tempos de espera da Suite NODRI. O que você salvar aqui vale para TODOS os clientes na próxima abertura do programa — sem reinstalar nada.</p>
-              <a href="/admin/programas" className="bg-nodri-cyan hover:brightness-110 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition-all">
+              <a href="/admin/programas" className="bg-nodri-cyan hover:brightness-110 text-black font-semibold px-6 py-2.5 rounded-xl text-sm transition">
                 Abrir Configuração
               </a>
             </div>
@@ -1508,8 +1508,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <div className="text-right"><div className="font-syne font-bold text-[15px]">R${plano.preco}</div><div className="text-[9px] text-nodri-t3">/mês</div></div>
                         <div className="text-right"><div className="text-[11px] font-medium flex items-center gap-1"><Users size={11} /> {plano.max_usuarios} usuário(s)</div></div>
                         <div className="flex gap-1.5">
-                          <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all"><Edit size={11} /></button>
-                          <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all"><Trash2 size={11} /></button>
+                          <button onClick={() => openEditPlano(plano)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition"><Edit size={11} /></button>
+                          <button onClick={() => deletePlano(plano.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition"><Trash2 size={11} /></button>
                         </div>
                       </div>
                     </div>
@@ -1558,7 +1558,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         </div>
                       )}
                       <button type="submit" disabled={savingCupon || !cuponForm.percentual}
-                        className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg text-[12px] font-bold hover:brightness-110 disabled:opacity-50 transition-all">
+                        className="flex items-center gap-2 bg-nodri-cyan text-black px-5 py-2.5 rounded-lg text-[12px] font-bold hover:brightness-110 disabled:opacity-50 transition">
                         {savingCupon ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
                         Gerar Cupom
                       </button>
@@ -1580,7 +1580,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     ) : (
                       <div className="space-y-2">
                         {cupons.map(c => (
-                          <div key={c.id} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${c.ativo ? 'border-nodri-border bg-nodri-surface' : 'border-nodri-border/30 bg-nodri-card/50 opacity-60'}`}>
+                          <div key={c.id} className={`flex items-center justify-between p-3 rounded-lg border transition ${c.ativo ? 'border-nodri-border bg-nodri-surface' : 'border-nodri-border/30 bg-nodri-card/50 opacity-60'}`}>
                             <div className="flex items-center gap-3">
                               <div className="font-mono font-bold text-[14px] text-nodri-cyan tracking-wider">{c.codigo}</div>
                               <div className="text-[10px] bg-nodri-cyan/10 text-nodri-cyan px-2 py-0.5 rounded-full font-bold">{c.percentual}% OFF</div>
@@ -1590,10 +1590,10 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                               <div className="text-[10px] text-nodri-t3">{c.usos_atual} uso(s)</div>
                               <div className="text-[10px] text-nodri-t3">{new Date(c.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</div>
                               <button onClick={() => toggleCupon(c.id, c.ativo)} title={c.ativo ? 'Desativar' : 'Reativar'}
-                                className={`p-1.5 rounded-md border transition-all ${c.ativo ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/7 hover:bg-nodri-amber/15' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15'}`}>
+                                className={`p-1.5 rounded-md border transition ${c.ativo ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/7 hover:bg-nodri-amber/15' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15'}`}>
                                 {c.ativo ? <Lock size={11} /> : <Unlock size={11} />}
                               </button>
-                              <button onClick={() => deleteCupon(c.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition-all">
+                              <button onClick={() => deleteCupon(c.id)} className="p-1.5 rounded-md border border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15 transition">
                                 <Trash2 size={11} />
                               </button>
                             </div>
@@ -1640,7 +1640,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <span className="text-nodri-t3">{count} salões ({pct}%)</span>
                       </div>
                       <div className="h-2 bg-nodri-surface rounded-full overflow-hidden">
-                        <div className="h-full bg-nodri-cyan rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-full bg-nodri-cyan rounded-full transition" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   )
@@ -1697,7 +1697,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <button
                           type="button"
                           onClick={() => setIaConfig(p => ({ ...p, instrucoes_base: `Seja sempre cordial e use o nome do profissional ao cumprimentar.\nFoco principal: aumentar faturamento e fidelização de clientes.\nSempre sugira pelo menos uma ação prática ao final de cada resposta.\nUse linguagem simples e direta, sem termos técnicos desnecessários.` }))}
-                          className="text-[10px] px-3 py-1 rounded bg-nodri-border hover:bg-nodri-cyan/20 text-nodri-t2 hover:text-nodri-cyan transition-all flex items-center gap-1"
+                          className="text-[10px] px-3 py-1 rounded bg-nodri-border hover:bg-nodri-cyan/20 text-nodri-t2 hover:text-nodri-cyan transition flex items-center gap-1"
                         >
                           <ClipboardList size={11} className="inline mr-1" /> Carregar Prompt Padrão
                         </button>
@@ -1860,7 +1860,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         toast.success(novoEstado ? 'Atualização disponibilizada para todos os salões!' : 'Botão voltou ao modo normal')
                       }}
                       disabled={savingPrograma}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition-all ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-700 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-bold transition ${configPrograma.atualizacao_ativa ? 'bg-green-500/15 border border-green-500/40 text-green-700 hover:bg-green-500/25' : 'bg-nodri-surface border border-nodri-border text-nodri-t2 hover:border-nodri-cyan/40 hover:text-nodri-cyan'}`}>
                       {configPrograma.atualizacao_ativa ? <><Zap size={12} /> Atualização ATIVA — Clique para desativar</> : <><RefreshCw size={12} /> Disponibilizar Atualização do Sistema</>}
                     </button>
                     <button
@@ -1929,7 +1929,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   {localNotifs.slice(0, 8).map(n => {
                     const isCompra = n.metadata?.tipo === 'compra'
                     return (
-                      <div key={n.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border group hover:border-nodri-cyan/20 transition-all ${isCompra ? 'bg-nodri-green/5 border-nodri-green/20' : 'bg-nodri-surface border-nodri-border'}`}>
+                      <div key={n.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border group hover:border-nodri-cyan/20 transition ${isCompra ? 'bg-nodri-green/5 border-nodri-green/20' : 'bg-nodri-surface border-nodri-border'}`}>
                         <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${isCompra ? 'bg-nodri-green' : TIPO_COLOR[n.tipo]}`} />
                         {editNotif?.id === n.id ? (
                           <div className="flex-1 flex gap-2">
@@ -1972,7 +1972,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   <div className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-2 font-medium">Enviar Notificação</div>
                   <div className="relative mb-2" ref={dropdownRef}>
                     <button onClick={() => setShowDestinatarios(!showDestinatarios)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-nodri-card border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition-all">
+                      className="w-full flex items-center justify-between px-3 py-2 bg-nodri-card border border-nodri-border rounded-lg text-[11px] hover:border-nodri-cyan/30 transition">
                       <span className={notifDestinatarios.length === 0 ? 'text-nodri-t3' : 'text-nodri-t1'}>{notifDestinatarios.length === 0 ? 'Todos os salões' : `${notifDestinatarios.length} salão(ões) selecionado(s)`}</span>
                       <ChevronDown size={12} className={`text-nodri-t3 transition-transform ${showDestinatarios ? 'rotate-180' : ''}`} />
                     </button>
@@ -2004,7 +2004,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       className="nodri-input flex-1 text-[11px]"
                       onKeyDown={e => e.key === 'Enter' && sendNotification()} />
                     <button onClick={sendNotification} disabled={sending || !notifMsg.trim()}
-                      className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all shrink-0">
+                      className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[11px] font-bold px-3 py-1.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition shrink-0">
                       {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Enviar
                     </button>
                   </div>
@@ -2046,12 +2046,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1.5">
-                              <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition-all" title="Editar"><Edit size={11} /></button>
-                              <button onClick={() => openModCtrl(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-cyan/35 text-nodri-cyan bg-nodri-cyan/7 text-[10px] font-semibold hover:bg-nodri-cyan/15 transition-all"><Puzzle size={10} /> Módulos</button>
-                              <button onClick={() => { setAssinSalao(salao); setAssinPlano(''); setAssinLink(''); setAssinMsg('') }} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-green/35 text-nodri-green bg-nodri-green/7 text-[10px] font-semibold hover:bg-nodri-green/15 transition-all" title="Assinatura recorrente"><CreditCard size={10} /> Assinatura</button>
-                              <button onClick={() => acessarComoCliente(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-amber/35 text-nodri-amber bg-nodri-amber/7 text-[10px] font-semibold hover:bg-nodri-amber/15 transition-all" title="Acessar como este cliente"><LogIn size={10} /> Acessar</button>
+                              <button onClick={() => openEditSalao(salao)} className="p-1.5 rounded-md border border-nodri-purple/40 text-nodri-purple bg-nodri-purple/7 hover:bg-nodri-purple/15 transition" title="Editar"><Edit size={11} /></button>
+                              <button onClick={() => openModCtrl(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-cyan/35 text-nodri-cyan bg-nodri-cyan/7 text-[10px] font-semibold hover:bg-nodri-cyan/15 transition"><Puzzle size={10} /> Módulos</button>
+                              <button onClick={() => { setAssinSalao(salao); setAssinPlano(''); setAssinLink(''); setAssinMsg('') }} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-green/35 text-nodri-green bg-nodri-green/7 text-[10px] font-semibold hover:bg-nodri-green/15 transition" title="Assinatura recorrente"><CreditCard size={10} /> Assinatura</button>
+                              <button onClick={() => acessarComoCliente(salao)} className="flex items-center gap-1 px-2 py-1 rounded-md border border-nodri-amber/35 text-nodri-amber bg-nodri-amber/7 text-[10px] font-semibold hover:bg-nodri-amber/15 transition" title="Acessar como este cliente"><LogIn size={10} /> Acessar</button>
                               <button onClick={() => toggleBloqueio(salao)}
-                                className={`p-1.5 rounded-md border transition-all ${salao.status === 'bloqueado' ? 'border-nodri-green/35 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15' : 'border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15'}`}
+                                className={`p-1.5 rounded-md border transition ${salao.status === 'bloqueado' ? 'border-nodri-green/35 text-nodri-green bg-nodri-green/7 hover:bg-nodri-green/15' : 'border-nodri-red/35 text-nodri-red bg-nodri-red/7 hover:bg-nodri-red/15'}`}
                                 title={salao.status === 'bloqueado' ? 'Desbloquear' : 'Bloquear'}>
                                 {salao.status === 'bloqueado' ? <Unlock size={11} /> : <Lock size={11} />}
                               </button>
@@ -2113,7 +2113,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   navigator.clipboard.writeText(txt)
                   toast.success('Dados copiados!')
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-nodri-border text-nodri-t2 rounded-lg text-[12px] hover:text-nodri-t1 hover:border-nodri-cyan/30 transition-all">
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-nodri-border text-nodri-t2 rounded-lg text-[12px] hover:text-nodri-t1 hover:border-nodri-cyan/30 transition">
                 <ClipboardList size={13} className="inline mr-1" /> Copiar Dados
               </button>
               <button
@@ -2128,7 +2128,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   setSelectedCompra(null)
                   setShowNovoSalao(true)
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-nodri-cyan text-black rounded-lg text-[12px] font-bold hover:brightness-110 transition-all">
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-nodri-cyan text-black rounded-lg text-[12px] font-bold hover:brightness-110 transition">
                 <Plus size={13} /> Cadastrar Salão
               </button>
             </div>
@@ -2218,7 +2218,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             <div className="flex border-b border-nodri-border">
               {[{ id: 'dados', label: 'Dados', icon: <ClipboardList size={12} className="inline mr-1" /> }, { id: 'acesso', label: 'Acesso', icon: <Key size={12} className="inline mr-1" /> }, { id: 'perigo', label: 'Perigo', icon: <AlertCircle size={12} className="inline mr-1" /> }].map(t => (
                 <button key={t.id} onClick={() => setEditTab(t.id as any)}
-                  className={`flex-1 py-2.5 text-[11.5px] font-medium border-b-2 transition-all ${editTab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t2 hover:text-nodri-t1'}`}>
+                  className={`flex-1 py-2.5 text-[11.5px] font-medium border-b-2 transition ${editTab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t2 hover:text-nodri-t1'}`}>
                   {t.icon}{t.label}
                 </button>
               ))}
@@ -2260,8 +2260,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         <div className="text-[10px] text-nodri-t3">Liberar acesso à IA para este salão</div>
                       </div>
                       <button type="button" onClick={() => toggleIA(editSalao)}
-                        className={`w-10 h-5 rounded-full relative transition-all ${editSalao.ia_ativa ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
-                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${editSalao.ia_ativa ? 'left-5' : 'left-0.5'}`}/>
+                        className={`w-10 h-5 rounded-full relative transition ${editSalao.ia_ativa ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition ${editSalao.ia_ativa ? 'left-5' : 'left-0.5'}`}/>
                       </button>
                     </div>
                   </>
@@ -2300,7 +2300,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </div>
                       <p className="text-[11px] text-nodri-t2 mb-3">{editSalao.status === 'bloqueado' ? 'O salão está bloqueado. Clique para reativar o acesso.' : 'Bloquear impede o cliente de acessar o sistema. Pode ser desfeito.'}</p>
                       <button type="button" onClick={() => toggleBloqueio(editSalao)}
-                        className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition-all ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
+                        className={`px-4 py-2 rounded-lg text-[11.5px] font-bold transition ${editSalao.status === 'bloqueado' ? 'bg-nodri-green text-black hover:brightness-110' : 'border border-nodri-amber text-nodri-amber hover:bg-nodri-amber/10'}`}>
                         {editSalao.status === 'bloqueado' ? <><CheckCircle size={12} className="inline mr-1" /> Desbloquear Salão</> : <><Lock size={12} className="inline mr-1" /> Bloquear Salão</>}
                       </button>
                     </div>
@@ -2308,7 +2308,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       <div className="font-syne font-bold text-[12px] mb-1 flex items-center gap-2 text-nodri-red"><Trash2 size={13} /> Excluir Salão Permanentemente</div>
                       <p className="text-[11px] text-nodri-t2 mb-3">Esta ação é irreversível. Todos os dados do salão serão apagados.</p>
                       {!showDeleteConfirm ? (
-                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition-all"><Trash2 size={12} /> Excluir este salão</button>
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11.5px] font-bold border border-nodri-red text-nodri-red hover:bg-nodri-red/10 transition"><Trash2 size={12} /> Excluir este salão</button>
                       ) : (
                         <div className="space-y-2">
                           <p className="text-[11px] text-nodri-red">Digite o nome do salão para confirmar: <strong>{editSalao.nome}</strong></p>
@@ -2316,7 +2316,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <div className="flex gap-2">
                             <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }} className="nodri-btn-ghost text-[11px]">Cancelar</button>
                             <button type="button" onClick={deleteSalao} disabled={deletingSalao || deleteConfirmText !== editSalao.nome}
-                              className="flex items-center gap-1.5 bg-nodri-red text-gray-900 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition-all">
+                              className="flex items-center gap-1.5 bg-nodri-red text-gray-900 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-40 transition">
                               {deletingSalao ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Excluir Definitivamente
                             </button>
                           </div>
@@ -2452,7 +2452,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                 const plano = planoMinimoPara(m.chave)
                 return (
                   <div key={m.chave} onClick={() => toggleModuloLogico(m.ids)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
+                    className={`p-3 rounded-lg border cursor-pointer transition ${on ? 'border-nodri-cyan bg-nodri-cyan/10' : 'border-nodri-border bg-nodri-surface hover:border-nodri-cyan/30'}`}>
                     <div className="flex items-start gap-2">
                       <Settings size={13} className="text-nodri-t3 shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
@@ -2460,7 +2460,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         {plano && <div className="text-[9px] text-nodri-t3 mt-0.5">Plano {plano.nome} · R$ {plano.preco}</div>}
                       </div>
                       <div className={`w-7 h-3.5 rounded-full relative shrink-0 transition-colors ${on ? 'bg-nodri-cyan' : 'bg-nodri-border'}`}>
-                        <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all ${on ? 'left-4' : 'left-0.5'}`} />
+                        <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition ${on ? 'left-4' : 'left-0.5'}`} />
                       </div>
                     </div>
                     {/* A Suite são 4 programas numa chave só — dizer quais evita
@@ -2475,8 +2475,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
             <div className="flex justify-between items-center border-t border-nodri-border pt-3">
               <span className="text-[11px] text-nodri-t1 font-medium">{modulosLogicos.filter(m => m.ids.every(id => modulosAtivos.has(id))).length} de {modulosLogicos.length} módulos ativos</span>
               <div className="flex gap-2">
-                <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition-all">Cancelar</button>
-                <button onClick={saveModulos} disabled={savingMods} className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-1.5">
+                <button onClick={() => setModCtrlSalao(null)} className="px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 text-[11px] hover:bg-nodri-surface transition">Cancelar</button>
+                <button onClick={saveModulos} disabled={savingMods} className="px-3 py-1.5 rounded-lg bg-nodri-cyan text-black text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition flex items-center gap-1.5">
                   {savingMods ? <><Loader2 size={12} className="animate-spin" /> Salvando...</> : 'Salvar Alterações'}
                 </button>
               </div>

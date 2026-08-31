@@ -290,7 +290,7 @@ function FiltroGrupo({ titulo, opcoes, sel, onToggle }: { titulo: string; opcoes
           const on = sel.has(o.v)
           return (
             <button key={o.v} onClick={() => onToggle(o.v)}
-              className="text-[11px] px-2.5 py-1 rounded-full font-medium transition-all"
+              className="text-[11px] px-2.5 py-1 rounded-full font-medium transition"
               style={{ background: on ? COR : '#fff', color: on ? '#fff' : '#4a4760', border: '1px solid ' + (on ? COR : '#e6e3f2') }}>
               {o.l}
             </button>

@@ -339,7 +339,7 @@ export default function FeedbackPage() {
           ) : (
             formularios.map(f => (
               <button key={f.id} onClick={() => { selectForm(f); setSidebarOpen(false) }}
-                className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition-all hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}>
+                className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${f.ativo ? 'bg-green-400' : 'bg-red-400'}`} />
                   <span className="text-[11.5px] font-medium text-nodri-t1 truncate flex-1">{f.titulo}</span>
@@ -354,13 +354,13 @@ export default function FeedbackPage() {
           {/* Botões na lateral */}
           <div className="p-3 border-t border-nodri-border mt-auto space-y-1.5">
             <button onClick={criarFormulario} disabled={saving}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
               <Plus size={12} /> Novo Formulário
             </button>
             {selected && (
               <button onClick={() => router.push(`/salon/feedback/resultados/${selected.id}`)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                 style={{ background: 'rgba(139,92,246,0.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.3)' }}>
                 <BarChart2 size={12} /> Ver Resultados
               </button>
@@ -376,7 +376,7 @@ export default function FeedbackPage() {
               <h2 className="text-nodri-t1 font-syne font-bold text-lg mb-2">Sistema de Feedback</h2>
               <p className="text-nodri-t2 text-sm mb-6 max-w-sm">Crie formulários personalizados e envie o link para seus clientes responderem</p>
               <button onClick={criarFormulario} disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm mx-auto transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm mx-auto transition"
                 style={{ background: 'linear-gradient(135deg, #5b4fcf, #f43f8e)', color: 'white' }}>
                 <Plus size={16} /> Criar primeiro formulário
               </button>
@@ -395,12 +395,12 @@ export default function FeedbackPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={toggleAtivo}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border transition"
                     style={{ borderColor: '#e0ddd8', color: '#767069' }}>
                     {selected.ativo ? <><EyeOff size={10} /> Desativar</> : <><Eye size={10} /> Ativar</>}
                   </button>
                   <button onClick={excluirFormulario}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all">
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] border border-red-500/30 text-red-400 hover:bg-red-500/10 transition">
                     <Trash2 size={10} /> Excluir
                   </button>
                 </div>
@@ -415,7 +415,7 @@ export default function FeedbackPage() {
               <div className="hidden sm:flex gap-0 border-b-0">
                 {(['perguntas', 'link', 'config'] as const).map(t => (
                   <button key={t} onClick={() => setTab(t)}
-                    className={`px-4 py-2 text-[11px] font-medium capitalize border-b-2 transition-all ${tab === t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}>
+                    className={`px-4 py-2 text-[11px] font-medium capitalize border-b-2 transition ${tab === t ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}>
                     {t === 'perguntas' ? <><Pencil size={11} className="inline mr-1" />Perguntas</> : t === 'link' ? <><Link size={11} className="inline mr-1" />Link para Clientes</> : <><Settings size={11} className="inline mr-1" />Configurações</>}
                   </button>
                 ))}
@@ -431,7 +431,7 @@ export default function FeedbackPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-[11px] text-nodri-t2">{perguntas.length} pergunta{perguntas.length !== 1 ? 's' : ''}</div>
                     <button onClick={() => setShowNova(!showNova)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition"
                       style={{ background: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
                       <Plus size={12} /> Adicionar Pergunta
                     </button>
@@ -473,12 +473,12 @@ export default function FeedbackPage() {
                         </div>
                         <div className="flex gap-2 pt-1">
                           <button onClick={adicionarPergunta} disabled={saving || !novaPerg.titulo.trim()}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold disabled:opacity-50 transition-all"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold disabled:opacity-50 transition"
                             style={{ background: 'rgba(34,197,94,0.15)', color: '#15803d', border: '1px solid rgba(34,197,94,0.3)' }}>
                             <Check size={12} /> Adicionar
                           </button>
                           <button onClick={() => setShowNova(false)}
-                            className="px-4 py-2 rounded-lg text-[11px] border border-nodri-border text-nodri-t2 hover:text-nodri-t1 transition-all">
+                            className="px-4 py-2 rounded-lg text-[11px] border border-nodri-border text-nodri-t2 hover:text-nodri-t1 transition">
                             Cancelar
                           </button>
                         </div>
@@ -489,7 +489,7 @@ export default function FeedbackPage() {
                   {/* LISTA DE PERGUNTAS */}
                   <div className="space-y-2">
                     {perguntas.map((p, i) => (
-                      <div key={p.id} className="rounded-xl border transition-all"
+                      <div key={p.id} className="rounded-xl border transition"
                         style={{ background: '#ffffff', borderColor: editando?.id === p.id ? 'rgba(6,182,212,0.4)' : '#f5f4f0' }}>
                         {editando?.id === p.id ? (
                           <div className="p-4 space-y-3">
@@ -520,7 +520,7 @@ export default function FeedbackPage() {
                             </div>
                             <div className="flex gap-2">
                               <button onClick={salvarPergunta} disabled={saving}
-                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all"
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold transition"
                                 style={{ background: 'rgba(6,182,212,0.15)', color: '#0891b2', border: '1px solid rgba(6,182,212,0.3)' }}>
                                 <Check size={11} /> Salvar
                               </button>
@@ -553,11 +553,11 @@ export default function FeedbackPage() {
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <button onClick={() => setEditando(p)}
-                                className="w-7 h-7 rounded-md flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan hover:bg-nodri-cyan/10 transition-all">
+                                className="w-7 h-7 rounded-md flex items-center justify-center text-nodri-t3 hover:text-nodri-cyan hover:bg-nodri-cyan/10 transition">
                                 <Edit2 size={12} />
                               </button>
                               <button onClick={() => excluirPergunta(p.id)}
-                                className="w-7 h-7 rounded-md flex items-center justify-center text-nodri-t3 hover:text-red-400 hover:bg-red-400/10 transition-all">
+                                className="w-7 h-7 rounded-md flex items-center justify-center text-nodri-t3 hover:text-red-400 hover:bg-red-400/10 transition">
                                 <Trash2 size={12} />
                               </button>
                             </div>
@@ -594,14 +594,14 @@ export default function FeedbackPage() {
                     <div className="flex items-center gap-2 p-3 rounded-xl border" style={{ background: '#f5f4f0', borderColor: '#f5f4f0' }}>
                       <span className="flex-1 text-[11px] text-nodri-cyan break-all">{linkFeedback}</span>
                       <button onClick={copiarLink}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold shrink-0 transition"
                         style={{ background: 'rgba(139,92,246,0.2)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.35)' }}>
                         <Copy size={11} /> Copiar
                       </button>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <a href={linkFeedback} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition"
                         style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
                         <Eye size={11} /> Visualizar formulário
                       </a>
@@ -625,18 +625,18 @@ export default function FeedbackPage() {
                         </div>
                         <div className="mt-3 flex gap-2 flex-wrap">
                           <button onClick={() => { navigator.clipboard.writeText(montarMsg(msgAtual, linkFeedback)); toast.success('Mensagem copiada! É só colar no WhatsApp.') }}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition"
                             style={{ background: '#25D366', color: '#fff', border: 'none' }}>
                             <Copy size={12} /> Copiar mensagem
                           </button>
                           <button onClick={() => { setMsgEdit(msgAtual); setMsgEditando(true) }}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                             style={{ background: 'rgba(139,92,246,0.1)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,0.3)' }}>
                             <Edit2 size={12} /> Editar
                           </button>
                           {msgCliente && (
                             <button onClick={excluirMsgCliente}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                               style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.3)' }}>
                               <Trash2 size={12} /> Excluir
                             </button>
@@ -653,7 +653,7 @@ export default function FeedbackPage() {
                         </p>
                         <div className="flex gap-2">
                           <button onClick={salvarMsgCliente} disabled={msgSalvando}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition"
                             style={{ background: 'rgba(34,197,94,0.15)', color: '#15803d', border: '1px solid rgba(34,197,94,0.35)' }}>
                             <Check size={12} /> {msgSalvando ? 'Salvando...' : 'Salvar mensagem'}
                           </button>
@@ -663,7 +663,7 @@ export default function FeedbackPage() {
                             Cancelar
                           </button>
                           <button onClick={() => setMsgEdit(modeloPadraoMsg(nomeSalao))}
-                            className="px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                            className="px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                             style={{ border: '1px dashed #c9c4f0', background: '#f6f4ff', color: '#5b4fcf' }}>
                             Restaurar modelo
                           </button>
@@ -701,7 +701,7 @@ export default function FeedbackPage() {
                           rows={3} className="w-full bg-nodri-card border border-nodri-border rounded-lg px-3 py-2 text-[12px] text-nodri-t1 outline-none focus:border-nodri-cyan/40 resize-none" />
                       </div>
                       <button onClick={salvarConfig} disabled={saving}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition"
                         style={{ background: 'rgba(6,182,212,0.15)', color: '#0891b2', border: '1px solid rgba(6,182,212,0.3)' }}>
                         <Check size={12} /> {saving ? 'Salvando...' : 'Salvar Configurações'}
                       </button>

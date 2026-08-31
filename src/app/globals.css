@@ -420,10 +420,10 @@ button { font-family: inherit; transition: filter .12s ease, box-shadow .12s eas
     @apply bg-nodri-card border border-nodri-border rounded-xl;
   }
   .nodri-btn-primary {
-    @apply bg-nodri-cyan text-white font-bold text-sm px-4 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95;
+    @apply bg-nodri-cyan text-white font-bold text-sm px-4 py-2 rounded-lg hover:brightness-110 transition active:scale-95;
   }
   .nodri-btn-ghost {
-    @apply border border-nodri-border text-nodri-t2 text-sm px-4 py-2 rounded-lg hover:bg-black/5 hover:text-nodri-t1 transition-all;
+    @apply border border-nodri-border text-nodri-t2 text-sm px-4 py-2 rounded-lg hover:bg-black/5 hover:text-nodri-t1 transition;
   }
   .nodri-input {
     @apply w-full bg-nodri-card border border-nodri-border text-nodri-t1 placeholder-nodri-t3 rounded-lg px-3 py-2 text-sm outline-none focus:border-nodri-cyan/50 transition-colors;

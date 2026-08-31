@@ -112,7 +112,18 @@ const CORES: Record<string, string> = {
   dosagem: '#ea580c', gerais: '#ea580c', manutencao: '#ea580c', cafe: '#ea580c',
 }
 
-const LINHA = '#cbd5e1'
+// Os quatro ramos do nível 2, na ordem em que aparecem. Sair da marcação
+// solta para uma lista é o que permite ao desenho saber qual é o PRIMEIRO e
+// qual é o ÚLTIMO ramo — sem isso não dá para o barramento parar no centro
+// deles.
+const RAMOS: { chave: string; filhos: string[] }[] = [
+  { chave: 'administrativo', filhos: ['financeiro', 'compras'] },
+  { chave: 'rh',             filhos: [] },
+  { chave: 'marketing',      filhos: ['comercial'] },
+  { chave: 'coordenador',    filhos: ['recepcao', 'profissionais', 'dosagem', 'gerais', 'manutencao', 'cafe'] },
+]
+
+const LINHA = '#b8b2a6'   // era #cbd5e1: sumia no branco e a árvore ficava sem linhas
 
 export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true, onExcluir }: Props) {
   const [doc, setDoc] = useState<DocOrg>({})
@@ -215,7 +226,13 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   // variante: 'solida' = área do nível 2 (fundo colorido, como no desenho),
   //           'staff'  = assessoria (borda tracejada, fora da linha de comando),
   //           'branca' = setor de execução.
-  function Caixa({ chave, dep, largura = 132, variante = 'branca' }: {
+  // Selo de assessoria: diz POR QUE a caixa está fora da cadeia de comando.
+  // Sem isso o tracejado é só um estilo diferente; com isso ele é informação.
+  const SELO_STAFF: Record<string, string> = {
+    contabilidade: 'Externo', qualidade: 'Audita', tecnica: 'Legal',
+  }
+
+  function Caixa({ chave, dep, largura = 150, variante = 'branca' }: {
     chave: string; dep?: DepOrg; largura?: number; variante?: 'solida' | 'staff' | 'branca'
   }) {
     if (!dep) return null
@@ -225,39 +242,63 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     const linhas = info.linhas && info.linhas.length ? info.linhas : padrao.linhas
     const pend = dep.pendencias_abertas || 0
     const doPortal = solicPorSetor[dep.id] || 0
-    const solida = variante === 'solida'
     const staff = variante === 'staff'
-    // Pisca com QUALQUER pendência aberta, não só com solicitação do portal:
-    // era o caso de o setor ter tarefa esperando e o card ficar parado.
-    const alerta = doPortal > 0 || pend > 0
+    const area = variante === 'solida'      // nível 2: um degrau acima dos filhos
+
+    // ── Escala do selo de pendências ────────────────────────────────────────
+    // Antes QUALQUER pendência acendia borda vermelha e ligava o pisca. Como
+    // quase todo setor tem pendência, a tela inteira piscava em vermelho o dia
+    // inteiro — alerta que está em tudo não avisa nada, só cansa.
+    // Agora a contagem é um selo com escala (em dia · 1 a 5 · 6 ou mais) e o
+    // pisca fica reservado ao pedido do portal, que é o único que está de fato
+    // esperando alguém responder hoje.
+    const selo = doPortal > 0
+      ? { texto: `${doPortal} do portal`, fundo: '#fdeae8', tinta: '#a3211a', pisca: true }
+      : pend === 0
+        ? { texto: 'em dia', fundo: '#eef1ee', tinta: '#5c6b5e', pisca: false }
+        : pend <= 5
+          ? { texto: `${pend} pendência${pend > 1 ? 's' : ''}`, fundo: '#fdf2dc', tinta: '#8a4c05', pisca: false }
+          : { texto: `${pend} pendências`, fundo: '#fdeae8', tinta: '#a3211a', pisca: false }
 
     return (
       <div
         onClick={() => { if (!editando) onAbrir(dep.id) }}
-        className={`rounded-xl transition-all ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'} ${alerta ? 'nodri-pisca-card' : ''}`}
+        className={`rounded-xl transition ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'}`}
         style={{
-          width: largura, padding: solida ? '8px 10px' : '7px 9px',
-          background: solida ? cor : '#fff',
-          border: solida ? (alerta ? '1.5px solid #dc2626' : 'none')
-            : `1.5px ${staff ? 'dashed' : 'solid'} ${alerta ? '#dc2626' : staff ? '#c9c5be' : cor}`,
-          borderTop: solida || staff ? undefined : `3px solid ${cor}`,
-          // Com pendência o halo vermelho da animação assume o box-shadow
-          boxShadow: alerta ? undefined : solida ? `0 3px 10px ${cor}44` : '0 1px 3px rgba(0,0,0,.05)',
+          // Largura fixa por nível: ter seis filhos embaixo não pode fazer a
+          // caixa parecer mais importante que a do lado.
+          width: largura, padding: area ? '9px 11px 10px' : '8px 10px 9px',
+          // Nenhuma caixa é preenchida de cor: a cor do ramo vira a faixa de
+          // 3px no topo. Assim a DIREÇÃO (a única sólida, escura) volta a ser
+          // o elemento mais pesado e a leitura desce de cima para baixo.
+          background: staff ? '#fbfaf7' : '#fff',
+          border: `1px ${staff ? 'dashed' : 'solid'} ${staff ? '#c3bcae' : '#ddd8cd'}`,
+          borderTop: `3px ${staff ? 'dashed' : 'solid'} ${staff ? '#8a8377' : cor}`,
+          boxShadow: '0 1px 2px rgba(0,0,0,.05)',
+          position: 'relative',
         }}>
-        <div className="flex items-start gap-1" style={{ marginBottom: 2 }}>
-          <span style={{ fontSize: 10, lineHeight: 1.3 }}>{padrao.icone}</span>
-          <span className="font-bold leading-tight" style={{
-            fontSize: solida ? 9.4 : 8.8,
-            color: solida ? '#fff' : staff ? '#4b5563' : cor,
-            letterSpacing: '.3px', flex: 1,
+
+        {staff && SELO_STAFF[chave] && (
+          <span style={{
+            position: 'absolute', top: -8, right: 9, background: '#efece4', border: '1px solid #ddd7c9',
+            color: '#6d675d', fontSize: 8, fontWeight: 700, letterSpacing: '.08em',
+            textTransform: 'uppercase', padding: '1px 6px', borderRadius: 99,
+          }}>{SELO_STAFF[chave]}</span>
+        )}
+
+        <div className="flex items-start gap-1" style={{ marginBottom: 3 }}>
+          <span className="font-bold" style={{
+            fontSize: area ? 10 : 9.4,
+            color: staff ? '#5f594e' : cor,
+            letterSpacing: '.05em', textTransform: 'uppercase', lineHeight: 1.25, flex: 1,
           }}>
             {dep.nome_completo}
           </span>
           {editando && onExcluir && (
             <button onClick={e => { e.stopPropagation(); onExcluir(dep.id, dep.nome_completo) }}
-              title="Excluir setor"
-              style={{ border: 'none', background: 'transparent', color: solida ? '#fff' : '#dc2626', cursor: 'pointer', fontSize: 10, lineHeight: 1, padding: 0 }}>
-
+              title="Excluir setor" aria-label={`Excluir o setor ${dep.nome_completo}`}
+              style={{ border: 'none', background: 'transparent', color: '#dc2626', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: 0 }}>
+              &times;
             </button>
           )}
         </div>
@@ -269,6 +310,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
               onChange={e => editarResponsavel(dep.id, e.target.value)}
               onClick={e => e.stopPropagation()}
               placeholder="Responsável"
+              aria-label={`Responsável por ${dep.nome_completo}`}
               className="w-full mb-1 px-1.5 py-0.5 rounded border border-nodri-border"
               style={{ fontSize: 9.5 }} />
             <textarea
@@ -277,24 +319,30 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
               onClick={e => e.stopPropagation()}
               rows={3}
               placeholder="Uma atribuição por linha"
+              aria-label={`Atribuições de ${dep.nome_completo}`}
               className="w-full px-1.5 py-0.5 rounded border border-nodri-border resize-y"
               style={{ fontSize: 9, lineHeight: 1.5 }} />
           </>
         ) : (
           <>
             {info.responsavel && (
-              <p className="font-semibold" style={{ fontSize: 8.4, color: solida ? '#ffffffdd' : '#3f3a35', marginBottom: 1 }}>
+              <p className="font-bold" style={{ fontSize: area ? 11 : 10.4, color: '#26231f', lineHeight: 1.3, marginBottom: 3 }}>
                 {info.responsavel}
               </p>
             )}
             {linhas.map((l, i) => (
-              <p key={i} style={{ fontSize: 7.8, color: solida ? '#ffffffc4' : '#6b6860', lineHeight: 1.42 }}>{l}</p>
+              <p key={i} style={{ fontSize: area ? 9.8 : 9.4, color: '#6d675d', lineHeight: 1.45 }}>{l}</p>
             ))}
-            {(pend > 0 || doPortal > 0) && (
-              <p className="font-bold" style={{ fontSize: 7.8, color: solida ? '#fff' : '#b91c1c', marginTop: 3 }}>
-                {doPortal > 0 ? `${doPortal} do portal` : `${pend} pendência${pend > 1 ? 's' : ''}`}
-              </p>
-            )}
+            <span
+              className={selo.pisca ? 'nodri-pisca-card' : undefined}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 7,
+                fontSize: 9.4, fontWeight: 700, padding: '2px 8px 2px 6px', borderRadius: 99,
+                background: selo.fundo, color: selo.tinta, fontVariantNumeric: 'tabular-nums',
+              }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }} />
+              {selo.texto}
+            </span>
           </>
         )}
       </div>
@@ -302,6 +350,7 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   }
 
   const { mapa, sobra } = porChave
+  const ramosVisiveis = RAMOS.filter(r => mapa[r.chave] || r.filhos.some(f => mapa[f]))
 
   // Conectores — as linhas de comando são só bordas
   // Altura dos conectores. Era 14/12 e as fileiras ficavam quase encostadas;
@@ -319,6 +368,9 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   /** Um ramo: a área do nível 2 e, abaixo, os setores que respondem a ela.
    *  Também chamado como função — ver o motivo em Caixa. */
   function Ramo({ areaChave, filhos, larguraArea = 168 }: { areaChave: string; filhos: string[]; larguraArea?: number }) {
+    // Filho sempre com a MESMA largura (150). Antes cada ramo escolhia a sua e
+    // a largura acabava lida como importância.
+    const LARG_FILHO = 150
     const area = mapa[areaChave]
     const comFilhos = filhos.filter(f => mapa[f])
     if (!area && !comFilhos.length) return null
@@ -330,12 +382,12 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           <div className="flex items-start gap-2" style={{ position: 'relative' }}>
             {/* barra ligando os centros dos filhos das pontas */}
             {comFilhos.length > 1 && (
-              <div style={{ position: 'absolute', top: 0, left: 66, right: 66, height: 2, background: LINHA }} />
+              <div style={{ position: 'absolute', top: 0, left: LARG_FILHO / 2, right: LARG_FILHO / 2, height: 2, background: LINHA }} />
             )}
             {comFilhos.map(f => (
               <div key={f} className="flex flex-col items-center">
                 <V h={26} />
-                {Caixa({ chave: f, dep: mapa[f] })}
+                {Caixa({ chave: f, dep: mapa[f], largura: LARG_FILHO })}
               </div>
             ))}
           </div>
@@ -379,8 +431,11 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
 
           {/* ── NÍVEL 0 — Direção, com a Contabilidade como assessoria externa ── */}
           <div className="flex items-center">
+            {/* Peso invisível: mesma largura do conjunto da direita (tracejo 34
+                + caixa 150), para a DIREÇÃO ficar no eixo do desenho. */}
+            {mapa.contabilidade && <div style={{ width: 184, flexShrink: 0 }} />}
             <div className="rounded-xl text-white text-center" style={{
-              background: 'linear-gradient(135deg,#24243f,#101021)', padding: '9px 18px', minWidth: 190,
+              background: 'linear-gradient(135deg,#24243f,#101021)', padding: '12px 22px', minWidth: 230,
             }}>
               <p className="font-bold" style={{ fontSize: 9.6, letterSpacing: '1px' }}>DIREÇÃO / PROPRIETÁRIO</p>
               <p style={{ fontSize: 8, opacity: .7 }}>Estratégia · investimento · decisão final</p>
@@ -396,11 +451,11 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
           {/* ── NÍVEL 1 — Gerência, com Qualidade e Técnica assessorando ── */}
           <div className="flex items-center">
             {mapa.qualidade && (<>
-              {Caixa({ chave: 'qualidade', dep: mapa.qualidade, largura: 160, variante: 'staff' })}
+              {Caixa({ chave: 'qualidade', dep: mapa.qualidade, largura: 168, variante: 'staff' })}
               <Tracejo w={34} />
             </>)}
             {mapa.gerencia
-              ? Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 210, variante: 'solida' })
+              ? Caixa({ chave: 'gerencia', dep: mapa.gerencia, largura: 196, variante: 'solida' })
               : (
                 <div className="rounded-xl text-white text-center" style={{
                   background: 'linear-gradient(135deg,#6d5fe0,#4b3fbb)', padding: '10px 20px', minWidth: 200,
@@ -410,19 +465,30 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
               )}
             {mapa.tecnica && (<>
               <Tracejo w={34} />
-              {Caixa({ chave: 'tecnica', dep: mapa.tecnica, largura: 160, variante: 'staff' })}
+              {Caixa({ chave: 'tecnica', dep: mapa.tecnica, largura: 168, variante: 'staff' })}
             </>)}
           </div>
 
-          <V />
-          <div style={{ height: 2, background: LINHA, width: '100%' }} />
+          <V h={30} />
 
-          {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ── */}
-          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 40 }}>
-            <Fragment key="r-adm">{Ramo({ areaChave: 'administrativo', filhos: ['financeiro', 'compras'], larguraArea: 280 })}</Fragment>
-            <Fragment key="r-rh">{Ramo({ areaChave: 'rh', filhos: [], larguraArea: 168 })}</Fragment>
-            <Fragment key="r-mkt">{Ramo({ areaChave: 'marketing', filhos: ['comercial'], larguraArea: 180 })}</Fragment>
-            <Fragment key="r-op">{Ramo({ areaChave: 'coordenador', filhos: ['recepcao', 'profissionais', 'dosagem', 'gerais', 'manutencao', 'cafe'], larguraArea: 400 })}</Fragment>
+          {/* ── NÍVEL 2 e 3 — áreas e os setores que respondem a cada uma ──
+              Cada ramo desenha a SUA METADE do barramento: o primeiro começa
+              no próprio centro e o último termina nele. É o que faz a barra
+              fechar certo mesmo com um ramo de seis filhos ao lado de um sem
+              filho nenhum — com uma barra única de ponta a ponta ela sobrava
+              para fora dos dois extremos. */}
+          <div className="flex items-start justify-center gap-6" style={{ paddingTop: 26 }}>
+            {ramosVisiveis.map((r, i) => (
+              <div key={r.chave} style={{ position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', top: -26, height: 2, background: LINHA,
+                  left: i === 0 ? 'calc(50% - 1px)' : -12,
+                  right: i === ramosVisiveis.length - 1 ? 'calc(50% - 1px)' : -12,
+                }} />
+                <div style={{ position: 'absolute', top: -26, left: 'calc(50% - 1px)', width: 2, height: 26, background: LINHA }} />
+                {Ramo({ areaChave: r.chave, filhos: r.filhos })}
+              </div>
+            ))}
           </div>
 
           {/* Qualquer setor fora do modelo continua aparecendo aqui */}

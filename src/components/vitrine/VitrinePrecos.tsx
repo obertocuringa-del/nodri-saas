@@ -57,7 +57,7 @@ export default function VitrinePrecos({ servicos }: { servicos: ServicoPublico[]
               {/* A categoria é o botão graúdo; os serviços descem por baixo
                   dela como itens soltos, e não dentro de outra caixa. */}
               <button onClick={() => setAberta(a => (a === cat ? null : cat))}
-                className={'w-full flex items-center gap-3 px-4 py-3.5 text-left bg-white rounded-2xl border transition-all shadow-sm '
+                className={'w-full flex items-center gap-3 px-4 py-3.5 text-left bg-white rounded-2xl border transition shadow-sm '
                   + (aberta ? 'border-[var(--vt-cor)]' : 'border-gray-200')}>
                 <span className="font-bold text-[13px] text-gray-900 uppercase tracking-wide flex-1">{cat}</span>
                 <span className="text-[11px] text-gray-400 tabular-nums">{itens.length}</span>

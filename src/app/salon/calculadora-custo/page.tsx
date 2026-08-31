@@ -315,7 +315,7 @@ function InfoBtn({ id, className }: { id: string; className?: string }) {
     <>
       <button
         onClick={e => { e.stopPropagation(); setAberto(true) }}
-        className={`flex-shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center transition-all hover:scale-110 ${className||''}`}
+        className={`flex-shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center transition hover:scale-110 ${className||''}`}
         style={{background:'#5b4fcf30',color:'#7c6fe0',border:'1px solid #5b4fcf50'}}
         title={info.titulo}
       >i</button>
@@ -1981,7 +1981,7 @@ Use números reais. Seja direto.`
               {mesesComDados.slice(0,6).map(m=>(
                 <button key={`${m.ano}-${m.mes}`}
                   onClick={()=>trocarPeriodo(m.ano, m.mes)}
-                  className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
+                  className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold transition"
                   style={{
                     background: m.ano===anoSel&&m.mes===mesSel ? '#5b4fcf' : '#5b4fcf20',
                     color: m.ano===anoSel&&m.mes===mesSel ? 'white' : '#5b4fcf',
@@ -2009,7 +2009,7 @@ Use números reais. Seja direto.`
               </button>
             )}
             <button onClick={() => salvarMes()} disabled={salvando}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition disabled:opacity-50"
               style={{background:'#5b4fcf',color:'white'}}>
               {salvando ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
               <span className="no-mobile">Salvar {MESES_NOMES[mesSel]}</span>
@@ -2027,7 +2027,7 @@ Use números reais. Seja direto.`
         <div className="hidden sm:flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto" style={{background:'#faf9f7',...oculto(verAbasExtras)}}>
           {ABAS.map(a=>(
             <button key={a.id} onClick={()=>setAba(a.id as any)}
-              className="flex-shrink-0 py-2 px-2 sm:px-1 rounded-lg text-[10px] font-bold transition-all text-center min-w-[72px] sm:min-w-0 sm:flex-1"
+              className="flex-shrink-0 py-2 px-2 sm:px-1 rounded-lg text-[10px] font-bold transition text-center min-w-[72px] sm:min-w-0 sm:flex-1"
               style={{background:aba===a.id?'#5b4fcf':'transparent',color:aba===a.id?'white':'#767069'}}>
               <div>{a.icon}</div><div className="mt-0.5 leading-tight">{a.label}</div>
             </button>
@@ -2960,7 +2960,7 @@ Use números reais. Seja direto.`
                           <div key={idx} className="flex items-center gap-3">
                             <div className="w-32 text-xs text-right" style={{color:'#3a3835'}}>{item.l}</div>
                             <div className="flex-1 rounded-full h-6 relative overflow-hidden" style={{background:'#ffffff'}}>
-                              <div className="h-6 rounded-full flex items-center px-3 transition-all" style={{width:`${Math.max(pct,3)}%`,background:`${item.c}25`,border:`1px solid ${item.c}50`}}>
+                              <div className="h-6 rounded-full flex items-center px-3 transition" style={{width:`${Math.max(pct,3)}%`,background:`${item.c}25`,border:`1px solid ${item.c}50`}}>
                                 <span className="text-[10px] font-bold whitespace-nowrap" style={{color:item.c}}>{fmtR(item.v)} ({pct.toFixed(1)}%)</span>
                               </div>
                             </div>
@@ -3016,7 +3016,7 @@ Use números reais. Seja direto.`
                         {capGiro > 0 && (
                           <div className="mt-2">
                             <div className="w-full rounded-full h-2" style={{background:'#ffffff'}}>
-                              <div className="h-2 rounded-full transition-all" style={{width:`${Math.min((totalReservaAcum/capGiro)*100,100)}%`,background:'#06b6d4'}}/>
+                              <div className="h-2 rounded-full transition" style={{width:`${Math.min((totalReservaAcum/capGiro)*100,100)}%`,background:'#06b6d4'}}/>
                             </div>
                             <p className="text-[10px] mt-1 font-bold" style={{color:totalReservaAcum>=capGiro?'#10b981':'#06b6d4'}}>
                               {totalReservaAcum>=capGiro
@@ -3091,7 +3091,7 @@ Use números reais. Seja direto.`
 
                 {/* Botão Atualizar */}
                 <button onClick={atualizar}
-                  className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                  className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
                   style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
                   {atualizando ? 'Tudo atualizado!' : 'Atualizar Resultados'}
                 </button>
@@ -3099,7 +3099,7 @@ Use números reais. Seja direto.`
                 {/* Botão IA */}
                 <div className="rounded-2xl border overflow-hidden" style={{borderColor:'#5b4fcf40'}}>
                   {!analiseIA&&!loadingIA&&!erroIA&&(
-                    <button onClick={analisarIA} className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                    <button onClick={analisarIA} className="w-full py-4 font-bold text-sm flex items-center justify-center gap-2 transition hover:brightness-110"
                       style={{background:'linear-gradient(135deg,#5b4fcf20,#7c6fe020)',color:'#7c6fe0',border:'none'}}>
                       Quero a análise completa da NODRI IA
                       <span className="text-xs font-normal" style={{color:'#767069'}}>— opcional</span>
@@ -3260,7 +3260,7 @@ Use números reais. Seja direto.`
                 )}
               </div>
             )}
-            <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+            <button onClick={atualizar} className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
               style={{background:atualizando?'#10b98120':'#ffffff',color:atualizando?'#10b981':'#767069',border:`1px solid ${atualizando?'#10b981':'#dedad4'}`}}>
               {atualizando?'Tudo atualizado!':'Atualizar Resultados'}
             </button>
@@ -3313,7 +3313,7 @@ Use números reais. Seja direto.`
                   {/* Seletor de modo */}
                   <div className="grid grid-cols-2 gap-2 mb-2 pl-7">
                     <button onClick={()=>setModoCustoOp('dani')}
-                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
+                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition"
                       style={{
                         background: modoCustoOp==='dani' ? '#5b4fcf20' : '#f5f4f0',
                         border: `1px solid ${modoCustoOp==='dani' ? '#5b4fcf' : '#ffffff'}`,
@@ -3328,7 +3328,7 @@ Use números reais. Seja direto.`
                       <p style={{color:'#767069',paddingLeft:'18px'}}>{n(custIndD)||30}% fixo — igual à planilha</p>
                     </button>
                     <button onClick={()=>setModoCustoOp('real')}
-                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition-all"
+                      className="py-2 px-3 rounded-xl text-[10px] font-bold text-left transition"
                       style={{
                         background: modoCustoOp==='real' ? '#10b98120' : '#f5f4f0',
                         border: `1px solid ${modoCustoOp==='real' ? '#10b981' : '#ffffff'}`,
@@ -3374,7 +3374,7 @@ Use números reais. Seja direto.`
                   </div>
                   <p className="text-xs mb-1.5 pl-7" style={{color:'#6b6860'}}>Com a lei, o imposto incide sobre a margem do salão, não sobre o preço total.</p>
                   <div className="pl-7">
-                    <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
+                    <button onClick={()=>setSalaoParceiro(p=>!p)} className="w-full py-2.5 rounded-xl text-sm font-bold transition"
                       style={{background:salaoParceiro?'#10b981':'#ffffff',color:salaoParceiro?'white':'#767069',border:`1.5px solid ${salaoParceiro?'#10b981':'#dedad4'}`}}>
                       {salaoParceiro?'SIM':'NÃO'}
                     </button>
@@ -3432,7 +3432,7 @@ Use números reais. Seja direto.`
                   style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition"
                 style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
                 {ordenarPorLucro ? 'Mais lucrativo primeiro' : 'Ordem original'}
               </button>
@@ -3654,7 +3654,7 @@ Use números reais. Seja direto.`
                           <div style={{color:c.resultado>0?'#10b981':'#ef4444',fontWeight:'bold'}}>{c.resultado>0?'Lucrativo':'Prejuízo'}</div>
                         </div>
                         <button onClick={()=>toggleDiag(s.id)}
-                          className="w-full py-2 text-[11px] font-bold border-t transition-all"
+                          className="w-full py-2 text-[11px] font-bold border-t transition"
                           style={{background:diagAbertos.has(s.id)?'#5b4fcf':'#5b4fcf12',color:diagAbertos.has(s.id)?'#fff':'#5b4fcf',borderColor:'#e8e6e0'}}>
                           {diagAbertos.has(s.id)?'Ocultar':'Ver'} Diagnóstico da Comissão &amp; Recomendações
                         </button>
@@ -3824,7 +3824,7 @@ Use números reais. Seja direto.`
                   style={{background:'#f5f4f0',border:'1px solid #dedad4'}}/>
               </div>
               <button onClick={()=>setOrdenarPorLucro(v=>!v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition"
                 style={{background:ordenarPorLucro?'#10b98120':'#ffffff',color:ordenarPorLucro?'#10b981':'#767069',border:`1px solid ${ordenarPorLucro?'#10b981':'#dedad4'}`}}>
                 {ordenarPorLucro ? 'Menor custo primeiro' : 'Ordem original'}
               </button>
@@ -4211,7 +4211,7 @@ Use números reais. Seja direto.`
                     </div>
                     {/* Barra do score */}
                     <div className="w-full rounded-full h-3" style={{background:'#ffffff'}}>
-                      <div className="h-3 rounded-full transition-all duration-700"
+                      <div className="h-3 rounded-full transition duration-700"
                         style={{width:`${scoreFinanceiro.score}%`, background:`linear-gradient(90deg, #ef4444, #f59e0b, ${scoreFinanceiro.cor})`}}/>
                     </div>
                     <div className="flex justify-between text-[10px] mt-1" style={{color:'#767069'}}>
@@ -4245,7 +4245,7 @@ Use números reais. Seja direto.`
                             </div>
                           </div>
                           <div className="w-full rounded-full h-4 relative" style={{background:'#ffffff'}}>
-                            <div className="h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                            <div className="h-4 rounded-full transition duration-500 flex items-center justify-end pr-2"
                               style={{width:`${Math.min(pct,100)}%`, background:`${item.c}30`, border:`1px solid ${item.c}60`}}>
                               {pct > 8 && <span className="text-[9px] font-bold" style={{color:item.c}}>{pct.toFixed(1)}%</span>}
                             </div>
@@ -4389,7 +4389,7 @@ Use números reais. Seja direto.`
                           </div>
                           <div className="w-full rounded-full h-3 relative" style={{background:'#ffffff'}}>
                             <div className="absolute top-0 bottom-0 w-0.5 z-10" style={{left:`${pctMeta}%`, background:'#ffffff50'}}/>
-                            <div className="h-3 rounded-full transition-all duration-500"
+                            <div className="h-3 rounded-full transition duration-500"
                               style={{width:`${pctBarra}%`, background:ok?`${item.c}80`:'#ef444480', border:`1px solid ${ok?item.c:'#ef4444'}`}}/>
                           </div>
                           <div className="flex justify-between text-[9px] mt-0.5 mb-1" style={{color:'#767069'}}>
@@ -4462,7 +4462,7 @@ Use números reais. Seja direto.`
                                 return (
                                   <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
                                     <div className="text-[8px] font-bold" style={{color:negativo?'#ef4444':cor}}>{fmtR(val).replace('R$ ','R$')}</div>
-                                    <div className="w-full rounded-t-sm transition-all"
+                                    <div className="w-full rounded-t-sm transition"
                                       style={{height:`${pct}%`,background:negativo?'#ef444460':`${cor}60`,border:`1px solid ${negativo?'#ef4444':cor}`,minHeight:'4px'}}/>
                                     <div className="text-[7px]" style={{color:'#6b6860'}}>{MESES_NOMES[m.mes].slice(0,3)}/{String(m.ano).slice(2)}</div>
                                   </div>

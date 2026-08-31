@@ -153,7 +153,7 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         .pr-anim{animation:prUp .5s cubic-bezier(.2,.7,.3,1) both}
         .pr-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--accent),#b89bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;flex-shrink:0}
         .pr-bell{width:46px;height:46px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff}
-        .pr-dot{width:7px;height:7px;border-radius:50%;background:#cbb9f5;transition:all .3s;cursor:pointer}
+        .pr-dot{width:7px;height:7px;border-radius:50%;background:#cbb9f5;transition:color .3s, background-color .3s, border-color .3s, box-shadow .3s, transform .3s, opacity .3s, filter .3s;cursor:pointer}
         .pr-dot.on{background:var(--accent);width:20px;border-radius:99px}
         .pr-areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px}
         .pr-area{background:var(--card);border:1px solid var(--bord);border-radius:18px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:transform .2s,box-shadow .2s,border-color .2s}

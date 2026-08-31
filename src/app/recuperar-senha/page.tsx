@@ -70,7 +70,7 @@ export default function RecuperarSenhaPage() {
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all"
+                  className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                   Enviar Link de Recuperação

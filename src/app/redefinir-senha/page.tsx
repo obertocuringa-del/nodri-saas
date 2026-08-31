@@ -41,7 +41,7 @@ function RedefinirSenhaForm() {
       <CheckCircle size={48} className="text-nodri-green mx-auto mb-4" />
       <h2 className="font-syne font-bold text-lg mb-2">Senha redefinida!</h2>
       <p className="text-nodri-t2 text-sm mb-6">Sua senha foi alterada com sucesso.</p>
-      <a href="/login" className="flex items-center justify-center gap-2 bg-nodri-cyan text-black font-bold py-3 px-6 rounded-lg hover:brightness-110 transition-all">
+      <a href="/login" className="flex items-center justify-center gap-2 bg-nodri-cyan text-black font-bold py-3 px-6 rounded-lg hover:brightness-110 transition">
         Fazer Login
       </a>
     </div>
@@ -70,7 +70,7 @@ function RedefinirSenhaForm() {
           </div>
         </div>
         <button type="submit" disabled={loading || !senha || !confirmar}
-          className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all">
+          className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition">
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
           Redefinir Senha
         </button>

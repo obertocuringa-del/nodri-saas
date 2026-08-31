@@ -54,7 +54,7 @@ function BarraH({ valor, max, cor }: { valor: number; max: number; cor?: string 
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 rounded-full" style={{ background: '#e8e6e0' }}>
-        <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: cor || '#22d3ee' }} />
+        <div className="h-2 rounded-full transition duration-500" style={{ width: `${pct}%`, background: cor || '#22d3ee' }} />
       </div>
       <span className="text-[10px] text-nodri-t3 w-8 text-right">{pct}%</span>
     </div>
@@ -205,17 +205,17 @@ export default function ResultadosPage() {
               <button onClick={() => { setInicioAplicado(inicio); setFimAplicado(fim) }} className="p-0.5 hover:text-nodri-cyan text-nodri-t3 transition-colors"><RefreshCw size={11} /></button>
             </div>
             {/* EXPORTAR */}
-            <button onClick={exportarCSV} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+            <button onClick={exportarCSV} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.25)' }}>
               <Download size={12} /> Excel
             </button>
-            <button onClick={exportarPDF} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+            <button onClick={exportarPDF} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)' }}>
               <FileText size={12} /> PDF
             </button>
             {/* IA */}
             <button onClick={acionarIA} disabled={iaLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-60"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition disabled:opacity-60"
               style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.25),rgba(244,63,142,.25))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
               <Brain size={13} />{iaLoading ? 'Analisando...' : 'Acionar IA Claude'}
             </button>
@@ -346,7 +346,7 @@ export default function ResultadosPage() {
                           <div className="text-[9px] text-nodri-t3 opacity-0 group-hover:opacity-100 transition-opacity font-bold" style={{ color: cor }}>
                             {item.media}
                           </div>
-                          <div className="w-full rounded-t transition-all duration-500 relative" title={`${item.semana}: ${item.media}`}
+                          <div className="w-full rounded-t transition duration-500 relative" title={`${item.semana}: ${item.media}`}
                             style={{ height: `${Math.max(pct, 8)}%`, background: cor, opacity: 0.85 }}>
                             <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px]" style={{ color: cor }}>{trend}</span>
                           </div>
@@ -894,7 +894,7 @@ export default function ResultadosPage() {
                               toast.error('Erro ao excluir')
                             }
                           }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition hover:opacity-80"
                           style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)' }}>
                           <Trash2 size={11} /> Excluir
                         </button>

@@ -475,7 +475,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       {!modoEmbarcado && !aberto && (
         <button
           onClick={() => { setAberto(true); setTelaCheia(true) }}
-          className="fixed flex items-center justify-center transition-all duration-300 hover:scale-110"
+          className="fixed flex items-center justify-center transition duration-300 hover:scale-110"
           style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', width: 56, height: 56, borderRadius: '50%', bottom: 90, right: 24, zIndex: 10000, border: 'none', cursor: 'pointer', boxShadow: '0 4px 24px rgba(245,158,11,0.4)', position: 'fixed' }}
           title="NODRI IA"
         >

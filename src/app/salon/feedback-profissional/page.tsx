@@ -275,7 +275,7 @@ export default function FeedbackProfissionalPage() {
               <button
                 key={f.id}
                 onClick={() => { setSelected(f); setSidebarOpen(false) }}
-                className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition-all hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}
+                className={`w-full text-left px-3 py-3 border-b border-nodri-border/50 transition hover:bg-nodri-surface ${selected?.id === f.id ? 'bg-nodri-surface border-l-2 border-l-nodri-cyan' : ''}`}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${f.ativo ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -291,7 +291,7 @@ export default function FeedbackProfissionalPage() {
             <button
               onClick={criarFormulario}
               disabled={saving}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(34,197,94,.12)', color: '#15803d', border: '1px solid rgba(34,197,94,.25)' }}
             >
               <Plus size={12} /> Novo Formulário
@@ -300,14 +300,14 @@ export default function FeedbackProfissionalPage() {
               <>
                 <button
                   onClick={() => router.push(`/salon/feedback-profissional/resultados/${selected.id}`)}
-                  className="w-full hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                  className="w-full hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                   style={{ background: 'rgba(139,92,246,.15)', color: '#7c6fe0', border: '1px solid rgba(139,92,246,.3)' }}
                 >
                   <BarChart2 size={12} /> Ver Resultados
                 </button>
                 <button
                   onClick={() => router.push(`/salon/feedback-profissional/gerenciar/${selected.id}`)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
                   style={{ background: 'rgba(250,204,21,.1)', color: '#b45309', border: '1px solid rgba(250,204,21,.25)' }}
                 >
                   <Settings2 size={12} /> Gerenciar Feedbacks
@@ -316,14 +316,14 @@ export default function FeedbackProfissionalPage() {
             )}
             <button
               onClick={() => router.push('/salon/feedback-profissional/bloqueios')}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,.25)' }}
             >
               <Lock size={12} /> Bloqueios
             </button>
             <button
               onClick={() => router.push('/salon/feedback-profissional/importar')}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition"
               style={{ background: 'rgba(6,182,212,.12)', color: '#0891b2', border: '1px solid rgba(6,182,212,.25)' }}
             >
               <Upload size={12} /> Importar Histórico
@@ -385,7 +385,7 @@ export default function FeedbackProfissionalPage() {
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`px-4 py-2 text-[11px] font-medium border-b-2 transition-all whitespace-nowrap ${tab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}
+                    className={`px-4 py-2 text-[11px] font-medium border-b-2 transition whitespace-nowrap ${tab === t.id ? 'border-nodri-cyan text-nodri-cyan' : 'border-transparent text-nodri-t3 hover:text-nodri-t1'}`}
                   >
                     {t.label}
                   </button>
@@ -411,7 +411,7 @@ export default function FeedbackProfissionalPage() {
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             onClick={() => setFormTipo('positivo')}
-                            className="py-3 rounded-xl text-[12px] font-bold transition-all"
+                            className="py-3 rounded-xl text-[12px] font-bold transition"
                             style={formTipo === 'positivo'
                               ? { background: 'rgba(34,197,94,.15)', color: '#15803d', border: '2px solid rgba(34,197,94,.4)' }
                               : { background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.08)' }}>
@@ -419,7 +419,7 @@ export default function FeedbackProfissionalPage() {
                           </button>
                           <button
                             onClick={() => setFormTipo('negativo')}
-                            className="py-3 rounded-xl text-[12px] font-bold transition-all"
+                            className="py-3 rounded-xl text-[12px] font-bold transition"
                             style={formTipo === 'negativo'
                               ? { background: 'rgba(239,68,68,.12)', color: '#dc2626', border: '2px solid rgba(239,68,68,.35)' }
                               : { background: '#f5f4f0', color: '#767069', border: '1px solid rgba(0,0,0,.08)' }}>
@@ -474,7 +474,7 @@ export default function FeedbackProfissionalPage() {
                       <button
                         onClick={registrarFeedback}
                         disabled={formLoading || !formProf || !formOcorr}
-                        className="w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40"
+                        className="w-full py-3 rounded-xl text-[13px] font-bold transition disabled:opacity-40"
                         style={{ background: 'linear-gradient(135deg,rgba(124,92,252,.3),rgba(244,63,142,.2))', color: '#5b4fcf', border: '1px solid rgba(139,92,246,.4)' }}>
                         {formLoading ? <><Clock size={12} className="inline mr-1" />Registrando...</> : <><Check size={12} className="inline mr-1" />Registrar Feedback</>}
                       </button>

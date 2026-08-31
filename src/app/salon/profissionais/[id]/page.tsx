@@ -424,7 +424,7 @@ function BlocoFidelizacao({ f, comissaoMedia = 0 }: { f: Fidelizacao; comissaoMe
           <span>Fidelização {f.taxa_fidelizacao}%</span><span>Perda {f.taxa_perda}%</span>
         </div>
         <div className="w-full bg-nodri-border rounded-full h-2 overflow-hidden">
-          <div className="h-2 bg-nodri-green rounded-full transition-all"
+          <div className="h-2 bg-nodri-green rounded-full transition"
             style={{width:`${Math.min(Math.max(f.taxa_fidelizacao,0),100)}%`}}/>
         </div>
         <p className="text-[10px] text-nodri-t3">
@@ -786,7 +786,7 @@ function BlocoDiagnostico({ prof, form, metricas, p1, p2, fidel }: {
         </div>
         {scoreGeral !== null && (
           <div className="w-full bg-nodri-border rounded-full h-3 overflow-hidden">
-            <div className="h-3 rounded-full transition-all" style={{width:`${scoreGeral}%`, background:`linear-gradient(90deg,${corGeral},${corGeral}88)`}}/>
+            <div className="h-3 rounded-full transition" style={{width:`${scoreGeral}%`, background:`linear-gradient(90deg,${corGeral},${corGeral}88)`}}/>
           </div>
         )}
       </div>
@@ -957,7 +957,7 @@ function FiltroComparacao({ modoFiltro, setModoFiltro, p1i, setP1i, p1f, setP1f,
         <div className="ml-auto flex gap-1">
           {(['simples','range'] as const).map(m=>(
             <button key={m} onClick={()=>handleModo(m)}
-              className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition-all
+              className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition
                 ${modoFiltro===m ? 'bg-nodri-cyan/10 text-nodri-cyan border-nodri-cyan/30' : 'text-nodri-t3 border-nodri-border'}`}>
               {m==='simples' ? 'Mês a Mês' : 'Intervalo'}
             </button>
@@ -1900,7 +1900,7 @@ function AbaPendencias({ profissionalId }: { profissionalId: string }) {
           <button
             onClick={criar}
             disabled={criando || !novaMensagem.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold disabled:opacity-50 hover:brightness-110 transition-all">
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold disabled:opacity-50 hover:brightness-110 transition">
             {criando ? <Loader2 size={12} className="animate-spin"/> : '+'} Adicionar
           </button>
         </div>
@@ -3460,7 +3460,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
       {!souProf && !loadAlertas && alertasAtivos.length > 0 && (
         <div className="relative border-b border-nodri-border bg-nodri-surface px-5 py-2 flex items-center gap-3">
           <button onClick={() => setMostrarHistoricoAlertas(v => !v)}
-            className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 hover:bg-amber-100 transition-all">
+            className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 hover:bg-amber-100 transition">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"/>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"/>
@@ -3958,8 +3958,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                       </p>
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer" onClick={()=>set(key, !form[key])}>
-                      <div className={`w-10 h-5 rounded-full relative transition-all ${form[key] ? 'bg-green-500' : 'bg-red-700'}`}>
-                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form[key] ? 'left-5' : 'left-0.5'}`}/>
+                      <div className={`w-10 h-5 rounded-full relative transition ${form[key] ? 'bg-green-500' : 'bg-red-700'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition ${form[key] ? 'left-5' : 'left-0.5'}`}/>
                       </div>
                       <span className={`text-[12px] font-bold ${form[key] ? 'text-green-400' : 'text-red-400'}`}>{form[key] ? 'SIM' : 'NÃO'}</span>
                     </label>
@@ -3969,8 +3969,8 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
               {!form.is_departamento && <div className="bg-nodri-surface border border-nodri-border rounded-2xl p-5">
                 <h2 className="font-syne font-bold text-[12px] text-nodri-purple mb-3">Status</h2>
                 <label className="flex items-center gap-3 cursor-pointer" onClick={()=>set('ativo',!form.ativo)}>
-                  <div className={`w-10 h-5 rounded-full relative transition-all ${form.ativo?'bg-nodri-green':'bg-nodri-border'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.ativo?'left-5':'left-0.5'}`}/>
+                  <div className={`w-10 h-5 rounded-full relative transition ${form.ativo?'bg-nodri-green':'bg-nodri-border'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition ${form.ativo?'left-5':'left-0.5'}`}/>
                   </div>
                   <span className="text-[12px] text-nodri-t1">{form.ativo?'Profissional Ativo':'Profissional Inativo'}</span>
                 </label>
@@ -4204,7 +4204,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                       if (selecionado) { setAgendClienteSel(null); setAgendHistorico(null); setAgendSugestao('') }
                       else { setAgendClienteSel(ag.cliente); buscarHistoricoCliente(ag.cliente, ag.celular) }
                     }}
-                    className="cursor-pointer transition-all"
+                    className="cursor-pointer transition"
                     style={{
                       borderBottom: i < agendamentosAgrupados.length - 1 ? '1px solid #f3f4f6' : 'none',
                       background: selecionado ? '#f0eefb' : '#fff',
@@ -4341,7 +4341,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                               <button
                                 onClick={()=>gerarSugestaoVenda(ag)}
                                 disabled={agendLoadSug}
-                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition"
                                 style={{background:'#5b4fcf',color:'#fff',opacity:agendLoadSug?0.7:1,boxShadow:'0 2px 8px #5b4fcf40'}}>
                                 {agendLoadSug ? <Loader2 size={16} className="animate-spin"/> : ''}
                                 {agendLoadSug ? 'Analisando dados e gerando estratégias...' : 'GERAR SUGESTÕES DE EXPERIÊNCIA E VENDA (IA)'}
@@ -4452,7 +4452,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         <span className="text-[12px] text-nodri-t3">meta: {fmt$(metaInfo.meta_final)}</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-nodri-border/40 overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? '#22c55e' : 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }} />
+                        <div className="h-full rounded-full transition" style={{ width: `${pct}%`, background: pct >= 100 ? '#22c55e' : 'linear-gradient(135deg, #5b4fcf, #5b4fcf)' }} />
                       </div>
                       <p className="text-[11px] text-nodri-t3 mt-1">{pct.toFixed(0)}% da meta atingida</p>
                     </div>
@@ -4931,7 +4931,7 @@ ${fieisRows?`<div class="sec"><div class="sec-title">Clientes Fiéis (${d.client
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {cards.map(item=>(
                             <button key={item.id} onClick={()=>setDepCardAberto(depCardAberto===item.id?null:item.id)}
-                              className={`bg-nodri-card border rounded-xl p-3 text-left transition-all cursor-pointer ${depCardAberto===item.id?'border-nodri-cyan':'border-nodri-border hover:border-nodri-cyan'}`}>
+                              className={`bg-nodri-card border rounded-xl p-3 text-left transition cursor-pointer ${depCardAberto===item.id?'border-nodri-cyan':'border-nodri-border hover:border-nodri-cyan'}`}>
                               <div className="text-[9px] text-nodri-t3 uppercase tracking-wider mb-1">{item.l}</div>
                               <div className="font-syne font-bold text-[16px]" style={{color:item.c}}>{item.v}</div>
                               <div className="text-[8px] text-nodri-t3 mt-1">{depCardAberto===item.id?'▲ fechar':'▼ ver detalhes'}</div>
@@ -5456,7 +5456,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                   style={{ border: '1.5px solid #e0ddd8', background: '#f8f7f5', color: '#1a1a1a' }} />
               </div>
               <button onClick={() => buscarClientesPerdidos(perdidosDataInicio, perdidosDataFim)}
-                className="px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all hover:brightness-110"
+                className="px-4 py-1.5 rounded-lg text-[12px] font-bold transition hover:brightness-110"
                 style={{ background: '#5b4fcf', color: '#ffffff' }}>
                 Buscar
               </button>
@@ -5468,7 +5468,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                   { label: 'Tudo', de: `01/01/2019`, ate: `31/12/${anoAtual}` },
                 ].map(op => (
                   <button key={op.label} onClick={() => { setPerdidosDataInicio(op.de); setPerdidosDataFim(op.ate); buscarClientesPerdidos(op.de, op.ate) }}
-                    className="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                    className="px-3 py-1 rounded-lg text-[11px] font-semibold transition"
                     style={{ background: perdidosDataInicio === op.de && perdidosDataFim === op.ate ? '#5b4fcf' : '#f0eefb', color: perdidosDataInicio === op.de && perdidosDataFim === op.ate ? '#ffffff' : '#5b4fcf' }}>
                     {op.label}
                   </button>
@@ -5565,7 +5565,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                       const isSaiuSalao = st.id === 'saiu-salao'
                       return (
                         <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
-                          className={`rounded-xl p-3 text-left transition-all border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
+                          className={`rounded-xl p-3 text-left transition border-2 ${subTabPerdidos===st.id?'border-nodri-cyan bg-nodri-surface':'border-nodri-border bg-nodri-surface hover:border-nodri-t3'}`}>
                           <div className="text-[10px] text-nodri-t3 mb-0.5 leading-tight">{st.label}</div>
                           <div className="font-syne font-black text-[22px] leading-none" style={{color: st.cor}}>{qtd}</div>
                           <div className="text-[9px] text-nodri-t3 mb-2">clientes</div>
@@ -5635,7 +5635,7 @@ ${paresRows?`<table class="tbl"><thead><tr><th>#</th><th>Serviço A</th><th>Serv
                     <div className="flex min-w-max">
                     {subTabs.map(st => (
                       <button key={st.id} onClick={() => setSubTabPerdidos(st.id)}
-                        className={`px-4 py-2 text-[11px] font-semibold border-b-2 transition-all whitespace-nowrap ${subTabPerdidos===st.id?'border-nodri-cyan text-nodri-cyan':'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
+                        className={`px-4 py-2 text-[11px] font-semibold border-b-2 transition whitespace-nowrap ${subTabPerdidos===st.id?'border-nodri-cyan text-nodri-cyan':'border-transparent text-nodri-t3 hover:text-nodri-t2'}`}>
                         {st.label} ({st.count})
                       </button>
                     ))}

@@ -103,7 +103,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
       return (
         <div style={style}>
           <a href={bloco.conteudo.url} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-cyan/40 transition-all group">
+            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-cyan/40 transition group">
             <FileText size={30} className="text-nodri-t2 shrink-0" />
             <div className="flex-1">
               <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-cyan transition-colors">{bloco.conteudo.nome || 'Abrir PDF'}</div>
@@ -119,7 +119,7 @@ function RenderBloco({ bloco }: { bloco: any }) {
       return (
         <div style={style}>
           <a href={bloco.conteudo.url} download
-            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-green/40 transition-all group">
+            className="flex items-center gap-3 p-4 nodri-card border border-nodri-border hover:border-nodri-green/40 transition group">
             <BarChart3 size={30} className="text-nodri-green shrink-0" />
             <div className="flex-1">
               <div className="text-[13px] font-medium text-nodri-t1 group-hover:text-nodri-green transition-colors">{bloco.conteudo.nome || 'Baixar planilha'}</div>
@@ -262,7 +262,7 @@ export default function ConteudoPage() {
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide truncate">{titulo}</h1>
         <div className="flex-1" />
         <button onClick={() => imprimirConteudoA4(tituloImpressao)}
-          className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/40 transition-all">
+          className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-nodri-border text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/40 transition">
           <Printer size={14} /> Imprimir
         </button>
       </div>
@@ -328,7 +328,7 @@ export default function ConteudoPage() {
                 && !!AVALIACOES_POP[dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)]?.id] && (
                 <div className="mx-auto mb-3 flex justify-end" style={{ maxWidth: 840 }}>
                   <button onClick={() => setAvalDoc(dados.conteudo.docs[Math.min(docSel, dados.conteudo.docs.length - 1)])}
-                    className="flex items-center gap-2 text-[13px] font-bold px-4 py-2 rounded-lg transition-all"
+                    className="flex items-center gap-2 text-[13px] font-bold px-4 py-2 rounded-lg transition"
                     style={{ background: '#5b4fcf', color: '#fff' }}>
                     <ClipboardCheck size={15} /> Avaliar profissional
                   </button>

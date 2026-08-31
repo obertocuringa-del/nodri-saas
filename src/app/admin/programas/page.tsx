@@ -182,7 +182,7 @@ export default function ProgramasConfigPage() {
         <div className="flex-1" />
         {totalPersonalizados > 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">{totalPersonalizados} personalizado{totalPersonalizados > 1 ? 's' : ''}</span>}
         <button onClick={salvar} disabled={saving || loading}
-          className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[12px] font-bold px-4 py-2 rounded-lg hover:brightness-110 disabled:opacity-50 transition-all">
+          className="flex items-center gap-1.5 bg-nodri-cyan text-black text-[12px] font-bold px-4 py-2 rounded-lg hover:brightness-110 disabled:opacity-50 transition">
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Salvar
         </button>
       </div>

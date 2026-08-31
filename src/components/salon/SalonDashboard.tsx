@@ -553,7 +553,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             <span style={{ color: '#92400e', fontWeight: 'normal' }}>— Sessão temporária (2h)</span>
           </div>
           <button onClick={voltarAoAdmin}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition-all hover:brightness-110"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg font-black text-[11px] transition hover:brightness-110"
             style={{ background: '#faf9f7', color: '#92400e', border: '1px solid #ca8a04' }}>
             ← Voltar ao Admin
           </button>
@@ -707,15 +707,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </div>
             </div>
             <div className="flex gap-1">
-              <button className="relative flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
+              <button className="relative flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition">
                 <Bell size={13} />
                 {notificacoes.length > 0 && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-nodri-red rounded-full" />}
               </button>
-              <a href="/salon/perfil" className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition-all">
+              <a href="/salon/perfil" className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition">
                 <Settings size={13} />
               </a>
               <button onClick={handleLogout} title="Sair"
-                className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition-all">
+                className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition">
                 <LogOut size={13} />
               </button>
             </div>
@@ -739,7 +739,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
                   <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition-all hover:brightness-110"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110"
                     style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', color: '#5b4fcf' }}>
                     Baixar Programa
                   </a>
@@ -834,12 +834,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <div className="flex items-center gap-1 px-2 shrink-0">
                   {notificacoes.length > 1 && (
                     <button onClick={() => setNotifIndex(i => i + 1)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-nodri-t3 hover:text-nodri-t1 transition-all">
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-nodri-t3 hover:text-nodri-t1 transition">
                       {(notifIndex % notificacoes.length) + 1}/{notificacoes.length}
                     </button>
                   )}
                   <button onClick={() => setNotifDismissed(true)}
-                    className="p-1.5 rounded text-nodri-t3 hover:text-nodri-t1 transition-all">
+                    className="p-1.5 rounded text-nodri-t3 hover:text-nodri-t1 transition">
                     <X size={13} />
                   </button>
                 </div>
@@ -886,7 +886,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
             const emManutencao = !!modulo.em_manutencao
             return (
             <div key={modulo.id}
-              className="p-4 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 relative overflow-hidden rounded-xl"
+              className="p-4 flex flex-col cursor-pointer transition hover:-translate-y-0.5 relative overflow-hidden rounded-xl"
               style={{
                 background: '#ffffff',
                 border: emManutencao ? '1.5px solid #fca5a5' : modulo.habilitado ? '1.5px solid #e8e6e0' : '1.5px solid #e8e6e0',
@@ -920,7 +920,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 </div>
 
                 <button onClick={() => handleAbrir(modulo)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition"
                   style={emManutencao ? {
                     background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5',
                   } : modulo.habilitado ? {

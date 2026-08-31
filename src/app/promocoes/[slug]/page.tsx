@@ -80,7 +80,7 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
         <nav className="max-w-5xl mx-auto px-2 flex">
           {ABAS.map(({ id, label, icone: Icone }) => (
             <button key={id} onClick={() => setAba(id)}
-              className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 border-b-2 transition-all '
+              className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 border-b-2 transition '
                 + (aba === id
                   ? 'border-[var(--vt-cor)] text-[var(--vt-cor)]'
                   : 'border-transparent text-gray-400 hover:text-gray-600')}>

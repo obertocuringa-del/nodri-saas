@@ -225,7 +225,7 @@ export default function ImportarExcelPage() {
 
         {/* Dropzone */}
         <div
-          className="border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer"
+          className="border-2 border-dashed rounded-2xl p-10 text-center transition cursor-pointer"
           style={{
             borderColor: arrastando ? '#5b4fcf' : arquivo ? '#16a34a' : '#d0cdc7',
             background: arrastando ? '#f0eefb' : arquivo ? '#f0fdf4' : '#ffffff',
@@ -255,7 +255,7 @@ export default function ImportarExcelPage() {
 
         {/* Botão Reconstruir do Raw */}
         <button onClick={reconstruirDoRaw} disabled={reconstruindo}
-          className="w-full mt-4 py-3 rounded-xl text-[13px] font-syne font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full mt-4 py-3 rounded-xl text-[13px] font-syne font-bold transition disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ background: '#fef3c7', border: '1.5px solid #f59e0b', color: '#b45309' }}>
           {reconstruindo ? <><Loader2 size={16} className="animate-spin" /> Reconstruindo dados...</> : 'Reconstruir dados a partir dos atendimentos brutos'}
         </button>
@@ -285,7 +285,7 @@ export default function ImportarExcelPage() {
 
         {/* Botão Reset */}
         <button onClick={resetarTudo} disabled={resetando}
-          className="w-full mt-4 py-2 rounded-xl text-[12px] font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full mt-4 py-2 rounded-xl text-[12px] font-semibold transition disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ border: '1.5px solid #fca5a5', color: '#dc2626', background: '#fff5f5' }}>
           {resetando ? <><Loader2 size={14} className="animate-spin" /> Limpando banco...</> : 'Limpar todos os dados antes de reimportar'}
         </button>
@@ -297,7 +297,7 @@ export default function ImportarExcelPage() {
 
         {/* Botão Importar */}
         <button onClick={enviar} disabled={!arquivo || carregando}
-          className="w-full mt-4 py-4 rounded-xl font-syne font-bold text-[15px] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full mt-4 py-4 rounded-xl font-syne font-bold text-[15px] transition disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ background: carregando ? '#8b80e8' : '#5b4fcf', color: '#ffffff' }}>
           {carregando ? (
             <><Loader2 size={18} className="animate-spin" /> {progresso || 'Importando...'}</>

@@ -171,7 +171,7 @@ export default function TrabalheConoscoPage() {
                 </div>
 
                 <button type="submit" disabled={loading}
-                  className="w-full py-3.5 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[14px] mt-2">
+                  className="w-full py-3.5 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition text-[14px] mt-2">
                   {loading ? <><Loader2 size={18} className="animate-spin" /> Cadastrando...</> : cfg.afiliado_pg_botao}
                 </button>
               </form>
@@ -192,7 +192,7 @@ export default function TrabalheConoscoPage() {
               <div className="flex items-center justify-center gap-3">
                 <span className="font-mono font-black text-2xl text-nodri-cyan tracking-widest">{resultado.cupom}</span>
                 <button onClick={() => copiar(resultado.cupom, 'Cupom')}
-                  className="p-2 bg-nodri-cyan/10 border border-nodri-cyan/30 rounded-lg text-nodri-cyan hover:bg-nodri-cyan/20 transition-all">
+                  className="p-2 bg-nodri-cyan/10 border border-nodri-cyan/30 rounded-lg text-nodri-cyan hover:bg-nodri-cyan/20 transition">
                   <Copy size={14} />
                 </button>
               </div>
@@ -204,11 +204,11 @@ export default function TrabalheConoscoPage() {
               <div className="flex items-center gap-2">
                 <span className="flex-1 font-mono text-[11px] text-nodri-purple text-left break-all">{resultado.link}</span>
                 <button onClick={() => copiar(resultado.link, 'Link')}
-                  className="p-2 bg-nodri-purple/10 border border-nodri-purple/30 rounded-lg text-nodri-purple hover:bg-nodri-purple/20 transition-all shrink-0">
+                  className="p-2 bg-nodri-purple/10 border border-nodri-purple/30 rounded-lg text-nodri-purple hover:bg-nodri-purple/20 transition shrink-0">
                   <Copy size={14} />
                 </button>
                 <a href={resultado.link} target="_blank" rel="noopener noreferrer"
-                  className="p-2 bg-nodri-border rounded-lg text-nodri-t3 hover:text-nodri-cyan transition-all shrink-0">
+                  className="p-2 bg-nodri-border rounded-lg text-nodri-t3 hover:text-nodri-cyan transition shrink-0">
                   <ExternalLink size={14} />
                 </a>
               </div>

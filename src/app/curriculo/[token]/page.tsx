@@ -21,7 +21,7 @@ const maskTel = (v: string) => {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
-const inputCls = 'w-full px-4 py-3.5 rounded-2xl text-[15px] focus:outline-none transition-all'
+const inputCls = 'w-full px-4 py-3.5 rounded-2xl text-[15px] focus:outline-none transition'
 const inputSty: React.CSSProperties = { background: '#f7f6fc', border: '2px solid transparent', color: '#1a1a1a' }
 const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = COR; e.currentTarget.style.background = '#fff' }
 const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = '#f7f6fc' }
@@ -192,7 +192,7 @@ export default function CurriculoPublicoPage() {
             {erroEnvio && <div className="rounded-xl px-4 py-2.5 text-[13px] text-center font-medium" style={{ background: '#fef2f2', color: '#dc2626' }}>{erroEnvio}</div>}
 
             <button onClick={enviar} disabled={enviando}
-              className="w-full py-4 rounded-2xl text-[16px] font-bold text-white flex items-center justify-center gap-2 transition-all"
+              className="w-full py-4 rounded-2xl text-[16px] font-bold text-white flex items-center justify-center gap-2 transition"
               style={{ background: `linear-gradient(135deg,${COR},${COR2})`, opacity: enviando ? .7 : 1, boxShadow: '0 10px 24px rgba(91,79,207,.32)' }}>
               {enviando ? <Loader2 size={19} className="animate-spin" /> : <Send size={18} />} Enviar candidatura
             </button>

@@ -151,7 +151,7 @@ export default function ModalAgendarAcao({
                     <button key={p.id}
                       onClick={() => setProfsPromo(prev =>
                         prev.includes(p.nome) ? prev.filter(x => x !== p.nome) : [...prev, p.nome])}
-                      className={'w-full flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-[13px] font-semibold border transition-all '
+                      className={'w-full flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-[13px] font-semibold border transition '
                         + (marcado
                           ? 'bg-[var(--vt-cor)] text-white border-transparent'
                           : 'bg-white text-gray-700 border-gray-200')}>

@@ -436,7 +436,7 @@ export default function EditorSubmenus() {
     return (
       <div className="space-y-3">
         {/* Upload zone */}
-        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${uploadingKey === 'imagem' ? 'border-nodri-cyan/50 bg-nodri-cyan/5' : 'border-nodri-border hover:border-nodri-cyan/40'}`}>
+        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition ${uploadingKey === 'imagem' ? 'border-nodri-cyan/50 bg-nodri-cyan/5' : 'border-nodri-border hover:border-nodri-cyan/40'}`}>
           {uploadingKey === 'imagem' ? (
             <><Loader2 size={22} className="animate-spin text-nodri-cyan" /><span className="text-[12px] text-nodri-cyan">Enviando imagem...</span></>
           ) : (
@@ -510,7 +510,7 @@ export default function EditorSubmenus() {
       return (
         <div className="text-center py-6 space-y-3">
           <p className="text-nodri-t3 text-[12px]">Nenhuma tabela criada.</p>
-          <button onClick={initTabela} className="flex items-center gap-2 mx-auto px-4 py-2 bg-nodri-purple/10 border border-nodri-purple/30 text-nodri-purple rounded-lg text-[12px] font-bold hover:bg-nodri-purple/20 transition-all">
+          <button onClick={initTabela} className="flex items-center gap-2 mx-auto px-4 py-2 bg-nodri-purple/10 border border-nodri-purple/30 text-nodri-purple rounded-lg text-[12px] font-bold hover:bg-nodri-purple/20 transition">
             <Plus size={13} /> Criar Tabela (3×3)
           </button>
         </div>
@@ -520,10 +520,10 @@ export default function EditorSubmenus() {
     return (
       <div className="space-y-2">
         <div className="flex gap-1.5 flex-wrap">
-          <button onClick={addRow} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Plus size={9} /> Linha</button>
-          <button onClick={addCol} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition-all"><Plus size={9} /> Coluna</button>
+          <button onClick={addRow} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition"><Plus size={9} /> Linha</button>
+          <button onClick={addCol} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-cyan hover:border-nodri-cyan/30 transition"><Plus size={9} /> Coluna</button>
           <button onClick={() => updC({ tabela: null })}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all ml-auto"><Trash2 size={9} /> Remover Tabela</button>
+            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition ml-auto"><Trash2 size={9} /> Remover Tabela</button>
         </div>
         <div className="overflow-x-auto">
           <table className="border-collapse w-full text-[12px]">
@@ -539,7 +539,7 @@ export default function EditorSubmenus() {
                   ))}
                   <td className="border-0 pl-1">
                     <button onClick={() => removeRow(li)}
-                      className="w-5 h-5 text-nodri-t3 hover:text-nodri-red opacity-0 group-hover/row:opacity-100 transition-all flex items-center justify-center shrink-0">
+                      className="w-5 h-5 text-nodri-t3 hover:text-nodri-red opacity-0 group-hover/row:opacity-100 transition flex items-center justify-center shrink-0">
                       <X size={9} />
                     </button>
                   </td>
@@ -572,7 +572,7 @@ export default function EditorSubmenus() {
       return (
         <div className="text-center py-6 space-y-3">
           <p className="text-nodri-t3 text-[12px]">Nenhum layout de colunas criado.</p>
-          <button onClick={initColunas} className="flex items-center gap-2 mx-auto px-4 py-2 bg-nodri-amber/10 border border-nodri-amber/30 text-nodri-amber rounded-lg text-[12px] font-bold hover:bg-nodri-amber/20 transition-all">
+          <button onClick={initColunas} className="flex items-center gap-2 mx-auto px-4 py-2 bg-nodri-amber/10 border border-nodri-amber/30 text-nodri-amber rounded-lg text-[12px] font-bold hover:bg-nodri-amber/20 transition">
             <Plus size={13} /> Criar 2 Colunas
           </button>
         </div>
@@ -607,11 +607,11 @@ export default function EditorSubmenus() {
       <div className="space-y-2">
         <div className="flex gap-1.5">
           <button onClick={addCol} disabled={colunas.length >= 4}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-amber hover:border-nodri-amber/30 transition-all disabled:opacity-30">
+            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-border rounded text-nodri-t2 hover:text-nodri-amber hover:border-nodri-amber/30 transition disabled:opacity-30">
             <Plus size={9} /> Coluna ({colunas.length}/4)
           </button>
           <button onClick={() => updC({ colunas: null })}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition-all ml-auto">
+            className="flex items-center gap-1 text-[10px] px-2 py-1 bg-nodri-card border border-nodri-red/30 rounded text-nodri-red hover:bg-nodri-red/10 transition ml-auto">
             <Trash2 size={9} /> Remover
           </button>
         </div>
@@ -626,7 +626,7 @@ export default function EditorSubmenus() {
               />
               {colunas.length > 1 && (
                 <button onClick={() => removeCol(col.id)}
-                  className="absolute top-1 right-1 w-5 h-5 text-nodri-t3 hover:text-nodri-red opacity-0 group-hover/col:opacity-100 transition-all flex items-center justify-center rounded bg-nodri-card">
+                  className="absolute top-1 right-1 w-5 h-5 text-nodri-t3 hover:text-nodri-red opacity-0 group-hover/col:opacity-100 transition flex items-center justify-center rounded bg-nodri-card">
                   <X size={9} />
                 </button>
               )}
@@ -708,7 +708,7 @@ export default function EditorSubmenus() {
 
     return (
       <div className="space-y-3">
-        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${uploadingKey === 'pdf' ? 'border-nodri-red/50 bg-nodri-red/5' : 'border-nodri-border hover:border-nodri-red/40'}`}>
+        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition ${uploadingKey === 'pdf' ? 'border-nodri-red/50 bg-nodri-red/5' : 'border-nodri-border hover:border-nodri-red/40'}`}>
           {uploadingKey === 'pdf' ? (
             <><Loader2 size={22} className="animate-spin text-nodri-red" /><span className="text-[12px] text-nodri-red">Enviando PDF...</span></>
           ) : (
@@ -750,7 +750,7 @@ export default function EditorSubmenus() {
 
     return (
       <div className="space-y-3">
-        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${uploadingKey === 'excel' ? 'border-nodri-green/50 bg-nodri-green/5' : 'border-nodri-border hover:border-nodri-green/40'}`}>
+        <label className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-xl cursor-pointer transition ${uploadingKey === 'excel' ? 'border-nodri-green/50 bg-nodri-green/5' : 'border-nodri-border hover:border-nodri-green/40'}`}>
           {uploadingKey === 'excel' ? (
             <><Loader2 size={22} className="animate-spin text-nodri-green" /><span className="text-[12px] text-nodri-green">Enviando planilha...</span></>
           ) : (
@@ -810,11 +810,11 @@ export default function EditorSubmenus() {
           <div className="font-syne font-bold text-[12px] text-nodri-cyan"> Páginas</div>
           <div className="flex gap-1">
             <button onClick={() => setShowNovaCategoria(true)} title="Nova categoria"
-              className="p-1.5 bg-nodri-purple/10 border border-nodri-purple/30 text-nodri-purple rounded hover:bg-nodri-purple/20 transition-all">
+              className="p-1.5 bg-nodri-purple/10 border border-nodri-purple/30 text-nodri-purple rounded hover:bg-nodri-purple/20 transition">
               <FolderPlus size={11} />
             </button>
             <button onClick={() => setShowNovoItem(true)} title="Nova página"
-              className="p-1.5 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan rounded hover:bg-nodri-cyan/20 transition-all">
+              className="p-1.5 bg-nodri-cyan/10 border border-nodri-cyan/30 text-nodri-cyan rounded hover:bg-nodri-cyan/20 transition">
               <Plus size={11} />
             </button>
           </div>
@@ -862,7 +862,7 @@ export default function EditorSubmenus() {
                 </div>
               ) : (
                 <button onClick={() => setCategoriaAtiva(menu.categoria)}
-                  className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition-all ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
+                  className={`flex-1 flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-bold transition ${categoriaAtiva === menu.categoria ? 'bg-nodri-cyan/10 text-nodri-cyan border border-nodri-cyan/20' : 'text-nodri-t2 hover:text-nodri-t1 hover:bg-white/3'}`}>
                   <span className={`truncate ${menu.oculto ? 'opacity-40 italic' : ''}`}>{menu.oculto && ' '}{menu.categoria}</span>
                   <span className="text-[9px] opacity-60 ml-1">{menu.itens.length}</span>
                   {categoriaAtiva === menu.categoria ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
@@ -901,13 +901,13 @@ export default function EditorSubmenus() {
                     ) : (
                       <>
                         <button onClick={() => abrirEditor(item.slug, item.titulo)}
-                          className={`flex-1 text-left px-2.5 py-1.5 rounded text-[10.5px] transition-all truncate ${slugAtivo === item.slug ? 'bg-nodri-purple/10 text-nodri-purple border border-nodri-purple/20' : 'text-nodri-t3 hover:text-nodri-t1 hover:bg-white/2'} ${item.oculto ? 'opacity-40 italic' : ''}`}>
+                          className={`flex-1 text-left px-2.5 py-1.5 rounded text-[10.5px] transition truncate ${slugAtivo === item.slug ? 'bg-nodri-purple/10 text-nodri-purple border border-nodri-purple/20' : 'text-nodri-t3 hover:text-nodri-t1 hover:bg-white/2'} ${item.oculto ? 'opacity-40 italic' : ''}`}>
                           {item.oculto && ' '}{item.titulo}
                         </button>
                         <button onClick={() => { setEditandoItem(item.slug); setNomePagina(item.titulo) }} title="Renomear"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-cyan transition-all rounded shrink-0"><Edit3 size={10} /></button>
+                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-cyan transition rounded shrink-0"><Edit3 size={10} /></button>
                         <button onClick={() => setConfirmDelete(item.slug)} title="Excluir página"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-red transition-all rounded shrink-0"><Trash2 size={10} /></button>
+                          className="opacity-0 group-hover:opacity-100 p-1 text-nodri-t3 hover:text-nodri-red transition rounded shrink-0"><Trash2 size={10} /></button>
                       </>
                     )}
                   </div>
@@ -964,19 +964,19 @@ export default function EditorSubmenus() {
               </div>
               <div className="flex gap-2 flex-wrap">
                 <button onClick={toggleOculto}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-bold transition-all ${dados.oculto ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/10 hover:bg-nodri-amber/20' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/10 hover:bg-nodri-green/20'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-bold transition ${dados.oculto ? 'border-nodri-amber/40 text-nodri-amber bg-nodri-amber/10 hover:bg-nodri-amber/20' : 'border-nodri-green/40 text-nodri-green bg-nodri-green/10 hover:bg-nodri-green/20'}`}>
                   {dados.oculto ? <><EyeOff size={12} /> Oculta</> : <><Eye size={12} /> Visível</>}
                 </button>
                 <a href={`/conteudo/${dados.slug}`} target="_blank"
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-nodri-border text-nodri-t2 hover:text-nodri-cyan rounded-lg text-[11px] transition-all">
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-nodri-border text-nodri-t2 hover:text-nodri-cyan rounded-lg text-[11px] transition">
                   <Eye size={12} /> Ver
                 </a>
                 <button onClick={() => setConfirmDelete(dados.slug)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15 rounded-lg text-[11px] transition-all">
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-nodri-red/30 text-nodri-red bg-nodri-red/5 hover:bg-nodri-red/15 rounded-lg text-[11px] transition">
                   <Trash2 size={12} /> Excluir
                 </button>
                 <button onClick={salvar} disabled={saving}
-                  className="flex items-center gap-1.5 bg-nodri-cyan text-black px-4 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition-all">
+                  className="flex items-center gap-1.5 bg-nodri-cyan text-black px-4 py-1.5 rounded-lg text-[11px] font-bold hover:brightness-110 disabled:opacity-50 transition">
                   {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Salvar
                 </button>
               </div>
@@ -1013,7 +1013,7 @@ export default function EditorSubmenus() {
                   onDragEnter={() => { dragSecaoOver.current = tipo; setDragHighlight(tipo) }}
                   onDragEnd={reordenarSecao}
                   onDragOver={e => e.preventDefault()}
-                  className={`nodri-card overflow-hidden transition-all ${highlighted ? 'ring-2 ring-nodri-cyan border-nodri-cyan' : ''}`}
+                  className={`nodri-card overflow-hidden transition ${highlighted ? 'ring-2 ring-nodri-cyan border-nodri-cyan' : ''}`}
                 >
                   <div className="flex items-center gap-2 px-4 py-2.5 bg-nodri-surface/60 border-b border-nodri-border cursor-pointer select-none hover:bg-nodri-surface transition-colors"
                     onClick={() => toggleColapso(tipo)}>
@@ -1043,7 +1043,7 @@ export default function EditorSubmenus() {
             })}
 
             <button onClick={salvar} disabled={saving}
-              className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all text-[13px]">
+              className="w-full py-3 bg-nodri-cyan text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition text-[13px]">
               {saving ? <><Loader2 size={16} className="animate-spin" /> Salvando...</> : <><Save size={16} /> Salvar Página</>}
             </button>
           </div>

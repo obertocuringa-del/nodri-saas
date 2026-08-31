@@ -257,12 +257,12 @@ export default function AvaliacaoPage() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
         .card-pergunta { animation: fadeUp 0.4s ease both; }
         .opcao-btn:hover { transform: translateX(4px); }
-        .opcao-btn { transition: all 0.18s ease; }
-        .radio-circle { transition: all 0.15s ease; }
+        .opcao-btn { transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease, filter 0.18s ease; }
+        .radio-circle { transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease, filter 0.15s ease; }
         textarea:focus { outline: none; }
         input:focus { outline: none; }
         .enviar-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px var(--cor-shadow) !important; }
-        .enviar-btn { transition: all 0.2s ease; }
+        .enviar-btn { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease; }
       `}</style>
 
       <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #fff1f5 0%, #fdf4ff 40%, #f5f3ff 70%, #eff6ff 100%)' }}>

@@ -56,7 +56,7 @@ function Barra({ valor, max, cor, height = 2 }: { valor: number; max: number; co
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 rounded-full" style={{ background: 'rgba(0,0,0,.06)', height }}>
-        <div className="rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: cor || '#22d3ee', height }} />
+        <div className="rounded-full transition duration-500" style={{ width: `${pct}%`, background: cor || '#22d3ee', height }} />
       </div>
       <span className="text-[10px] text-nodri-t3 w-7 text-right">{pct}%</span>
     </div>
@@ -287,7 +287,7 @@ export default function ResultadosProfPage() {
               <div className="flex gap-1 border-b border-nodri-border overflow-x-auto no-print">
                 {ABAS.map(({ id: aid, label, icon: Icon }) => (
                   <button key={aid} onClick={() => setAbaAtiva(aid as Aba)}
-                    className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold whitespace-nowrap transition-all border-b-2 -mb-px"
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold whitespace-nowrap transition border-b-2 -mb-px"
                     style={abaAtiva === aid
                       ? { color: '#0891b2', borderColor: '#22d3ee' }
                       : { color: '#767069', borderColor: 'transparent' }}>
@@ -357,7 +357,7 @@ export default function ResultadosProfPage() {
                         <div className="w-full flex gap-1 flex-wrap mt-1">
                           {todosOsMeses.map((mes, i) => (
                             <button key={mes} onClick={() => setMesSelecionado(i)}
-                              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${mesAtualKey === mes ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition ${mesAtualKey === mes ? 'bg-nodri-cyan/15 text-nodri-cyan border border-nodri-cyan/30' : 'text-nodri-t3 hover:text-nodri-t1 border border-nodri-border'}`}>
                               {formatMes(mes)}
                             </button>
                           ))}

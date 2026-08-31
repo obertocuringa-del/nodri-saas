@@ -88,7 +88,7 @@ export default function AcademiaPage() {
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setCategoriaAtiva(null)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!categoriaAtiva ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${!categoriaAtiva ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
           >
             Todos
           </button>
@@ -96,7 +96,7 @@ export default function AcademiaPage() {
             <button
               key={cat.key}
               onClick={() => setCategoriaAtiva(categoriaAtiva === cat.key ? null : cat.key)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${categoriaAtiva === cat.key ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${categoriaAtiva === cat.key ? 'bg-nodri-cyan text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
             >
               {cat.label}
             </button>
@@ -138,7 +138,7 @@ export default function AcademiaPage() {
                       <button
                         key={artigo.id}
                         onClick={() => router.push(`/salon/academia/${artigo.id}`)}
-                        className={`w-full text-left bg-white rounded-xl border ${cat.borda} p-4 flex items-center gap-3 hover:shadow-md transition-all group`}
+                        className={`w-full text-left bg-white rounded-xl border ${cat.borda} p-4 flex items-center gap-3 hover:shadow-md transition group`}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-800 text-sm group-hover:text-nodri-cyan transition-colors">{artigo.titulo}</p>
