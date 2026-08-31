@@ -80,6 +80,16 @@ export const FORMATOS = {
 
 export type FormatoId = keyof typeof FORMATOS
 
+/**
+ * Raio do círculo da foto. Exportado porque a tela de edição precisa da MESMA
+ * conta para transformar o arrasto do dedo em deslocamento — com duas cópias
+ * da fórmula, uma muda e a outra fica para trás, e o arrasto passa a andar
+ * mais (ou menos) que o dedo.
+ */
+export function raioDoCirculo(W: number, H: number): number {
+  return Math.min(W * 0.295, H * 0.158)
+}
+
 /** Enquadramento da foto dentro do círculo. */
 export interface Enquadre { x: number; y: number; zoom: number }
 
@@ -91,6 +101,7 @@ export interface DadosArte {
   nome: string         // nome do profissional
   mensagem: string
   logo: HTMLImageElement | null
+  logoLuminancia?: number  // 0 a 1; decide se a logo ainda se enxerga no tema
   assinatura: string   // nome do salão, usado quando não há logo
 }
 
@@ -203,7 +214,7 @@ export function desenharArte(ctx: CanvasRenderingContext2D, W: number, H: number
   ctx.globalAlpha = 1
 
   // ── foto ───────────────────────────────────────────────────────────────────
-  const raio = Math.min(W * 0.295, H * 0.158)
+  const raio = raioDoCirculo(W, H)
   const cx = W / 2
   const cy = alturaFaixa * 0.86
 
@@ -339,16 +350,141 @@ export function desenharArte(ctx: CanvasRenderingContext2D, W: number, H: number
     const larguraLogo = (d.logo.naturalWidth / d.logo.naturalHeight) * alturaLogo
     const maxLargura = W * 0.5
     const escala = larguraLogo > maxLargura ? maxLargura / larguraLogo : 1
-    ctx.drawImage(
-      d.logo,
-      cx - (larguraLogo * escala) / 2,
-      yAssinatura - (alturaLogo * escala) / 2,
-      larguraLogo * escala,
-      alturaLogo * escala,
-    )
+    const lw = larguraLogo * escala
+    const lh = alturaLogo * escala
+
+    // Depois de tirar o fundo branco pode sobrar o problema oposto: logo escura
+    // sobre tema escuro (ou clara sobre tema claro) simplesmente some. Quando
+    // logo e fundo têm brilho parecido, entra uma plaquinha de contraste — bem
+    // arredondada e com folga, para ler como escolha de desenho, e não como o
+    // retângulo branco que veio junto do arquivo.
+    const lumLogo = typeof d.logoLuminancia === 'number' ? d.logoLuminancia : 0.5
+    const lumFundo = luminanciaDe(tema.fundo)
+    if (Math.abs(lumLogo - lumFundo) < 0.34) {
+      const folga = lh * 0.42
+      ctx.fillStyle = lumFundo < 0.5 ? 'rgba(255,255,255,.93)' : 'rgba(20,18,16,.06)'
+      arredondado(ctx, cx - lw / 2 - folga, yAssinatura - lh / 2 - folga * 0.75,
+        lw + folga * 2, lh + folga * 1.5, (lh + folga * 1.5) * 0.34)
+      ctx.fill()
+    }
+
+    ctx.drawImage(d.logo, cx - lw / 2, yAssinatura - lh / 2, lw, lh)
   } else if (d.assinatura) {
     ctx.fillStyle = tema.texto
     ctx.font = `700 ${Math.round(W * 0.036)}px 'Syne', 'Segoe UI', sans-serif`
     ctx.fillText(d.assinatura, cx, yAssinatura + W * 0.012)
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOGO: tirar o fundo branco que veio dentro do arquivo
+//
+// A logo do salão é salva como imagem comum, e quase toda logo que a gente
+// recebe vem com fundo branco chapado — foi exportada assim. Sobre a arte
+// clara ninguém nota; sobre o tema escuro vira um retângulo branco no meio do
+// rodapé.
+//
+// Trocar a extensão para .png NÃO resolve: o branco não é "falta de fundo", são
+// pixels brancos de verdade. PNG só permite transparência, não a cria.
+//
+// O que resolve é apagar o branco. E apagar só o do FUNDO: varrendo a partir
+// das bordas para dentro, parando onde a cor muda. Assim o branco que faz parte
+// do desenho (o miolo de uma letra, um brilho) fica de pé — se fosse por
+// "apague todo pixel claro", a logo sairia esburacada.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LogoPreparada {
+  imagem: HTMLImageElement
+  luminancia: number   // 0 a 1, média do que sobrou visível
+}
+
+function quaseBranco(d: Uint8ClampedArray, i: number): boolean {
+  const r = d[i], g = d[i + 1], b = d[i + 2]
+  const menor = Math.min(r, g, b)
+  const maior = Math.max(r, g, b)
+  // claro E sem cor: branco sujo e cinza clarinho entram, amarelo claro não
+  return menor > 228 && maior - menor < 26
+}
+
+export async function prepararLogo(original: HTMLImageElement): Promise<LogoPreparada | null> {
+  const L = original.naturalWidth, A = original.naturalHeight
+  if (!L || !A) return null
+
+  const tela = document.createElement('canvas')
+  tela.width = L
+  tela.height = A
+  const ctx = tela.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return null
+  ctx.drawImage(original, 0, 0)
+
+  let dados: ImageData
+  try {
+    dados = ctx.getImageData(0, 0, L, A)
+  } catch {
+    // Imagem de outro domínio suja o canvas e a leitura é proibida. Devolve a
+    // logo como veio: melhor com fundo branco do que sem logo nenhuma.
+    return { imagem: original, luminancia: 0.5 }
+  }
+
+  const d = dados.data
+  const total = L * A
+
+  // Primeiro a pergunta que decide tudo: o branco é o FUNDO ou é a MARCA?
+  // Logo branca sobre fundo colorido existe, e nela apagar o branco apagaria a
+  // logo inteira. A conta é simples — se quase tudo que está opaco é branco,
+  // o branco é a marca, e a imagem sai como veio (a plaquinha de contraste
+  // resolve a leitura dela sobre fundo claro).
+  let brancos = 0, opacos = 0
+  for (let p = 0; p < total; p++) {
+    const i = p * 4
+    if (d[i + 3] < 40) continue
+    opacos++
+    if (quaseBranco(d, i)) brancos++
+  }
+  const proporcaoBranca = opacos ? brancos / opacos : 0
+
+  if (proporcaoBranca < 0.9) {
+    // Apaga TODO pixel quase branco, não só o que encosta na borda.
+    //
+    // A primeira versão varria só a partir das bordas, para preservar branco
+    // que fosse parte do desenho. Ficou errado no caso mais comum: o vazado
+    // das letras. O miolo do "o" é cercado pela tinta da própria letra, então
+    // a varredura nunca chega lá — e a logo saiu com bolhas brancas dentro das
+    // letras sobre o fundo escuro, que é justamente o defeito que se queria
+    // corrigir.
+    for (let p = 0; p < total; p++) {
+      const i = p * 4
+      if (d[i + 3] >= 40 && quaseBranco(d, i)) d[i + 3] = 0
+    }
+  }
+
+  ctx.putImageData(dados, 0, 0)
+
+  // Média do que sobrou: é o que diz se a logo é escura ou clara, e portanto se
+  // ela ainda se enxerga sobre o fundo do tema escolhido.
+  let soma = 0, contados = 0
+  for (let p = 0; p < L * A; p += 7) {
+    const i = p * 4
+    if (d[i + 3] < 40) continue
+    soma += (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
+    contados++
+  }
+
+  const limpa = new Image()
+  await new Promise<void>(pronto => {
+    limpa.onload = () => pronto()
+    limpa.onerror = () => pronto()
+    limpa.src = tela.toDataURL('image/png')
+  })
+
+  return { imagem: limpa, luminancia: contados ? soma / contados : 0.5 }
+}
+
+/** Luminância de uma cor #rrggbb, para comparar logo e fundo. */
+export function luminanciaDe(hex: string): number {
+  let h = (hex || '').replace('#', '')
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 1
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 }

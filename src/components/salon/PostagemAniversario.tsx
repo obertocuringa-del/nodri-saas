@@ -5,7 +5,7 @@ import { X, Upload, Loader2, Download, Sparkles, ZoomIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getLogoSalao } from '@/lib/logoSalao'
 import {
-  TEMAS, FORMATOS, desenharArte,
+  TEMAS, FORMATOS, desenharArte, prepararLogo, raioDoCirculo,
   type Tema, type FormatoId, type Enquadre,
 } from '@/lib/arteAniversario'
 
@@ -35,6 +35,7 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
 
   const [foto, setFoto] = useState<HTMLImageElement | null>(null)
   const [logo, setLogo] = useState<HTMLImageElement | null>(null)
+  const [logoLum, setLogoLum] = useState(0.5)
   const [nomeSalao, setNomeSalao] = useState('')
 
   const telaRef = useRef<HTMLCanvasElement>(null)
@@ -63,8 +64,17 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
     getLogoSalao().then(url => {
       if (!url) return
       const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => setLogo(img)
+      img.onload = async () => {
+        // O fundo branco é tirado UMA vez, aqui, e não a cada redesenho: varrer
+        // a imagem inteira a cada tecla digitada na mensagem travaria a prévia.
+        const pronta = await prepararLogo(img)
+        if (pronta) { setLogo(pronta.imagem); setLogoLum(pronta.luminancia) }
+        else setLogo(img)
+      }
+      img.onerror = () => { /* fica o nome do salão */ }
+      // Sem crossOrigin de propósito: a logo é guardada como data URL no
+      // próprio banco, então é mesma origem. Pedir CORS aqui faria a imagem
+      // falhar ao carregar em vez de aparecer.
       img.src = url
     })
 
@@ -136,9 +146,10 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
       nome: nomeBanner || 'Nome',
       mensagem,
       logo,
+      logoLuminancia: logoLum,
       assinatura: nomeSalao,
     })
-  }, [formato, tema, foto, enquadre, nomeBanner, mensagem, logo, nomeSalao])
+  }, [formato, tema, foto, enquadre, nomeBanner, mensagem, logo, logoLum, nomeSalao])
 
   useEffect(() => { redesenhar() }, [redesenhar])
 
@@ -154,7 +165,8 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
     // O deslocamento é guardado em MÚLTIPLOS DO RAIO do círculo, e não em
     // pixels: assim o mesmo enquadramento vale para os dois formatos, que têm
     // círculos de tamanhos diferentes.
-    const raioNaTela = caixa.width * 0.265
+    const { w, h } = FORMATOS[formato]
+    const raioNaTela = raioDoCirculo(w, h) * (caixa.width / w)
     const dx = (e.clientX - arrastando.current.x) / raioNaTela
     const dy = (e.clientY - arrastando.current.y) / raioNaTela
     arrastando.current = { x: e.clientX, y: e.clientY }
@@ -185,6 +197,7 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
           nome: nomeBanner || 'Nome',
           mensagem,
           logo,
+          logoLuminancia: logoLum,
           assinatura: nomeSalao,
         })
         const blob: Blob | null = await new Promise(res => fora.toBlob(res, 'image/png'))
