@@ -119,7 +119,8 @@ QUEM É A PESSOA
 ${retrato}
 
 REGRAS
-- Duas frases, no máximo 30 palavras no total.
+- Duas frases, entre 22 e 34 palavras no total. Não venha com uma frase de dez palavras: a arte reserva um espaço para a mensagem, e texto curto demais deixa um vazio no meio da peça.
+- NÃO escreva "parabéns" nem "feliz aniversário". As duas coisas já estão escritas na arte, em letra grande, logo acima da mensagem. Sua parte é o que vem DEPOIS disso: o desejo, o elogio, o que se quer para o ano dela.
 - Fale COM ela (você), não sobre ela.
 - Puxe algo do que ela faz ou de quanto tempo está na casa, para a mensagem não servir para qualquer pessoa.
 - Se o cadastro não disser quase nada sobre ela, NÃO invente qualidade que você não sabe se existe: escreva uma frase bonita sobre a data e sobre o ano que começa para ela. Bonita de verdade, com imagem e ritmo — não o "muitos anos de vida e muitas felicidades" de cartão de banca.
@@ -130,7 +131,14 @@ REGRAS
 - Responda APENAS com a mensagem, sem introdução.`
 
   try {
-    const texto = await iaGerar(apiKey, modelo, prompt, { maxTokens: 300 })
+    // maxTokens folgado e thinkingBudget:0 pelo mesmo motivo das outras rotas
+    // do sistema: no Gemini, parte do orçamento de saída é gasta "pensando"
+    // antes de escrever. Com 300 tokens e sem essa trava, a frase voltava
+    // cortada no meio ("Que seu talento continue a inspirar beleza e").
+    // A mensagem continua curta porque o PROMPT manda ser curta — não porque
+    // o teto de tokens a interrompe. Teto não é forma de controlar tamanho:
+    // ele corta no meio da palavra em vez de fazer o modelo concluir.
+    const texto = await iaGerar(apiKey, modelo, prompt, { maxTokens: 700, geminiThinkingBudget: 0 })
     const limpo = tirarVocativo(
       String(texto || '').trim().replace(/^["']|["']$/g, ''),
       primeiro,

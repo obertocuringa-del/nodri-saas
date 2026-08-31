@@ -268,21 +268,61 @@ export function desenharArte(ctx: CanvasRenderingContext2D, W: number, H: number
   }
   ctx.restore()
 
-  // ── "Parabéns" ─────────────────────────────────────────────────────────────
+  // ── bloco de texto: MEDIDO antes de ser pintado ────────────────────────────
+  //
+  // Antes o título nascia numa altura fixa e só a mensagem era centrada no que
+  // sobrava. Com mensagem curta, toda a folga se acumulava num lugar só — o
+  // vão entre o texto e a logo, que era o que ficava feio.
+  //
+  // Agora o conjunto inteiro (Parabéns, o nome na tarja, "Feliz aniversário" e
+  // a mensagem) é medido primeiro e centrado como um bloco único no espaço
+  // entre a foto e a assinatura. Assim a folga que sobra se divide por igual
+  // em cima e embaixo, e mensagem curta apenas aproxima o conjunto, em vez de
+  // abrir um buraco no rodapé.
+  const yAssinatura = H * 0.925
+
   ctx.textAlign = 'center'
-  ctx.textBaseline = 'alphabetic'
-  const yTitulo = cy + raio + H * 0.072
+  ctx.textBaseline = 'top'
+
+  const corpoTitulo = Math.round(W * 0.100)
+  const corpoNome = Math.round(W * 0.076)
+  const corpoSub = Math.round(W * 0.040)
+  const fitaH = corpoNome * 1.5
+
+  const vaoTituloFita = H * 0.010
+  const vaoFitaSub = H * 0.022
+  const vaoSubMsg = H * 0.026
+
+  const regiaoTopo = cy + raio + H * 0.030
+  const regiaoBase = yAssinatura - H * 0.052
+
+  const alturaFixa = corpoTitulo + vaoTituloFita + fitaH + vaoFitaSub + corpoSub + vaoSubMsg
+  const larguraMsg = W * 0.78
+  const sobraParaMsg = Math.max(corpoSub, regiaoBase - regiaoTopo - alturaFixa)
+
+  // O corpo da mensagem começa grande e só encolhe se precisar caber. Frase
+  // curta fica com letra maior, o que ajuda a ocupar a página com dignidade.
+  let corpoMsg = Math.round(W * 0.040)
+  let linhas: string[] = []
+  for (; corpoMsg >= Math.round(W * 0.024); corpoMsg -= 2) {
+    ctx.font = `400 ${corpoMsg}px 'DM Sans', 'Segoe UI', sans-serif`
+    linhas = quebrar(ctx, d.mensagem, larguraMsg, 5)
+    if (linhas.length * corpoMsg * 1.5 <= sobraParaMsg) break
+  }
+  const alturaBloco = alturaFixa + linhas.length * corpoMsg * 1.5
+  let y = regiaoTopo + Math.max(0, (regiaoBase - regiaoTopo - alturaBloco) / 2)
+
+  // ── "Parabéns" ─────────────────────────────────────────────────────────────
   ctx.fillStyle = tema.titulo
-  ctx.font = `800 ${Math.round(W * 0.108)}px 'Syne', 'Segoe UI', sans-serif`
-  ctx.fillText(d.titulo, cx, yTitulo)
+  ctx.font = `800 ${corpoTitulo}px 'Syne', 'Segoe UI', sans-serif`
+  ctx.fillText(d.titulo, cx, y)
+  y += corpoTitulo + vaoTituloFita
 
   // ── tarja com o nome ───────────────────────────────────────────────────────
-  const corpoNome = Math.round(W * 0.082)
   ctx.font = `700 ${corpoNome}px 'Syne', 'Segoe UI', sans-serif`
-  const larguraNome = Math.min(ctx.measureText(d.nome).width, W * 0.74)
+  const larguraNome = Math.min(ctx.measureText(d.nome).width, W * 0.72)
   const fitaW = larguraNome + W * 0.13
-  const fitaH = corpoNome * 1.52
-  const fitaY = yTitulo + H * 0.014
+  const fitaY = y
   const fitaX = cx - fitaW / 2
 
   // dobras laterais, que dão o ar de fita
@@ -313,38 +353,30 @@ export function desenharArte(ctx: CanvasRenderingContext2D, W: number, H: number
   ctx.clip()
   ctx.fillText(d.nome, cx, fitaY + fitaH * 0.54)
   ctx.restore()
-  ctx.textBaseline = 'alphabetic'
+  ctx.textBaseline = 'top'
+  y += fitaH + vaoFitaSub
+
+  // ── "Feliz aniversário" ────────────────────────────────────────────────────
+  // A data precisa estar dita na arte, e não depender de a mensagem lembrar de
+  // dizê-la. Em versalete espaçado, logo abaixo do nome: lê como legenda do
+  // nome, não compete com o "Parabéns" e ainda encurta o caminho entre a tarja
+  // e o texto, que era onde o vazio aparecia.
+  ctx.fillStyle = tema.titulo
+  ctx.font = `700 ${corpoSub}px 'Syne', 'Segoe UI', sans-serif`
+  try { (ctx as any).letterSpacing = `${Math.round(W * 0.007)}px` } catch { /* navegador antigo ignora */ }
+  ctx.fillText('FELIZ ANIVERSÁRIO', cx, y)
+  try { (ctx as any).letterSpacing = '0px' } catch { /* idem */ }
+  y += corpoSub + vaoSubMsg
 
   // ── mensagem ───────────────────────────────────────────────────────────────
-  // O espaço entre a tarja e o rodapé é o que sobrou; o corpo da letra diminui
-  // até o texto caber nele. É o que impede a mensagem de invadir a logo no
-  // formato de feed, que é mais baixo.
-  const topoMsg = fitaY + fitaH + H * 0.045
-  const baseRodape = H * 0.855
-  const alturaDisponivel = baseRodape - topoMsg
-  const larguraMsg = W * 0.78
-
-  let corpoMsg = Math.round(W * 0.037)
-  let linhas: string[] = []
-  for (; corpoMsg >= Math.round(W * 0.023); corpoMsg -= 2) {
-    ctx.font = `400 ${corpoMsg}px 'DM Sans', 'Segoe UI', sans-serif`
-    linhas = quebrar(ctx, d.mensagem, larguraMsg, 6)
-    if (linhas.length * corpoMsg * 1.52 <= alturaDisponivel) break
-  }
-
-  // Centrado no vao: o Stories e mais alto que o feed e, com o texto preso no
-  // topo, sobrava um buraco entre a mensagem e a assinatura.
-  const alturaTexto = linhas.length * corpoMsg * 1.52
-  const yPrimeira = topoMsg + (alturaDisponivel - alturaTexto) / 2 + corpoMsg
-
   ctx.fillStyle = tema.texto
   ctx.font = `400 ${corpoMsg}px 'DM Sans', 'Segoe UI', sans-serif`
   linhas.forEach((l, i) => {
-    ctx.fillText(l, cx, yPrimeira + i * corpoMsg * 1.52)
+    ctx.fillText(l, cx, y + i * corpoMsg * 1.5)
   })
+  ctx.textBaseline = 'alphabetic'
 
   // ── assinatura do salão ────────────────────────────────────────────────────
-  const yAssinatura = H * 0.925
   if (d.logo && d.logo.naturalWidth) {
     const alturaLogo = Math.min(H * 0.062, W * 0.11)
     const larguraLogo = (d.logo.naturalWidth / d.logo.naturalHeight) * alturaLogo
