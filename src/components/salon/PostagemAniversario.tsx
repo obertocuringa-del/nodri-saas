@@ -27,7 +27,7 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
   const [profId, setProfId] = useState('')
   const [sexo, setSexo] = useState<'feminino' | 'masculino'>('feminino')
   const [temaId, setTemaId] = useState('rose')
-  const [mensagem, setMensagem] = useState('Que a felicidade acompanhe cada passo seu e que seu sucesso seja cada vez maior. Feliz aniversário!')
+  const [mensagem, setMensagem] = useState('Que a felicidade acompanhe cada passo seu e que seu sucesso seja cada vez maior. Que este novo ciclo venha cheio de conquistas!')
   const [gerando, setGerando] = useState(false)
   const [baixando, setBaixando] = useState(false)
   const [formato, setFormato] = useState<FormatoId>('stories')
@@ -103,7 +103,16 @@ export default function PostagemAniversario({ aoFechar }: { aoFechar: () => void
       })
       const d = await r.json()
       if (d?.mensagem) setMensagem(d.mensagem)
-      if (d && d.gerado_por_ia === false) toast('Texto padrão — a IA não respondeu. Pode editar à vontade.')
+      if (d && d.gerado_por_ia === false) {
+        // Dizer O QUE aconteceu, e não só que não deu certo: "a IA não
+        // respondeu" manda a pessoa reclamar sem saber onde mexer.
+        const recado = d.motivo === 'sem_chave'
+          ? 'A IA ainda não tem chave configurada. Texto padrão aplicado — pode editar.'
+          : d.motivo === 'desligada'
+            ? 'A IA está desligada no painel. Texto padrão aplicado — pode editar.'
+            : 'A IA não respondeu agora. Texto padrão aplicado — pode editar ou tentar de novo.'
+        toast(recado)
+      }
     } catch {
       toast.error('Não consegui gerar o texto. Escreva o seu abaixo.')
     }
