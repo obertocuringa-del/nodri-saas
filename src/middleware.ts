@@ -293,5 +293,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)'],
+  // -- Por que robots.txt e sitemap.xml entraram nesta lista --------------
+  //
+  // Eles nao estavam, e o middleware tratava os dois como pagina privada: o
+  // Google pedia /robots.txt e /sitemap.xml e levava 307 para /login.
+  // Os dois arquivos existiam no codigo (src/app/robots.ts e sitemap.ts),
+  // eram gerados no build, e nunca foram lidos por buscador nenhum — nem o
+  // mapa do site, nem as regras do que pode ou nao ser indexado.
+  //
+  // Arquivo de raiz que buscador e navegador pedem sozinhos nao passa por
+  // autenticacao: nao ha usuario do outro lado para logar.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|llms\\.txt|opengraph-image|twitter-image|manifest\\.webmanifest|site\\.webmanifest|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)'],
 }

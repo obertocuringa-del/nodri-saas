@@ -1,0 +1,55 @@
+# NODRI
+
+> Sistema de gestão para salões de beleza, barbearias e clínicas de estética.
+> Reúne num só lugar o controle financeiro, a equipe, os processos do salão e
+> a relação com o cliente — e transforma os dados do salão em decisão.
+
+O NODRI é um SaaS brasileiro, em português, cobrado por assinatura mensal, com
+quatro planos. O dono do salão contrata, cadastra a equipe e passa a acompanhar
+faturamento, metas, comissões, custos e atendimento pelo mesmo painel.
+
+## O que o sistema faz
+
+- **Financeiro**: calculadora de custo e formação de preço, ponto de equilíbrio,
+  despesas diretas e indiretas, boletos a pagar, comissões e descontos por
+  profissional, empréstimos parcelados.
+- **Equipe**: cadastro de profissionais CLT e PJ, plano de carreira, avaliação
+  de desempenho, escala de trabalho e de feriados, portal próprio onde cada
+  profissional vê só o que é dele.
+- **Processos**: check list diário por período, POPs, organograma de setores,
+  departamentos com fila de solicitações, controle de enxovais, esterilização,
+  dosagem de produto, atas de reunião.
+- **Cliente**: pesquisa de satisfação com link público, convite para avaliar no
+  Google, vitrine com preços e promoções, agendamento pelo WhatsApp, lista de
+  espera, aniversariantes.
+- **Relatórios**: faturamento por período, ticket médio, clientes novos e
+  recorrentes, dinheiro parado em clientes inativos, metas por profissional,
+  corridas internas entre a equipe.
+- **Inteligência artificial**: consultoria sobre os números do próprio salão e
+  análise automática das pesquisas de satisfação.
+
+## Para quem é
+
+Salão de beleza, barbearia, estúdio de estética, clínica de estética e
+esmalteria — do salão de uma cadeira ao que tem equipe grande e vários setores.
+O perfil típico é o dono que já fatura mas não sabe onde o dinheiro fica, ou que
+controla tudo em caderno e planilha.
+
+## Páginas
+
+- [Início](https://www.nodri.com.br/): o que o sistema faz e para quem
+- [Trabalhe conosco](https://www.nodri.com.br/trabalhe-conosco): programa de
+  afiliados, para quem quer indicar o NODRI e receber comissão
+
+## Contato
+
+- Site: https://www.nodri.com.br
+- E-mail: nodriestiloebeleza@gmail.com
+
+## O que não indexar
+
+Links pessoais gerados pelo salão para UMA pessoa — pesquisa de satisfação de um
+cliente, ficha de um candidato a emprego, autocadastro de um parceiro, vitrine
+de um salão específico — são abertos porque quem recebe ainda não tem login, não
+porque devam ser encontrados por estranhos. As regras estão em
+https://www.nodri.com.br/robots.txt
