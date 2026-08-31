@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Cake, Loader2, Gift, MessageCircle, X, Send } from 'lucide-react'
+import { ArrowLeft, Cake, Loader2, Gift, MessageCircle, X, Send, Image as ImageIcon } from 'lucide-react'
+import PostagemAniversario from '@/components/salon/PostagemAniversario'
 import toast from 'react-hot-toast'
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -20,6 +21,7 @@ export default function AniversariantesPage() {
   const [loading, setLoading] = useState(true)
   const [msgAlvo, setMsgAlvo] = useState<Aniv | null>(null)
   const [msgTexto, setMsgTexto] = useState('')
+  const [postagemAberta, setPostagemAberta] = useState(false)
   const mesAtual = new Date().getMonth() + 1
 
   function abrirWhats(a: Aniv) {
@@ -77,6 +79,19 @@ export default function AniversariantesPage() {
         <div style={{ background: 'linear-gradient(135deg,#7c3aed,#db2777)', borderRadius: 16, padding: '18px 22px', marginBottom: 18, color: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 800 }}><Gift size={18} /> {MESES[mesAtual - 1]} — {doMesAtual.length} aniversariante{doMesAtual.length !== 1 ? 's' : ''}</div>
           <p style={{ fontSize: 12, opacity: 0.9, margin: '6px 0 0' }}>Quem faz aniversário este mês. Que tal mandar uma mensagem?</p>
+
+          {/* A arte do post fica no cartão do mês, e não numa barra lá em cima,
+              porque é aqui que o olho já está quando a pessoa lembra do
+              aniversário. Branco sobre o roxo para ler como ação principal sem
+              competir com o "Parabenizar" de cada linha. */}
+          <button onClick={() => setPostagemAberta(true)} style={{
+            marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 18px', borderRadius: 10, border: 'none', background: '#fff',
+            color: '#7c3aed', fontSize: 13, fontWeight: 900, cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(0,0,0,.16)',
+          }}>
+            <ImageIcon size={15} /> Postagem
+          </button>
         </div>
 
         {loading ? (
@@ -141,6 +156,8 @@ export default function AniversariantesPage() {
           </div>
         </div>
       )}
+
+      {postagemAberta && <PostagemAniversario aoFechar={() => setPostagemAberta(false)} />}
     </div>
   )
 }
