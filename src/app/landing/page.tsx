@@ -709,7 +709,16 @@ export default function LandingPage({ cfgInicial }: any) {
           maxWidth: 1040, margin: '22px auto 0', paddingTop: 14,
           borderTop: '1px solid rgba(255,255,255,.14)', fontSize: 11.5, color: 'rgba(255,255,255,.55)',
         }}>
-          &copy; {new Date().getFullYear()} {cfg.footer_logo}. {cfg.footer_direitos}
+          {/* suppressHydrationWarning por causa do ano: o servidor da Vercel
+              roda em UTC e o navegador no fuso de quem abre. Na virada do ano,
+              entre 21h e meia-noite no Brasil, o servidor ja escreve o ano
+              novo e o cliente ainda escreve o velho — e um numero diferente no
+              mesmo lugar faz o React descartar TODO o HTML do servidor e
+              redesenhar a pagina no cliente. Uma vez por ano, na pagina de
+              entrada. Isto avisa o React que aqui a diferenca e esperada. */}
+          <span suppressHydrationWarning>
+            &copy; {new Date().getFullYear()} {cfg.footer_logo}. {cfg.footer_direitos}
+          </span>
         </div>
       </footer>
     </div>
