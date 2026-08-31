@@ -125,10 +125,24 @@ export const LANDING_PADRAO = {
     'O pagamento é feito via Pix automaticamente',
   ],
 
+  // ── Rodapé ────────────────────────────────────────────────────────────────
+  // Quem vende assinatura pela internet precisa se identificar na página: o
+  // Código de Defesa do Consumidor exige nome, CNPJ e endereço eletrônico bem
+  // visíveis, e é isso que separa um site de empresa de uma página anônima —
+  // inclusive aos olhos do Google, que usa esses sinais para decidir se um
+  // site que cobra dinheiro é confiável.
+  //
+  // Razão social, CNPJ e endereço nascem VAZIOS de propósito: dado real não
+  // mora no código. Preencha em Admin > Vitrine > Rodapé. Linha vazia não é
+  // desenhada — ninguém vê rótulo sem conteúdo.
   footer_logo: 'NODRI',
   footer_texto: 'Gestão Inteligente para Salões de Beleza',
   footer_email: 'contato@nodri.com.br',
   footer_whatsapp: '5561982195214',
+  footer_razao_social: '',
+  footer_cnpj: '',
+  footer_endereco: '',
+  footer_direitos: 'Todos os direitos reservados.',
 }
 
 export type LandingConfig = typeof LANDING_PADRAO

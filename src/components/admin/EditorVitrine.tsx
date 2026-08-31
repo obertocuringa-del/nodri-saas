@@ -284,6 +284,23 @@ export default function EditorVitrine() {
       </Bloco>
 
       {/* PÁGINA DO AFILIADO — /trabalhe-conosco, inteira editável aqui */}
+      <Bloco titulo="Rodapé do site">
+        <p className="text-[10px] text-nodri-t3 -mt-1">
+          Identificação da empresa no fim da página. Campo que você deixar em
+          branco simplesmente não aparece no site.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Campo rotulo="Nome no rodapé" v={cfg.footer_logo} on={(v: string) => set('footer_logo', v)} />
+          <Campo rotulo="Frase abaixo do nome" v={cfg.footer_texto} on={(v: string) => set('footer_texto', v)} />
+          <Campo rotulo="Razão social" v={cfg.footer_razao_social} on={(v: string) => set('footer_razao_social', v)} />
+          <Campo rotulo="CNPJ" v={cfg.footer_cnpj} on={(v: string) => set('footer_cnpj', v)} />
+          <Campo rotulo="E-mail de contato" v={cfg.footer_email} on={(v: string) => set('footer_email', v)} />
+          <Campo rotulo="WhatsApp (só números, com DDI)" v={cfg.footer_whatsapp} on={(v: string) => set('footer_whatsapp', v)} />
+        </div>
+        <Campo rotulo="Endereço" v={cfg.footer_endereco} on={(v: string) => set('footer_endereco', v)} />
+        <Campo rotulo="Frase de direitos autorais" v={cfg.footer_direitos} on={(v: string) => set('footer_direitos', v)} />
+      </Bloco>
+
       <Bloco titulo="Página do afiliado (/trabalhe-conosco)">
         <p className="text-[10px] text-nodri-t3 -mt-1">
           É a página que abre no botão “Quero ser Afiliado”. O que estiver entre **dois asteriscos** aparece na cor da marca.

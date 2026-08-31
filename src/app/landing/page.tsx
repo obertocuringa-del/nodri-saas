@@ -643,13 +643,68 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
         </div>
       </section>
 
-      {/* O rodape saiu a pedido: logo repetida, o mesmo texto de apresentacao
-          que ja esta no topo, e-mail e quatro links que duplicavam o que a
-          barra do topo e a secao de afiliados ja oferecem. Bloco branco no fim
-          da pagina sem nada novo so alonga a rolagem.
+      {/* ── RODAPE ────────────────────────────────────────────────────────────
+          Ele ja tinha saido uma vez, e com razao: era um bloco alto que
+          repetia a logo, o mesmo texto do topo e quatro links que a barra de
+          cima ja oferecia. Nada novo, so rolagem a mais.
 
-          Nada de essencial se perdeu: "Ja sou cliente" continua no topo e
-          "Quero ser afiliado" na secao acima. */}
+          Voltou por um motivo diferente do que motivou a saida: quem vende
+          assinatura pela internet precisa se identificar na propria pagina.
+          Nome, CNPJ e um endereco eletronico visiveis sao exigencia do Codigo
+          de Defesa do Consumidor, e sao tambem o que separa, aos olhos do
+          Google, um site de empresa de uma pagina anonima que cobra dinheiro.
+
+          Entao voltou como FAIXA, nao como bloco: uma linha de identificacao,
+          uma de contato. Tudo editavel em Admin > Vitrine > Rodape, e campo
+          vazio nao e desenhado — quem nao preencheu o CNPJ nao ve um rotulo
+          solto no site. */}
+      <footer style={{
+        background: MARINHO, color: 'rgba(255,255,255,.72)', padding: '30px 20px 34px',
+        fontSize: 12.5, lineHeight: 1.75,
+      }}>
+        <div style={{
+          maxWidth: 1040, margin: '0 auto', display: 'flex', flexWrap: 'wrap',
+          gap: '18px 40px', alignItems: 'flex-start', justifyContent: 'space-between',
+        }}>
+          <div style={{ minWidth: 220 }}>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 16, letterSpacing: '.5px' }}>
+              {cfg.footer_logo}
+            </div>
+            {cfg.footer_texto ? <div>{cfg.footer_texto}</div> : null}
+          </div>
+
+          <div style={{ minWidth: 220 }}>
+            {cfg.footer_razao_social ? <div>{cfg.footer_razao_social}</div> : null}
+            {cfg.footer_cnpj ? <div>CNPJ {cfg.footer_cnpj}</div> : null}
+            {cfg.footer_endereco ? <div>{cfg.footer_endereco}</div> : null}
+          </div>
+
+          <div style={{ minWidth: 200 }}>
+            {cfg.footer_email ? (
+              <div>
+                <a href={`mailto:${cfg.footer_email}`} style={{ color: CIANO, textDecoration: 'none' }}>
+                  {cfg.footer_email}
+                </a>
+              </div>
+            ) : null}
+            {cfg.footer_whatsapp ? (
+              <div>
+                <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer"
+                  style={{ color: CIANO, textDecoration: 'none' }}>
+                  Falar no WhatsApp
+                </a>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div style={{
+          maxWidth: 1040, margin: '22px auto 0', paddingTop: 14,
+          borderTop: '1px solid rgba(255,255,255,.14)', fontSize: 11.5, color: 'rgba(255,255,255,.55)',
+        }}>
+          &copy; {new Date().getFullYear()} {cfg.footer_logo}. {cfg.footer_direitos}
+        </div>
+      </footer>
     </div>
   )
 }
