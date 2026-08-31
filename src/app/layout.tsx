@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import './globals.css'
@@ -48,9 +48,40 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.nodri.com.br'),
 }
 
+// ── Como o celular deve desenhar a página ────────────────────────────────────
+//
+// Antes isto não existia e o Next usava o padrao dele. Duas coisas faltavam:
+//
+// 1. themeColor: a barra do navegador (topo do Chrome no Android, borda da
+//    aba no iPhone) ficava branca ou cinza, sem relação com o sistema. Agora
+//    ela pega o mesmo creme do fundo — a tela vira uma coisa só.
+// 2. colorScheme: declara que o NODRI é claro. Sem isso, aparelho no modo
+//    escuro pintava de preto o que o proprio navegador desenha (setinha do
+//    select, calendario do campo de data, texto sugerido) — preto no preto.
+//
+// O zoom continua LIBERADO de propósito: travar o zoom é o atalho fácil para
+// "arrumar" o celular, e tira de quem enxerga pouco a única saída que resta.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#faf9f7',
+  colorScheme: 'light',
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
+      <head>
+        {/* As fontes (Syne e DM Sans) sao pedidas la de dentro do globals.css,
+            e o navegador so descobre o endereco delas DEPOIS de baixar e ler o
+            CSS inteiro. Estas duas linhas mandam abrir a conversa com o
+            servidor de fontes em paralelo, ainda durante a leitura do HTML.
+            Quando chegar a hora de pedir a fonte, a conexao ja esta pronta —
+            o texto aparece na fonte certa mais cedo, sem aquele pisca de
+            trocar a fonte no meio do carregamento. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body>
         {children}
         <WhatsAppButton />

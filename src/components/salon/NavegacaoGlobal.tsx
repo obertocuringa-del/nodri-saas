@@ -460,7 +460,7 @@ export default function NavegacaoGlobal() {
           style={{ ...pillSt, color: '#8a859c', fontWeight: 600, minWidth: 210, justifyContent: 'flex-start' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <Search size={15} color="#5b4fcf" />
-          <span style={{ flex: 1, textAlign: 'left' }}>Buscar no sistema...</span>
+          <span style={{ flex: 1, textAlign: 'left' }}>Buscar no sistema…</span>
           <span style={{ fontSize: 10, color: '#b9b4d6', border: '1px solid #e5e1f5', borderRadius: 5, padding: '1px 6px' }}>Ctrl+K</span>
         </button>
       </div>
@@ -487,17 +487,17 @@ export default function NavegacaoGlobal() {
       {/* Busca ultra inteligente (overlay) */}
       {buscaAberta && (
         <div onClick={() => setBuscaAberta(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,12,40,.55)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '10vh 14px 14px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 620, boxShadow: '0 30px 80px rgba(0,0,0,.35)', overflow: 'hidden' }}>
+          <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Buscar em todo o sistema" style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 620, boxShadow: '0 30px 80px rgba(0,0,0,.35)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: '1px solid #f0eee8' }}>
               <Search size={18} color="#5b4fcf" style={{ flexShrink: 0 }} />
               <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKeyDown}
-                placeholder="Digite qualquer coisa: página, senha, telefone, escala, profissional..."
+                placeholder="Digite qualquer coisa: página, senha, telefone, escala, profissional…"
                 style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15.5, fontWeight: 600, color: '#1a1a1a', background: 'transparent' }} />
               {apiLoading && <Loader2 size={16} className="animate-spin" style={{ color: '#9ca3af', flexShrink: 0 }} />}
               <span style={{ fontSize: 10.5, color: '#9ca3af', border: '1px solid #e8e6e0', borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>ESC fecha</span>
             </div>
 
-            <div style={{ maxHeight: '58vh', overflowY: 'auto', padding: 8 }}>
+            <div aria-live="polite" style={{ maxHeight: '58vh', overflowY: 'auto', overscrollBehavior: 'contain', padding: 8 }}>
               {paginas.length > 0 && (
                 <>
                   <div style={{ fontSize: 10.5, fontWeight: 900, color: '#9ca3af', letterSpacing: '.6px', padding: '8px 12px 4px' }}>{q.trim() ? 'PÁGINAS E FERRAMENTAS' : 'ATALHOS RÁPIDOS'}</div>
@@ -550,7 +550,7 @@ export default function NavegacaoGlobal() {
       {/* Aviso "Deseja salvar?" — alterações não salvas antes de sair da página */}
       {avisoSalvar && (
         <div onClick={() => setAvisoSalvar(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,12,40,.55)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 430, padding: 22, boxShadow: '0 30px 80px rgba(0,0,0,.35)' }}>
+          <div onClick={e => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-label="Voce tem alteracoes nao salvas" style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 430, padding: 22, boxShadow: '0 30px 80px rgba(0,0,0,.35)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ width: 38, height: 38, borderRadius: 10, background: '#fff7ed', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AlertTriangle size={19} /></span>
               <h3 style={{ fontSize: 15.5, fontWeight: 800, margin: 0, color: '#1a1a1a' }}>Você tem alterações não salvas!</h3>

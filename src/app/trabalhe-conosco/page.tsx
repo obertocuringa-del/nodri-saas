@@ -123,7 +123,7 @@ export default function TrabalheConoscoPage() {
                   <div className="relative">
                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
-                      placeholder="Seu nome completo" required
+                      placeholder="Seu nome completo" required autoComplete="name" autoCapitalize="words"
                       className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function TrabalheConoscoPage() {
                     <div className="relative">
                       <CreditCard size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                       <input value={form.cpf} onChange={e => setForm(p => ({ ...p, cpf: formatCPF(e.target.value) }))}
-                        placeholder="000.000.000-00" required maxLength={14}
+                        placeholder="000.000.000-00" required maxLength={14} inputMode="numeric" autoComplete="off" spellCheck={false}
                         className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                     </div>
                   </div>
@@ -143,7 +143,7 @@ export default function TrabalheConoscoPage() {
                     <div className="relative">
                       <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                       <input value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))}
-                        placeholder="(00) 00000-0000"
+                        placeholder="(00) 00000-0000" type="tel" inputMode="tel" autoComplete="tel"
                         className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                     </div>
                   </div>
@@ -154,7 +154,7 @@ export default function TrabalheConoscoPage() {
                   <div className="relative">
                     <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                      placeholder="seu@email.com" required
+                      placeholder="seu@email.com" required inputMode="email" autoComplete="email" spellCheck={false} autoCapitalize="none"
                       className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function TrabalheConoscoPage() {
                   <div className="relative">
                     <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-nodri-t3" />
                     <input value={form.chave_pix} onChange={e => setForm(p => ({ ...p, chave_pix: e.target.value }))}
-                      placeholder="CPF, email, telefone ou chave aleatória" required
+                      placeholder="CPF, email, telefone ou chave aleatória" required autoComplete="off" spellCheck={false} autoCapitalize="none"
                       className="w-full bg-nodri-surface border border-nodri-border rounded-lg pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-nodri-cyan transition-colors" />
                   </div>
                   <p className="text-[10px] text-nodri-t3 mt-1">{cfg.afiliado_pg_dica_pix}</p>

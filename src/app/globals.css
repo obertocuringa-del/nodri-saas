@@ -432,3 +432,119 @@ button { font-family: inherit; transition: filter .12s ease, box-shadow .12s eas
     @apply text-nodri-t3 text-xs uppercase tracking-widest font-medium;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CAMADA DE ACABAMENTO — celular e computador
+   ───────────────────────────────────────────────────────────────────
+   Bloco fechado, aplicado depois de tudo. Só acrescenta propriedades
+   que NENHUMA tela usava antes (toque, área segura, movimento, cor
+   nativa dos campos). Nada aqui muda layout, cor ou comportamento do
+   que já existia — se algo aqui for removido, o sistema volta a ser
+   exatamente o que era.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 1) COR NATIVA DOS CAMPOS
+   O sistema é claro, mas nunca disse isso ao navegador. Em celular ou
+   Windows no modo escuro, o navegador "ajudava" pintando de preto o
+   que ele mesmo desenha: a setinha do <select>, o calendário do campo
+   de data, a barra de rolagem, o texto sugerido. Dava campo preto no
+   preto — ilegível. Esta linha declara o tema e resolve tudo de uma vez. */
+html { color-scheme: light; }
+
+/* 2) TOQUE SEM ATRASO (celular)
+   Sem isto, o navegador espera ~300ms depois de cada toque para ver se
+   vem um segundo toque (zoom por toque duplo). Toda a interface do
+   telefone parecia meio segundo mais lenta do que é. `manipulation`
+   mantém rolar e pinçar para dar zoom; só desliga a espera. */
+button, a, [role="button"], input, select, textarea, label, summary {
+  touch-action: manipulation;
+}
+
+/* 3) BRILHO DO TOQUE
+   O quadrado cinza que o Android pinta sobre o que é tocado ficava
+   torto nos botões redondos. Trocado pelo roxo do NODRI, translúcido. */
+html { -webkit-tap-highlight-color: rgba(91, 79, 207, .15); }
+
+/* 4) ÁREA SEGURA (iPhone com barra inferior)
+   O respiro do rodapé passa a somar a faixa do aparelho. Em telefone
+   sem entalhe o env() vale zero e nada muda. */
+@media (max-width: 640px) {
+  [style*="min-height: 100vh"], [style*="min-height:100vh"],
+  [style*="min-height: 100dvh"], [style*="min-height:100dvh"] {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+  [style*="flex: 1"][style*="overflow-y: auto"],
+  [style*="flex: 1"][style*="overflow-y:auto"] {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* 5) ROLAGEM PRESA DENTRO DA JANELA
+   Ao chegar no fim da lista de um modal, o dedo continuava rolando a
+   PÁGINA ATRÁS — e no topo chegava a disparar o "puxar para recarregar"
+   do Android, que descarta o formulário aberto. Agora a rolagem morre
+   na borda da janela. */
+[style*="position: fixed"][style*="inset"],
+[style*="position: fixed"][style*="inset"] [style*="overflow-y: auto"],
+[style*="position: fixed"][style*="inset"] [style*="overflow-y:auto"],
+.nodri-modal-lanc, .nodri-modal-overlay {
+  overscroll-behavior: contain;
+}
+
+/* 6) NÚMEROS QUE ALINHAM
+   Em fonte normal o "1" é mais estreito que o "8", então uma coluna de
+   valores fica serrilhada e comparar de bater o olho não funciona.
+   `tabular-nums` dá a todos os dígitos a mesma largura — as casas
+   decimais ficam uma embaixo da outra. Vale para tabelas, campos de
+   número e dinheiro (é um sistema financeiro: isso se lê o dia todo). */
+table td, table th,
+input[type="number"], input[type="date"], input[type="tel"],
+.nodri-num, .nodri-valor {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* 7) TÍTULOS SEM PALAVRA ÓRFÃ
+   Impede que a última palavra de um título caia sozinha numa linha —
+   o que acontecia muito no celular, onde tudo é estreito. Navegador
+   antigo ignora e fica como estava. */
+h1, h2, h3, h4, h5, h6 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* 8) MOVIMENTO REDUZIDO
+   Quem liga "reduzir movimento" no aparelho (enjoo, sensibilidade,
+   epilepsia fotossensível) para de receber o pisca-pisca dos alertas.
+   O alerta NÃO some: fica no vermelho, parado e igualmente visível. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Exceção: rodinhas de carregando continuam girando — paradas elas
+     viram um traço sem sentido, e a pessoa não sabe que está esperando. */
+  .animate-spin { animation: spin 1s linear infinite !important; }
+  /* Os alertas ficam no estado "aceso", já que não podem mais piscar. */
+  .nodri-alerta-pisca { background: #fee2e2 !important; box-shadow: 0 0 0 3px rgba(220,38,38,.35) !important; }
+  .nodri-pisca-card   { box-shadow: 0 0 0 3px rgba(220,38,38,.55) !important; }
+}
+
+/* 9) ANEL DE FOCO QUE SOBREVIVE AO ESTILO INLINE
+   Havia 119 campos e botões escritos com `outline: 'none'` direto na
+   tag. Estilo inline vence folha de estilo, então a regra de foco lá
+   de cima morria ali: quem navega de Tab (e quem depende de teclado)
+   ficava sem saber onde está. Com !important o anel volta em todos de
+   uma vez. Continua sendo :focus-visible, ou seja: aparece no Tab e
+   NÃO aparece no clique de mouse — nenhuma tela muda de aparência
+   para quem usa o mouse. */
+:focus-visible {
+  outline: 2px solid #5b4fcf !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+/* Dentro de faixa escura o roxo some; ali o anel é branco. */
+[style*="background: #1a1a1a"] :focus-visible,
+[style*="background:#1a1a1a"] :focus-visible {
+  outline-color: #ffffff !important;
+}

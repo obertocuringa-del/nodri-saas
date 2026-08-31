@@ -99,49 +99,49 @@ export default function FormularioContato() {
     <div style={{ background: '#fff', borderRadius: 20, padding: 'clamp(16px,2.4vw,24px)' }}>
       <div style={{ display: 'grid', gap: 11, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,220px), 1fr))' }}>
         <div>
-          <label style={rotulo}>Nome *</label>
-          <input style={campo} value={f.nome} onChange={e => set('nome', e.target.value)} placeholder="Seu nome" />
+          <label htmlFor="ct-nome" style={rotulo}>Nome *</label>
+          <input id="ct-nome" autoComplete="given-name" autoCapitalize="words" style={campo} value={f.nome} onChange={e => set('nome', e.target.value)} placeholder="Seu nome" />
         </div>
         <div>
-          <label style={rotulo}>Sobrenome</label>
-          <input style={campo} value={f.sobrenome} onChange={e => set('sobrenome', e.target.value)} placeholder="Seu sobrenome" />
+          <label htmlFor="ct-sobrenome" style={rotulo}>Sobrenome</label>
+          <input id="ct-sobrenome" autoComplete="family-name" autoCapitalize="words" style={campo} value={f.sobrenome} onChange={e => set('sobrenome', e.target.value)} placeholder="Seu sobrenome" />
         </div>
         <div>
-          <label style={rotulo}>E-mail *</label>
-          <input style={campo} type="email" value={f.email} onChange={e => set('email', e.target.value)} placeholder="seu@email.com" />
+          <label htmlFor="ct-email" style={rotulo}>E-mail *</label>
+          <input id="ct-email" style={campo} type="email" inputMode="email" autoComplete="email" spellCheck={false} autoCapitalize="none" value={f.email} onChange={e => set('email', e.target.value)} placeholder="seu@email.com" />
         </div>
         <div>
-          <label style={rotulo}>Celular</label>
-          <input style={campo} value={f.celular} onChange={e => set('celular', e.target.value)} placeholder="61999999999" />
+          <label htmlFor="ct-celular" style={rotulo}>Celular</label>
+          <input id="ct-celular" style={campo} type="tel" inputMode="tel" autoComplete="tel" value={f.celular} onChange={e => set('celular', e.target.value)} placeholder="61999999999" />
         </div>
         <div>
-          <label style={rotulo}>Estado</label>
-          <select style={campo} value={f.estado} onChange={e => set('estado', e.target.value)}>
+          <label htmlFor="ct-estado" style={rotulo}>Estado</label>
+          <select id="ct-estado" autoComplete="address-level1" style={campo} value={f.estado} onChange={e => set('estado', e.target.value)}>
             <option value="">Selecione</option>
             {ESTADOS.map(u => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
         <div>
-          <label style={rotulo}>Cidade</label>
-          <input style={campo} value={f.cidade} onChange={e => set('cidade', e.target.value)} placeholder="Sua cidade" />
+          <label htmlFor="ct-cidade" style={rotulo}>Cidade</label>
+          <input id="ct-cidade" autoComplete="address-level2" autoCapitalize="words" style={campo} value={f.cidade} onChange={e => set('cidade', e.target.value)} placeholder="Sua cidade" />
         </div>
         <div>
-          <label style={rotulo}>Tipo de estabelecimento</label>
-          <select style={campo} value={f.tipo_estabelecimento} onChange={e => set('tipo_estabelecimento', e.target.value)}>
+          <label htmlFor="ct-tipo" style={rotulo}>Tipo de estabelecimento</label>
+          <select id="ct-tipo" style={campo} value={f.tipo_estabelecimento} onChange={e => set('tipo_estabelecimento', e.target.value)}>
             <option value="">Selecione</option>
             {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
         <div>
-          <label style={rotulo}>Qual sistema você usa hoje? *</label>
-          <input style={campo} value={f.sistema_atual} onChange={e => set('sistema_atual', e.target.value)}
+          <label htmlFor="ct-sistema" style={rotulo}>Qual sistema você usa hoje? *</label>
+          <input id="ct-sistema" autoComplete="off" style={campo} value={f.sistema_atual} onChange={e => set('sistema_atual', e.target.value)}
             placeholder="Ex.: caderno, planilha, ou o nome do sistema" />
         </div>
       </div>
 
       <div style={{ marginTop: 11 }}>
-        <label style={rotulo}>Como o NODRI pode te ajudar?</label>
-        <select style={campo} value={f.objetivo} onChange={e => set('objetivo', e.target.value)}>
+        <label htmlFor="ct-objetivo" style={rotulo}>Como o NODRI pode te ajudar?</label>
+        <select id="ct-objetivo" style={campo} value={f.objetivo} onChange={e => set('objetivo', e.target.value)}>
           <option value="">Selecione</option>
           {OBJETIVOS.map(t => <option key={t} value={t}>{t}</option>)}
         </select>

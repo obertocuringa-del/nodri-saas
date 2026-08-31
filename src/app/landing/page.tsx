@@ -124,7 +124,12 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
            coluna tambem para de crescer. Medido na pagina: a 28px a frase
            ocupa 589 dos 627 px da coluna. */
         @media (min-width: 901px) {
-          .titulo-l2 { display: block; white-space: nowrap; font-size: min(1.82vw, 28px); letter-spacing: -.5px; margin-top: 6px; }
+          /* Sem o "white-space: nowrap". Ele so entra em acao quando a
+             frase NAO cabe na linha — e ai ele nao resolve nada: manda o
+             texto seguir reto e o resto e cortado fora da tela. Sem ele, a
+             frase que cabe continua numa linha so (nada muda) e a que nao
+             cabe quebra e aparece inteira. */
+          .titulo-l2 { display: block; font-size: min(1.82vw, 28px); letter-spacing: -.5px; margin-top: 6px; }
           /* A frase menor sobrou 149px de branco em cima e outros 149 embaixo.
              Espalhando o texto pela coluna inteira o branco vira respiro
              entre os blocos — e, como a etiqueta sobe para o topo, a foto ao
@@ -186,8 +191,13 @@ export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string
           .hero-titulo { letter-spacing: -.5px; line-height: 1.15 !important; }
           /* Medido na tela: a 7.1vw a chamada ocupa 338 dos 350 px uteis de um
              celular de 390, e continua cabendo num de 360. */
-          .hero-titulo .titulo-l1 { display: block; white-space: nowrap; font-size: 7.1vw; }
-          .hero-titulo .titulo-l2 { display: block; white-space: nowrap; font-size: 3.85vw; font-weight: 800; letter-spacing: 0; margin-top: 7px; }
+          /* Idem no celular. Medido na tela de 375px com o texto padrao
+             ("Seu salao funciona quando voce nao esta la?", que vem em UMA
+             linha so): a frase pede 535px de largura e a tela oferece 335 —
+             os 200px que sobravam eram cortados e a chamada do site chegava
+             pela metade em quem entra pelo telefone. */
+          .hero-titulo .titulo-l1 { display: block; font-size: 7.1vw; }
+          .hero-titulo .titulo-l2 { display: block; font-size: 3.85vw; font-weight: 800; letter-spacing: 0; margin-top: 7px; }
           .hero-titulo br { display: none; }
           .hero-sub { font-size: 15.5px !important; line-height: 1.6 !important; }
           .hero-destaques { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }

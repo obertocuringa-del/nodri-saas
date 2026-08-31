@@ -193,34 +193,34 @@ function CadastroInner() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
-                <label style={lbl}>Nome do Salão *</label>
-                <input style={inp} placeholder="Ex: Salão Bella" value={form.nome_salao} onChange={e => setForm(p => ({ ...p, nome_salao: e.target.value }))} />
+                <label htmlFor="cad-salao" style={lbl}>Nome do Salão *</label>
+                <input id="cad-salao" name="organization" autoComplete="organization" style={inp} placeholder="Ex: Salão Bella" value={form.nome_salao} onChange={e => setForm(p => ({ ...p, nome_salao: e.target.value }))} />
               </div>
               <div>
-                <label style={lbl}>Responsável *</label>
-                <input style={inp} placeholder="Seu nome" value={form.responsavel} onChange={e => setForm(p => ({ ...p, responsavel: e.target.value }))} />
+                <label htmlFor="cad-responsavel" style={lbl}>Responsável *</label>
+                <input id="cad-responsavel" name="name" autoComplete="name" style={inp} placeholder="Seu nome" value={form.responsavel} onChange={e => setForm(p => ({ ...p, responsavel: e.target.value }))} />
               </div>
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>Cidade *</label>
-              <input style={inp} placeholder="Ex: São Paulo - SP" value={form.cidade} onChange={e => setForm(p => ({ ...p, cidade: e.target.value }))} />
+              <label htmlFor="cad-cidade" style={lbl}>Cidade *</label>
+              <input id="cad-cidade" name="city" autoComplete="address-level2" style={inp} placeholder="Ex: São Paulo - SP" value={form.cidade} onChange={e => setForm(p => ({ ...p, cidade: e.target.value }))} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
-                <label style={lbl}>Email *</label>
-                <input type="email" style={inp} placeholder="seu@email.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+                <label htmlFor="cad-email" style={lbl}>Email *</label>
+                <input id="cad-email" name="email" type="email" inputMode="email" autoComplete="email" spellCheck={false} autoCapitalize="none" style={inp} placeholder="seu@email.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
               </div>
               <div>
-                <label style={lbl}>Telefone com DDD *</label>
-                <input style={inp} placeholder="(11) 99999-9999" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} />
+                <label htmlFor="cad-telefone" style={lbl}>Telefone com DDD *</label>
+                <input id="cad-telefone" name="tel" type="tel" inputMode="tel" autoComplete="tel" style={inp} placeholder="(11) 99999-9999" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} />
               </div>
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>CPF ou CNPJ do responsável *</label>
-              <input style={inp} placeholder="000.000.000-00" value={form.cpf_cnpj}
+              <label htmlFor="cad-doc" style={lbl}>CPF ou CNPJ do responsável *</label>
+              <input id="cad-doc" inputMode="numeric" autoComplete="off" spellCheck={false} style={inp} placeholder="000.000.000-00" value={form.cpf_cnpj}
                 onChange={e => setForm(p => ({ ...p, cpf_cnpj: mascaraCpfCnpj(e.target.value) }))} />
               <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>
                 Exigido pelo banco para emitir a cobrança. Não aparece para mais ninguém.
@@ -228,8 +228,8 @@ function CadastroInner() {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>Dia de vencimento da fatura *</label>
-              <select style={{ ...inp, cursor: 'pointer' }} value={form.dia_vencimento} onChange={e => setForm(p => ({ ...p, dia_vencimento: e.target.value }))}>
+              <label htmlFor="cad-vencimento" style={lbl}>Dia de vencimento da fatura *</label>
+              <select id="cad-vencimento" style={{ ...inp, cursor: 'pointer' }} value={form.dia_vencimento} onChange={e => setForm(p => ({ ...p, dia_vencimento: e.target.value }))}>
                 {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
                   <option key={d} value={String(d)}>Todo dia {d}</option>
                 ))}
@@ -238,9 +238,9 @@ function CadastroInner() {
 
             {/* Cupom */}
             <div style={{ marginBottom: 24 }}>
-              <label style={lbl}>Código de desconto (opcional)</label>
+              <label htmlFor="cad-cupom" style={lbl}>Código de desconto (opcional)</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <input style={{ ...inp, flex: 1 }} placeholder="Ex: NODRI20"
+                <input id="cad-cupom" autoComplete="off" spellCheck={false} autoCapitalize="characters" style={{ ...inp, flex: 1 }} placeholder="Ex: NODRI20"
                   value={form.cupom}
                   onChange={e => { setForm(p => ({ ...p, cupom: e.target.value.toUpperCase() })); setCupomStatus(null) }}
                   onKeyDown={e => e.key === 'Enter' && validarCupom()} />
