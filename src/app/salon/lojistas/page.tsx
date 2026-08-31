@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, Settings, Download, Eye, Pencil, Trash2, X, Save, Users, BarChart3, Search, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import * as XLSX from 'xlsx'
 import { capitalizarNome, maskCelular, formatInstagram, formatBloco, linkWhatsappSalao } from '@/lib/lojistaFormatters'
 import MultiSelectBusca, { Opcao } from '@/components/lojistas/MultiSelectBusca'
 import SeletorDataNascimento from '@/components/lojistas/SeletorDataNascimento'
@@ -108,7 +107,12 @@ export default function LojistasPage() {
     link.click()
   }
 
-  function exportarXLSX() {
+// A biblioteca de Excel (xlsx) pesa mais que a pagina inteira e so serve no
+// instante em que alguem clica para importar ou exportar. Importada no topo,
+// ela viajava junto com o HTML para TODO mundo que abrisse a tela — inclusive
+// quem so entrou para olhar. Agora ela e buscada no clique.
+  async function exportarXLSX() {
+    const XLSX = await import('xlsx')
     const ws = XLSX.utils.aoa_to_sheet(linhasExportacao())
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Lojistas')

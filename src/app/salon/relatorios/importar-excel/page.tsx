@@ -3,9 +3,18 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet } from 'lucide-react'
 import toast from 'react-hot-toast'
-import * as XLSX from 'xlsx'
+// `import type` some no build: e so anotacao de tipo, nao carrega a
+// biblioteca. Quem carrega e o `await import('xlsx')` la embaixo, no momento
+// em que a pessoa escolhe o arquivo.
+import type * as TipoXLSX from 'xlsx'
 
-function sheetToJson(wb: XLSX.WorkBook, name: string): any[] {
+// A biblioteca de Excel (xlsx) pesa mais que a pagina inteira e so serve no
+// instante em que alguem clica para importar ou exportar. Importada no topo,
+// ela viajava junto com o HTML para TODO mundo que abrisse a tela — inclusive
+// quem so entrou para olhar. Agora ela e buscada no clique.
+type ModuloXLSX = typeof import('xlsx')
+
+function sheetToJson(XLSX: ModuloXLSX, wb: TipoXLSX.WorkBook, name: string): any[] {
   const ws = wb.Sheets[name]
   if (!ws) return []
   return XLSX.utils.sheet_to_json(ws, { defval: null })
@@ -81,25 +90,26 @@ export default function ImportarExcelPage() {
     try {
       // ── 1. Parsear Excel no browser ──────────────────────────────────────
       const buffer = await arquivo.arrayBuffer()
+      const XLSX = await import('xlsx')
       const wb = XLSX.read(buffer, { type: 'array', cellDates: false, raw: true })
 
       setProgresso('Extraindo dados das abas...')
 
-      const periodos        = sheetToJson(wb, 'PERIODOS')
-      const resumo          = sheetToJson(wb, 'RESUMO_MENSAL')
-      const fatDiario       = sheetToJson(wb, 'FATURAMENTO_DIARIO')
-      const servicos        = sheetToJson(wb, 'SERVICOS')
-      const produtos        = sheetToJson(wb, 'PRODUTOS')
-      const profPag         = sheetToJson(wb, 'PROF_PAGAMENTOS')
-      const profTicket      = sheetToJson(wb, 'PROF_TICKET')
-      const profPref        = sheetToJson(wb, 'PROF_PREFERENCIA')
-      const profOcup        = sheetToJson(wb, 'PROF_OCUPACAO')
-      const profServicos    = sheetToJson(wb, 'PROF_SERVICOS')
-      const profProdutos    = sheetToJson(wb, 'PROF_PRODUTOS')
-      const metas           = sheetToJson(wb, 'METAS')
-      const feedbacks       = sheetToJson(wb, 'FEEDBACK')
-      const atendimentosRaw = sheetToJson(wb, 'ATENDIMENTOS_RAW')
-      const agendamentosRaw = sheetToJson(wb, 'AGENDAMENTOS_RAW')
+      const periodos        = sheetToJson(XLSX, wb, 'PERIODOS')
+      const resumo          = sheetToJson(XLSX, wb, 'RESUMO_MENSAL')
+      const fatDiario       = sheetToJson(XLSX, wb, 'FATURAMENTO_DIARIO')
+      const servicos        = sheetToJson(XLSX, wb, 'SERVICOS')
+      const produtos        = sheetToJson(XLSX, wb, 'PRODUTOS')
+      const profPag         = sheetToJson(XLSX, wb, 'PROF_PAGAMENTOS')
+      const profTicket      = sheetToJson(XLSX, wb, 'PROF_TICKET')
+      const profPref        = sheetToJson(XLSX, wb, 'PROF_PREFERENCIA')
+      const profOcup        = sheetToJson(XLSX, wb, 'PROF_OCUPACAO')
+      const profServicos    = sheetToJson(XLSX, wb, 'PROF_SERVICOS')
+      const profProdutos    = sheetToJson(XLSX, wb, 'PROF_PRODUTOS')
+      const metas           = sheetToJson(XLSX, wb, 'METAS')
+      const feedbacks       = sheetToJson(XLSX, wb, 'FEEDBACK')
+      const atendimentosRaw = sheetToJson(XLSX, wb, 'ATENDIMENTOS_RAW')
+      const agendamentosRaw = sheetToJson(XLSX, wb, 'AGENDAMENTOS_RAW')
 
       // ── 2. Enviar dados agregados (rápido) ───────────────────────────────
       setProgresso(`Salvando ${periodos.length} períodos no banco...`)

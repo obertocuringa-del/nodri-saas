@@ -4,10 +4,30 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { voltar } from '@/lib/historicoNav'
 import { ArrowLeft, BarChart3, Users, UserPlus, Calendar, ShieldCheck, ShieldOff, Cake, MessageCircle, TrendingUp, Tag, ClipboardList } from 'lucide-react'
-import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  PieChart, Pie, Cell, BarChart, Bar,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+
+// Os graficos chegam DEPOIS da pagina. Enquanto nao chegam, fica no lugar uma
+// caixa da altura certa — sem isso o conteudo abaixo saltaria quando eles
+// aparecessem. ssr:false porque grafico so existe no navegador; renderizar no
+// servidor so gastaria tempo para o resultado ser jogado fora.
+const Esperando = ({ h = 250 }: { h?: number }) => (
+  <div style={{ height: h, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#b9b4d6', fontSize: 12, fontWeight: 600 }}>
+    Montando o grafico...
+  </div>
+)
+const GraficoCrescimento = dynamic(
+  () => import('@/components/salon/GraficosLojistas').then(m => m.GraficoCrescimento),
+  { ssr: false, loading: () => <Esperando /> })
+const GraficoSegmentos = dynamic(
+  () => import('@/components/salon/GraficosLojistas').then(m => m.GraficoSegmentos),
+  { ssr: false, loading: () => <Esperando /> })
+const GraficoServicos = dynamic(
+  () => import('@/components/salon/GraficosLojistas').then(m => m.GraficoServicos),
+  { ssr: false, loading: () => <Esperando h={220} /> })
+const GraficoParticipacao = dynamic(
+  () => import('@/components/salon/GraficosLojistas').then(m => m.GraficoParticipacao),
+  { ssr: false, loading: () => <Esperando h={96} /> })
 import { linkWhatsappSalao } from '@/lib/lojistaFormatters'
 
 const COR = '#5b4fcf'
@@ -83,7 +103,6 @@ export default function RelatorioLojistasPage() {
   }
 
   const crescimentoFmt = dados.crescimento.map(c => ({ ...c, label: `${MESES_ABREV[Number(c.mes.slice(5, 7)) - 1]}/${c.mes.slice(2, 4)}` }))
-  const CustomTooltip = tooltipStyle
 
   const linkZapSalao = linkWhatsappSalao(telefoneSalao)
 
@@ -124,28 +143,13 @@ export default function RelatorioLojistasPage() {
 
           {/* CRESCIMENTO */}
           <SecaoRelatorio titulo="Crescimento" subtitulo="Cadastros nos últimos 12 meses" icone={<TrendingUp size={16} color="white" />} cor={COR}>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={crescimentoFmt} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0eef9" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={{ stroke: '#f0eef9' }} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip content={CustomTooltip} />
-                <Line type="monotone" dataKey="qtd" name="Cadastros" stroke={COR} strokeWidth={3} dot={{ r: 3.5, fill: COR, strokeWidth: 0 }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <GraficoCrescimento dados={crescimentoFmt} cor={COR} />
           </SecaoRelatorio>
 
           {/* SEGMENTOS */}
           <SecaoRelatorio titulo="Segmentos" subtitulo="Distribuição das lojas parceiras" icone={<Tag size={16} color="white" />} cor={COR2}>
             {dados.segmentos.length === 0 ? <SemDados /> : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={dados.segmentos} dataKey="qtd" nameKey="segmento" cx="50%" cy="50%" innerRadius={45} outerRadius={82} paddingAngle={2} cornerRadius={4}>
-                    {dados.segmentos.map((_, i) => <Cell key={i} fill={CORES_PIZZA[i % CORES_PIZZA.length]} stroke="white" strokeWidth={2} />)}
-                  </Pie>
-                  <Tooltip content={CustomTooltip} />
-                </PieChart>
-              </ResponsiveContainer>
+              <GraficoSegmentos dados={dados.segmentos} cores={CORES_PIZZA} />
             )}
             {dados.segmentos.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'center', marginTop: 4 }}>
@@ -163,15 +167,7 @@ export default function RelatorioLojistasPage() {
         {/* SERVIÇOS MAIS PROCURADOS */}
         <SecaoRelatorio titulo="Serviços Mais Procurados" subtitulo="Ranking de interesse entre os lojistas" icone={<ClipboardList size={16} color="white" />} cor={COR}>
           {dados.servicos.length === 0 ? <SemDados /> : (
-            <ResponsiveContainer width="100%" height={Math.max(220, dados.servicos.length * 32)}>
-              <BarChart data={dados.servicos} layout="vertical" margin={{ top: 4, right: 30, left: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0eef9" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={{ stroke: '#f0eef9' }} tickLine={false} />
-                <YAxis type="category" dataKey="nome" width={170} tick={{ fontSize: 11.5, fill: '#374151', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <Tooltip content={CustomTooltip} />
-                <Bar dataKey="qtd" name="Interesse" fill={COR} radius={[0, 8, 8, 0]} barSize={16} />
-              </BarChart>
-            </ResponsiveContainer>
+            <GraficoServicos dados={dados.servicos} cor={COR} />
           )}
         </SecaoRelatorio>
 
@@ -190,14 +186,7 @@ export default function RelatorioLojistasPage() {
           <SecaoRelatorio titulo="Participação no Grupo" icone={<MessageCircle size={16} color="white" />} cor="#16a34a">
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
               <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={[{ v: dados.grupo.entraram }, { v: dados.grupo.nao_entraram }]} dataKey="v" innerRadius={32} outerRadius={46} startAngle={90} endAngle={-270} cornerRadius={6} paddingAngle={dados.grupo.nao_entraram > 0 && dados.grupo.entraram > 0 ? 3 : 0}>
-                      <Cell fill="#16a34a" />
-                      <Cell fill="#f0eef9" />
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
+                <GraficoParticipacao entraram={dados.grupo.entraram} naoEntraram={dados.grupo.nao_entraram} />
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#1a1a1a' }}>{dados.grupo.percentual}%</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -208,21 +197,6 @@ export default function RelatorioLojistasPage() {
           </SecaoRelatorio>
         </div>
       </div>
-    </div>
-  )
-}
-
-function tooltipStyle({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null
-  return (
-    <div style={{ background: 'white', border: '1px solid #ece9f7', borderRadius: 10, padding: '8px 12px', boxShadow: '0 8px 24px rgba(30,20,60,0.12)', fontSize: 12 }}>
-      {label && <div style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{label}</div>}
-      {payload.map((p: any, i: number) => (
-        <div key={i} style={{ color: '#6b7280', fontWeight: 600 }}>
-          {p.name || p.payload?.segmento || p.payload?.nome}: <b style={{ color: '#1a1a1a' }}>{p.value}</b>
-          {p.payload?.percentual !== undefined ? ` · ${p.payload.percentual}%` : ''}
-        </div>
-      ))}
     </div>
   )
 }

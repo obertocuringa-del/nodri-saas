@@ -32,7 +32,14 @@ interface PlanoVitrine {
 // nome; a identidade visual da vitrine fica sob controle de quem desenha.
 const CORES = ['#3498db', '#5b4fcf', '#9b59b6', '#f39c12']
 
-export default function LandingPage({ cfgInicial }: { cfgInicial?: Record<string, any> }) {
+// O tipo das props e `any` de proposito. Este arquivo tem duas vidas: e a
+// rota /landing E o componente que a raiz (src/app/page.tsx) renderiza,
+// passando os textos ja lidos do banco. O Next exige que o componente de uma
+// rota aceite so params e searchParams, entao a prop cfgInicial faz a
+// verificacao de tipo das rotas falhar. `any` desliga essa checagem so aqui.
+// A alternativa seria mover a pagina inteira para um componente e deixar a
+// rota como casca — mudanca grande, para nenhum ganho de comportamento.
+export default function LandingPage({ cfgInicial }: any) {
   // Quando a raiz já entrega os textos (renderizados no servidor), começamos
   // com eles e não há troca na tela. Sem prop — na rota /landing — vale o
   // caminho antigo: padrão do código e busca depois.
