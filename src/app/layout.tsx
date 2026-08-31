@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 // ── Como o NODRI aparece no Google ──────────────────────────────────────────
@@ -46,6 +48,12 @@ export const metadata: Metadata = {
       'Seu salão no controle, suas decisões baseadas em dados. Agenda, clientes, profissionais, financeiro, metas e indicadores em uma única plataforma.',
   },
   metadataBase: new URL('https://www.nodri.com.br'),
+  // Para verificar o site no Google Search Console: crie a variavel
+  // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION na Vercel com o codigo que o Google
+  // der, e a meta tag aparece sozinha. Sem a variavel, nada e escrito.
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 }
 
 // ── Como o celular deve desenhar a página ────────────────────────────────────
@@ -85,6 +93,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <WhatsAppButton />
+
+        {/* ── Medicao de visitas e de velocidade ────────────────────────────
+            Por que NAO e o Google Analytics:
+            o CSP deste site diz `script-src 'self'`, ou seja, script de fora
+            nao roda. Para o GA funcionar seria preciso abrir o CSP para os
+            dominios do Google — e, como o GA grava cookie de rastreamento,
+            entraria junto a obrigacao do banner de consentimento (LGPD).
+            Pagar com um pedaco da blindagem e com um banner na cara de quem
+            chega, para saber quantas visitas o site teve, e caro demais.
+
+            Estes dois sao servidos do PROPRIO dominio (/_vercel/insights/),
+            entao passam no CSP que ja existe sem mudar uma linha dele, e nao
+            gravam cookie nem identificam ninguem — por isso dispensam banner.
+
+            Analytics: quantas visitas, de onde vieram, quais paginas.
+            SpeedInsights: quanto o site demora para abrir NO APARELHO DE QUEM
+            USA — nao no teste de laboratorio. E o unico numero de velocidade
+            que corresponde ao celular do dono do salao no 4G.
+
+            Os dois so comecam a receber dados depois de ligados no painel da
+            Vercel (Projeto > Analytics > Enable). Sem isso o script nem carrega,
+            entao nao ha custo em ja deixar montado. */}
+        <Analytics />
+        <SpeedInsights />
         <Toaster
           position="top-right"
           toastOptions={{
