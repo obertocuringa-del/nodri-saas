@@ -83,6 +83,9 @@ async function roteador(request: NextRequest) {
     // Config remota dos programas desktop (GET é público e só leitura;
     // o POST valida master dentro da própria rota)
     pathname === '/api/config/programas' ||
+    // Sinal de vida para o monitor de fora. Publico porque o monitor nao tem
+    // login — e nao devolve nada sobre o negocio, so se esta de pe.
+    pathname === '/api/health' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname === '/'
