@@ -19,6 +19,7 @@ import EsterilizacaoFluxoProf from '@/components/salon/EsterilizacaoFluxoProf'
 import CorridasProf from '@/components/salon/CorridasProf'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import toast from 'react-hot-toast'
+import { comoBotao } from '@/lib/acessibilidade'
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
 // tabelas, listas e badges de status) — reaproveitado no chat e na Estratégia de Meta.
@@ -2577,7 +2578,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
               const exp = aberto.has(d.id)
               return (
                 <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
-                  <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                  <div {...comoBotao} onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf' }}>→ {nomeDep(d.profissional_id)}</span>
                     {d.prioridade === 'urgente' && !d.resolvido && <span style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', padding: '1px 7px', borderRadius: 999 }}>URGENTE</span>}
                     <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
@@ -2650,7 +2651,7 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
                 const exp = aberto.has(d.id)
                 return (
                   <div key={d.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
-                    <div onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
+                    <div {...comoBotao} onClick={() => toggle(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: 12, cursor: 'pointer' }}>
                       {d.solicitante_nome && <span style={{ fontSize: 11, fontWeight: 700, color: '#0ea5e9' }}>{d.solicitante_nome}</span>}
                       <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: d.resolvido ? '#ecfdf5' : '#fffbeb', color: d.resolvido ? '#047857' : '#92400e' }}>{d.resolvido ? 'RESOLVIDA' : 'ABERTA'}</span>
                       {!exp && <span style={{ fontSize: 12, color: '#6b6860', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.mensagem}</span>}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Trash2, Save, Loader2, ExternalLink, ChevronDown } from 'lucide-react'
 import CampoTextoRico from '@/components/admin/CampoTextoRico'
+import { comoBotao } from '@/lib/acessibilidade'
 
 // ── Editor de funcionalidades ───────────────────────────────────────────────
 //
@@ -90,7 +91,7 @@ export default function EditorFuncionalidades() {
         const expandido = aberto === f.id
         return (
           <div key={f.id} className="nodri-card p-3">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setAberto(expandido ? null : f.id)}>
+            <div {...comoBotao} className="flex items-center gap-2 cursor-pointer" onClick={() => setAberto(expandido ? null : f.id)}>
               <ChevronDown size={14} className={`text-nodri-t3 transition-transform ${expandido ? 'rotate-180' : ''}`} />
               <div className="min-w-0 flex-1">
                 <div className="text-[12.5px] font-bold text-nodri-t1 truncate">{f.nome}</div>

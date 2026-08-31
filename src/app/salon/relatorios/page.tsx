@@ -11,6 +11,7 @@ import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 import DetalheClienteRelatorio from '@/components/salon/DetalheClienteRelatorio'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { usePermissoes } from '@/lib/usePermissoes'
+import { comoBotao } from '@/lib/acessibilidade'
 
 // ─── ORDENAÇÃO DE TABELAS (reutilizável) ─────────────────────────────────────
 // Converte um valor para uma chave ordenável: detecta número, data BR (DD/MM/YYYY)
@@ -2816,7 +2817,7 @@ ${lista.map((c:any,i:number)=>{
                       <div style={{ background: '#ffffff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: 20 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                           {(analiseDetalhe as any[]).map((f: any) => (
-                            <div key={f.label} onClick={() => abrirFreqModal(f)} style={{ cursor: 'pointer' }}
+                            <div {...comoBotao} key={f.label} onClick={() => abrirFreqModal(f)} style={{ cursor: 'pointer' }}
                               onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
                               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -2986,7 +2987,7 @@ ${lista.map((c:any,i:number)=>{
             <p style={{ color: '#767069', fontSize: 13, marginBottom: 20, lineHeight: 1.7 }}>
               Selecione o <strong style={{ color: '#767069' }}>base_dados_nodri.xlsx</strong>. Os dados do período importado <strong style={{ color: '#5b4fcf' }}>substituirão apenas aquele período</strong> — outros meses não são afetados.
             </p>
-            <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #e8e6e0', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
+            <div {...comoBotao} onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #e8e6e0', borderRadius: 10, padding: 32, textAlign: 'center', cursor: 'pointer' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#5b4fcf')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#e8e6e0')}>
               <Upload size={32} style={{ margin: '0 auto 10px', display: 'block', color: '#5b4fcf' }} />

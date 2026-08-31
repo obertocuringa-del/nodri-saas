@@ -11,6 +11,7 @@ import {
   linhasParaEsterilizacaoItems, esterilizacaoItemsParaTabela,
 } from '@/lib/esterilizacaoShared'
 import { STATUS_ESTER, type PedidoEster } from '@/lib/esterilizacaoFluxo'
+import { comoBotao } from '@/lib/acessibilidade'
 
 interface ProfSalao { id: string; nome: string; telefone?: string }
 interface LinhaCruzamento { nome: string; atendimentos: number; esterilizacoes: number; registros: number; servicos: string[] }
@@ -268,7 +269,7 @@ ${items.length || fluxoDoMes.length ? `<table><thead><tr><th>Profissional</th><t
                 const expandido = aberto === l.nome
                 return (
                   <div key={l.nome} style={{ borderRadius: 10, background: bg, overflow: 'hidden' }}>
-                    <div onClick={() => setAberto(expandido ? null : l.nome)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', flexWrap: 'wrap', cursor: 'pointer' }}>
+                    <div {...comoBotao} onClick={() => setAberto(expandido ? null : l.nome)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', flexWrap: 'wrap', cursor: 'pointer' }}>
                       {critico ? <ShieldAlert size={16} color={cor} /> : ok ? <ShieldCheck size={16} color={cor} /> : <ShieldAlert size={16} color={cor} />}
                       <strong style={{ fontSize: 13.5, color: '#1a1a1a', minWidth: 120 }}>{l.nome}</strong>
                       <span style={{ fontSize: 12, color: '#374151' }}>{l.atendimentos} atendimento{l.atendimentos !== 1 ? 's' : ''}</span>

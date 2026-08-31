@@ -17,6 +17,7 @@ import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import { urlPublica } from '@/lib/urlPublica'
 import ConferenciaProfissionais from './ConferenciaProfissionais'
 import { ehCnpj } from '@/lib/vinculoProfissional'
+import { comoBotao } from '@/lib/acessibilidade'
 
 // Aviso de demanda nos cards de setor: vermelho sobre o rosa claro do card.
 // (Ja foi marrom escuro; pesou demais nesta tela e voltou ao discreto.)
@@ -1247,7 +1248,7 @@ ${montarContratoHTML()}
               <form onSubmit={salvar}>
                 {/* FOTO */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', padding: '20px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e8e6e0' }}>
-                  <div onClick={() => fileRef.current?.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px dashed #5b4fcf60', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                  <div {...comoBotao} onClick={() => fileRef.current?.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px dashed #5b4fcf60', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                     {fotoPreview ? <img src={fotoPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="preview" /> : <Upload size={24} color="#5b4fcf80" />}
                     {uploadingFoto && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px' }}>...</div>}
                   </div>

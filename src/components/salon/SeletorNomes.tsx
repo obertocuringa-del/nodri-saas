@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { comoBotao } from '@/lib/acessibilidade'
 
 const COR = '#5b4fcf'
 
@@ -46,7 +47,7 @@ export function SeletorNomes({ value, onChange, opcoes }: { value: string; onCha
           <div onClick={() => setAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 29 }} />
           <div style={{ position: 'absolute', zIndex: 30, top: '100%', left: 0, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,.15)', minWidth: 170, maxHeight: 220, overflowY: 'auto', marginTop: 3 }}>
             {disponiveis.length === 0 ? <div style={{ padding: 8, fontSize: 12, color: '#9ca3af' }}>Sem opções</div> : disponiveis.map(o => (
-              <div key={o} onClick={() => add(o)} style={{ padding: '7px 10px', fontSize: 12.5, cursor: 'pointer', whiteSpace: 'nowrap' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8f7ff')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{o}</div>
+              <div {...comoBotao} key={o} onClick={() => add(o)} style={{ padding: '7px 10px', fontSize: 12.5, cursor: 'pointer', whiteSpace: 'nowrap' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8f7ff')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>{o}</div>
             ))}
           </div>
         </>

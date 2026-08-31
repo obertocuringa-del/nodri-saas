@@ -9,6 +9,7 @@ import EditorVitrine from './EditorVitrine'
 import EditorFuncionalidades from './EditorFuncionalidades'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
+import { comoBotao } from '@/lib/acessibilidade'
 
 interface Props {
   saloes: Salao[]
@@ -1984,7 +1985,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           <span className="text-[11.5px] font-medium">Todos os salões</span>
                         </div>
                         {saloes.map(s => (
-                          <div key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
+                          <div {...comoBotao} key={s.id} onClick={() => toggleDestinatario(s.id)} className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-nodri-surface transition-colors">
                             <div className={`w-4 h-4 rounded border flex items-center justify-center ${notifDestinatarios.includes(s.id) ? 'bg-nodri-cyan border-nodri-cyan' : 'border-nodri-border'}`}>{notifDestinatarios.includes(s.id) && <Check size={10} className="text-black" />}</div>
                             <div><div className="text-[11.5px] text-nodri-t1">{s.nome}</div><div className="text-[10px] text-nodri-t3">{s.email}</div></div>
                           </div>

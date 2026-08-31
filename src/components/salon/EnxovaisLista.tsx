@@ -7,6 +7,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { getLogoSalao } from '@/lib/logoSalao'
 import { parseBRLNumber } from '@/lib/kitsShared'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { comoBotao } from '@/lib/acessibilidade'
 
 const COR = '#5b4fcf'
 
@@ -236,7 +237,7 @@ export default function EnxovaisLista() {
 
       {/* ── Preço por lavagem ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-        <div onClick={() => setPrecosAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
+        <div {...comoBotao} onClick={() => setPrecosAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, color: precosAberto ? COR : '#9ca3af', transition: 'transform .15s', transform: precosAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
           <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Valor unitário por lavagem</h3>
           {!precosAberto && (
@@ -264,7 +265,7 @@ export default function EnxovaisLista() {
 
       {/* ── Estoque ── */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16, marginBottom: 20 }}>
-        <div onClick={() => setEstoqueAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
+        <div {...comoBotao} onClick={() => setEstoqueAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, color: estoqueAberto ? COR : '#9ca3af', transition: 'transform .15s', transform: estoqueAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
           <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', margin: 0, display: 'flex', alignItems: 'center' }}><Package size={15} style={{ marginRight: 5 }} />Estoque</h3>
           {!estoqueAberto && (
@@ -340,7 +341,7 @@ export default function EnxovaisLista() {
               const aberta = expandido.has(v.data)
               return (
                 <div key={v.data} style={{ background: '#fff', border: '1px solid #eceae4', borderRadius: 14, overflow: 'hidden' }}>
-                  <div onClick={() => alternarExpandido(v.data)} style={{ display: 'flex', alignItems: 'center', gap: mobile ? 10 : 16, padding: '12px 16px', cursor: 'pointer', flexWrap: 'wrap' }}>
+                  <div {...comoBotao} onClick={() => alternarExpandido(v.data)} style={{ display: 'flex', alignItems: 'center', gap: mobile ? 10 : 16, padding: '12px 16px', cursor: 'pointer', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 11, color: aberta ? COR : '#9ca3af', transition: 'transform .15s', transform: aberta ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▶</span>
                     <strong style={{ fontSize: 14, color: '#1a1a1a', minWidth: 90 }}>{v.data}</strong>
                     <span style={{ fontSize: 11.5, color: '#9ca3af' }}>{v.regs.length} {v.regs.length === 1 ? 'item' : 'itens'}</span>
