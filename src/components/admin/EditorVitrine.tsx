@@ -332,6 +332,16 @@ export default function EditorVitrine() {
           <Campo rotulo="WhatsApp (só números, com DDI)" v={cfg.footer_whatsapp} on={(v: string) => set('footer_whatsapp', v)} />
         </div>
         <Campo rotulo="Endereço" v={cfg.footer_endereco} on={(v: string) => set('footer_endereco', v)} />
+
+        <p className="text-[10px] text-nodri-t3 mt-1">
+          Redes sociais: cole o endereço completo do perfil. O ícone só aparece
+          no site se o campo estiver preenchido.
+        </p>
+        <div className="grid grid-cols-1 gap-2">
+          <Campo rotulo="Instagram (link do perfil)" v={cfg.footer_instagram} on={(v: string) => set('footer_instagram', v)} />
+          <Campo rotulo="Facebook (link da página)" v={cfg.footer_facebook} on={(v: string) => set('footer_facebook', v)} />
+          <Campo rotulo="YouTube (link do canal)" v={cfg.footer_youtube} on={(v: string) => set('footer_youtube', v)} />
+        </div>
         <Campo rotulo="Frase de direitos autorais" v={cfg.footer_direitos} on={(v: string) => set('footer_direitos', v)} />
       </Bloco>
 

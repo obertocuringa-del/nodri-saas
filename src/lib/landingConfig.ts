@@ -35,6 +35,9 @@ const TEXTOS_APOSENTADOS: Record<string, string[]> = {
   hero_subtitulo: [
     'Automatize confirmações, envio de mensagens, relatórios e muito mais. Tudo integrado diretamente ao seu WhatsApp.',
   ],
+  // Endereço que nunca foi o do salão: o correto é o gmail, e era este que
+  // aparecia no rodapé como contato oficial.
+  footer_email: ['contato@nodri.com.br'],
 }
 
 // Os três destaques do topo também são os antigos: nomeavam recurso

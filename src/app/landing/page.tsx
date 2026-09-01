@@ -4,6 +4,7 @@ import FormularioContato from '@/components/FormularioContato'
 import MenuFuncionalidades from '@/components/MenuFuncionalidades'
 import Carrossel from '@/components/Carrossel'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
+import { Instagram, Facebook, Youtube } from 'lucide-react'
 
 // ── O que a vitrine promete ─────────────────────────────────────────────────
 // O texto anterior vendia automação de WhatsApp: "automatize confirmações,
@@ -709,24 +710,36 @@ export default function LandingPage({ cfgInicial }: any) {
         background: MARINHO, color: 'rgba(255,255,255,.72)', padding: '30px 20px 34px',
         fontSize: 12.5, lineHeight: 1.75,
       }}>
-        <div style={{
-          maxWidth: 1040, margin: '0 auto', display: 'flex', flexWrap: 'wrap',
-          gap: '18px 40px', alignItems: 'flex-start', justifyContent: 'space-between',
+        {/* ── Por que grid e não flex com space-between ──────────────────────
+            Era flex com `space-between` e três blocos. Como razão social, CNPJ
+            e endereço nascem vazios até alguém preencher, o bloco do meio
+            ficava com altura zero — e o `space-between` jogava o contato lá
+            para a direita, deixando um vazio enorme no meio do rodapé.
+
+            Com grid de colunas iguais, o rodapé fica alinhado tendo ou não
+            esses dados: o que existe ocupa a sua coluna, e o que não existe
+            não abre buraco. */}
+        <div className="nodri-rodape" style={{
+          maxWidth: 1040, margin: '0 auto', display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '22px 40px', alignItems: 'start',
         }}>
-          <div style={{ minWidth: 220 }}>
-            <div style={{ color: '#fff', fontWeight: 900, fontSize: 16, letterSpacing: '.5px' }}>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '.4px', marginBottom: 4 }}>
               {cfg.footer_logo}
             </div>
             {cfg.footer_texto ? <div>{cfg.footer_texto}</div> : null}
           </div>
 
-          <div style={{ minWidth: 220 }}>
-            {cfg.footer_razao_social ? <div>{cfg.footer_razao_social}</div> : null}
-            {cfg.footer_cnpj ? <div>CNPJ {cfg.footer_cnpj}</div> : null}
-            {cfg.footer_endereco ? <div>{cfg.footer_endereco}</div> : null}
-          </div>
+          {(cfg.footer_razao_social || cfg.footer_cnpj || cfg.footer_endereco) ? (
+            <div>
+              {cfg.footer_razao_social ? <div>{cfg.footer_razao_social}</div> : null}
+              {cfg.footer_cnpj ? <div>CNPJ {cfg.footer_cnpj}</div> : null}
+              {cfg.footer_endereco ? <div>{cfg.footer_endereco}</div> : null}
+            </div>
+          ) : null}
 
-          <div style={{ minWidth: 200 }}>
+          <div>
             {cfg.footer_email ? (
               <div>
                 <a href={`mailto:${cfg.footer_email}`} style={{ color: CIANO, textDecoration: 'none' }}>
@@ -740,6 +753,34 @@ export default function LandingPage({ cfgInicial }: any) {
                   style={{ color: CIANO, textDecoration: 'none' }}>
                   Falar no WhatsApp
                 </a>
+              </div>
+            ) : null}
+
+            {/* ── Redes sociais ────────────────────────────────────────────
+                Cada ícone só aparece se houver link cadastrado em
+                Admin > Editor Landing Page > Rodapé do site. Perfil que ainda
+                não existe não vira botão que leva a lugar nenhum — e rede
+                social com link quebrado passa impressão pior do que rede
+                social nenhuma. */}
+            {(cfg.footer_instagram || cfg.footer_facebook || cfg.footer_youtube) ? (
+              <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                {([
+                  ['Instagram', cfg.footer_instagram, <Instagram key="i" size={17} />],
+                  ['Facebook', cfg.footer_facebook, <Facebook key="f" size={17} />],
+                  ['YouTube', cfg.footer_youtube, <Youtube key="y" size={17} />],
+                ] as [string, string, React.ReactNode][])
+                  .filter(([, url]) => !!url)
+                  .map(([nome, url, icone]) => (
+                    <a key={nome} href={url} target="_blank" rel="noopener noreferrer"
+                      aria-label={`NODRI no ${nome}`} title={nome}
+                      style={{
+                        width: 36, height: 36, borderRadius: 9, display: 'inline-flex',
+                        alignItems: 'center', justifyContent: 'center', color: '#fff',
+                        border: '1px solid rgba(255,255,255,.28)', textDecoration: 'none',
+                      }}>
+                      {icone}
+                    </a>
+                  ))}
               </div>
             ) : null}
           </div>

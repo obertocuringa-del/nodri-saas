@@ -153,12 +153,22 @@ export const LANDING_PADRAO = {
   // desenhada — ninguém vê rótulo sem conteúdo.
   footer_logo: 'NODRI',
   footer_texto: 'Gestão Inteligente para Salões de Beleza',
-  footer_email: 'contato@nodri.com.br',
+  footer_email: 'nodriestiloebeleza@gmail.com',
   footer_whatsapp: '5561982195214',
   footer_razao_social: '',
   footer_cnpj: '',
   footer_endereco: '',
   footer_direitos: 'Todos os direitos reservados.',
+
+  // Redes sociais do rodape. Nascem VAZIAS: o icone so aparece quando ha link,
+  // entao um perfil que ainda nao existe nao vira botao quebrado no site.
+  // Preencher em Admin > Editor Landing Page > Rodape do site.
+  // O perfil do NODRI, ja existente. Facebook e YouTube ficam vazios porque
+  // nao sei os enderecos — e link chutado que da em pagina inexistente passa
+  // impressao pior do que nao ter o icone.
+  footer_instagram: 'https://www.instagram.com/nodri.estilo.beleza/',
+  footer_facebook: '',
+  footer_youtube: '',
 }
 
 export type LandingConfig = typeof LANDING_PADRAO
