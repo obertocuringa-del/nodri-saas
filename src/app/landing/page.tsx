@@ -113,7 +113,7 @@ export default function LandingPage({ cfgInicial }: any) {
   }
 
   return (
-    <div className="nodri-vitrine" style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
+    <div className="nodri-vitrine" style={{ fontFamily: "var(--fonte-texto), 'DM Sans', 'Segoe UI', sans-serif", background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
 
       {/* ── Por que dangerouslySetInnerHTML e nao <style>{`...`}</style> ──────
           Escrito como filho de texto, o React ESCAPA aspas e sinais de maior
@@ -139,6 +139,18 @@ export default function LandingPage({ cfgInicial }: any) {
         .nodri-4col { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
         /* A imagem pesa mais que o texto: e ela que prende o olho de quem
            chega. 1.25fr contra 1fr da o destaque sem espremer a leitura. */
+        /* ── Tipografia ────────────────────────────────────────────────
+           Ate hoje esta pagina era desenhada na fonte de reserva do sistema
+           operacional (Segoe UI no Windows, outra coisa em cada aparelho): o
+           @import das fontes era bloqueado pelo CSP e ninguem percebeu. Agora
+           que elas vem do proprio dominio, os titulos usam a Syne — que e a
+           face da marca e o que da personalidade a pagina. Texto corrido fica
+           na DM Sans, que e feita para ler. */
+        .nodri-vitrine h1, .nodri-vitrine h2, .nodri-vitrine h3 {
+          font-family: var(--fonte-titulo), 'Syne', 'Segoe UI', sans-serif;
+          letter-spacing: -.022em;
+        }
+
         .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: stretch;
                       grid-template-columns: 1.05fr 1.1fr; }
         @media (max-width: 900px) { .nodri-hero { grid-template-columns: 1fr; } }
@@ -154,11 +166,13 @@ export default function LandingPage({ cfgInicial }: any) {
              frase que cabe continua numa linha so (nada muda) e a que nao
              cabe quebra e aparece inteira. */
           .titulo-l2 { display: block; font-size: min(1.82vw, 28px); letter-spacing: -.5px; margin-top: 6px; }
-          /* A frase menor sobrou 149px de branco em cima e outros 149 embaixo.
-             Espalhando o texto pela coluna inteira o branco vira respiro
-             entre os blocos — e, como a etiqueta sobe para o topo, a foto ao
-             lado (que nasce na linha dela) cresce junto e cobre o resto. */
-          .nodri-hero-texto { justify-content: space-between !important; }
+          /* Era "space-between", para o branco que sobrava virar respiro
+             entre os blocos. Com o texto atual isso passou a abrir um VAZIO no
+             meio da coluna: titulo em cima, paragrafo la embaixo e um buraco
+             no meio, encarando um painel denso do lado direito.
+             Centralizado com espacamento constante, a coluna se lê como um
+             bloco só — que e o que ela é. */
+          .nodri-hero-texto { justify-content: center !important; gap: clamp(20px,2.2vw,30px) !important; }
         }
 
         /* Os quatro selos do afiliado eram caixas mortas. Reagem ao mouse
