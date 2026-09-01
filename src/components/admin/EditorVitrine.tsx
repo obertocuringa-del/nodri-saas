@@ -77,6 +77,40 @@ export default function EditorVitrine() {
     <div className="flex flex-col gap-3 pb-24">
       {/* TOPO */}
       <Bloco titulo="Topo da página">
+        {/* ── Voltar à abertura recomendada ────────────────────────────────
+            Os textos do topo ficam salvos no banco e ganham dos do código.
+            Sem este botão, trocar a abertura significava reescrever cinco
+            campos à mão — e não havia caminho de volta se alguém apagasse
+            uma frase boa.
+
+            Ele mexe SÓ na abertura (etiqueta, título, texto e os três
+            destaques). Tudo que você escreveu no resto da página — dores,
+            comparação, benefícios, contato, afiliados, rodapé — fica como
+            está. Um "restaurar tudo" apagaria meses de escrita por um
+            clique errado.
+
+            E ele não salva sozinho: preenche os campos e deixa você ler
+            antes de clicar em Salvar. */}
+        <button
+          onClick={() => {
+            if (!confirm('Isto substitui a etiqueta, o título, o texto de abertura e os três destaques pelos recomendados.\n\nO resto da página não é tocado. Nada é salvo até você clicar em Salvar.\n\nContinuar?')) return
+            setCfg((p: any) => ({
+              ...p,
+              hero_etiqueta: LANDING_PADRAO.hero_etiqueta,
+              hero_titulo: LANDING_PADRAO.hero_titulo,
+              hero_subtitulo: LANDING_PADRAO.hero_subtitulo,
+              destaques: JSON.parse(JSON.stringify(LANDING_PADRAO.destaques)),
+            }))
+          }}
+          className="w-full mb-2 px-3 py-2 rounded-lg border border-nodri-cyan text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10 transition">
+          Usar a abertura recomendada
+        </button>
+        <p className="text-[10px] text-nodri-t3 -mt-1 mb-2">
+          Preenche só o topo (etiqueta, título, texto e destaques) com a versão
+          recomendada. O resto da página fica intacto e nada é salvo até você
+          clicar em Salvar.
+        </p>
+
         <Campo rotulo="Etiqueta pequena" v={cfg.hero_etiqueta} on={(v: string) => set('hero_etiqueta', v)} />
         <Campo rotulo="Título principal" v={cfg.hero_titulo} on={(v: string) => set('hero_titulo', v)} area />
         <Campo rotulo="Texto abaixo do título" v={cfg.hero_subtitulo} on={(v: string) => set('hero_subtitulo', v)} area />
