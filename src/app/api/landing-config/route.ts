@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
+import { semTextosAposentados } from '@/lib/landingConfig'
 
 // Os textos moravam aqui numa cópia própria, que desencontrou da página e
 // passou a sobrescrever o site com texto de duas versões atrás. Agora vêm
@@ -16,7 +17,9 @@ export async function GET() {
     .eq('chave', 'landing_config')
     .single()
 
-  const saved = data?.valor || {}
+  // O MESMO filtro da pagina publica. Sem isto, o editor mostraria o texto
+  // antigo que o site ja nao usa — e salvar dali o traria de volta.
+  const saved = semTextosAposentados(data?.valor || {})
   return NextResponse.json({ ...DEFAULT_CONFIG, ...saved })
 }
 
