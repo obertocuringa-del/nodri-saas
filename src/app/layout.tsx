@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Syne, DM_Sans } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import { Analytics } from '@vercel/analytics/next'
@@ -21,6 +22,27 @@ import './globals.css'
 // O que NÃO dá para controlar daqui é a "Visão geral criada por IA" que
 // aparece na busca: ela é escrita pelo Google a partir do conteúdo do site.
 // Melhorar estes campos ajuda, mas quem manda nela é o texto das páginas.
+// ── As fontes do NODRI, servidas do PROPRIO dominio ─────────────────────────
+//
+// Elas nunca apareceram. O globals.css pedia Syne e DM Sans com um @import
+// para fonts.googleapis.com, e o CSP deste site diz `style-src 'self'` — ou
+// seja, o navegador bloqueava a folha de estilo das fontes. Todo o sistema
+// vinha sendo desenhado na fonte de reserva do sistema operacional, e a
+// tipografia escolhida nunca chegou a ser vista por ninguem.
+//
+// A saida NAO foi abrir o CSP. O next/font baixa os arquivos no momento do
+// build e os serve do proprio dominio: passa no CSP como esta, nao faz
+// requisicao a terceiro (melhor privacidade), carrega antes e nao pisca
+// trocando de fonte no meio do carregamento.
+const syne = Syne({
+  subsets: ['latin'], weight: ['400', '500', '600', '700', '800'],
+  variable: '--fonte-titulo', display: 'swap',
+})
+const dmSans = DM_Sans({
+  subsets: ['latin'], weight: ['300', '400', '500', '700'],
+  variable: '--fonte-texto', display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: 'NODRI | Gestão Inteligente para Salões de Beleza',
   description:
@@ -78,18 +100,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        {/* As fontes (Syne e DM Sans) sao pedidas la de dentro do globals.css,
-            e o navegador so descobre o endereco delas DEPOIS de baixar e ler o
-            CSS inteiro. Estas duas linhas mandam abrir a conversa com o
-            servidor de fontes em paralelo, ainda durante a leitura do HTML.
-            Quando chegar a hora de pedir a fonte, a conexao ja esta pronta —
-            o texto aparece na fonte certa mais cedo, sem aquele pisca de
-            trocar a fonte no meio do carregamento. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
+    <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable}`}>
       <body>
         {children}
         <WhatsAppButton />

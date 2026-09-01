@@ -144,7 +144,12 @@ export default function LojistaPublicoPage() {
   const fundo = { minHeight: '100vh', background: '#f4f3fa' }
 
   const estilosGlobais = (
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+
       .lj-input, .lj-select { transition: border-color 0.18s ease, box-shadow 0.18s ease; }
       .lj-input:focus, .lj-select:focus { border-color: ${COR} !important; box-shadow: 0 0 0 4px ${COR}18; }
       .lj-select { appearance: none; -webkit-appearance: none;
@@ -166,7 +171,7 @@ export default function LojistaPublicoPage() {
         .lj-botoes button { width: 100%; justify-content: center; }
         .lj-grid-2 { grid-template-columns: 1fr !important; }
       }
-    `}</style>
+    ` }} />
   )
 
   if (loading) {

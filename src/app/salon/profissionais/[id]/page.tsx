@@ -3596,7 +3596,12 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         </div>
       )}
 
-      {souProf && <style>{`
+      {souProf && <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+
         @keyframes profFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
         .prof-skin{animation:profFade .5s ease both}
         .prof-skin > *{margin-bottom:18px}
@@ -3605,7 +3610,7 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
         .prof-skin .rounded-xl{border-radius:18px!important;border-color:#efeafc!important;box-shadow:0 6px 18px rgba(91,79,207,.10)!important}
         .prof-skin h1,.prof-skin h2,.prof-skin h3{letter-spacing:.2px;color:#4b3fc4!important}
         .prof-skin h2,.prof-skin h3{font-size:15px!important}
-      `}</style>}
+      ` }} />}
 
       <div className={`max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 ${souProf ? 'prof-skin' : ''}`}>
 

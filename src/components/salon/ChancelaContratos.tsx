@@ -132,7 +132,12 @@ tr:nth-child(even) td{background:#faf9ff}
 
   return (
     <div>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+
         .ch-tab { width:100%; border-collapse:collapse; min-width:760px; }
         .ch-tab th { text-align:left; font-size:10px; font-weight:800; color:#8a8680; text-transform:uppercase;
           letter-spacing:.5px; padding:9px 11px; background:#fbfbfa; border-bottom:1px solid #eceae4; white-space:nowrap; }
@@ -149,7 +154,7 @@ tr:nth-child(even) td{background:#faf9ff}
            saber onde cada profissional começa mesmo rolando na horizontal. */
         .ch-tab tbody td:first-child { box-shadow: inset 3px 0 0 #ece9f7; }
         .ch-tab tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #5b4fcf; }
-      `}</style>
+      ` }} />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, flexWrap: 'wrap', marginBottom: 13 }}>
         <div style={{ flex: 1, minWidth: 200 }}>

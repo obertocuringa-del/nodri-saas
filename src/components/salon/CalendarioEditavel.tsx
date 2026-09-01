@@ -376,7 +376,12 @@ ${doMes.length
           com celas de 66px, e compromisso de duas palavras já saía cortado.
           No celular a grade encolhe para caber sem rolar de lado — o texto sai
           da cela e vira a lista do mês, logo abaixo. */}
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+
         /* A cela nao tem altura fixa: ela e o que sobra da tela dividido
            pelo numero de semanas do mes. Assim o mes inteiro cabe numa tela
            so — com altura fixa, fevereiro cabia e um mes de 6 semanas nao. */
@@ -405,7 +410,7 @@ ${doMes.length
           .ncal-topo-mes { gap: 8px !important; }
         }
         .ncal-dia:hover { border-color: ${corTema} !important; }
-      `}</style>
+      ` }} />
 
       {!embutido ? (
       <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>

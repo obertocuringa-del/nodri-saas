@@ -26,8 +26,8 @@ module.exports = {
         }
       },
       fontFamily: {
-        syne: ['Syne', 'sans-serif'],
-        dm:   ['DM Sans', 'sans-serif'],
+        syne: ['var(--fonte-titulo)', 'Syne', 'sans-serif'],
+        dm:   ['var(--fonte-texto)', 'DM Sans', 'sans-serif'],
       },
       animation: {
         'fade-in':    'fadeIn 0.3s ease',

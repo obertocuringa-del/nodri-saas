@@ -267,7 +267,12 @@ export default function ConteudoPage() {
         </button>
       </div>
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+
         .pop-doc{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#33313f;font-size:14.5px;line-height:1.7}
         .pop-doc>*:first-child{margin-top:0}
         .pop-doc h1{font-size:24px;color:#2a2350;font-weight:800;margin:0 0 4px}
@@ -279,7 +284,7 @@ export default function ConteudoPage() {
         .pop-doc li{margin:4px 0}
         .pop-doc blockquote{border-left:3px solid #5b4fcf;background:#f7f6fb;padding:10px 16px;margin:12px 0;border-radius:0 10px 10px 0;font-style:italic;color:#4a4760}
         .pop-doc strong{color:#2a2350;font-weight:700}
-      `}</style>
+      ` }} />
 
       <div className="max-w-5xl mx-auto px-5 py-8">
 

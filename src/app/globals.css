@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap');
+/* O @import das fontes saiu daqui: o CSP (style-src 'self') bloqueava a folha
+   do Google e as fontes nunca carregavam. Agora elas vem do next/font, em
+   layout.tsx, servidas pelo proprio dominio. */
 
 @tailwind base;
 @tailwind components;
@@ -35,7 +37,7 @@
 html, body {
   background-color: var(--nodri-dark);
   color: var(--nodri-t1);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--fonte-texto), 'DM Sans', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

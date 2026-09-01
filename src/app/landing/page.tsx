@@ -115,7 +115,24 @@ export default function LandingPage({ cfgInicial }: any) {
   return (
     <div className="nodri-vitrine" style={{ fontFamily: 'Segoe UI, sans-serif', background: '#f7fafc', minHeight: '100vh', color: '#1a1a1a' }}>
 
-      <style>{`
+      {/* ── Por que dangerouslySetInnerHTML e nao <style>{`...`}</style> ──────
+          Escrito como filho de texto, o React ESCAPA aspas e sinais de maior
+          ao renderizar no servidor. A regra saia assim no HTML entregue:
+
+            .nodri-midia-cheia &gt; div[style*=&quot;aspect-ratio&quot;] { ... }
+
+          Isso nao e so feio: e CSS morto. O navegador le <style> como texto
+          cru, entao `&quot;` fica literal e o seletor nunca casa com nada.
+          E como o texto do servidor passava a ser diferente do texto do
+          cliente (que tem as aspas de verdade), a hidratacao falhava — e o
+          React descartava TODA a pagina do servidor para redesenhar no
+          navegador, jogando fora justamente o HTML que o Google le e que faz
+          a pagina aparecer rapido.
+
+          Com dangerouslySetInnerHTML o CSS vai cru, identico nos dois lados.
+          O nome assusta, mas aqui nao ha risco nenhum: o conteudo e uma
+          constante escrita neste arquivo, nao entra dado de usuario. */}
+      <style dangerouslySetInnerHTML={{ __html: `
         /* Quatro cards numa linha só no computador. Com auto-fit o quarto card
            caía sozinho numa segunda linha e a seção ficava torta.
            No celular vira uma coluna, senão o texto fica ilegível. */
@@ -300,7 +317,7 @@ export default function LandingPage({ cfgInicial }: any) {
         }
         @media (max-width: 1000px) { .nodri-4col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px)  { .nodri-4col { gap: 12px; } }
-      `}</style>
+      ` }} />
 
       {/* ── BARRA DO TOPO ─────────────────────────────────────────────── */}
       <header className="nodri-topo" style={{

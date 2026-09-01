@@ -113,7 +113,12 @@ export default function CheckProconPainel() {
 
   return (
     <div>
-      <style>{`.cp-item input[type="text"]:focus { border-color: ${COR} !important; }`}</style>
+      <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: escrito como filho de texto, o React escapa
+   aspas e ">" ao renderizar no servidor — a regra vira letra morta e a
+   hidratacao quebra, fazendo o React descartar a pagina do servidor.
+   Conteudo constante deste arquivo, sem dado de usuario. */
+.cp-item input[type="text"]:focus { border-color: ${COR} !important; }` }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ width: 30, height: 30, borderRadius: 9, background: COR, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
