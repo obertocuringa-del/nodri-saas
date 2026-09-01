@@ -42,12 +42,32 @@ export default function MenuFuncionalidades() {
 
   if (!itens.length) return null
 
-  // Agrupa preservando a ordem que veio do banco.
+  // ── Agrupamento ───────────────────────────────────────────────────────────
+  //
+  // A categoria é texto livre, digitado à mão em cada funcionalidade. Comparar
+  // por texto exato fazia "FINANCEIRO" e "Financeiro" virarem DOIS grupos com
+  // o mesmo nome no menu — um com um item, outro com seis. Quem olha acha que
+  // o site está quebrado, e não está: é só maiúscula.
+  //
+  // Agora o agrupamento ignora caixa e acento. E o rótulo exibido é
+  // padronizado: quem digitou tudo em maiúsculas não deixa o menu gritando ao
+  // lado das outras. O que está salvo não é alterado — isto é só exibição.
+  const chaveCat = (s: string) =>
+    (s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+  const comoTitulo = (s: string) => {
+    const t = (s || '').trim()
+    if (!t) return t
+    // Só mexe em quem está inteiro em maiúsculas; o resto sai como foi escrito.
+    if (t !== t.toUpperCase()) return t
+    return t.toLowerCase().replace(/(^|\s|\/)([a-zà-ÿ])/g, (_, a, b) => a + b.toUpperCase())
+  }
+
   const categorias: { nome: string; itens: Func[] }[] = []
   for (const f of itens) {
-    const c = categorias.find(x => x.nome === f.categoria)
+    const c = categorias.find(x => chaveCat(x.nome) === chaveCat(f.categoria))
     if (c) c.itens.push(f)
-    else categorias.push({ nome: f.categoria, itens: [f] })
+    else categorias.push({ nome: comoTitulo(f.categoria), itens: [f] })
   }
 
   return (

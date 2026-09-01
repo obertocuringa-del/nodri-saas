@@ -284,18 +284,6 @@ export const FUNCIONALIDADES_CATALOGO: FuncCatalogo[] = [
 
   // ── RESULTADO ─────────────────────────────────────────────────────────────
   {
-    categoria: 'Resultado', nome: 'Metas do Salão e da Equipe', slug: 'metas-do-salao-e-da-equipe',
-    etiqueta: 'Metas', cor: RES,
-    titulo: 'Quanto o seu salão precisa faturar hoje?',
-    descricao: 'A meta do mês, sozinha, não ajuda ninguém: no dia 20 já é tarde para reagir. O que muda o resultado é saber, todo dia, quanto deveria ter entrado até aqui — e quanto falta correr.\n\nO NODRI distribui a meta pelos dias considerando o potencial de cada dia da semana, porque segunda não fatura como sábado. E recalcula sozinho quando um dia fica abaixo.',
-    destaques: [
-      { titulo: 'Meta do dia, não só do mês', desc: 'Quanto faturar hoje, ajustado ao dia da semana' },
-      { titulo: 'Recalcula quando cai', desc: 'Ficou abaixo? Ele redistribui o que falta nos dias restantes' },
-      { titulo: 'Meta por profissional', desc: 'Cada uma com a sua, sem você calcular nada' },
-    ],
-    arte: { rotulo: 'Meta do salão', valor: '92% batida', linhas: [['Meta do mês', 'R$ 140.000'], ['Faturado', 'R$ 128.750'], ['Falta por dia', 'R$ 1.607']] },
-  },
-  {
     categoria: 'Resultado', nome: 'Relatórios do Salão', slug: 'relatorios-do-salao',
     etiqueta: 'Relatórios', cor: RES,
     titulo: 'Qual é o melhor dia do seu salão?',
