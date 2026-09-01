@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1093" width="900" height="1093" role="img" aria-label="Cliente na cadeira do salao: voltou em 21 dias, satisfacao 9,4 de 10">
+  <title>Cliente atendida e satisfeita</title>
+
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafd"/>
+      <stop offset="1" stop-color="#eaf1f8"/>
+    </linearGradient>
+    <linearGradient id="espelho" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e4edf7"/>
+    </linearGradient>
+    <!-- userSpaceOnUse e obrigatorio: no padrao cada forma remapeia o gradiente
+         para a propria caixa, e pescoco e cabeca saem em tons diferentes -->
+    <linearGradient id="figura" gradientUnits="userSpaceOnUse" x1="0" y1="430" x2="0" y2="1010">
+      <stop offset="0" stop-color="#173a68"/>
+      <stop offset="1" stop-color="#0c2650"/>
+    </linearGradient>
+    <filter id="cartao" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0d2a56" flood-opacity="0.13"/>
+    </filter>
+    <filter id="aparelho" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0d2a56" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1093" fill="url(#fundo)"/>
+
+  <!-- circulos fora de foco: profundidade sem pedir leitura -->
+  <circle cx="716" cy="222" r="170" fill="#00b5d8" opacity="0.09"/>
+  <circle cx="140" cy="806" r="128" fill="#0d2a56" opacity="0.05"/>
+
+  <g fill="none" stroke="#00b5d8" stroke-width="6" stroke-linejoin="round" opacity="0.34">
+    <path d="M196 142 L221 194 L278 202 L237 242 L246 300 L196 273 L146 300 L155 242 L114 202 L171 194 Z"/>
+  </g>
+  <rect x="0" y="1000" width="900" height="93" fill="#e3ebf5"/>
+  <path d="M250 1000 L250 400 A200 200 0 0 1 650 400 L650 1000 Z" fill="url(#espelho)"/>
+  <path d="M250 1000 L250 400 A200 200 0 0 1 650 400 L650 1000" fill="none" stroke="#00b5d8" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M286 1000 L286 404 A164 164 0 0 1 614 404 L614 1000" fill="none" stroke="#0d2a56" stroke-opacity="0.09" stroke-width="2"/>
+  <!-- a cadeira precisa ser mais escura que o fundo, senao some -->
+  <rect x="352" y="548" width="190" height="352" rx="72" fill="#c3d2e4"/>
+  <rect x="368" y="566" width="158" height="316" rx="60" fill="#d7e2ee"/>
+  <rect x="306" y="782" width="42" height="104" rx="16" fill="#b7c7dc"/>
+  <rect x="546" y="782" width="42" height="104" rx="16" fill="#b7c7dc"/>
+  <rect x="318" y="856" width="258" height="54" rx="22" fill="#b7c7dc"/>
+  <rect x="420" y="906" width="50" height="60" fill="#a4b6ce"/>
+  <ellipse cx="445" cy="972" rx="104" ry="20" fill="#b0c0d6"/>
+  <ellipse cx="445" cy="962" rx="104" ry="20" fill="#c3d2e4"/>
+
+  <!-- a capa vai em ciano de proposito: em marinho ela virava uma mancha so
+       com o cabelo, e a cliente sumia -->
+  <path d="M366 906 L392 706 Q422 680 446 700 Q470 680 500 706 L526 906 Z" fill="#00b5d8" opacity="0.92"/>
+  <path d="M392 706 Q446 738 500 706 L505 730 Q446 764 387 730 Z" fill="#ffffff" opacity="0.85"/>
+
+  <path d="M382 588 Q370 672 382 704 L510 704 Q522 672 510 588 Z" fill="url(#figura)"/>
+  <circle cx="446" cy="578" r="62" fill="url(#figura)"/>
+  <g filter="url(#cartao)">
+    <rect x="52" y="330" width="252" height="112" rx="20" fill="#ffffff"/>
+  </g>
+  <circle cx="86" cy="370" r="7" fill="#00b5d8"/>
+  <text x="104" y="376" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#5c6b80">Ela voltou em</text>
+  <text x="84" y="416" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="31" font-weight="800" fill="#0d2a56">21 dias</text>
+  <g filter="url(#cartao)">
+    <rect x="592" y="742" width="272" height="132" rx="20" fill="#ffffff"/>
+  </g>
+  <text x="622" y="780" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#5c6b80">Satisfa&#231;&#227;o</text>
+  <text x="622" y="822" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="35" font-weight="800" fill="#0d2a56">9,4 de 10</text>
+  <path d="M635 834 L639 845 L650 847 L643 855 L645 866 L635 860 L625 866 L627 855 L620 847 L631 845 Z" fill="#00b5d8"/>
+  <path d="M665 834 L669 845 L680 847 L673 855 L675 866 L665 860 L655 866 L657 855 L650 847 L661 845 Z" fill="#00b5d8"/>
+  <path d="M695 834 L699 845 L710 847 L703 855 L705 866 L695 860 L685 866 L687 855 L680 847 L691 845 Z" fill="#00b5d8"/>
+  <path d="M725 834 L729 845 L740 847 L733 855 L735 866 L725 860 L715 866 L717 855 L710 847 L721 845 Z" fill="#00b5d8"/>
+  <path d="M755 834 L759 845 L770 847 L763 855 L765 866 L755 860 L745 866 L747 855 L740 847 L751 845 Z" fill="#00b5d8"/>
+</svg>

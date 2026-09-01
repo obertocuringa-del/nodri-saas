@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import FormularioContato from '@/components/FormularioContato'
 import MenuFuncionalidades from '@/components/MenuFuncionalidades'
-import Carrossel from '@/components/Carrossel'
+import Carrossel, { type Midia } from '@/components/Carrossel'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { Instagram, Facebook, Youtube } from 'lucide-react'
 
@@ -21,6 +21,28 @@ import { Instagram, Facebook, Youtube } from 'lucide-react'
 // parece a mesma empresa da logo.
 const MARINHO = '#0d2a56'
 const CIANO = '#00b5d8'
+
+// ── As cenas da abertura ────────────────────────────────────────────────────
+// Cinco ilustracoes na mesma linguagem, contando a mesma historia em ordem:
+// o dia comeca (agenda), o cliente confirma, o caixa fecha, a equipe cumpre,
+// a cliente volta. Ficam aqui fora do componente de proposito — recriar o
+// array a cada render remontaria o carrossel e ele voltaria para a primeira
+// cena a cada tecla digitada no formulario mais abaixo.
+//
+// Quem cadastrar foto em Admin > Editor Landing Page some com estas: foto do
+// salao de verdade vende mais que desenho, e a pagina prefere a foto.
+const CENAS_DA_ABERTURA: Midia[] = [
+  { url: '/hero-salao-nodri.svg', inteira: true,
+    alt: 'Profissional de salao com o NODRI na mao: agenda do dia e dinheiro parado em clientes inativos' },
+  { url: '/hero-confirma-nodri.svg', inteira: true,
+    alt: 'Confirmacoes chegando pelo WhatsApp: 142 hoje e faltas em queda de 63 por cento' },
+  { url: '/hero-caixa-nodri.svg', inteira: true,
+    alt: 'Recepcao com a tela do caixa: comissoes de R$ 8.240 e caixa do dia de R$ 4.180' },
+  { url: '/hero-equipe-nodri.svg', inteira: true,
+    alt: 'Equipe de tres profissionais: 18 de 18 tarefas do dia e meta em 112 por cento' },
+  { url: '/hero-cliente-nodri.svg', inteira: true,
+    alt: 'Cliente atendida na cadeira do salao: voltou em 21 dias, satisfacao 9,4 de 10' },
+]
 
 const DEFAULT_CONFIG = LANDING_PADRAO
 
@@ -469,15 +491,13 @@ export default function LandingPage({ cfgInicial }: any) {
           ) : (
           <div className="hero-midia">
             {/* O mockup de painel que ficava aqui trazia 68 blocos de texto e
-                competia com o titulo, numa pagina que ja tem muita leitura.
-                No lugar dele, a cena do salao: quem usa, o sistema na mao dela
-                e dois numeros. O arquivo antigo continua em
-                public/hero-painel-nodri.svg caso valha comparar. */}
-            <img src="/hero-salao-nodri.svg" alt="Profissional de salao com o NODRI na mao, mostrando a agenda do dia e o dinheiro parado em clientes inativos"
-              width={900} height={1093} loading="eager"
-              style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)' }} />
+                competia com o titulo, numa pagina que ja tem muita leitura. No
+                lugar dele, cinco cenas do salao com dois numeros cada. O mesmo
+                Carrossel das fotos: troca sozinha, tem seta e para no hover.
+                O arquivo antigo continua em public/hero-painel-nodri.svg. */}
+            <Carrossel midias={CENAS_DA_ABERTURA} intervalo={6} />
             <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
-              Ilustração. Os números do seu salão aparecem aqui.
+              Ilustrações. Os números do seu salão aparecem aqui.
             </p>
           </div>
           )}

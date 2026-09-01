@@ -8,7 +8,12 @@ const MARINHO = '#0d2a56'
 // `inteira`: a midia aparece completa, sem corte. Foto de salao fica bem
 // preenchendo o quadro (o padrao), mas ARTE nao: preencher come as bordas,
 // e numa peca desenhada a borda e onde ficam o titulo e o rodape.
-export interface Midia { tipo?: 'imagem' | 'video'; url: string; inteira?: boolean }
+export interface Midia {
+  tipo?: 'imagem' | 'video'; url: string; inteira?: boolean
+  /** Descricao para quem nao enxerga a imagem. Foto de salao dispensa
+      (e decorativa); ilustracao que carrega numero, nao. */
+  alt?: string
+}
 
 /** Link do Drive vira endereço direto: o que ele compartilha é uma página. */
 export function urlDeImagem(url: string): string {
@@ -117,7 +122,7 @@ export default function Carrossel({ midias, intervalo = 5, alturaMax, preencher,
           />
         </div>
       ) : (
-        <img src={urlDeImagem(atual.url)} alt=""
+        <img src={urlDeImagem(atual.url)} alt={atual.alt || ''}
           style={{
             display: 'block', borderRadius: 18,
             border: '1px solid #e3e8f0', boxShadow: '0 18px 50px rgba(13,42,86,.12)',

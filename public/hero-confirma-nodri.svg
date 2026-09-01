@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1093" width="900" height="1093" role="img" aria-label="Profissional recebendo confirmacoes: 142 hoje e faltas em queda de 63 por cento">
+  <title>O cliente confirma sozinho pelo WhatsApp</title>
+
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafd"/>
+      <stop offset="1" stop-color="#eaf1f8"/>
+    </linearGradient>
+    <linearGradient id="espelho" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e4edf7"/>
+    </linearGradient>
+    <!-- userSpaceOnUse e obrigatorio: no padrao cada forma remapeia o gradiente
+         para a propria caixa, e pescoco e cabeca saem em tons diferentes -->
+    <linearGradient id="figura" gradientUnits="userSpaceOnUse" x1="0" y1="430" x2="0" y2="1010">
+      <stop offset="0" stop-color="#173a68"/>
+      <stop offset="1" stop-color="#0c2650"/>
+    </linearGradient>
+    <filter id="cartao" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0d2a56" flood-opacity="0.13"/>
+    </filter>
+    <filter id="aparelho" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0d2a56" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1093" fill="url(#fundo)"/>
+
+  <!-- circulos fora de foco: profundidade sem pedir leitura -->
+  <circle cx="716" cy="222" r="170" fill="#00b5d8" opacity="0.09"/>
+  <circle cx="140" cy="806" r="128" fill="#0d2a56" opacity="0.05"/>
+
+  <g fill="none" stroke="#00b5d8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.34">
+    <rect x="100" y="146" width="192" height="126" rx="22"/>
+    <path d="M146 272 L146 318 L192 272"/>
+  </g>
+  <rect x="0" y="1000" width="900" height="93" fill="#e3ebf5"/>
+  <g transform="translate(334 1000) scale(1.0) translate(-442 -1000)">
+    <g fill="url(#figura)">
+      <circle cx="382" cy="458" r="27"/>
+      <circle cx="442" cy="500" r="64"/>
+      <path d="M420 552 L420 606 Q442 628 464 606 L464 552 Z"/>
+      <path d="M348 1000 C344 790 358 690 404 634 Q422 622 442 646 Q462 622 480 634 C526 690 540 790 536 1000 Z"/>
+      <path d="M470 628 Q566 620 620 576 L656 608 Q604 682 486 696 Z"/>
+      <path d="M618 582 Q646 560 680 580 Q694 600 672 616 Q638 632 616 610 Z"/>
+    </g>
+  <path d="M418 616 L442 674 L466 616 L480 634 L442 706 L404 634 Z" fill="#00b5d8" opacity="0.92"/>
+  <circle cx="494" cy="548" r="9" fill="none" stroke="#00b5d8" stroke-width="4"/>
+  <g transform="rotate(-16 700 580)" filter="url(#aparelho)">
+    <rect x="646" y="482" width="118" height="196" rx="17" fill="#ffffff"/>
+    <rect x="658" y="502" width="94" height="156" rx="9" fill="#0d2a56"/>
+    <rect x="668" y="516" width="54" height="18" rx="9" fill="#ffffff" opacity="0.28"/>
+    <rect x="690" y="542" width="52" height="18" rx="9" fill="#00b5d8"/>
+    <rect x="668" y="568" width="62" height="18" rx="9" fill="#ffffff" opacity="0.22"/>
+    <rect x="698" y="594" width="44" height="18" rx="9" fill="#00b5d8"/>
+    <rect x="670" y="626" width="70" height="18" rx="9" fill="#00b5d8" opacity="0.55"/>
+  </g>
+  <path d="M636 572 Q660 556 682 570 Q694 588 674 604 Q650 618 634 600 Z" fill="url(#figura)"/>
+  </g>
+  <g filter="url(#cartao)">
+    <rect x="646" y="292" width="196" height="78" rx="20" fill="#ffffff"/>
+    <path d="M652 330 L626 368 L658 362 Z" fill="#ffffff"/>
+  </g>
+  <rect x="672" y="316" width="101" height="8" rx="4" fill="#c6d2e2"/>
+  <rect x="672" y="336" width="66" height="8" rx="4" fill="#dbe3ee"/>
+  <g filter="url(#cartao)">
+    <rect x="686" y="400" width="158" height="70" rx="20" fill="#ffffff"/>
+    <path d="M692 430 L666 468 L698 462 Z" fill="#ffffff"/>
+  </g>
+  <rect x="712" y="424" width="82" height="8" rx="4" fill="#c6d2e2"/>
+  <rect x="712" y="444" width="53" height="8" rx="4" fill="#dbe3ee"/>
+  <g filter="url(#cartao)">
+    <rect x="638" y="508" width="212" height="78" rx="20" fill="#ffffff"/>
+    <path d="M644 546 L618 584 L650 578 Z" fill="#ffffff"/>
+  </g>
+  <rect x="664" y="532" width="110" height="8" rx="4" fill="#c6d2e2"/>
+  <rect x="664" y="552" width="72" height="8" rx="4" fill="#dbe3ee"/>
+  <path d="M790 547 L806 562 L828 531" fill="none" stroke="#00b5d8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g filter="url(#cartao)">
+    <rect x="52" y="330" width="252" height="112" rx="20" fill="#ffffff"/>
+  </g>
+  <circle cx="86" cy="370" r="7" fill="#00b5d8"/>
+  <text x="104" y="376" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#5c6b80">Confirma&#231;&#245;es</text>
+  <text x="84" y="416" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="31" font-weight="800" fill="#0d2a56">142 hoje</text>
+  <g filter="url(#cartao)">
+    <rect x="592" y="742" width="272" height="132" rx="20" fill="#ffffff"/>
+  </g>
+  <text x="622" y="780" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#5c6b80">Faltas no m&#234;s</text>
+  <text x="622" y="822" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="35" font-weight="800" fill="#0d2a56">caiu 63%</text>
+  <path d="M622 802 C660 812 678 830 706 838 S776 848 834 852" fill="none" stroke="#00b5d8" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="834" cy="852" r="6" fill="#00b5d8"/>
+</svg>
