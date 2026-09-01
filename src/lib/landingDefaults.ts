@@ -12,19 +12,35 @@
 export const LANDING_PADRAO = {
   hero_logo: 'NODRI',
 
-  // Começa pela DOR, não pelo produto. "Sistema de gestão" não desperta nada
-  // em quem não sabe que precisa; a pergunta que ele não consegue responder,
-  // sim. E a segunda frase promete resultado, não funcionalidade.
+  // ── A abertura ─────────────────────────────────────────────────────────────
+  //
+  // Começa pela DOR, não pelo produto: "sistema de gestão" não desperta nada em
+  // quem não sabe que precisa; a pergunta que ele não consegue responder, sim.
+  //
+  // A segunda linha carrega a DIFERENÇA, e é a parte mais importante da página.
+  // Todo salão já ouviu falar de sistema de agenda e acha que tem um. Enquanto
+  // a NODRI for apresentada pelo que ela tem em comum com os outros (WhatsApp,
+  // relatório, confirmação), ela é comparada por preço e perde. Apresentada
+  // pelo que só ela faz — cuidar da EQUIPE e do PROCESSO — não há com quem
+  // comparar.
+  //
+  // Duas regras que a abertura tem que respeitar, e que já foram quebradas:
+  //   1. As duas linhas precisam prometer a MESMA coisa. Título mandando
+  //      "pare de gastar" com subtítulo prometendo "fature mais" são promessas
+  //      opostas na mesma tela, e quem lê não sabe o que o produto faz.
+  //   2. Nada de listar funcionalidade aqui. "Automatize confirmações e
+  //      relatórios" descreve o que qualquer concorrente também faz.
   hero_titulo: 'Seu salão funciona quando você não está lá?',
-  hero_subtitulo: 'A NODRI transforma sua base de clientes em dinheiro. Mais organização, mais relacionamento e mais faturamento — de forma orgânica, aproveitando quem já conhece e confia na sua empresa.',
+  hero_subtitulo: 'Todo salão tem sistema de agenda. Quase nenhum tem sistema para a equipe: quem faz o quê, quanto cada serviço deixa de lucro e qual cliente parou de voltar. É esse o buraco que a NODRI fecha.',
   hero_botao: 'Quero conhecer a NODRI',
   hero_cor_botao: '#00b5d8',
 
-  // Três destaques logo abaixo do título, no topo.
+  // Três destaques logo abaixo do título. Cada um é uma PERDA que o dono já
+  // teve, escrita como capacidade — não um recurso do sistema.
   destaques: [
-    { titulo: 'Financeiro real', desc: 'Custo, lucro e preço certo por serviço' },
-    { titulo: 'Equipe medida', desc: 'Metas, comissões e desempenho de cada um' },
-    { titulo: 'Alertas que importam', desc: 'Cliente sumindo e queda de faturamento' },
+    { titulo: 'Você passa a saber seus números', desc: 'Custo real, lucro por serviço e quanto precisa faturar para não ter prejuízo' },
+    { titulo: 'A equipe anda sem você', desc: 'Cada setor com dono, cada tarefa com prazo e a rotina escrita' },
+    { titulo: 'Ninguém some sem você notar', desc: 'O sistema aponta a cliente que parou de voltar antes de ela virar prejuízo' },
   ],
   hero_botao2: 'Ver como funciona',
   hero_rodape: 'Feito dentro de um salão em operação, não numa mesa de escritório.',
