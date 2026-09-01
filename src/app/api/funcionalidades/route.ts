@@ -3,6 +3,11 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { FUNCIONALIDADES_CATALOGO } from '@/lib/funcionalidadesCatalogo'
+import { FUNCIONALIDADES_CATALOGO_2 } from '@/lib/funcionalidadesCatalogo2'
+
+// O catalogo vive em dois arquivos so para nao virar um arquivo de mil linhas
+// que ninguem abre. Aqui eles voltam a ser uma lista so.
+const CATALOGO = [...FUNCIONALIDADES_CATALOGO, ...FUNCIONALIDADES_CATALOGO_2]
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -25,7 +30,7 @@ export const revalidate = 0
 // (botão "Trazer as recomendadas"), a versão do banco passa a mandar naquele
 // slug — o que for escrito lá nunca é sobrescrito por este arquivo.
 function doCatalogo() {
-  return FUNCIONALIDADES_CATALOGO.map((f, i) => ({
+  return CATALOGO.map((f, i) => ({
     id: `catalogo:${f.slug}`,
     origem: 'catalogo' as const,
     categoria: f.categoria,

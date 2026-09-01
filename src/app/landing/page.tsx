@@ -142,13 +142,22 @@ export default function LandingPage({ cfgInicial }: any) {
         /* ── Tipografia ────────────────────────────────────────────────
            Ate hoje esta pagina era desenhada na fonte de reserva do sistema
            operacional (Segoe UI no Windows, outra coisa em cada aparelho): o
-           @import das fontes era bloqueado pelo CSP e ninguem percebeu. Agora
-           que elas vem do proprio dominio, os titulos usam a Syne — que e a
-           face da marca e o que da personalidade a pagina. Texto corrido fica
-           na DM Sans, que e feita para ler. */
+           @import era bloqueado pelo CSP e ninguem percebeu. Agora as fontes
+           vem do proprio dominio.
+
+           Os titulos chegaram a usar a Syne, que e a face da marca. Voltaram
+           para a DM Sans, e o motivo e leitura: Syne e fonte de DISPLAY —
+           feita para pouca palavra em tamanho grande, tipo uma assinatura.
+           Aplicada em h1, h2 e h3 de uma pagina longa, com frases em portugues
+           cheias de acento, ela cansa a vista. Numa pagina que existe para ser
+           lida, leitura ganha de personalidade.
+
+           A DM Sans em peso 700 e tracking negativo nao fica sem carater: fica
+           firme e legivel, que e o que uma pagina de venda precisa. A Syne
+           continua na marca e nos rotulos curtos, que e onde ela funciona. */
         .nodri-vitrine h1, .nodri-vitrine h2, .nodri-vitrine h3 {
-          font-family: var(--fonte-titulo), 'Syne', 'Segoe UI', sans-serif;
-          letter-spacing: -.022em;
+          font-family: var(--fonte-texto), 'DM Sans', 'Segoe UI', sans-serif;
+          letter-spacing: -.028em;
         }
 
         .nodri-hero { display: grid; gap: clamp(30px,4vw,56px); align-items: stretch;
