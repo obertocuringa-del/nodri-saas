@@ -25,6 +25,8 @@ interface Func {
   video_url?: string; imagem_url?: string; botao_texto?: string
   midias?: { tipo?: 'imagem' | 'video'; url: string }[]; intervalo?: number
   ordem_categoria?: number; ordem?: number; ativo?: boolean
+  /** 'catalogo' = ainda nao existe no banco; veio do codigo. */
+  origem?: 'catalogo'
 }
 
 export default function EditorFuncionalidades() {
@@ -32,6 +34,44 @@ export default function EditorFuncionalidades() {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState<string | null>(null)
   const [aberto, setAberto] = useState<string | null>(null)
+  const [trazendo, setTrazendo] = useState(false)
+
+  // ── As duas listas ────────────────────────────────────────────────────────
+  // O que veio do banco pode ser editado e excluido. O que veio do catalogo do
+  // codigo ja ESTA no ar (a vitrine mostra), mas ainda nao existe como linha —
+  // entao nao da para salvar nem apagar enquanto nao for trazido.
+  const doBanco = itens.filter(f => f.origem !== 'catalogo')
+  const doCatalogo = itens.filter(f => f.origem === 'catalogo')
+
+  // Cria no banco as que ainda sao so catalogo. A partir dai elas passam a ser
+  // suas: o que voce escrever nelas nunca mais e sobrescrito pelo codigo.
+  async function trazerRecomendadas() {
+    if (!doCatalogo.length) return
+    if (!confirm(`Isto cria ${doCatalogo.length} funcionalidades no banco para voce poder editar.
+
+Elas ja aparecem no site hoje; o que muda e que passam a ser editaveis e param de acompanhar as atualizacoes do sistema.
+
+Continuar?`)) return
+    setTrazendo(true)
+    let ok = 0
+    for (const f of doCatalogo) {
+      try {
+        const r = await fetch('/api/funcionalidades', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            categoria: f.categoria, nome: f.nome, slug: f.slug, etiqueta: f.etiqueta,
+            titulo: f.titulo, descricao: f.descricao, destaques: f.destaques,
+            imagem_url: f.imagem_url, botao_texto: f.botao_texto,
+            ordem_categoria: f.ordem_categoria, ordem: f.ordem,
+          }),
+        })
+        if (r.ok) ok++
+      } catch { /* segue para a proxima */ }
+    }
+    setTrazendo(false)
+    toast.success(ok + ' de ' + doCatalogo.length + ' trazidas')
+    carregar()
+  }
 
   async function carregar() {
     try {
@@ -87,7 +127,40 @@ export default function EditorFuncionalidades() {
         </p>
       </div>
 
-      {itens.map(f => {
+      {/* ── As que vêm do catálogo do sistema ──────────────────────────────
+          Elas JÁ estão no ar: a vitrine mostra todas, com texto e arte. O que
+          ainda não existe é a linha no banco — e é isso que "Trazer" cria,
+          para você poder editar. Enquanto não trouxer, elas continuam
+          acompanhando as melhorias do sistema; depois de trazidas, param de
+          acompanhar e passam a ser suas. */}
+      {doCatalogo.length > 0 && (
+        <div className="nodri-card p-4 border border-nodri-cyan/40">
+          <h3 className="font-syne font-bold text-[12px] text-nodri-cyan mb-1">
+            {doCatalogo.length} funcionalidades do sistema já no ar
+          </h3>
+          <p className="text-[11px] text-nodri-t2 leading-relaxed mb-2">
+            Elas já aparecem no menu e têm página, texto de venda e imagem — sem
+            precisar cadastrar nada. Traga para o banco só quando quiser
+            <b> editar </b> alguma: a partir daí ela vira sua e deixa de receber
+            as melhorias que vierem no sistema.
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {doCatalogo.map(f => (
+              <a key={f.slug} href={`/funcionalidade/${f.slug}`} target="_blank" rel="noopener noreferrer"
+                className="text-[10.5px] px-2 py-1 rounded-md bg-nodri-surface border border-nodri-border text-nodri-t2 hover:text-nodri-cyan">
+                {f.nome}
+              </a>
+            ))}
+          </div>
+          <button onClick={trazerRecomendadas} disabled={trazendo}
+            className="px-3 py-2 rounded-lg border border-nodri-cyan text-nodri-cyan text-[11px] font-bold hover:bg-nodri-cyan/10 disabled:opacity-60 inline-flex items-center gap-2">
+            {trazendo ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            {trazendo ? 'Trazendo…' : 'Trazer todas para editar'}
+          </button>
+        </div>
+      )}
+
+      {doBanco.map(f => {
         const expandido = aberto === f.id
         return (
           <div key={f.id} className="nodri-card p-3">

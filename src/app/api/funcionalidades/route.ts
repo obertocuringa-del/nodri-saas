@@ -2,12 +2,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { FUNCIONALIDADES_CATALOGO } from '@/lib/funcionalidadesCatalogo'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // GET é público (alimenta o menu e as páginas da vitrine).
 // Escrita é do master.
+
+// ── Catálogo + banco ─────────────────────────────────────────────────────────
+//
+// A vitrine tinha UMA funcionalidade cadastrada, e o sistema tem dezenas. Criar
+// as outras uma a uma no painel seria meia hora de digitação antes de a página
+// começar a vender.
+//
+// Então a lista pública é a soma de dois lugares: o que está no BANCO manda, e
+// o CATÁLOGO do código preenche o que ainda não foi criado. A comparação é por
+// slug.
+//
+// Consequência que importa: as páginas já existem e já vendem, sem ninguém
+// precisar cadastrar nada. E no instante em que uma delas for criada no painel
+// (botão "Trazer as recomendadas"), a versão do banco passa a mandar naquele
+// slug — o que for escrito lá nunca é sobrescrito por este arquivo.
+function doCatalogo() {
+  return FUNCIONALIDADES_CATALOGO.map((f, i) => ({
+    id: `catalogo:${f.slug}`,
+    origem: 'catalogo' as const,
+    categoria: f.categoria,
+    nome: f.nome,
+    slug: f.slug,
+    etiqueta: f.etiqueta,
+    titulo: f.titulo,
+    descricao: f.descricao,
+    destaques: f.destaques,
+    video_url: null,
+    imagem_url: `/func/${f.slug}.svg`,
+    botao_texto: 'Quero conhecer',
+    ordem_categoria: i,
+    ordem: i,
+    ativo: true,
+  }))
+}
 
 export async function GET() {
   const { data } = await supabaseAdmin
@@ -16,7 +51,12 @@ export async function GET() {
     .eq('ativo', true)
     .order('ordem_categoria')
     .order('ordem')
-  return NextResponse.json(data || [])
+
+  const doBanco = (data || []) as any[]
+  const slugsNoBanco = new Set(doBanco.map(f => f.slug))
+  const complemento = doCatalogo().filter(f => !slugsNoBanco.has(f.slug))
+
+  return NextResponse.json([...doBanco, ...complemento])
 }
 
 async function ehMaster() {
