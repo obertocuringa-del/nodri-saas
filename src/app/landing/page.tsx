@@ -468,16 +468,16 @@ export default function LandingPage({ cfgInicial }: any) {
               preencher recuo={recuoVideo} className="hero-midia" />
           ) : (
           <div className="hero-midia">
-            {/* Ilustracao do painel. Era um bloco de ~45 linhas de JSX; virou
-                uma imagem SVG (public/hero-painel-nodri.svg) para poder mostrar
-                mais coisa — os 6 indicadores numa tela so, o dinheiro parado em
-                clientes inativos, o ponto de equilibrio e as metas — sem inchar
-                a pagina. SVG escala sem borrar e pesa menos que o JSX que saiu. */}
-            <img src="/hero-painel-nodri.svg" alt="Painel do salao no NODRI: faturamento, ticket medio, clientes atendidos e novos, faturamento de servicos e produtos, dinheiro parado em clientes inativos, ponto de equilibrio, satisfacao do cliente e metas da equipe"
+            {/* O mockup de painel que ficava aqui trazia 68 blocos de texto e
+                competia com o titulo, numa pagina que ja tem muita leitura.
+                No lugar dele, a cena do salao: quem usa, o sistema na mao dela
+                e dois numeros. O arquivo antigo continua em
+                public/hero-painel-nodri.svg caso valha comparar. */}
+            <img src="/hero-salao-nodri.svg" alt="Profissional de salao com o NODRI na mao, mostrando a agenda do dia e o dinheiro parado em clientes inativos"
               width={900} height={1093} loading="eager"
               style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 18, boxShadow: '0 18px 50px rgba(13,42,86,.09)' }} />
             <p style={{ fontSize: 10.5, color: '#a0aab8', textAlign: 'center', marginTop: 10 }}>
-              Ilustração do painel. Os números do seu salão aparecem aqui.
+              Ilustração. Os números do seu salão aparecem aqui.
             </p>
           </div>
           )}
