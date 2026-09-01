@@ -221,10 +221,53 @@ export async function GET() {
         achou = true
       }
 
-      const valor = valorDaMetrica(a, c.metrica)
-      // Só entra no ranking quem teve dado no período (evita fila de zeros)
-      if (!achou && valor === 0) continue
-      linhas.push({ profId: p.id, nome: p.apelido || p.nome_completo || 'Profissional', valor, pos: 0 })
+      // No modo grupo a métrica é sempre o faturamento contra a meta da própria
+      // pessoa — não faz sentido escolher outra: a meta do perfil é em dinheiro.
+      const ehGrupo = c.modo === 'grupo'
+      const valor = ehGrupo ? a.fat : valorDaMetrica(a, c.metrica)
+
+      // Só entra no ranking quem teve dado no período (evita fila de zeros).
+      //
+      // No grupo isso se inverte: quem foi escolhido a dedo e produziu zero é
+      // justamente quem o grupo precisa enxergar para ir buscar. Sumir com a
+      // coluna dela esconderia o buraco que a corrida existe para tapar.
+      if (!ehGrupo && !achou && valor === 0) continue
+      if (ehGrupo && a.meta <= 0) continue
+
+      linhas.push({
+        profId: p.id, nome: p.apelido || p.nome_completo || 'Profissional', valor, pos: 0,
+        ...(ehGrupo ? { metaPessoal: a.meta } : {}),
+      })
+    }
+
+    if (c.modo === 'grupo') {
+      // Doações: quanto cada uma entregou e quanto recebeu.
+      const doado = new Map<string, number>(), recebido = new Map<string, number>()
+      for (const d of (c.doacoes || [])) {
+        const v = Number(d.valor) || 0
+        if (v <= 0) continue
+        doado.set(d.de, (doado.get(d.de) || 0) + v)
+        recebido.set(d.para, (recebido.get(d.para) || 0) + v)
+      }
+      for (const l of linhas) {
+        const meta = Number(l.metaPessoal || 0)
+        l.doado = doado.get(l.profId) || 0
+        l.recebido = recebido.get(l.profId) || 0
+        // O excedente nasce da produção dela, não do que recebeu — senão uma
+        // doação viraria excedente para repassar adiante, e o mesmo dinheiro
+        // circularia pelo grupo inflando todo mundo.
+        l.excedente = Math.max(l.valor - meta, 0)
+        // Bateu contando o que recebeu: é o objetivo declarado da corrida em
+        // grupo, fechar junto. Quem ajudou continua batida pela própria conta.
+        l.pctMeta = meta > 0 ? Number((((l.valor + l.recebido) / meta) * 100).toFixed(0)) : null
+        l.bateuMeta = meta > 0 && (l.valor + l.recebido) >= meta
+      }
+      // Ordena pela % da própria meta: é o que a corrida mede. Ordenar por R$
+      // colocaria quem tem meta alta sempre na frente, e o gráfico mentiria.
+      linhas.sort((x, y) => (y.pctMeta || 0) - (x.pctMeta || 0) || x.nome.localeCompare(y.nome, 'pt-BR'))
+      linhas.forEach((l, i) => { l.pos = i + 1 })
+      rankings[c.id] = linhas
+      continue
     }
 
     // Métrica inversa ordena ao contrário: quem tem MENOS ocorrência lidera.
@@ -258,7 +301,10 @@ export async function GET() {
   for (const c of publicadas) {
     // Corrida inversa premia com teto zero ("nenhuma falta"); nas demais, meta
     // zero significa que ninguém definiu alvo, e sem alvo não há o que bater.
-    const limiteVale = metricaInfo(c.metrica).inversa
+    // Na corrida em grupo o alvo não é `c.meta` (não existe um só): cada uma tem
+    // o seu, vindo do perfil. Quem bateu o próprio alvo leva medalha igual.
+    const limiteVale = c.modo === 'grupo' ? true
+      : metricaInfo(c.metrica).inversa
       ? (typeof c.meta === 'number' && c.meta >= 0)
       : (typeof c.meta === 'number' && c.meta > 0)
     if (!limiteVale) continue

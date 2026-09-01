@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal } from 'lucide-react'
+import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal, Users } from 'lucide-react'
 import {
-  type CorridaInterna, type LinhaRanking, type MetricaCorrida,
+  type CorridaInterna, type LinhaRanking, type MetricaCorrida, type DoacaoMeta,
   METRICAS_CORRIDA, METRICAS_ESCOLHIVEIS, metricaInfo, statusCorrida, STATUS_CORRIDA,
   periodoLabel, formataValor, ridC,
 } from '@/lib/corridasInternas'
+import CorridaGrupo from './CorridaGrupo'
 import { useModulos } from '@/lib/useModulos'
 import AvisoPlano from './AvisoPlano'
 
@@ -90,13 +91,18 @@ export default function CorridasInternas() {
   function novo() {
     const hoje = new Date()
     const ym = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
-    setEdit({ id: ridC(), titulo: '', metrica: 'faturamento', de: ym, ate: ym, topPremiado: 3, ocultarValores: true, ativa: true, criadoEm: Date.now() })
+    setEdit({ id: ridC(), titulo: '', modo: 'ranking', metrica: 'faturamento', de: ym, ate: ym, topPremiado: 3, ocultarValores: true, ativa: true, criadoEm: Date.now() })
   }
 
   async function salvarCorrida(c: CorridaInterna) {
     if (!c.titulo.trim()) { toast.error('Dê um nome à corrida'); return }
-    if (metricaInfo(c.metrica).precisaServico && !c.servico?.trim()) { toast.error('Informe o nome do serviço'); return }
-    if (metricaInfo(c.metrica).precisaOcorrido && !c.ocorrido?.trim()) { toast.error('Escolha o tipo de ocorrência'); return }
+    // A corrida em grupo não usa métrica — cobrar serviço ou ocorrência aqui
+    // travaria o salvamento de quem trocou o tipo depois de ter escolhido
+    // "serviço específico", por um campo que a tela nem mostra mais.
+    if (c.modo !== 'grupo') {
+      if (metricaInfo(c.metrica).precisaServico && !c.servico?.trim()) { toast.error('Informe o nome do serviço'); return }
+      if (metricaInfo(c.metrica).precisaOcorrido && !c.ocorrido?.trim()) { toast.error('Escolha o tipo de ocorrência'); return }
+    }
     if (c.de > c.ate) { toast.error('O período final não pode ser antes do inicial'); return }
     const existe = corridas.some(x => x.id === c.id)
     const lista = existe ? corridas.map(x => x.id === c.id ? c : x) : [c, ...corridas]
@@ -177,7 +183,8 @@ export default function CorridasInternas() {
         <div className="ci-cards">
           {corridas.map(c => (
             <CardCorrida key={c.id} c={c} ranking={rankings[c.id] || []}
-              onEdit={() => setEdit(c)} onExcluir={() => excluir(c.id)} onToggle={() => toggleAtiva(c)} />
+              onEdit={() => setEdit(c)} onExcluir={() => excluir(c.id)} onToggle={() => toggleAtiva(c)}
+              onDoacoes={(doacoes) => salvarLista(corridas.map(x => x.id === c.id ? { ...x, doacoes } : x))} />
           ))}
         </div>
       )}
@@ -191,9 +198,10 @@ export default function CorridasInternas() {
 }
 
 // ── Card de uma corrida (visão do salão) ──
-function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle }: {
+function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle, onDoacoes }: {
   c: CorridaInterna; ranking: LinhaRanking[]
   onEdit: () => void; onExcluir: () => void; onToggle: () => void
+  onDoacoes: (doacoes: DoacaoMeta[]) => void
 }) {
   const st = statusCorrida(c)
   const info = metricaInfo(c.metrica)
@@ -208,8 +216,8 @@ function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle }: {
             <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 20, background: sinfo.bg, color: sinfo.cor }}>{sinfo.label}</span>
           </div>
           <div style={{ fontSize: 12, color: '#6b6860' }}>
-            {info.label} · {periodoLabel(c)}
-            {typeof c.meta === 'number' && c.meta > 0 && <> · meta {formataValor(c.metrica, c.meta)}</>}
+            {c.modo === 'grupo' ? 'Em grupo · cada uma contra a própria meta' : info.label} · {periodoLabel(c)}
+            {c.modo !== 'grupo' && typeof c.meta === 'number' && c.meta > 0 && <> · meta {formataValor(c.metrica, c.meta)}</>}
           </div>
           {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
         </div>
@@ -223,7 +231,9 @@ function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle }: {
       {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
       {/* O salão sempre vê os números: é quem precisa entender a diferença. */}
-      <Ranking ranking={ranking} c={c} />
+      {c.modo === 'grupo'
+        ? <CorridaGrupo c={c} ranking={ranking} podeDoar onDoacoes={onDoacoes} />
+        : <Ranking ranking={ranking} c={c} />}
     </div>
   )
 }
@@ -285,6 +295,7 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
   const [c, setC] = useState<CorridaInterna>(corrida)
   const set = (patch: Partial<CorridaInterna>) => setC(v => ({ ...v, ...patch }))
   const info = metricaInfo(c.metrica)
+  const ehGrupo = c.modo === 'grupo'
   const todos = !c.participantes || c.participantes.length === 0
 
   function toggleProf(id: string) {
@@ -308,6 +319,40 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
           </div>
 
           <div>
+            <label className="ci-lbl">Tipo de corrida *</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {([
+                { v: 'ranking', icone: <Trophy size={14} />, titulo: 'Ranking', sub: 'Uma métrica, um primeiro lugar' },
+                { v: 'grupo', icone: <Users size={14} />, titulo: 'Em grupo', sub: 'Cada uma contra a própria meta' },
+              ] as const).map(op => {
+                const ativo = (c.modo || 'ranking') === op.v
+                return (
+                  <button key={op.v} type="button" onClick={() => set({ modo: op.v })}
+                    style={{
+                      flex: '1 1 180px', textAlign: 'left', padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
+                      border: '1.5px solid', borderColor: ativo ? '#16a34a' : '#e5e3dd',
+                      background: ativo ? '#dcfce7' : '#fff', color: ativo ? '#15803d' : '#6b6860',
+                    }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 800 }}>{op.icone} {op.titulo}</span>
+                    <span style={{ display: 'block', fontSize: 11, marginTop: 2, opacity: .85 }}>{op.sub}</span>
+                  </button>
+                )
+              })}
+            </div>
+            {ehGrupo && (
+              <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 6 }}>
+                A meta de cada uma vem do perfil dela: vale a <b>meta manual</b> se estiver
+                preenchida; se estiver vazia, vale a <b>redistribuída</b>. Não há vencedor —
+                o placar é do grupo, e quem passa da própria meta pode entregar a sobra para
+                uma colega que ainda não fechou.
+              </div>
+            )}
+          </div>
+
+          {/* No grupo não se escolhe métrica: a meta do perfil é em dinheiro, então
+              o que conta é o faturamento contra ela. Oferecer "ticket médio" aqui
+              criaria uma corrida que compara laranja com o alvo da maçã. */}
+          <div style={{ display: ehGrupo ? 'none' : undefined }}>
             <label className="ci-lbl">O que conta (métrica) *</label>
             <select className="ci-inp" value={c.metrica} onChange={e => set({ metrica: e.target.value as MetricaCorrida })}>
               {/* Só as escolhíveis: as ocultas seguem calculando para as corridas
@@ -367,7 +412,7 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
             </div>
           </div>
 
-          <div className="ci-form-grid">
+          <div className="ci-form-grid" style={{ display: ehGrupo ? 'none' : undefined }}>
             <div>
               {/* Na corrida inversa a meta é um TETO, e chamar de "meta a bater"
                   faria o dono digitar o contrário do que quer. */}

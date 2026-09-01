@@ -70,9 +70,36 @@ export function metricaInfo(m: MetricaCorrida): MetricaInfo {
   return METRICAS_CORRIDA.find(x => x.chave === m) || METRICAS_CORRIDA[0]
 }
 
+/**
+ * Uma doacao de excedente na corrida em grupo.
+ *
+ * Nao move dinheiro nem faturamento: e um gesto dentro do grafico. Quem passou
+ * da propria meta empresta a sobra para uma colega que ainda nao bateu, para o
+ * grupo fechar junto. Por isso a producao de quem doa continua inteira na
+ * coluna dela -- encolher a barra de quem mais produziu seria punir o gesto.
+ */
+export interface DoacaoMeta {
+  de: string      // profId de quem doou
+  para: string    // profId de quem recebeu
+  valor: number
+  em: number
+}
+
 export interface CorridaInterna {
   id: string
   titulo: string
+  /**
+   * 'ranking' (padrao) e a disputa de sempre: uma metrica, um alvo unico, um
+   * primeiro lugar. 'grupo' vira a corrida do avesso -- nao ha vencedor, cada
+   * uma corre contra a PROPRIA meta (a mesma do perfil dela) e o placar e do
+   * conjunto.
+   *
+   * O campo e opcional de proposito: toda corrida ja gravada nao tem 'modo', e
+   * ausente tem de continuar significando 'ranking'. Um default obrigatorio
+   * reescreveria disputas antigas.
+   */
+  modo?: 'ranking' | 'grupo'
+  doacoes?: DoacaoMeta[]
   descricao?: string          // regra / observação livre (opcional)
   metrica: MetricaCorrida
   servico?: string            // usado quando metrica === 'servico'
@@ -95,6 +122,45 @@ export interface LinhaRanking {
   pos: number                 // 1, 2, 3...
   bateuMeta?: boolean
   pctMeta?: number | null     // % da meta (quando há meta)
+  // ── Só no modo grupo ──
+  metaPessoal?: number        // a meta DELA no período (manual, ou a redistribuída)
+  excedente?: number          // quanto passou da própria meta (0 se não passou)
+  doado?: number              // quanto já entregou para colegas
+  recebido?: number           // quanto ganhou de colegas
+}
+
+export interface ResumoGrupo {
+  metaTotal: number
+  produzido: number
+  pct: number
+  bateram: number
+  participantes: number
+}
+
+/**
+ * Placar do conjunto.
+ *
+ * `produzido` soma só o que cada uma produziu de fato — doação NÃO entra. Uma
+ * doação move altura entre duas colunas; se ela também somasse aqui, o grupo
+ * apareceria mais perto da meta só por ter movido número de lado.
+ */
+export function resumoGrupo(linhas: LinhaRanking[]): ResumoGrupo {
+  let metaTotal = 0, produzido = 0, bateram = 0
+  for (const l of linhas) {
+    metaTotal += Number(l.metaPessoal || 0)
+    produzido += Number(l.valor || 0)
+    if (l.bateuMeta) bateram++
+  }
+  return {
+    metaTotal, produzido,
+    pct: metaTotal > 0 ? (produzido / metaTotal) * 100 : 0,
+    bateram, participantes: linhas.length,
+  }
+}
+
+/** Excedente que a pessoa ainda pode entregar (o que passou da meta, menos o já doado). */
+export function sobraDisponivel(l: LinhaRanking): number {
+  return Math.max(Number(l.excedente || 0) - Number(l.doado || 0), 0)
 }
 
 export type StatusCorrida = 'ativa' | 'agendada' | 'encerrada' | 'inativa'
