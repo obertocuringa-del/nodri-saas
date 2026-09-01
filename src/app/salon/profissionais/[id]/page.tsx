@@ -20,6 +20,26 @@ import CorridasProf from '@/components/salon/CorridasProf'
 import { confirmarSaidaSemSalvar } from '@/lib/guardaSalvar'
 import toast from 'react-hot-toast'
 import { comoBotao } from '@/lib/acessibilidade'
+import { useModulos } from '@/lib/useModulos'
+
+// ── Abas que vivem do relatório importado ───────────────────────────────────
+//
+// Estas oito abas não são "parte da ficha": são o módulo de Relatórios
+// aparecendo dentro dela. Todas leem `relatorio_periodos` (faturamento,
+// clientes, ocupação) ou `agendamentos_raw`, que entram pela importação da
+// planilha.
+//
+// Antes desta lista elas apareciam para qualquer plano e abriam VAZIAS para
+// quem não importa planilha — o cliente pagava pela ficha e encontrava oito
+// abas em branco, concluía que o sistema era fraco e ia embora. Some é melhor
+// que vazia: o que não tem matéria-prima não deve estar na barra.
+//
+// METAS está aqui de propósito, mesmo a meta sendo digitada à mão: sem o
+// realizado vindo do relatório, ela é um número que ninguém consegue medir.
+const ABAS_DO_RELATORIO = new Set([
+  'faturamento', 'desempenho', 'metas', 'dependencia',
+  'oportunidades', 'bundle', 'clientes-perdidos', 'agendamentos',
+])
 
 // Converte o markdown gerado pela IA num HTML estilizado (títulos, negrito real,
 // tabelas, listas e badges de status) — reaproveitado no chat e na Estratégia de Meta.
@@ -2325,6 +2345,10 @@ function AbaIA({ profissionalId, nomeProfissional }: { profissionalId: string; n
 // Aba DEMANDAS — histórico de demandas do profissional (% enviadas/resolvidas)
 // + envio de nova solicitação a um departamento.
 function DemandasProfissional({ profId, souProf }: { profId: string; souProf: boolean }) {
+  // O empréstimo liberado vira uma despesa "EMPRÉSTIMO" na calculadora do mês.
+  // Sem esse módulo, o pedido seria aceito e a parcela não teria onde cair —
+  // por isso a opção nem aparece.
+  const { tem: temModulo } = useModulos()
   const [enviadas, setEnviadas] = useState<any[]>([])
   const [recebidas, setRecebidas] = useState<any[]>([])
   const [deps, setDeps] = useState<any[]>([])
@@ -2515,14 +2539,14 @@ function DemandasProfissional({ profId, souProf }: { profId: string; souProf: bo
             </select>
 
             {/* Financeiro → opção de pedir empréstimo */}
-            {depEhFinanceiro && (
+            {depEhFinanceiro && temModulo('calculadora') && (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setModoEmp(false)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (!modoEmp ? '#5b4fcf' : '#e0ddd8'), background: !modoEmp ? '#f0eefb' : '#fff', color: !modoEmp ? '#5b4fcf' : '#6b6860', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Solicitação normal</button>
                 <button onClick={() => setModoEmp(true)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid ' + (modoEmp ? '#16a34a' : '#e0ddd8'), background: modoEmp ? '#f0fdf4' : '#fff', color: modoEmp ? '#15803d' : '#6b6860', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>Solicitar empréstimo</button>
               </div>
             )}
 
-            {depEhFinanceiro && modoEmp ? (
+            {depEhFinanceiro && modoEmp && temModulo('calculadora') ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: '#15803d' }}>R$</span>
@@ -2697,7 +2721,18 @@ export default function PerfilProfissionalPage() {
   const [endCidade, setEndCidade] = useState('')
   const [endUf, setEndUf] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
+  // Enquanto carrega, o hook responde `true` para tudo — de propósito, para não
+  // piscar "contrate o plano X" na cara de quem já contratou.
+  const { tem: temModulo } = useModulos()
   const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'>('cadastro')
+  // Tirar a aba da barra não basta: dá para cair nela por link direto
+  // (?aba=faturamento) ou por um link antigo salvo. Sem esta guarda, a aba
+  // some do menu mas o conteúdo continua sendo desenhado — vazio, que é
+  // exatamente o que se quer evitar.
+  useEffect(() => {
+    if (ABAS_DO_RELATORIO.has(tab) && !temModulo('relatorios')) setTab('cadastro')
+  }, [tab, temModulo])
+
   // ── Agendamentos ─────────────────────────────────────────────────────────────
   const [agendData, setAgendData] = useState<string>(() => { const h = new Date(); return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}` })
   const [agendamentos, setAgendamentos] = useState<any[]>([])
@@ -3524,6 +3559,9 @@ O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chan
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
           if (t === 'carreira') return !prof?.is_departamento && podeVer(t) // plano de carreira não se aplica a departamentos
           if (t === 'demandas') return !prof?.is_departamento && podeVer(t) // demandas do profissional (departamento tem página própria)
+          // Sem o módulo Relatórios não há planilha importada, e estas abas
+          // abririam em branco. Ver ABAS_DO_RELATORIO, no topo do arquivo.
+          if (ABAS_DO_RELATORIO.has(t as string) && !temModulo('relatorios')) return false
           return podeVer(t)
         })
         const labelAtivo = TABS.find(([t])=>t===tab)?.[1] ?? 'Menu'

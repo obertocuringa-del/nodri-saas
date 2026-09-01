@@ -46,19 +46,19 @@ export const MODULOS_NODRI: ModuloNodri[] = [
   {
     chave: 'calculadora',
     rotulo: 'Calculadora / Financeira',
-    descricao: 'Custo operacional, ponto de equilíbrio, precificação, boletos e empréstimos.',
+    descricao: 'As oito calculadoras, boletos, fluxo de caixa, comissões, empréstimos e descontos consolidados.',
     nomesNoBanco: ['CALCULADORA / FINANCEIRA'],
   },
   {
     chave: 'relatorios',
     rotulo: 'Relatórios',
-    descricao: 'Importação dos atendimentos e todos os relatórios que nascem dela.',
+    descricao: 'Importação dos atendimentos, análise de clientes, metas, corridas com ranking e DRE.',
     nomesNoBanco: ['RELATÓRIOS'],
   },
   {
     chave: 'suite',
-    rotulo: 'Suite NODRI',
-    descricao: 'Aplicativo de WhatsApp: confirmar agendamento, enviar feedback e listas.',
+    rotulo: 'Suite NODRI e alcance',
+    descricao: 'Aplicativo de WhatsApp, vitrine pública do salão, ações comerciais e parcerias com lojistas.',
     nomesNoBanco: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista', 'Enviar Lista c/ Arquivo'],
   },
 ]
@@ -67,10 +67,26 @@ export interface PlanoNodri {
   slug: string
   nome: string
   preco: number
+  /** A promessa do plano em três palavras — o que ele resolve. */
+  tema: string
   resumo: string
+  /** A pergunta que abre a venda: aquela que o dono não sabe responder. */
+  perguntaDeVenda: string
   modulos: ChaveModulo[]
 }
 
+// ── A régua da divisão ──────────────────────────────────────────────────────
+//
+// Os planos não são separados por assunto, e sim por DE ONDE VEM O DADO que
+// alimenta cada ferramenta. É essa régua que impede o defeito que existia
+// antes: ferramenta vendida num plano mas alimentada por dado de outro, que
+// chegava ao cliente pela metade.
+//
+//   Inicial   → o que o salão digita sobre si mesmo (equipe, rotina, processo)
+//   Essencial → o que o salão digita sobre dinheiro (custo, preço, contas)
+//   Gestão    → a planilha de atendimentos importada (clientes, metas, DRE)
+//   Completo  → o contato com o mercado (vitrine, campanhas, WhatsApp)
+//
 // Cada plano CONTÉM os módulos do anterior. A ordem importa: é ela que
 // define o que aparece como "a partir do plano X" quando falta acesso.
 export const PLANOS_NODRI: PlanoNodri[] = [
@@ -78,28 +94,36 @@ export const PLANOS_NODRI: PlanoNodri[] = [
     slug: 'inicial',
     nome: 'Inicial',
     preco: 50,
-    resumo: 'A base do sistema com a gestão da equipe.',
+    tema: 'A casa em ordem',
+    resumo: 'O salão para de depender da cabeça do dono: rotina escrita, equipe cadastrada, cada setor com dono e cada tarefa com prazo.',
+    perguntaDeVenda: 'Se você ficar duas semanas fora, o salão anda?',
     modulos: ['profissionais', 'academia'],
   },
   {
     slug: 'essencial',
     nome: 'Essencial',
     preco: 100,
-    resumo: 'Some o controle financeiro do salão.',
+    tema: 'O dinheiro',
+    resumo: 'A resposta para a pergunta que tira o sono: sobrou dinheiro esse mês, e por quê.',
+    perguntaDeVenda: 'Quanto custa fazer uma escova no seu salão? Não o preço — o custo.',
     modulos: ['profissionais', 'academia', 'calculadora'],
   },
   {
     slug: 'gestao',
     nome: 'Gestão',
     preco: 150,
-    resumo: 'Importa seus atendimentos e liga os relatórios.',
+    tema: 'O cliente',
+    resumo: 'A leitura da sua base: quem volta, quem sumiu, quem dá lucro e quanto ainda dá para tirar de quem já é seu cliente.',
+    perguntaDeVenda: 'Quantas clientes você perdeu nos últimos noventa dias?',
     modulos: ['profissionais', 'academia', 'calculadora', 'relatorios'],
   },
   {
     slug: 'completo',
     nome: 'Completo',
     preco: 300,
-    resumo: 'Tudo, mais o aplicativo de WhatsApp.',
+    tema: 'O alcance',
+    resumo: 'O salão falando com o mercado: vitrine própria, campanhas, parcerias e WhatsApp em escala.',
+    perguntaDeVenda: 'Quantos horários furaram no seu salão semana passada?',
     modulos: ['profissionais', 'academia', 'calculadora', 'relatorios', 'suite'],
   },
 ]
@@ -168,6 +192,28 @@ export const ROTAS_POR_MODULO: Array<{ prefixo: string; chave: ChaveModulo }> = 
   { prefixo: '/salon/relatorios', chave: 'relatorios' },
   { prefixo: '/api/relatorios', chave: 'relatorios' },
   { prefixo: '/salon/profissionais', chave: 'profissionais' },
+
+  // ── Redistribuição (set/2026) ─────────────────────────────────────────────
+  //
+  // Estas telas eram base e passaram a pertencer ao plano que TEM O DADO delas.
+  // Não é encarecimento: é o conserto de ferramentas que chegavam pela metade.
+  //
+  // Corridas internas: o ranking é calculado a partir de `relatorio_periodos`.
+  // Sem o módulo Relatórios a tela criava a corrida e não classificava
+  // ninguém — a competição existia no papel e não acontecia.
+  { prefixo: '/salon/corridas', chave: 'relatorios' },
+  { prefixo: '/api/salon/corridas', chave: 'relatorios' },
+
+  // Vitrine, ações comerciais e lojistas são o salão falando com o mercado:
+  // a mesma família da Suite, que é o WhatsApp em escala. Vão juntas no
+  // Completo para o plano ter um tema inteiro, e não um aplicativo solto.
+  // ATENÇÃO: só as telas DE DENTRO do painel entram aqui. A página pública
+  // /vitrine/[token] fica fora de propósito — quem a abre é a cliente do
+  // salão, que não tem login e não pode levar um bloqueio na cara.
+  { prefixo: '/salon/acoes-comerciais', chave: 'suite' },
+  { prefixo: '/salon/lojistas', chave: 'suite' },
+  { prefixo: '/api/salon/lojistas', chave: 'suite' },
+  { prefixo: '/api/salon/acoes-comerciais', chave: 'suite' },
 ]
 
 export function moduloExigidoPelaRota(pathname: string): ChaveModulo | null {

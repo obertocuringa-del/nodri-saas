@@ -22,7 +22,15 @@ export function useModulos() {
         if (!vivo) return
         setModulos(Array.isArray(d?.modulos) ? d.modulos : [])
       })
-      .catch(() => { if (vivo) setModulos([]) })
+      // Falha de rede NÃO vira bloqueio. Deixando `undefined`, o `tem()` abaixo
+      // responde true e a tela desenha tudo — quem bloqueia de verdade é o
+      // servidor, que na mesma situação também deixa passar ("banco fora do ar
+      // não pode virar bloqueio", middleware.ts).
+      //
+      // Antes isto virava `[]`, que significa "não contratou nada": um oscilar
+      // de wi-fi escondia as abas de quem paga. Com mais telas dependendo deste
+      // hook depois da redistribuição, esse engano ficaria caro.
+      .catch(() => { /* mantém undefined: na dúvida, mostra */ })
     return () => { vivo = false }
   }, [])
 

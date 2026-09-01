@@ -11,6 +11,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { useAutoSalvar } from '@/lib/autoSalvar'
 import ConsolidadoDescontos from '@/components/salon/ConsolidadoDescontos'
+import { useModulos } from '@/lib/useModulos'
 import { DESTINOS_CHECKLIST, CATEGORIA_RECEBIDOS, type DestinoChecklist, type BlocoDestino } from '@/lib/checklistDestinos'
 
 interface Demanda { id: string; texto: string; freq: string; feito: boolean; dias?: string[]; feito_em?: string; historico?: string[]; fixa?: boolean; diaMes?: number }
@@ -81,6 +82,7 @@ function marcarAgora(dem: Demanda) {
 export default function ChecklistPainel({ categoriaFixa = '', embutido = false, chave = 'checklist', defaultCategorias, semGerencia = false }: { categoriaFixa?: string; embutido?: boolean; chave?: string; defaultCategorias?: CatPadrao[]; semGerencia?: boolean } = {}) {
   const router = useRouter()
   const { ehSub, modoCaixa } = usePermissoes()
+  const { tem: temModulo } = useModulos()
   const isMobile = useIsMobile()
   // Sub comum EDITA (chegou aqui porque tem a permissão do Check List).
   // Só o MODO CAIXA fica restrito: executa (marca feito) e ADICIONA, mas não
@@ -492,7 +494,10 @@ export default function ChecklistPainel({ categoriaFixa = '', embutido = false, 
 
           {/* LANÇAR DESCONTO — fixo no topo: consolida o desconto mensal de cada
               profissional (bebidas + serviços internos + empréstimos) numa lista só */}
-          {!soLeitura && ehGerente && (
+          {/* O consolidado le a calculadora do mes para somar e devolve o
+              desconto para ela. Sem o modulo Calculadora ele abriria uma lista
+              que nao fecha com lugar nenhum — some em vez de enganar. */}
+          {!soLeitura && ehGerente && temModulo('calculadora') && (
             <button onClick={() => setDescontoOpen(true)}
               style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', borderRadius: 14, padding: isMobile ? '13px 15px' : '15px 18px', marginBottom: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(22,163,74,.28)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,.22)', flexShrink: 0 }}><HandCoins size={22} /></span>
