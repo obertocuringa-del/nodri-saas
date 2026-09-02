@@ -6,6 +6,8 @@ import {
   AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen, ShieldCheck,
 } from 'lucide-react'
 
+import MedalhasTopo from './MedalhasTopo'
+
 // Tela inicial do profissional (estilo Nubank/Notion): saudação + central de notificações + atalhos.
 // Sem cards grandes e sem emojis — ícones finos e elegantes. Tudo somente leitura.
 export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }: { pid?: string; nome?: string; prof?: any; onIrAba?: (aba: string) => void }) {
@@ -170,6 +172,8 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Olá, {nomeCurto}</h2>
           <p style={{ color: 'var(--txt2)', margin: '2px 0 0', fontSize: 13 }}>{cargo}</p>
+          {/* O que ela já conquistou vem antes de qualquer número a bater. */}
+          <MedalhasTopo profId={meuId || pid} />
         </div>
         <button onClick={() => setDark(d => !d)} title={dark ? 'Modo claro' : 'Modo escuro'} style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid var(--bord)', background: 'var(--card)', color: 'var(--txt2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
         {ehProf && (

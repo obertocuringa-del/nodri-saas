@@ -210,8 +210,20 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
                       <div className="cg-topo">{l.pctMeta ?? 0}%</div>
                     </div>
 
+                    {/* Recebido vai HACHURADO, e nao so noutra cor.
+                        Quando a colega produziu pouco e recebeu muito, a parte
+                        propria dela vira uma tira de 3px no pe da coluna e o
+                        bloco de cor cheia passa a ler como "ela fez isso tudo".
+                        A hachura diz, sem legenda, que aquela altura foi dada —
+                        a mesma marca que a coluna de quem doou ja usava.
+                        A borda branca embaixo separa o que e dela do que veio. */}
                     {pctRecebido > 0 && (
-                      <div style={{ height: y(pctRecebido), background: COR_RECEBIDO, opacity: 0.85, borderRadius: '5px 5px 0 0' }} />
+                      <div style={{
+                        height: y(pctRecebido), background: COR_RECEBIDO, opacity: 0.9,
+                        borderRadius: '5px 5px 0 0',
+                        borderBottom: '2px solid #fff',
+                        backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,.55) 4px, rgba(255,255,255,.55) 8px)',
+                      }} />
                     )}
                     {acima > 0 && (
                       <div style={{
@@ -295,7 +307,7 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
         <Chave cor={COR_ABAIXO} texto="Ainda não bateu" />
         <Chave cor={COR_BATEU} texto="Bateu a própria meta" />
         <Chave cor={COR_SOBRA} texto="Passou dos 100%" />
-        <Chave cor={COR_RECEBIDO} texto="Recebido de uma colega" />
+        <Chave cor={COR_RECEBIDO} hachura texto="Recebido de uma colega" />
       </div>
 
       {/* ── Entregar a sobra ─────────────────────────────────────────────── */}
@@ -359,10 +371,15 @@ function Rosca({ pct }: { pct: number }) {
   )
 }
 
-function Chave({ cor, texto }: { cor: string; texto: string }) {
+function Chave({ cor, texto, hachura }: { cor: string; texto: string; hachura?: boolean }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      <span style={{ width: 11, height: 11, borderRadius: 3, background: cor, flexShrink: 0 }} />
+      <span style={{
+        width: 11, height: 11, borderRadius: 3, background: cor, flexShrink: 0,
+        backgroundImage: hachura
+          ? 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,.6) 2px, rgba(255,255,255,.6) 4px)'
+          : undefined,
+      }} />
       {texto}
     </span>
   )
