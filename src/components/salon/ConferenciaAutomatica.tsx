@@ -29,6 +29,10 @@ interface Resultado {
   achados: Achado[]
   emRisco: number
   semDados: boolean
+  totalNoBanco?: number
+  totalNoMes?: number
+  diasComDado?: string[]
+  amostraDatas?: string[]
 }
 
 const CORES = {
@@ -103,9 +107,25 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       )}
 
       {r && r.semDados && (
-        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, color: '#475569' }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
           <b>Nenhum atendimento importado neste dia.</b> Não há o que conferir — o que é diferente de
-          &quot;conferido e sem problema&quot;. Importe o relatório do dia em Relatórios para conferir.
+          &quot;conferido e sem problema&quot;.
+          {/* Sem estas pistas o dono fica no escuro: não sabe se esqueceu de
+              importar, se importou outro mês, ou se a data está gravada de
+              outro jeito. Dizer o que EXISTE resolve os três de uma vez. */}
+          {typeof r.totalNoBanco === 'number' && (
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e2e8f0', fontSize: 12 }}>
+              {r.totalNoBanco === 0 ? (
+                <>Não há <b>nenhum</b> atendimento importado neste período. Importe o relatório em <b>Relatórios</b>.</>
+              ) : r.totalNoMes === 0 ? (
+                <>Há {r.totalNoBanco} atendimento(s) importado(s), mas <b>nenhum neste mês</b>.
+                  {!!r.amostraDatas?.length && <> Datas gravadas: {r.amostraDatas.join(', ')}.</>}</>
+              ) : (
+                <>Este mês tem {r.totalNoMes} atendimento(s), nos dias:{' '}
+                  <b>{(r.diasComDado || []).map(d => d.slice(0, 2)).join(', ')}</b>.</>
+              )}
+            </div>
+          )}
         </div>
       )}
 

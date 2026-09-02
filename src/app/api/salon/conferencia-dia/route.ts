@@ -71,6 +71,16 @@ export async function GET(req: NextRequest) {
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))
   const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
 
+  // Quando o dia vem vazio, dizer só "não tem" deixa o dono no escuro: ele não
+  // sabe se esqueceu de importar, se importou outro mês, ou se a data está
+  // gravada em outro formato. Então a resposta leva o que existe de fato.
+  const doMes = todos.filter(a => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(a.data_comanda).trim())
+    return m && `${m[2]}/${m[3]}` === data.slice(3)
+  })
+  const diasComDado = Array.from(new Set(doMes.map(a => String(a.data_comanda).trim())))
+    .sort((x, y) => x.slice(0, 2).localeCompare(y.slice(0, 2)))
+
   return NextResponse.json({
     data,
     itens: doDia.length,
@@ -82,6 +92,13 @@ export async function GET(req: NextRequest) {
     // Sem atendimento no dia não existe "conferido sem problema": existe
     // "não há o que conferir". A tela precisa saber a diferença.
     semDados: doDia.length === 0,
+    // Pistas para quando não há dado no dia.
+    totalNoBanco: todos.length,
+    totalNoMes: doMes.length,
+    diasComDado,
+    // Uma amostra do que está gravado, para o caso de a data vir em outro
+    // formato e o filtro por texto nunca casar.
+    amostraDatas: Array.from(new Set(todos.slice(0, 200).map(a => String(a.data_comanda)))).slice(0, 6),
   })
 }
 
