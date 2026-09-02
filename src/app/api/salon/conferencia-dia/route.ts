@@ -1,0 +1,103 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { getSessao } from '@/lib/apiAuth'
+import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } from '@/lib/conferenciaDia'
+
+export const dynamic = 'force-dynamic'
+
+const CHAVE_REGRAS = 'conferencia_regras'
+
+// Conferência automática de um dia, sobre os atendimentos já importados.
+//
+// Não busca nada em sistema de fora: lê `atendimentos_raw`, que entra pela
+// importação do relatório. É a parte da conferência que funciona hoje, sem
+// extensão e sem câmera.
+//
+// O histórico serve de régua para o preço "normal" de cada serviço. Uso 90
+// dias: menos que isso e um serviço pouco vendido nunca junta ocorrências
+// suficientes para ter padrão; muito mais e uma tabela de preço antiga passa a
+// contar como se fosse a de hoje.
+const DIAS_DE_HISTORICO = 90
+
+function paraISO(br: string): string {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(br || '').trim())
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
+}
+
+export async function GET(req: NextRequest) {
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const data = String(new URL(req.url).searchParams.get('data') || '').trim()   // DD/MM/AAAA
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
+    return NextResponse.json({ error: 'Informe a data como DD/MM/AAAA' }, { status: 400 })
+  }
+
+  const iso = paraISO(data)
+  const inicio = new Date(iso)
+  inicio.setDate(inicio.getDate() - DIAS_DE_HISTORICO)
+
+  const campos = 'num_comanda, data_comanda, profissional, cliente, servico, categoria, qtd, valor, desconto, total, pacote, ano, mes'
+
+  // Traz o mês do dia e o anterior — cobre os 90 dias sem varrer a tabela toda.
+  const meses: Array<{ ano: number; mes: number }> = []
+  const d = new Date(iso)
+  for (let i = 0; i < 4; i++) {
+    meses.push({ ano: d.getFullYear(), mes: d.getMonth() + 1 })
+    d.setMonth(d.getMonth() - 1)
+  }
+
+  const { data: linhas, error } = await supabaseAdmin
+    .from('atendimentos_raw')
+    .select(campos)
+    .eq('salao_id', sess.salaoId)
+    .in('ano', Array.from(new Set(meses.map(m => m.ano))))
+    .in('mes', Array.from(new Set(meses.map(m => m.mes))))
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const todos = (linhas || []) as unknown as Atendimento[]
+  const doDia = todos.filter(a => String(a.data_comanda).trim() === data)
+  const historico = todos.filter(a => String(a.data_comanda).trim() !== data)
+
+  const { data: cfg } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', CHAVE_REGRAS).maybeSingle()
+  const regras: RegraComposicao[] = Array.isArray((cfg as any)?.valor)
+    ? (cfg as any).valor : REGRAS_PADRAO
+
+  const achados = conferirDia(doDia, regras, historico)
+
+  const comandas = new Set(doDia.map(a => String(a.num_comanda)))
+  const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
+
+  return NextResponse.json({
+    data,
+    itens: doDia.length,
+    comandas: comandas.size,
+    faturado,
+    baseDoHistorico: historico.length,
+    achados,
+    emRisco: achados.reduce((s, a) => s + (a.valorEmRisco || 0), 0),
+    // Sem atendimento no dia não existe "conferido sem problema": existe
+    // "não há o que conferir". A tela precisa saber a diferença.
+    semDados: doDia.length === 0,
+  })
+}
+
+// Regras de composição — o dono edita no painel, sem depender de deploy.
+export async function PUT(req: NextRequest) {
+  const sess = await getSessao()
+  if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+
+  const body = await req.json().catch(() => null)
+  if (!Array.isArray(body?.regras)) return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+
+  const { error } = await supabaseAdmin.from('salao_config').upsert(
+    { salao_id: sess.salaoId, chave: CHAVE_REGRAS, valor: body.regras, atualizado_em: new Date().toISOString() },
+    { onConflict: 'salao_id,chave' },
+  )
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}

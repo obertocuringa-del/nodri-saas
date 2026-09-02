@@ -1,0 +1,184 @@
+'use client'
+
+/**
+ * Conferência automática do dia — o que o sistema confere sozinho.
+ *
+ * Fica ao lado da conferência manual, não no lugar dela: o sistema aponta, a
+ * pessoa decide. Por isso o painel nunca escreve nada no documento da
+ * conferência; ele só mostra.
+ *
+ * As três gavetas existem para o relatório não perder a confiança:
+ *   PROBLEMA       — certeza. É o que o dono precisa ver primeiro.
+ *   ATENÇÃO        — estranho, pode ter explicação (cortesia combinada).
+ *   NÃO CONFERIDO  — falta dado para julgar. Fica SEPARADO e visível, porque
+ *                    esconder o que não foi conferido é pior do que não
+ *                    conferir: dá ao dono a sensação de que está tudo coberto.
+ */
+
+import { useCallback, useEffect, useState } from 'react'
+import { Loader2, ShieldCheck, AlertTriangle, HelpCircle, RefreshCw, Printer } from 'lucide-react'
+import type { Achado } from '@/lib/conferenciaDia'
+
+const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+interface Resultado {
+  data: string
+  itens: number
+  comandas: number
+  faturado: number
+  achados: Achado[]
+  emRisco: number
+  semDados: boolean
+}
+
+const CORES = {
+  problema:      { bg: '#fef2f2', borda: '#fca5a5', texto: '#b91c1c', rotulo: 'PROBLEMA' },
+  atencao:       { bg: '#fffbeb', borda: '#fcd34d', texto: '#b45309', rotulo: 'ATENÇÃO' },
+  nao_conferido: { bg: '#f8fafc', borda: '#cbd5e1', texto: '#475569', rotulo: 'NÃO CONFERIDO' },
+} as const
+
+export default function ConferenciaAutomatica({ data }: { data: string }) {
+  const [r, setR] = useState<Resultado | null>(null)
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  const conferir = useCallback(async () => {
+    if (!data) return
+    setCarregando(true); setErro('')
+    try {
+      const res = await fetch(`/api/salon/conferencia-dia?data=${encodeURIComponent(data)}`, { credentials: 'include' })
+      const d = await res.json()
+      if (!res.ok) { setErro(d?.error || 'Não foi possível conferir'); setR(null) }
+      else setR(d)
+    } catch {
+      setErro('Não foi possível conferir')
+      setR(null)
+    }
+    setCarregando(false)
+  }, [data])
+
+  useEffect(() => { conferir() }, [conferir])
+
+  if (!data) return null
+
+  const porGravidade = (g: keyof typeof CORES) => (r?.achados || []).filter(a => a.gravidade === g)
+  const problemas = porGravidade('problema')
+  const atencoes = porGravidade('atencao')
+  const naoConferidos = porGravidade('nao_conferido')
+  const limpo = r && !r.semDados && r.achados.length === 0
+
+  return (
+    <div style={{ border: '1.5px solid #e8e6e0', borderRadius: 14, background: '#fff', padding: 16, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <ShieldCheck size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#1a1a1a' }}>Conferência automática</h3>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b6860' }}>
+            O sistema confere os lançamentos do dia. Você decide o que fazer.
+          </p>
+        </div>
+        <button onClick={conferir} disabled={carregando}
+          style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: carregando ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {carregando ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Conferir de novo
+        </button>
+        {r && !r.semDados && (
+          <button onClick={() => window.print()} className="no-mobile"
+            style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Printer size={13} /> Imprimir
+          </button>
+        )}
+      </div>
+
+      {carregando && !r && (
+        <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>
+          <Loader2 size={18} className="animate-spin" style={{ margin: '0 auto 6px' }} />
+          Conferindo…
+        </div>
+      )}
+
+      {erro && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: '10px 12px', fontSize: 12.5, color: '#b91c1c' }}>
+          {erro}
+        </div>
+      )}
+
+      {r && r.semDados && (
+        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, color: '#475569' }}>
+          <b>Nenhum atendimento importado neste dia.</b> Não há o que conferir — o que é diferente de
+          &quot;conferido e sem problema&quot;. Importe o relatório do dia em Relatórios para conferir.
+        </div>
+      )}
+
+      {r && !r.semDados && (
+        <>
+          {/* Veredito: o resumo do dia numa linha */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <Selo titulo="Comandas" valor={String(r.comandas)} />
+            <Selo titulo="Itens" valor={String(r.itens)} />
+            <Selo titulo="Faturado" valor={moeda(r.faturado)} />
+            {r.emRisco > 0 && <Selo titulo="Em risco" valor={moeda(r.emRisco)} destaque />}
+          </div>
+
+          {limpo && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#15803d' }}>
+              <b>Nada a apontar.</b> {r.comandas} comanda(s) e {r.itens} item(ns) conferidos, sem divergência.
+            </div>
+          )}
+
+          {[['problema', problemas], ['atencao', atencoes], ['nao_conferido', naoConferidos]]
+            .filter(([, lista]) => (lista as Achado[]).length > 0)
+            .map(([g, lista]) => {
+              const c = CORES[g as keyof typeof CORES]
+              return (
+                <div key={String(g)} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: c.texto, letterSpacing: 0.6, marginBottom: 6 }}>
+                    {c.rotulo} · {(lista as Achado[]).length}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {(lista as Achado[]).map(a => (
+                      <div key={a.id} style={{ background: c.bg, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 900, color: c.texto }}>Comanda {a.comanda}</span>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1a1a1a' }}>{a.servico}</span>
+                          {a.valorEmRisco > 0 && (
+                            <span style={{ fontSize: 12, fontWeight: 900, color: c.texto }}>{moeda(a.valorEmRisco)}</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: '#57534e', marginTop: 3 }}>{a.texto}</div>
+                        <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
+                          {a.cliente} · {a.profissional}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+
+          {naoConferidos.length > 0 && (
+            <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 11.5, color: '#6b6860', marginTop: 4 }}>
+              <HelpCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                &quot;Não conferido&quot; não é erro: é o que o sistema não teve como julgar sozinho.
+                Aparece separado de propósito, para você não achar que está tudo coberto.
+              </span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function Selo({ titulo, valor, destaque }: { titulo: string; valor: string; destaque?: boolean }) {
+  return (
+    <div style={{
+      border: `1px solid ${destaque ? '#fca5a5' : '#e8e6e0'}`,
+      background: destaque ? '#fef2f2' : '#faf9f7',
+      borderRadius: 10, padding: '8px 14px', minWidth: 92,
+    }}>
+      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 0.4 }}>{titulo}</div>
+      <div style={{ fontSize: 16, fontWeight: 900, color: destaque ? '#b91c1c' : '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+    </div>
+  )
+}

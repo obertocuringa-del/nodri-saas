@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Save, Plus, Trash2, AlertTriangle, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import ConferenciaAutomatica from './ConferenciaAutomatica'
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -204,6 +205,11 @@ export default function ConferenciaCaixas() {
       </div>
 
       {/* CAIXAS DO DIA */}
+      {/* O que o sistema confere sozinho vem ANTES do lançamento manual: o dono
+          lê os achados e só então registra a conferência dele. Não escreve nada
+          no documento — aponta, e a decisão continua sendo de quem confere. */}
+      {diaAberto && <ConferenciaAutomatica data={dataBR(diaAberto)} />}
+
       {diaAberto && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
