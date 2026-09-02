@@ -39,25 +39,43 @@ export async function GET(req: NextRequest) {
 
   const campos = 'num_comanda, data_comanda, profissional, cliente, servico, categoria, qtd, valor, desconto, total, pacote, ano, mes'
 
-  // Traz o mês do dia e o anterior — cobre os 90 dias sem varrer a tabela toda.
+  const [diaN, mesN, anoN] = data.split('/').map(Number)
+
+  // ── O DIA: buscado direto pela data ───────────────────────────────────────
+  //
+  // Antes eu trazia 4 meses de atendimento e filtrava o dia na memória. Duas
+  // coisas davam errado: o PostgREST corta em 1000 linhas quando não se pede
+  // limite, e os 4 meses incluíam junho — que sozinho encheu as 1000 vagas.
+  // Setembro existia no banco e nunca chegava aqui. Pedir o dia ao banco é
+  // exato, e é uma fração do volume.
+  const { data: linhasDia, error: erroDia } = await supabaseAdmin
+    .from('atendimentos_raw')
+    .select(campos)
+    .eq('salao_id', sess.salaoId)
+    .eq('ano', anoN).eq('mes', mesN)
+    .eq('data_comanda', data)
+    .limit(5000)
+  if (erroDia) return NextResponse.json({ error: erroDia.message }, { status: 500 })
+
+  // ── O HISTÓRICO: régua do preço normal de cada serviço ────────────────────
+  // Só o mês do dia e os dois anteriores, e com limite explícito.
   const meses: Array<{ ano: number; mes: number }> = []
   const d = new Date(iso)
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     meses.push({ ano: d.getFullYear(), mes: d.getMonth() + 1 })
     d.setMonth(d.getMonth() - 1)
   }
-
-  const { data: linhas, error } = await supabaseAdmin
+  const { data: linhasHist, error: erroHist } = await supabaseAdmin
     .from('atendimentos_raw')
     .select(campos)
     .eq('salao_id', sess.salaoId)
     .in('ano', Array.from(new Set(meses.map(m => m.ano))))
     .in('mes', Array.from(new Set(meses.map(m => m.mes))))
+    .limit(20000)
+  if (erroHist) return NextResponse.json({ error: erroHist.message }, { status: 500 })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const todos = (linhas || []) as unknown as Atendimento[]
-  const doDia = todos.filter(a => String(a.data_comanda).trim() === data)
+  const doDia = (linhasDia || []) as unknown as Atendimento[]
+  const todos = (linhasHist || []) as unknown as Atendimento[]
   const historico = todos.filter(a => String(a.data_comanda).trim() !== data)
 
   const { data: cfg } = await supabaseAdmin
@@ -94,6 +112,7 @@ export async function GET(req: NextRequest) {
     semDados: doDia.length === 0,
     // Pistas para quando não há dado no dia.
     totalNoBanco: todos.length,
+    limiteAtingido: todos.length >= 20000,
     totalNoMes: doMes.length,
     diasComDado,
     // Uma amostra do que está gravado, para o caso de a data vir em outro
