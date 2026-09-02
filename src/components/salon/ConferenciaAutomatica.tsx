@@ -36,6 +36,7 @@ interface Resultado {
   amostraDatas?: string[]
   regras?: RegraComposicao[]
   servicosConhecidos?: string[]
+  categoriasConhecidas?: string[]
 }
 
 const CORES = {
@@ -111,12 +112,23 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       {abrindoRegras && (
         <div style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>Exigências entre serviços</div>
-          <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 4px' }}>
             &quot;Toda comanda que tiver <b>A</b> precisa ter <b>B</b>.&quot; Se não tiver, vira problema no relatório do dia.
           </p>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>
+            Nos dois campos você pode pôr <b>uma categoria</b> — e aí vale para todos os serviços
+            dela, inclusive os que ainda forem criados — <b>ou um serviço específico</b>.
+          </p>
 
+          {/* Categorias primeiro na lista: é a escolha que cobre mais com menos
+              regra, e a que o dono quer na maioria das vezes. */}
           <datalist id="conf-servicos">
-            {(r?.servicosConhecidos || []).map(sv => <option key={sv} value={sv} />)}
+            {(r?.categoriasConhecidas || []).map(c => (
+              <option key={'c-' + c} value={c}>categoria — pega todos os serviços</option>
+            ))}
+            {(r?.servicosConhecidos || []).map(sv => (
+              <option key={'s-' + sv} value={sv}>serviço</option>
+            ))}
           </datalist>
 
           {regras.length === 0 && (

@@ -108,6 +108,11 @@ export async function GET(req: NextRequest) {
     servicosConhecidos: Array.from(new Set(
       [...doDia, ...todos].map(a => String(a.servico || '').trim()).filter(Boolean),
     )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
+    // Categorias vão separadas das dos serviços: escolher a categoria cobre
+    // todos os serviços dela de uma vez, inclusive os que ainda vão nascer.
+    categoriasConhecidas: Array.from(new Set(
+      [...doDia, ...todos].map(a => String(a.categoria || '').trim()).filter(Boolean),
+    )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
     itens: doDia.length,
     comandas: comandas.size,
     faturado,

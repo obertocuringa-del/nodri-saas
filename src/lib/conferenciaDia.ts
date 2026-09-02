@@ -181,15 +181,23 @@ export function conferirDia(
     porComanda.set(k, [...(porComanda.get(k) || []), a])
   }
 
+  // A regra casa tanto pelo NOME do serviço quanto pela CATEGORIA dele.
+  //
+  // É o que torna a regra utilizável: com mil serviços cadastrados, exigir que
+  // o dono liste um a um todos os que são coloração é pedir para a regra nunca
+  // ser criada. Escrevendo "Coloração" — que é a categoria — uma linha cobre a
+  // categoria inteira, e serviço novo que nascer nela já entra coberto.
+  const bate = (i: Atendimento, alvo: string) =>
+    contemPalavra(i.servico, alvo) || contemPalavra(i.categoria, alvo)
+
   for (const [comanda, itens] of porComanda) {
-    const nomes = itens.map(i => norm(i.servico))
     for (const r of regras) {
       if (!r.ativa) continue
       const gatilho = norm(r.quando), exigido = norm(r.exige)
       if (!gatilho || !exigido) continue
-      const disparou = itens.find(i => contemPalavra(i.servico, gatilho))
+      const disparou = itens.find(i => bate(i, gatilho))
       if (!disparou) continue
-      if (nomes.some(n => contemPalavra(n, exigido))) continue
+      if (itens.some(i => bate(i, exigido))) continue
       add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_composicao', valorEmRisco: 0,
         texto: `A comanda tem "${r.quando}" e não tem "${r.exige}".` })
     }
