@@ -113,7 +113,8 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
         <div style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>Exigências entre serviços</div>
           <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 4px' }}>
-            &quot;Toda comanda que tiver <b>A</b> precisa ter <b>B</b>.&quot; Se não tiver, vira problema no relatório do dia.
+            <b>exige</b> — toda comanda com <b>A</b> precisa ter <b>B</b> junto (corte exige higienização).<br />
+            <b>não pode ter</b> — <b>A</b> e <b>B</b> nunca vão na mesma comanda (ou é higienização ou é tratamento).
           </p>
           <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>
             Nos dois campos você pode pôr <b>uma categoria</b> — e aí vale para todos os serviços
@@ -144,7 +145,12 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                 <input list="conf-servicos" value={rg.quando} placeholder="COLORAÇÃO"
                   onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
                   style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
-                <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>exige</span>
+                <select value={rg.tipo || 'exige'}
+                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, tipo: e.target.value as 'exige' | 'proibe' } : x))}
+                  style={{ padding: '7px 6px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#fff', color: '#6b6860' }}>
+                  <option value="exige">exige</option>
+                  <option value="proibe">não pode ter</option>
+                </select>
                 <input list="conf-servicos" value={rg.exige} placeholder="HIGIENIZAÇÃO"
                   onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, exige: e.target.value } : x))}
                   style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
@@ -162,9 +168,9 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => setRegras(rs => [...rs, { id: Math.random().toString(36).slice(2, 9), quando: '', exige: '', ativa: true }])}
+            <button onClick={() => setRegras(rs => [...rs, { id: Math.random().toString(36).slice(2, 9), tipo: 'exige' as const, quando: '', exige: '', ativa: true }])}
               style={{ border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Plus size={13} /> Nova exigência
+              <Plus size={13} /> Nova regra
             </button>
             <button
               onClick={async () => {

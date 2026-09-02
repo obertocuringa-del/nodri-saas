@@ -50,11 +50,23 @@ export interface Atendimento {
   pacote?: string
 }
 
-/** Uma exigência de composição: "quem tem A precisa ter B na mesma comanda". */
+/**
+ * Regra de composição da comanda. Dois tipos:
+ *
+ *   exige   — quem tem A precisa ter B junto.
+ *             Ex.: toda COLORAÇÃO exige COMPLEMENTO; todo CORTE exige HIGIENIZAÇÃO.
+ *   proibe  — quem tem A não pode ter B junto.
+ *             Ex.: ou é HIGIENIZAÇÃO ou é TRATAMENTO, nunca os dois.
+ *
+ * `tipo` é opcional porque as regras já gravadas não o têm: ausente vale
+ * 'exige', que era o único comportamento até aqui. Sem isso, ligar o campo
+ * mudaria em silêncio o sentido das regras que o salão já cadastrou.
+ */
 export interface RegraComposicao {
   id: string
-  quando: string      // trecho do nome do serviço que dispara a regra
-  exige: string       // trecho que precisa existir na mesma comanda
+  tipo?: 'exige' | 'proibe'
+  quando: string      // nome do serviço OU categoria que dispara a regra
+  exige: string       // o que precisa existir (exige) ou não pode existir (proibe)
   ativa: boolean
 }
 
@@ -197,7 +209,17 @@ export function conferirDia(
       if (!gatilho || !exigido) continue
       const disparou = itens.find(i => bate(i, gatilho))
       if (!disparou) continue
-      if (itens.some(i => bate(i, exigido))) continue
+
+      const temOOutro = itens.find(i => bate(i, exigido))
+
+      if ((r.tipo || 'exige') === 'proibe') {
+        if (!temOOutro) continue
+        add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_conflito', valorEmRisco: 0,
+          texto: `A comanda tem "${r.quando}" e "${r.exige}" juntos — e os dois não podem ir na mesma comanda.` })
+        continue
+      }
+
+      if (temOOutro) continue
       add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_composicao', valorEmRisco: 0,
         texto: `A comanda tem "${r.quando}" e não tem "${r.exige}".` })
     }
@@ -218,8 +240,11 @@ export function conferirDia(
     String(a.comanda).localeCompare(String(b.comanda), 'pt-BR', { numeric: true }))
 }
 
-/** Regras que já vêm prontas — genéricas, sem nome de serviço de salão nenhum. */
-export const REGRAS_PADRAO: RegraComposicao[] = [
-  { id: 'r1', quando: 'COLORACAO', exige: 'COMPLEMENTO', ativa: false },
-  { id: 'r2', quando: 'COLORACAO', exige: 'HIGIENIZACAO', ativa: false },
-]
+/**
+ * Nenhuma regra vem ligada de fábrica.
+ *
+ * Nome de serviço e de categoria são de CADA salão. Uma regra padrão citando
+ * "COLORAÇÃO" acertaria num salão e acusaria besteira em outro — e o dono novo
+ * levaria a culpa por uma regra que ele não escreveu.
+ */
+export const REGRAS_PADRAO: RegraComposicao[] = []
