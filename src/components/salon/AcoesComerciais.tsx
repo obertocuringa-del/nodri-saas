@@ -12,6 +12,7 @@ import {
   type Campanha, type ArquivoCampanha,
 } from '@/lib/acoesComerciais'
 import { useModulos } from '@/lib/useModulos'
+import { enviarArquivo } from '@/lib/enviarArquivo'
 import AvisoPlano from './AvisoPlano'
 
 const ROXO = '#5b4fcf'
@@ -86,10 +87,38 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   useEffect(() => { carregar() }, [carregar])
 
   // Persiste a lista inteira (só dono). Otimista: atualiza local e envia.
+  //
+  // Antes de enviar, qualquer imagem que ainda esteja em base64 DENTRO do JSON
+  // (campanha criada na versão antiga) sobe para o storage e vira endereço. Sem
+  // este passo o conserto só valeria para campanha nova: as quatro que já
+  // existiam somavam 4,18 MB e continuariam estourando o limite de 4,5 MB da
+  // Vercel a cada salvamento — inclusive o salvamento da campanha nova.
   const salvarLista = useCallback(async (lista: Campanha[]) => {
     setCampanhas(lista)
+
+    const pendentes = lista.reduce((n, c) => n + (c.arquivos || []).filter(a => a.url?.startsWith('data:')).length, 0)
+    let enviar = lista
+    if (pendentes > 0) {
+      const aviso = toast.loading(`Guardando ${pendentes} imagem(ns) das campanhas…`)
+      enviar = await Promise.all(lista.map(async c => ({
+        ...c,
+        arquivos: await Promise.all((c.arquivos || []).map(async a => {
+          if (!a.url?.startsWith('data:')) return a
+          try {
+            const b = dataURLparaBlob(a.url)
+            const { url } = await enviarArquivo(new File([b], a.nome || 'imagem.png', { type: b.type }))
+            return { ...a, url }
+          } catch {
+            return a   // não conseguiu subir: fica o base64, a imagem não se perde
+          }
+        })),
+      })))
+      setCampanhas(enviar)
+      toast.success('Imagens guardadas', { id: aviso })
+    }
+
     const res = await fetch('/api/salon/acoes-comerciais', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campanhas: lista }),
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campanhas: enviar }),
     })
     if (!res.ok) { toast.error('Erro ao salvar'); carregar() }
   }, [carregar])
@@ -455,7 +484,15 @@ async function compartilharArquivos(c: Campanha, ids: string[], comTexto: boolea
 // Núcleo de envio: compartilha os arquivos e copia o texto (para colar como legenda).
 async function enviarArquivos(arqs: { url: string; nome: string }[], texto: string) {
   if (texto) { try { await navigator.clipboard?.writeText(texto) } catch { /* segue */ } }
-  const files = arqs.map(a => { const b = dataURLparaBlob(a.url); return new File([b], a.nome || 'imagem.png', { type: b.type }) })
+  // A imagem pode ser um endereco do storage (novo) ou um dataURL (campanha
+  // antiga, de quando a foto morava dentro do JSON). Os dois viram File aqui.
+  const files: File[] = []
+  for (const a of arqs) {
+    try {
+      const b = a.url.startsWith('data:') ? dataURLparaBlob(a.url) : await fetch(a.url).then(r => r.blob())
+      files.push(new File([b], a.nome || 'imagem.png', { type: b.type }))
+    } catch { /* uma imagem que nao baixa nao impede as outras */ }
+  }
   const nav = navigator as any
   if (nav.canShare && nav.canShare({ files })) {
     try {
@@ -624,18 +661,28 @@ function ModalEditar({ inicial, onSalvar, onClose }: { inicial: Campanha; onSalv
   const fileRef = useRef<HTMLInputElement>(null)
   const up = (campo: keyof Campanha, v: any) => setC(x => ({ ...x, [campo]: v }))
 
-  function addImagens(files: FileList | null) {
+  // A imagem sobe para o storage e a campanha guarda so o ENDERECO dela.
+  //
+  // Antes virava base64 dentro do proprio JSON. Como o salvamento manda a lista
+  // INTEIRA num PUT so, cada campanha com foto engordava esse envio: com quatro
+  // campanhas o corpo chegou a 4,18 MB, e o limite de uma requisicao na Vercel
+  // e 4,5 MB. A quinta era recusada -- aparecia na tela (o estado local ja
+  // tinha mudado) e sumia ao atualizar, porque no banco nada entrou. Com
+  // endereco no lugar da imagem, a lista inteira volta a caber em alguns KB.
+  async function addImagens(files: FileList | null) {
     if (!files) return
-    Array.from(files).forEach(f => {
-      if (!f.type.startsWith('image/')) { toast.error(`${f.name}: só imagens nesta etapa`); return }
-      if (f.size > 1.4 * 1024 * 1024) { toast.error(`${f.name}: imagem acima de 1,4 MB`); return }
-      const r = new FileReader()
-      r.onload = () => {
-        const arq: ArquivoCampanha = { id: rid(), tipo: 'imagem', url: String(r.result || ''), nome: f.name }
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith('image/')) { toast.error(`${f.name}: só imagens nesta etapa`); continue }
+      const aviso = toast.loading(`Enviando ${f.name}…`)
+      try {
+        const { url } = await enviarArquivo(f)
+        const arq: ArquivoCampanha = { id: rid(), tipo: 'imagem', url, nome: f.name }
         setC(x => ({ ...x, arquivos: [...x.arquivos, arq], capaId: x.capaId || arq.id }))
+        toast.success(`${f.name} enviada`, { id: aviso })
+      } catch (e: any) {
+        toast.error(e?.message || `Erro ao enviar ${f.name}`, { id: aviso })
       }
-      r.readAsDataURL(f)
-    })
+    }
   }
   function removerArq(id: string) { setC(x => ({ ...x, arquivos: x.arquivos.filter(a => a.id !== id), capaId: x.capaId === id ? x.arquivos.find(a => a.id !== id)?.id : x.capaId })) }
 
