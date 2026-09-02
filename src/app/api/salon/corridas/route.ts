@@ -4,6 +4,7 @@ import { getSessao } from '@/lib/apiAuth'
 import { registrarAuditoria } from '@/lib/audit'
 import type { CorridaInterna, LinhaRanking, MetricaCorrida, ResumoGrupo } from '@/lib/corridasInternas'
 import { metricaInfo, resumoGrupo } from '@/lib/corridasInternas'
+import { apelidoCasa, palavrasIguais } from '@/lib/matchProfissional'
 
 const CHAVE = 'corridas_internas'
 
@@ -29,10 +30,10 @@ function fazMatcher(prof: { nome_completo?: string | null; apelido?: string | nu
     const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
     if (!n) return false
     if (n === nomeCompleto) return true
-    if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+    if (apelidoCasa(apelido, n)) return true
     const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
     if (tokens.length === 0 || nTokens.length === 0) return false
-    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => palavrasIguais(t, nt))).length
     return matchCount >= Math.min(tokens.length, 2)
   }
 }
@@ -374,11 +375,27 @@ export async function GET() {
   // `simulacoes` traz os valores de teste. Com a coluna da colega em 120% na
   // tela, um "R$ 1.000" de doação entrega a meta dela por divisão — a mesma
   // fresta que a poda do ranking fecha. Então o objeto também vai podado.
-  const corridasVisiveis = ehDono ? visiveis : visiveis.map(c => c.modo !== 'grupo' ? c : ({
-    ...c,
-    simulacoes: undefined,
-    doacoes: (c.doacoes || []).filter(d => !d.teste).map(d => ({ de: d.de, para: d.para, em: d.em, valor: 0 })),
-  }))
+  // Corrida em grupo só aparece para quem está NELA de verdade.
+  //
+  // O filtro de participantes lá em cima já barra quem não foi escolhido, mas
+  // deixa passar um caso: com "todos os profissionais" marcado, quem ainda não
+  // tem meta no período fica de fora do gráfico (não há alvo para medir) e
+  // mesmo assim via a corrida — um card em que ela não existe. Aqui ela sai.
+  if (!ehDono) {
+    visiveis = visiveis.filter(c => c.modo !== 'grupo'
+      || (rankingsVisiveis[c.id] || []).some(l => l.profId === voceId))
+  }
+
+  const corridasVisiveis = ehDono ? visiveis : visiveis.map(c => {
+    // A observação interna some para qualquer corrida, de qualquer tipo.
+    const { observacaoInterna, ...semNota } = c
+    if (semNota.modo !== 'grupo') return semNota
+    return {
+      ...semNota,
+      simulacoes: undefined,
+      doacoes: (c.doacoes || []).filter(d => !d.teste).map(d => ({ de: d.de, para: d.para, em: d.em, valor: 0 })),
+    }
+  })
 
   return NextResponse.json({ corridas: corridasVisiveis, rankings: rankingsVisiveis, voceId, medalhas, resumosGrupo })
 }

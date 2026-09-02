@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
+import { apelidoCasa, palavrasIguais } from '@/lib/matchProfissional'
 
 // O bundle varre todos os atendimentos do profissional — pode passar de 10s.
 export const maxDuration = 60
@@ -21,7 +22,7 @@ function matchProf(item: any, tokens: string[], apelido: string, nomeCompleto: s
   const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
   if (!n) return false
   if (n === nomeCompleto) return true
-  if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+  if (apelidoCasa(apelido, n)) return true
   const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS.has(t))
   const matchCount = tokens.filter(t => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
   return matchCount >= Math.min(tokens.length, 2)

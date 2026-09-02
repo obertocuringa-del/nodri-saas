@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import { apelidoCasa, palavrasIguais } from '@/lib/matchProfissional'
 
 // Motor analítico: calcula chance de bater a meta a partir do ritmo atual projetado,
 // ajustado pela tendência de crescimento dos últimos meses — tudo determinístico (sem IA).
@@ -64,10 +65,10 @@ function criarMatchProf(nomeCompleto: string, apelido: string) {
     const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
     if (!n) return false
     if (n === nomeCompleto) return true
-    if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+    if (apelidoCasa(apelido, n)) return true
     const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
     if (tokens.length === 0 || nTokens.length === 0) return false
-    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => palavrasIguais(t, nt))).length
     return matchCount >= Math.min(tokens.length, 2)
   }
 }

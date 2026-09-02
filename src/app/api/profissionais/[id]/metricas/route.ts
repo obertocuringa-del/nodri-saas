@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { bloquearEdicao } from '@/lib/apiAuth'
+import { apelidoCasa, palavrasIguais } from '@/lib/matchProfissional'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -201,11 +202,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Match exato
     if (n === nomeCompleto) return true
     // Match por apelido
-    if (apelido && (n === apelido || n.includes(apelido) || apelido.includes(n))) return true
+    if (apelidoCasa(apelido, n)) return true
     // Match pelos primeiros 2 tokens do nome (sem preposição)
     const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
     if (tokens.length === 0 || nTokens.length === 0) return false
-    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
+    const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => palavrasIguais(t, nt))).length
     return matchCount >= Math.min(tokens.length, 2)
   }
 

@@ -117,7 +117,17 @@ export interface CorridaInterna {
    * inventado sobre o próprio trabalho, sem forma de saber que é teste.
    */
   simulacoes?: Record<string, number>
-  descricao?: string          // regra / observação livre (opcional)
+  descricao?: string          // regra / observação livre (opcional) — APARECE no portal
+  /**
+   * Recado do gerente para ele mesmo. NÃO aparece no portal.
+   *
+   * Separado de `descricao` de propósito: aquela é a regra da disputa, escrita
+   * para as profissionais lerem. Esta é a anotação de bastidor ("combinar o
+   * prêmio com a dona", "a Vera entrou no meio do mês"), e é podada no servidor
+   * antes de a resposta sair — esconder só na tela deixaria o texto no
+   * navegador de quem abrisse o inspetor.
+   */
+  observacaoInterna?: string
   metrica: MetricaCorrida
   servico?: string            // usado quando metrica === 'servico'
   ocorrido?: string           // usado quando metrica === 'feedback_neg'

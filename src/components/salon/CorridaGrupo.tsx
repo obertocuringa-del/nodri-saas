@@ -28,6 +28,38 @@ const ALTURA = 210
 
 const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+// Por que este bloco existe, e por que o layout NAO fica em style inline:
+//
+// O globals.css tem um pacote de regras de celular que casam pelo TEXTO do
+// atributo style -- [style*="display:flex"] ganha flex-wrap:wrap !important,
+// [style*="font-size: 10px"] vira 11px, e por aí. São regras boas para as telas
+// do sistema, que sao formularios e cards. Aplicadas a um grafico elas
+// desmontam a peça: as colunas embrulham, os rotulos incham e o eixo perde o
+// alinhamento -- foi exatamente o que apareceu no portal no celular.
+//
+// Nao dá para brigar com !important (mesma especificidade, ganha quem vier
+// depois, e a ordem entre globals.css e este bloco não é garantida). Entao a
+// saida e nao dar o que casar: layout e tamanho de fonte moram aqui, em classe.
+const CSS_GRUPO = [
+  '.cg-plot { display:flex; align-items:flex-end; position:relative; flex:1 }',
+  '.cg-nomes { display:flex; flex:1 }',
+  '.cg-col { flex:1 0 auto; display:flex; flex-direction:column; justify-content:flex-end; position:relative; height:100% }',
+  '.cg-rot { flex:1 0 auto; text-align:center; min-width:0 }',
+  '.cg-nome { font-size:11px; font-weight:800; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }',
+  '.cg-sub { font-size:10px; color:#6b6860; white-space:nowrap; font-variant-numeric:tabular-nums }',
+  '.cg-meta { font-size:9.5px; color:#9ca3af; white-space:nowrap; font-variant-numeric:tabular-nums }',
+  '.cg-eixo { font-size:10px; font-weight:600 }',
+  '.cg-topo { font-size:10.5px; font-weight:800; color:#57534e; white-space:nowrap; font-variant-numeric:tabular-nums }',
+  '@media (max-width:640px){',
+  // No celular o nome precisa de mais largura que os 64px do desktop: com menos
+  // que isso "VALDIRENE" e "120% da meta" quebram em tres linhas e a coluna
+  // vira uma tira. Prefiro rolar de lado a espremer.
+  '  .cg-col, .cg-rot { flex-basis:78px !important; min-width:78px !important }',
+  '  .cg-nome { font-size:10.5px }',
+  '  .cg-sub { font-size:9.5px }',
+  '}',
+].join(' ')
+
 export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar, onDoacoes, onSimulacoes }: {
   c: CorridaInterna
   ranking: LinhaRanking[]
@@ -83,6 +115,7 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <style dangerouslySetInnerHTML={{ __html: CSS_GRUPO }} />
 
       {/* ── O placar do conjunto ─────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14 }}>
@@ -134,20 +167,20 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
         A área do gráfico agora tem altura exata (ALTURA); os nomes vão fora.
       */}
       <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <div style={{ minWidth: Math.max(ranking.length * 74 + 52, 300), paddingTop: 36 }}>
+        <div style={{ minWidth: Math.max(ranking.length * 88 + 52, 300), paddingTop: 36 }}>
           <div style={{ display: 'flex', gap: 10 }}>
 
             {/* escala */}
             <div style={{ position: 'relative', width: 42, height: ALTURA, flexShrink: 0 }}>
               {[0, 50, 100].concat(teto > 130 ? [teto] : []).map(marca => (
-                <div key={marca} style={{ position: 'absolute', bottom: y(marca) - 7, right: 4, fontSize: 10, color: marca === 100 ? '#16a34a' : '#9ca3af', fontWeight: marca === 100 ? 800 : 600 }}>
+                <div key={marca} className="cg-eixo" style={{ position: 'absolute', bottom: y(marca) - 7, right: 4, color: marca === 100 ? '#16a34a' : '#9ca3af', fontWeight: marca === 100 ? 800 : 600 }}>
                   {marca}%
                 </div>
               ))}
             </div>
 
             {/* área das colunas — altura exata, para a linha da meta cair certa */}
-            <div style={{ position: 'relative', flex: 1, height: ALTURA, display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+            <div className="cg-plot" style={{ height: ALTURA, gap: 10 }}>
               <div style={{ position: 'absolute', left: 0, right: 0, bottom: y(100), borderTop: '2px dashed #16a34a', opacity: 0.55, pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, borderTop: '1px solid #d6d3cd', pointerEvents: 'none' }} />
 
@@ -164,11 +197,8 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
                   <div key={l.profId}
                     onClick={clicavel ? () => setDoando(doando === l.profId ? null : l.profId) : undefined}
                     title={clicavel ? `Entregar ${moeda(sobra)} para uma colega` : undefined}
-                    style={{
-                      position: 'relative', flex: '1 0 64px', minWidth: 64, height: '100%',
-                      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                      cursor: clicavel ? 'pointer' : 'default',
-                    }}>
+                    className="cg-col"
+                    style={{ cursor: clicavel ? 'pointer' : 'default' }}>
                     {/* rótulos acima da coluna */}
                     <div style={{ position: 'absolute', left: -6, right: -6, bottom: y(pctPropria + pctRecebido) + 4, textAlign: 'center', pointerEvents: 'none' }}>
                       {!l.valorOculto && Number(l.excedente || 0) > 0 && (
@@ -177,7 +207,7 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
                       {!l.valorOculto && Number(l.recebido || 0) > 0 && (
                         <div style={{ fontSize: 10, fontWeight: 800, color: COR_RECEBIDO, whiteSpace: 'nowrap' }}>+{moeda(l.recebido || 0)}</div>
                       )}
-                      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#57534e', fontVariantNumeric: 'tabular-nums' }}>{l.pctMeta ?? 0}%</div>
+                      <div className="cg-topo">{l.pctMeta ?? 0}%</div>
                     </div>
 
                     {pctRecebido > 0 && (
@@ -211,20 +241,20 @@ export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar,
           </div>
 
           {/* nomes — fora da área do gráfico, com as mesmas larguras de coluna */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+          <div className="cg-plot" style={{ alignItems: 'flex-start', gap: 10, marginTop: 6 }}>
             <div style={{ width: 42, flexShrink: 0 }} />
-            <div style={{ flex: 1, display: 'flex', gap: 10 }}>
+            <div className="cg-nomes" style={{ gap: 10 }}>
               {ranking.map(l => {
                 const sobra = sobraDisponivel(l)
                 return (
-                  <div key={l.profId} style={{ flex: '1 0 64px', minWidth: 64, textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={l.nome}>{l.nome}</div>
+                  <div key={l.profId} className="cg-rot">
+                    <div className="cg-nome" title={l.nome}>{l.nome}</div>
                     {l.valorOculto ? (
-                      <div style={{ fontSize: 10, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>{l.pctMeta ?? 0}% da meta</div>
+                      <div className="cg-meta">{l.pctMeta ?? 0}% da meta</div>
                     ) : (
                       <>
-                        <div style={{ fontSize: 10, color: '#6b6860', fontVariantNumeric: 'tabular-nums' }}>{moeda(l.valor)}</div>
-                        <div style={{ fontSize: 9.5, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>meta {moeda(Number(l.metaPessoal || 0))}</div>
+                        <div className="cg-sub">{moeda(l.valor)}</div>
+                        <div className="cg-meta">meta {moeda(Number(l.metaPessoal || 0))}</div>
                       </>
                     )}
                     {!!podeDoar && sobra > 0 && (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal, Users, ChevronDown, ChevronRight, Lock } from 'lucide-react'
 import {
   type CorridaInterna, type LinhaRanking, type MetricaCorrida, type DoacaoMeta, type ResumoGrupo,
   METRICAS_CORRIDA, METRICAS_ESCOLHIVEIS, metricaInfo, statusCorrida, STATUS_CORRIDA,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/corridasInternas'
 import CorridaGrupo from './CorridaGrupo'
 import { useModulos } from '@/lib/useModulos'
+import { comoBotao } from '@/lib/acessibilidade'
 import AvisoPlano from './AvisoPlano'
 
 const CSS = `
@@ -32,6 +33,10 @@ export default function CorridasInternas() {
   const [rankings, setRankings] = useState<Record<string, LinhaRanking[]>>({})
   const [medalhas, setMedalhas] = useState<{ profId: string; nome: string; total: number; corridas: { id: string; titulo: string }[] }[]>([])
   const [resumos, setResumos] = useState<Record<string, ResumoGrupo>>({})
+  // Uma corrida aberta por vez. Todas nascem fechadas: com meia dúzia
+  // publicadas, a página abria como um rolo de gráficos e o dono tinha de
+  // rolar até achar a que queria.
+  const [aberta, setAberta] = useState<string | null>(null)
   const [profs, setProfs] = useState<ProfLeve[]>([])
   const [servicosRel, setServicosRel] = useState<{ nome: string; quantidade: number }[]>([])
   // Tipos de ocorrência que o salão cadastrou no Feedback Profissional — a
@@ -185,6 +190,8 @@ export default function CorridasInternas() {
         <div className="ci-cards">
           {corridas.map(c => (
             <CardCorrida key={c.id} c={c} ranking={rankings[c.id] || []}
+              aberta={aberta === c.id}
+              onAbrir={() => setAberta(x => x === c.id ? null : c.id)}
               onEdit={() => setEdit(c)} onExcluir={() => excluir(c.id)} onToggle={() => toggleAtiva(c)}
               resumo={resumos[c.id]}
               onDoacoes={(doacoes) => salvarLista(corridas.map(x => x.id === c.id ? { ...x, doacoes } : x))}
@@ -202,8 +209,9 @@ export default function CorridasInternas() {
 }
 
 // ── Card de uma corrida (visão do salão) ──
-function CardCorrida({ c, ranking, resumo, onEdit, onExcluir, onToggle, onDoacoes, onSimulacoes }: {
+function CardCorrida({ c, ranking, resumo, aberta, onAbrir, onEdit, onExcluir, onToggle, onDoacoes, onSimulacoes }: {
   c: CorridaInterna; ranking: LinhaRanking[]; resumo?: ResumoGrupo
+  aberta: boolean; onAbrir: () => void
   onEdit: () => void; onExcluir: () => void; onToggle: () => void
   onDoacoes: (doacoes: DoacaoMeta[]) => void
   onSimulacoes: (simulacoes: Record<string, number>) => void
@@ -214,8 +222,10 @@ function CardCorrida({ c, ranking, resumo, onEdit, onExcluir, onToggle, onDoacoe
   return (
     <div style={{ background: '#fff', border: '1.5px solid #e8e6e0', borderLeft: '4px solid #16a34a', borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div {...comoBotao} onClick={onAbrir} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+          aria-expanded={aberta} title={aberta ? 'Fechar' : 'Abrir'}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 4 }}>
+            {aberta ? <ChevronDown size={16} style={{ color: '#16a34a', flexShrink: 0 }} /> : <ChevronRight size={16} style={{ color: '#9ca3af', flexShrink: 0 }} />}
             <span style={{ fontSize: 18 }}>{info.emoji}</span>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#1a1a1a' }}>{c.titulo}</h3>
             <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 20, background: sinfo.bg, color: sinfo.cor }}>{sinfo.label}</span>
@@ -226,19 +236,32 @@ function CardCorrida({ c, ranking, resumo, onEdit, onExcluir, onToggle, onDoacoe
           </div>
           {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
         </div>
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+        {/* Os botões ficam fora da área que abre/fecha: clicar em "excluir" não
+            pode, de quebra, expandir o card que está sendo apagado. */}
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           <button onClick={onToggle} title={c.ativa ? 'Pausar (esconder dos profissionais)' : 'Publicar'} style={btnIco}>{c.ativa ? <Pause size={15} /> : <Play size={15} />}</button>
           <button onClick={onEdit} title="Editar" style={btnIco}><Pencil size={15} /></button>
           <button onClick={onExcluir} title="Excluir" style={{ ...btnIco, color: '#dc2626' }}><Trash2 size={15} /></button>
         </div>
       </div>
 
-      {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
+      {aberta && (
+        <>
+          {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
-      {/* O salão sempre vê os números: é quem precisa entender a diferença. */}
-      {c.modo === 'grupo'
-        ? <CorridaGrupo c={c} ranking={ranking} resumo={resumo} podeDoar onDoacoes={onDoacoes} onSimulacoes={onSimulacoes} />
-        : <Ranking ranking={ranking} c={c} />}
+          {c.observacaoInterna && (
+            <div style={{ fontSize: 12, color: '#92400e', whiteSpace: 'pre-wrap', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 10px', display: 'flex', gap: 7 }}>
+              <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span style={{ flex: 1, minWidth: 0 }}>{c.observacaoInterna}</span>
+            </div>
+          )}
+
+          {/* O salão sempre vê os números: é quem precisa entender a diferença. */}
+          {c.modo === 'grupo'
+            ? <CorridaGrupo c={c} ranking={ranking} resumo={resumo} podeDoar onDoacoes={onDoacoes} onSimulacoes={onSimulacoes} />
+            : <Ranking ranking={ranking} c={c} />}
+        </>
+      )}
     </div>
   )
 }
@@ -438,6 +461,19 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
           <div>
             <label className="ci-lbl">Regras / observação (opcional)</label>
             <textarea className="ci-inp" style={{ minHeight: 64, resize: 'vertical' }} value={c.descricao || ''} onChange={e => set({ descricao: e.target.value })} placeholder="Explique como funciona, critério de desempate, etc." />
+            <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Este texto <b>aparece</b> no portal das profissionais.</div>
+          </div>
+
+          <div>
+            <label className="ci-lbl" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Lock size={11} /> Observação interna (só você vê)
+            </label>
+            <textarea className="ci-inp" style={{ minHeight: 64, resize: 'vertical', background: '#fffbeb', borderColor: '#fde68a' }}
+              value={c.observacaoInterna || ''} onChange={e => set({ observacaoInterna: e.target.value })}
+              placeholder="Anotação sua sobre a corrida — combinados, ressalvas, o que ainda falta acertar." />
+            <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>
+              <b>Não aparece</b> no portal. O texto nem é enviado para o navegador delas.
+            </div>
           </div>
 
           <div>

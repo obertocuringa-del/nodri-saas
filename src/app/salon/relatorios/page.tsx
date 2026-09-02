@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { apelidoCasa } from '@/lib/matchProfissional'
 import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
@@ -1770,10 +1771,11 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
               const ppAtual = dados.prof_pagamentos.filter(p => p.ano === p1Ano && p.mes === p1Mes)
 
               // Helper de match de nome
+              // Mesma regra do servidor (src/lib/matchProfissional.ts): palavra
+              // inteira e a partir do comeco do nome. Casar por pedaco solto
+              // fazia o apelido "Viegas" pescar "Raissa Harume VIEGAS Aguir Rosa".
               function matchNome(pNorm: string, apelido: string, nome: string) {
-                return pNorm === apelido || pNorm === nome ||
-                  (apelido.length >= 3 && pNorm.includes(apelido)) ||
-                  (apelido.length >= 3 && apelido.includes(pNorm))
+                return pNorm === apelido || pNorm === nome || apelidoCasa(apelido, pNorm)
               }
 
               // 6. Calcula média mensal histórica excluindo meses atípicos por profissional

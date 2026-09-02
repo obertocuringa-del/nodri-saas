@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Trophy, Medal } from 'lucide-react'
+import { Trophy, Medal, ChevronDown, ChevronRight } from 'lucide-react'
 import {
   type CorridaInterna, type LinhaRanking, type ResumoGrupo,
   metricaInfo, statusCorrida, STATUS_CORRIDA, periodoLabel,
 } from '@/lib/corridasInternas'
 import { Ranking } from './CorridasInternas'
 import CorridaGrupo from './CorridaGrupo'
+import { comoBotao } from '@/lib/acessibilidade'
 
 // Card "Corrida Interna" do portal do profissional — só leitura.
 // `destacarId` = id do profissional a destacar (quando o salão abre o perfil).
@@ -18,6 +19,8 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
   const [resumos, setResumos] = useState<Record<string, ResumoGrupo>>({})
   const [voceId, setVoceId] = useState('')
   const [loading, setLoading] = useState(true)
+  // Uma por vez, todas fechadas ao abrir — mesma regra da tela do salão.
+  const [aberta, setAberta] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/salon/corridas', { credentials: 'include' })
@@ -94,8 +97,10 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
         const minha = destacar ? ranking.find(l => l.profId === destacar) : undefined
         return (
           <div key={c.id} style={{ background: '#fff', border: '1.5px solid #e8e6e0', borderLeft: '4px solid #16a34a', borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
+            <div {...comoBotao} onClick={() => setAberta(x => x === c.id ? null : c.id)}
+              aria-expanded={aberta === c.id} title={aberta === c.id ? 'Fechar' : 'Abrir'} style={{ cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 4 }}>
+                {aberta === c.id ? <ChevronDown size={16} style={{ color: '#16a34a', flexShrink: 0 }} /> : <ChevronRight size={16} style={{ color: '#9ca3af', flexShrink: 0 }} />}
                 <span style={{ fontSize: 18 }}>{info.emoji}</span>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#1a1a1a' }}>{c.titulo}</h3>
                 <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 20, background: sinfo.bg, color: sinfo.cor }}>{sinfo.label}</span>
@@ -106,6 +111,7 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
               {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
             </div>
 
+            {aberta === c.id && (<>
             {/* Na corrida em grupo não há pódio — dizer "3º lugar" contradiria a
                 regra da disputa, que é justamente não ter vencedor. */}
             {minha && c.modo === 'grupo' && (
@@ -140,6 +146,7 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
             {c.modo === 'grupo'
               ? <CorridaGrupo c={c} ranking={ranking} resumo={resumos[c.id]} />
               : <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />}
+            </>)}
           </div>
         )
       })}

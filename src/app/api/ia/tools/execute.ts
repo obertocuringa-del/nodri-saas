@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import { apelidoCasa } from '@/lib/matchProfissional'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const fmtR = (v: number) => `R$${(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
@@ -88,7 +89,7 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
           const n = (item.profissional || item.profissional_original || '').toLowerCase().trim()
           if (!n) return false
           if (n === nomeCompleto) return true
-          if (apelidoProf && (n === apelidoProf || n.includes(apelidoProf) || apelidoProf.includes(n))) return true
+          if (apelidoCasa(apelidoProf, n)) return true
           const nTokens = n.split(/\s+/).filter((t: string) => t && !STOPWORDS_NOME.has(t))
           if (tokens.length === 0 || nTokens.length === 0) return false
           const matchCount = tokens.filter((t: string) => nTokens.some((nt: string) => nt.startsWith(t) || t.startsWith(nt))).length
