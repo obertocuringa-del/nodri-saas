@@ -195,7 +195,11 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
       {/* Status + ordem + seleção */}
       <div className="ac-status">
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
-          {([['todas', 'Todas'], ['ativa', 'Ativas'], ['agendada', 'Futuras'], ['encerrada', 'Encerradas']] as const).map(([k, l]) => (
+          {/* Só "Todas" e "Encerradas". Separar ativa de futura obrigava a
+              cliente a adivinhar em que gaveta estava a promoção que ela viu —
+              e "Futuras" ainda escondia o que já dava para agendar. O que
+              interessa é: está valendo, ou já passou. */}
+          {([['todas', 'Todas'], ['encerrada', 'Encerradas']] as const).map(([k, l]) => (
             <button key={k} onClick={() => setFStatus(k)}
               style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none',
                 background: fStatus === k ? '#1a1a2e' : '#f0eee8', color: fStatus === k ? '#fff' : '#6b6860' }}>{l}</button>

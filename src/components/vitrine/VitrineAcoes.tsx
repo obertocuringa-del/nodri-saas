@@ -5,15 +5,17 @@ import type { AcaoPublica, ServicoPublico, ProfissionalPublico } from '@/lib/vit
 import { linkWhatsapp } from '@/lib/vitrineCliente'
 import ModalAgendarAcao from './ModalAgendarAcao'
 
-// Ações comerciais como o cliente vê: os mesmos filtros da tela interna
-// (todas / ativas / futuras / encerradas + categoria), mas o card mostra só
-// imagem, descrição e categoria. O texto de "como lançar no sistema" é
-// instrução para a equipe e não chega aqui.
+// Ações comerciais como o cliente vê: o card mostra só imagem, descrição e
+// categoria. O texto de "como lançar no sistema" é instrução para a equipe e
+// não chega aqui.
+//
+// Os filtros são "Todas" e "Encerradas", só. Havia também "Ativas" e
+// "Futuras": a cliente abria o link, caía num filtro e não achava a promoção
+// que tinha visto no story, porque ela estava na outra aba. Em "Todas" ela vê
+// tudo o que o salão publicou — que é o ponto de mandar o link.
 
 const FILTROS = [
   { id: 'todas', label: 'Todas' },
-  { id: 'ativa', label: 'Ativas' },
-  { id: 'agendada', label: 'Futuras' },
   { id: 'encerrada', label: 'Encerradas' },
 ] as const
 
@@ -31,7 +33,10 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
   /** Faixa de atendimento do salão; ausente cai no padrão. */
   horario?: { abertura: string; fechamento: string } | null
 }) {
-  const [filtro, setFiltro] = useState<string>('ativa')
+  // Abre em "Todas". Era 'ativa', que com a aba de Ativas removida deixaria a
+  // cliente presa: nenhum botão apareceria marcado e ela não teria como voltar
+  // a ver tudo.
+  const [filtro, setFiltro] = useState<string>('todas')
   const [categoria, setCategoria] = useState('')
   const [selecionadas, setSelecionadas] = useState<string[]>([])
   // Uma descricao aberta por vez — varias abertas devolvem o muro de texto.
