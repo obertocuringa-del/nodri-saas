@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown, Clock } from 'lucide-react'
+import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown, Clock, Eraser } from 'lucide-react'
 import toast from 'react-hot-toast'
 import VitrineOcultar from './VitrineOcultar'
 
@@ -17,6 +17,8 @@ export default function LinkVitrine() {
   const [ocupado, setOcupado] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [confirmandoTroca, setConfirmandoTroca] = useState(false)
+  const [confirmandoVotos, setConfirmandoVotos] = useState(false)
+  const [resumoVotos, setResumoVotos] = useState<{ itens: number; votos: number; sugestoes: number } | null>(null)
   const [editandoSlug, setEditandoSlug] = useState(false)
   const [novoSlug, setNovoSlug] = useState('')
   const [escolhendo, setEscolhendo] = useState(false)
@@ -161,11 +163,56 @@ export default function LinkVitrine() {
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t2 disabled:opacity-50">
           <Pencil size={13} /> Editar endereço
         </button>
+        <button
+          onClick={async () => {
+            // Mostra o tamanho do estrago antes de perguntar: apagar enquete
+            // as cegas e apagar sem saber quantos votos reais vao junto.
+            const r = await fetch('/api/salon/vitrine-votos').then(x => x.ok ? x.json() : null).catch(() => null)
+            setResumoVotos(r || { itens: 0, votos: 0, sugestoes: 0 })
+            setConfirmandoVotos(true)
+          }}
+          disabled={ocupado}
+          className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t3 disabled:opacity-50">
+          <Eraser size={13} /> Zerar &quot;Mais pedidos&quot;
+        </button>
         <button onClick={() => setConfirmandoTroca(true)} disabled={ocupado}
           className="flex items-center gap-1.5 border border-nodri-border px-3 py-2 rounded-lg text-[12px] text-nodri-t3 disabled:opacity-50">
           <RefreshCw size={13} /> Gerar código novo
         </button>
       </div>
+
+      {confirmandoVotos && (
+        <div className="mt-3 pt-3 border-t border-nodri-border">
+          <p className="text-[13px] text-nodri-t2 mb-1">
+            Zerar a enquete <b>Mais pedidos</b> da página do cliente?
+          </p>
+          <p className="text-[12px] text-nodri-t3 mb-3">
+            {resumoVotos
+              ? `Hoje são ${resumoVotos.itens} serviço(s), ${resumoVotos.votos} voto(s) e ${resumoVotos.sugestoes} sugestão(ões) escrita(s).`
+              : 'Carregando…'}
+            {' '}O ranking volta a contar do zero. Promoções, preços e o endereço do link não são tocados.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                setOcupado(true)
+                const r = await fetch('/api/salon/vitrine-votos', { method: 'DELETE' })
+                setOcupado(false)
+                setConfirmandoVotos(false)
+                if (r.ok) toast.success('Enquete zerada')
+                else toast.error('Não foi possível zerar')
+              }}
+              disabled={ocupado}
+              className="px-3 py-2 rounded-lg text-[12px] font-semibold bg-red-600 text-white disabled:opacity-50">
+              Zerar agora
+            </button>
+            <button onClick={() => setConfirmandoVotos(false)} disabled={ocupado}
+              className="px-3 py-2 rounded-lg text-[12px] border border-nodri-border text-nodri-t2">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {escolhendo && (
         <div className="mt-3 pt-3 border-t border-nodri-border">
