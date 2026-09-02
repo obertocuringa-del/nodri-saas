@@ -11,6 +11,7 @@ import {
   precoDaCampanha,
   type Campanha, type ArquivoCampanha,
 } from '@/lib/acoesComerciais'
+import { AlertTriangle } from 'lucide-react'
 import { useModulos } from '@/lib/useModulos'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import AvisoPlano from './AvisoPlano'
@@ -65,6 +66,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const [ordem, setOrdem] = useState<'recentes' | 'compartilhadas'>('recentes')
   const [aberta, setAberta] = useState<Campanha | null>(null)
   const [editando, setEditando] = useState<Campanha | null>(null)
+  const [convertendo, setConvertendo] = useState(false)
   const [vendidos, setVendidos] = useState<Record<string, number>>({})
   const { tem, carregado: carregouModulos } = useModulos()
   const [verShares, setVerShares] = useState<Campanha | null>(null)   // placar de quem compartilhou
@@ -86,7 +88,41 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   }, [])
   useEffect(() => { carregar() }, [carregar])
 
-  // Persiste a lista inteira (só dono). Otimista: atualiza local e envia.
+  /** Quantas imagens ainda estão em base64 dentro do JSON. */
+function pendentesBase64(lista: Campanha[]): number {
+  return lista.reduce((n, c) => n + (c.arquivos || []).filter(a => a.url?.startsWith('data:')).length, 0)
+}
+
+/**
+ * Sobe para o storage toda imagem que ainda esteja em base64 e devolve a lista
+ * com endereços no lugar. Se um envio falhar, aquela imagem continua em base64:
+ * a foto não se perde, e a próxima tentativa pega o que ficou para trás.
+ */
+async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => void): Promise<Campanha[]> {
+  const pend = pendentesBase64(lista)
+  if (pend === 0) return lista
+  const aviso = toast.loading(`Guardando ${pend} imagem(ns) das campanhas…`)
+  const nova = await Promise.all(lista.map(async c => ({
+    ...c,
+    arquivos: await Promise.all((c.arquivos || []).map(async a => {
+      if (!a.url?.startsWith('data:')) return a
+      try {
+        const b = dataURLparaBlob(a.url)
+        const { url } = await enviarArquivo(new File([b], a.nome || 'imagem.png', { type: b.type }))
+        return { ...a, url }
+      } catch {
+        return a
+      }
+    })),
+  })))
+  aplicar(nova)
+  const faltou = pendentesBase64(nova)
+  if (faltou) toast.error(`${faltou} imagem(ns) não subiram. Tente de novo.`, { id: aviso })
+  else toast.success('Imagens guardadas', { id: aviso })
+  return nova
+}
+
+// Persiste a lista inteira (só dono). Otimista: atualiza local e envia.
   //
   // Antes de enviar, qualquer imagem que ainda esteja em base64 DENTRO do JSON
   // (campanha criada na versão antiga) sobe para o storage e vira endereço. Sem
@@ -96,26 +132,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const salvarLista = useCallback(async (lista: Campanha[]) => {
     setCampanhas(lista)
 
-    const pendentes = lista.reduce((n, c) => n + (c.arquivos || []).filter(a => a.url?.startsWith('data:')).length, 0)
-    let enviar = lista
-    if (pendentes > 0) {
-      const aviso = toast.loading(`Guardando ${pendentes} imagem(ns) das campanhas…`)
-      enviar = await Promise.all(lista.map(async c => ({
-        ...c,
-        arquivos: await Promise.all((c.arquivos || []).map(async a => {
-          if (!a.url?.startsWith('data:')) return a
-          try {
-            const b = dataURLparaBlob(a.url)
-            const { url } = await enviarArquivo(new File([b], a.nome || 'imagem.png', { type: b.type }))
-            return { ...a, url }
-          } catch {
-            return a   // não conseguiu subir: fica o base64, a imagem não se perde
-          }
-        })),
-      })))
-      setCampanhas(enviar)
-      toast.success('Imagens guardadas', { id: aviso })
-    }
+    const enviar = await converterImagens(lista, setCampanhas)
 
     const res = await fetch('/api/salon/acoes-comerciais', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campanhas: enviar }),
@@ -127,6 +144,12 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
     setCampanhas(cs => cs.map(c => c.id === id ? { ...c, [metrica]: (c[metrica] || 0) + 1 } : c))
     fetch('/api/salon/acoes-comerciais', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, metrica }) }).catch(() => {})
   }, [])
+
+  const pendentes = useMemo(() => pendentesBase64(campanhas), [campanhas])
+  // Peso do que vai no salvamento — o mesmo que a Vercel mede contra os 4,5 MB.
+  const pesoMB = useMemo(() => {
+    try { return new Blob([JSON.stringify(campanhas)]).size / 1048576 } catch { return 0 }
+  }, [campanhas])
 
   const filtradas = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -209,6 +232,28 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
 
       {/* Busca — linha própria, largura total */}
       <div style={{ position: 'relative', marginBottom: 10 }}>
+      {/* Aviso do peso das imagens.
+          O sistema manda a lista INTEIRA a cada salvamento, e imagem em base64
+          viaja dentro dela. Passando de ~4,5 MB a Vercel recusa a requisição e
+          a campanha nova some ao atualizar -- sem erro visível, porque a tela
+          já tinha mudado. Este aviso mostra o peso ANTES de o problema
+          aparecer, e converte com um clique. */}
+      {!soLeitura && pendentes > 0 && (
+        <div style={{ background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: 12, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <AlertTriangle size={18} style={{ color: '#b45309', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: '#92400e', lineHeight: 1.45 }}>
+            <b>{pendentes} imagem(ns) guardadas do jeito antigo</b>, dentro da própria campanha
+            ({(pesoMB).toFixed(2)} MB no total). Acima de 4,5 MB o sistema não consegue mais salvar
+            campanha nova — e a tela fica lenta para abrir.
+          </div>
+          <button onClick={async () => { setConvertendo(true); const nova = await converterImagens(campanhas, setCampanhas); await salvarLista(nova); setConvertendo(false) }}
+            disabled={convertendo}
+            style={{ flexShrink: 0, border: 'none', background: '#b45309', color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: 12.5, fontWeight: 800, cursor: convertendo ? 'wait' : 'pointer', opacity: convertendo ? .6 : 1 }}>
+            {convertendo ? 'Convertendo…' : 'Converter agora'}
+          </button>
+        </div>
+      )}
+
         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar campanha..."
           style={{ width: '100%', padding: '11px 12px 11px 36px', borderRadius: 12, border: '1px solid #e0ddd8', fontSize: 14, background: '#fff' }} />
