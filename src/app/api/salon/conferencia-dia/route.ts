@@ -101,6 +101,13 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     data,
+    // As regras vão junto para a tela poder editá-las sem uma segunda ida ao
+    // servidor — e os nomes de serviço reais junto delas, para o dono escolher
+    // de uma lista em vez de digitar de cabeça e errar o nome por um acento.
+    regras,
+    servicosConhecidos: Array.from(new Set(
+      [...doDia, ...todos].map(a => String(a.servico || '').trim()).filter(Boolean),
+    )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
     itens: doDia.length,
     comandas: comandas.size,
     faturado,

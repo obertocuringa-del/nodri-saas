@@ -16,8 +16,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, ShieldCheck, AlertTriangle, HelpCircle, RefreshCw, Printer } from 'lucide-react'
-import type { Achado } from '@/lib/conferenciaDia'
+import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal, Plus, Trash2, Save } from 'lucide-react'
+import toast from 'react-hot-toast'
+import type { Achado, RegraComposicao } from '@/lib/conferenciaDia'
 
 const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -33,6 +34,8 @@ interface Resultado {
   totalNoMes?: number
   diasComDado?: string[]
   amostraDatas?: string[]
+  regras?: RegraComposicao[]
+  servicosConhecidos?: string[]
 }
 
 const CORES = {
@@ -45,6 +48,9 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   const [r, setR] = useState<Resultado | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
+  const [abrindoRegras, setAbrindoRegras] = useState(false)
+  const [regras, setRegras] = useState<RegraComposicao[]>([])
+  const [salvandoRegras, setSalvandoRegras] = useState(false)
 
   const conferir = useCallback(async () => {
     if (!data) return
@@ -53,7 +59,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       const res = await fetch(`/api/salon/conferencia-dia?data=${encodeURIComponent(data)}`, { credentials: 'include' })
       const d = await res.json()
       if (!res.ok) { setErro(d?.error || 'Não foi possível conferir'); setR(null) }
-      else setR(d)
+      else { setR(d); setRegras(Array.isArray(d.regras) ? d.regras : []) }
     } catch {
       setErro('Não foi possível conferir')
       setR(null)
@@ -85,6 +91,10 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: carregando ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           {carregando ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Conferir de novo
         </button>
+        <button onClick={() => setAbrindoRegras(v => !v)}
+          style={{ border: '1px solid #e0ddd8', background: abrindoRegras ? '#f0eefb' : '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: abrindoRegras ? '#5b4fcf' : '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <SlidersHorizontal size={13} /> Regras
+        </button>
         {r && !r.semDados && (
           <button onClick={() => window.print()} className="no-mobile"
             style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -92,6 +102,86 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </button>
         )}
       </div>
+
+      {/* ── Regras da conferência ─────────────────────────────────────────
+          Ficam no banco, não no código: o dono acrescenta uma exigência sem
+          precisar de deploy. A escolha é por lista dos serviços que existem de
+          verdade nos lançamentos — digitar de cabeça erraria por um acento e a
+          regra nunca dispararia, sem ninguém entender por quê. */}
+      {abrindoRegras && (
+        <div style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>Exigências entre serviços</div>
+          <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>
+            &quot;Toda comanda que tiver <b>A</b> precisa ter <b>B</b>.&quot; Se não tiver, vira problema no relatório do dia.
+          </p>
+
+          <datalist id="conf-servicos">
+            {(r?.servicosConhecidos || []).map(sv => <option key={sv} value={sv} />)}
+          </datalist>
+
+          {regras.length === 0 && (
+            <div style={{ fontSize: 12.5, color: '#9ca3af', padding: '8px 0 12px' }}>
+              Nenhuma exigência cadastrada. A conferência segue rodando as outras verificações.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {regras.map((rg, i) => (
+              <div key={rg.id} style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '9px 10px' }}>
+                <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>quando tiver</span>
+                <input list="conf-servicos" value={rg.quando} placeholder="COLORAÇÃO"
+                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
+                  style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>exige</span>
+                <input list="conf-servicos" value={rg.exige} placeholder="HIGIENIZAÇÃO"
+                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, exige: e.target.value } : x))}
+                  style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b6860', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={rg.ativa}
+                    onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, ativa: e.target.checked } : x))} />
+                  ligada
+                </label>
+                <button onClick={() => setRegras(rs => rs.filter((_, j) => j !== i))} title="Excluir regra"
+                  style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '5px 7px', cursor: 'pointer', color: '#dc2626', display: 'flex' }}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => setRegras(rs => [...rs, { id: Math.random().toString(36).slice(2, 9), quando: '', exige: '', ativa: true }])}
+              style={{ border: '1px dashed #5b4fcf', background: '#f0eefb', color: '#5b4fcf', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Plus size={13} /> Nova exigência
+            </button>
+            <button
+              onClick={async () => {
+                // Regra sem os dois lados nunca dispara; some no salvamento em
+                // vez de ficar na lista dando a impressão de que está valendo.
+                const limpas = regras.filter(x => x.quando.trim() && x.exige.trim())
+                setSalvandoRegras(true)
+                const res = await fetch('/api/salon/conferencia-dia', {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ regras: limpas }),
+                })
+                setSalvandoRegras(false)
+                if (!res.ok) { toast.error('Não foi possível salvar as regras'); return }
+                setRegras(limpas)
+                toast.success('Regras salvas')
+                conferir()          // reconfere o dia já com as regras novas
+              }}
+              disabled={salvandoRegras}
+              style={{ border: 'none', background: '#16a34a', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: 12.5, fontWeight: 800, cursor: salvandoRegras ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {salvandoRegras ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Salvar e conferir
+            </button>
+          </div>
+
+          <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 10, marginBottom: 0 }}>
+            A comparação é por <b>palavra inteira</b>: a regra &quot;COLORAÇÃO&quot; não pega
+            &quot;DESCOLORAÇÃO&quot;, que é outro serviço.
+          </p>
+        </div>
+      )}
 
       {carregando && !r && (
         <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>
