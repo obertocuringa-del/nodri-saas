@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { Trophy, Medal } from 'lucide-react'
 import {
-  type CorridaInterna, type LinhaRanking,
+  type CorridaInterna, type LinhaRanking, type ResumoGrupo,
   metricaInfo, statusCorrida, STATUS_CORRIDA, periodoLabel,
 } from '@/lib/corridasInternas'
 import { Ranking } from './CorridasInternas'
+import CorridaGrupo from './CorridaGrupo'
 
 // Card "Corrida Interna" do portal do profissional — só leitura.
 // `destacarId` = id do profissional a destacar (quando o salão abre o perfil).
@@ -14,6 +15,7 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
   const [corridas, setCorridas] = useState<CorridaInterna[]>([])
   const [rankings, setRankings] = useState<Record<string, LinhaRanking[]>>({})
   const [medalhas, setMedalhas] = useState<{ profId: string; nome: string; total: number; corridas: { id: string; titulo: string }[] }[]>([])
+  const [resumos, setResumos] = useState<Record<string, ResumoGrupo>>({})
   const [voceId, setVoceId] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -25,6 +27,7 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
         setCorridas(Array.isArray(d.corridas) ? d.corridas : [])
         setRankings(d.rankings && typeof d.rankings === 'object' ? d.rankings : {})
         setMedalhas(Array.isArray(d.medalhas) ? d.medalhas : [])
+        setResumos(d.resumosGrupo && typeof d.resumosGrupo === 'object' ? d.resumosGrupo : {})
         setVoceId(d.voceId || '')
       })
       .catch(() => {})
@@ -97,11 +100,25 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: '#1a1a1a' }}>{c.titulo}</h3>
                 <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 20, background: sinfo.bg, color: sinfo.cor }}>{sinfo.label}</span>
               </div>
-              <div style={{ fontSize: 12, color: '#6b6860' }}>{info.label} · {periodoLabel(c)}</div>
+              <div style={{ fontSize: 12, color: '#6b6860' }}>
+                {c.modo === 'grupo' ? 'Em grupo · cada uma contra a própria meta' : info.label} · {periodoLabel(c)}
+              </div>
               {c.premio && <div style={{ fontSize: 12.5, color: '#b45309', fontWeight: 700, marginTop: 3 }}>{c.premio}</div>}
             </div>
 
-            {minha && (
+            {/* Na corrida em grupo não há pódio — dizer "3º lugar" contradiria a
+                regra da disputa, que é justamente não ter vencedor. */}
+            {minha && c.modo === 'grupo' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,#dcfce7,#d1fae5)', border: '1.5px solid #16a34a', borderRadius: 10, padding: '10px 14px' }}>
+                <Trophy size={20} style={{ color: minha.bateuMeta ? '#d97706' : '#16a34a', flexShrink: 0 }} />
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#15803d' }}>
+                  {minha.bateuMeta
+                    ? 'Você bateu a sua meta!'
+                    : `Você está com ${minha.pctMeta ?? 0}% da sua meta`}
+                </div>
+              </div>
+            )}
+            {minha && c.modo !== 'grupo' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,#dcfce7,#d1fae5)', border: '1.5px solid #16a34a', borderRadius: 10, padding: '10px 14px' }}>
                 {/* Vinha de MEDALHAS, que virou lista de textos vazios quando os
                     emojis saíram: sobrava um espaço de 22px desenhando nada. */}
@@ -120,7 +137,9 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
 
             {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
-            <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />
+            {c.modo === 'grupo'
+              ? <CorridaGrupo c={c} ranking={ranking} resumo={resumos[c.id]} />
+              : <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />}
           </div>
         )
       })}

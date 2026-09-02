@@ -83,6 +83,15 @@ export interface DoacaoMeta {
   para: string    // profId de quem recebeu
   valor: number
   em: number
+  /**
+   * Nasceu de sobra simulada.
+   *
+   * A simulação vive só na tela do dono, mas a doação é gravada na corrida e
+   * valeria para todo mundo — a profissional veria no portal que ganhou de uma
+   * colega que, no número real, não produziu nada. Marcada assim, ela não sai
+   * do servidor para o portal e some junto com a simulação que a criou.
+   */
+  teste?: boolean
 }
 
 export interface CorridaInterna {
@@ -100,6 +109,14 @@ export interface CorridaInterna {
    */
   modo?: 'ranking' | 'grupo'
   doacoes?: DoacaoMeta[]
+  /**
+   * Faturamento de mentira, por profissional, para o dono testar o gráfico.
+   *
+   * Só vale na tela do salão: o servidor não aplica simulação para o
+   * profissional. Se aplicasse, ela abriria o portal e veria um número
+   * inventado sobre o próprio trabalho, sem forma de saber que é teste.
+   */
+  simulacoes?: Record<string, number>
   descricao?: string          // regra / observação livre (opcional)
   metrica: MetricaCorrida
   servico?: string            // usado quando metrica === 'servico'
@@ -127,11 +144,26 @@ export interface LinhaRanking {
   excedente?: number          // quanto passou da própria meta (0 se não passou)
   doado?: number              // quanto já entregou para colegas
   recebido?: number           // quanto ganhou de colegas
+  /**
+   * A geometria do gráfico, em % da própria meta.
+   *
+   * O desenho sai daqui e NÃO de `valor / metaPessoal`, porque no portal do
+   * profissional os reais dos colegas nem chegam ao navegador. Percentual não
+   * entrega quanto a colega ganha; a divisão de dois reais, sim.
+   */
+  pctProprio?: number         // o que ela mesma produziu
+  pctRecebidoMeta?: number    // o que veio de colega
+  pctDoadoMeta?: number       // o que ela já entregou
+  /** Os valores em R$ desta linha foram omitidos (é de outra pessoa). */
+  valorOculto?: boolean
+  /** Este faturamento é simulado — não veio do relatório. */
+  simulado?: boolean
 }
 
 export interface ResumoGrupo {
-  metaTotal: number
-  produzido: number
+  /** Ausentes no portal do profissional: os dois juntos revelam o R$ do grupo. */
+  metaTotal?: number
+  produzido?: number
   pct: number
   bateram: number
   participantes: number

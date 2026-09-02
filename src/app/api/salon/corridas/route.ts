@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { registrarAuditoria } from '@/lib/audit'
-import type { CorridaInterna, LinhaRanking, MetricaCorrida } from '@/lib/corridasInternas'
-import { metricaInfo } from '@/lib/corridasInternas'
+import type { CorridaInterna, LinhaRanking, MetricaCorrida, ResumoGrupo } from '@/lib/corridasInternas'
+import { metricaInfo, resumoGrupo } from '@/lib/corridasInternas'
 
 const CHAVE = 'corridas_internas'
 
@@ -183,6 +183,8 @@ export async function GET() {
     }
   }
 
+  const ehDono = sess.role === 'salon'
+
   const rankings: Record<string, LinhaRanking[]> = {}
   for (const c of paraCalcular) {
     const meses = mesesEntre(c.de, c.ate)
@@ -224,6 +226,14 @@ export async function GET() {
       // No modo grupo a métrica é sempre o faturamento contra a meta da própria
       // pessoa — não faz sentido escolher outra: a meta do perfil é em dinheiro.
       const ehGrupo = c.modo === 'grupo'
+
+      // Faturamento simulado, só para o dono. O profissional recebe sempre o
+      // número real: ver um valor inventado sobre o próprio mês, sem nenhum
+      // aviso de que é teste, seria pior do que não ver a corrida.
+      const fingido = ehGrupo && ehDono ? c.simulacoes?.[p.id] : undefined
+      const ehSimulado = typeof fingido === 'number' && isFinite(fingido)
+      if (ehSimulado) { a.fat = Number(fingido); achou = true }
+
       const valor = ehGrupo ? a.fat : valorDaMetrica(a, c.metrica)
 
       // Só entra no ranking quem teve dado no período (evita fila de zeros).
@@ -237,6 +247,7 @@ export async function GET() {
       linhas.push({
         profId: p.id, nome: p.apelido || p.nome_completo || 'Profissional', valor, pos: 0,
         ...(ehGrupo ? { metaPessoal: a.meta } : {}),
+        ...(ehSimulado ? { simulado: true } : {}),
       })
     }
 
@@ -246,6 +257,8 @@ export async function GET() {
       for (const d of (c.doacoes || [])) {
         const v = Number(d.valor) || 0
         if (v <= 0) continue
+        // Entrega de teste só conta para quem está testando.
+        if (d.teste && !ehDono) continue
         doado.set(d.de, (doado.get(d.de) || 0) + v)
         recebido.set(d.para, (recebido.get(d.para) || 0) + v)
       }
@@ -257,6 +270,10 @@ export async function GET() {
         // doação viraria excedente para repassar adiante, e o mesmo dinheiro
         // circularia pelo grupo inflando todo mundo.
         l.excedente = Math.max(l.valor - meta, 0)
+        // Geometria do gráfico em % — é o que vai para o portal no lugar dos R$.
+        l.pctProprio = meta > 0 ? (l.valor / meta) * 100 : 0
+        l.pctRecebidoMeta = meta > 0 ? (l.recebido / meta) * 100 : 0
+        l.pctDoadoMeta = meta > 0 ? (l.doado / meta) * 100 : 0
         // Bateu contando o que recebeu: é o objetivo declarado da corrida em
         // grupo, fechar junto. Quem ajudou continua batida pela própria conta.
         l.pctMeta = meta > 0 ? Number((((l.valor + l.recebido) / meta) * 100).toFixed(0)) : null
@@ -327,7 +344,43 @@ export async function GET() {
   const rankingsVisiveis: Record<string, LinhaRanking[]> = {}
   for (const c of visiveis) if (rankings[c.id]) rankingsVisiveis[c.id] = rankings[c.id]
 
-  return NextResponse.json({ corridas: visiveis, rankings: rankingsVisiveis, voceId, medalhas })
+  // ── Placar do grupo, e o que dele o profissional pode ver ────────────────
+  //
+  // O profissional vê o gráfico inteiro — nomes, colunas, quem bateu — mas
+  // nenhum real que não seja o dele. Não é preciosismo: com "+R$ 1.000" escrito
+  // em cima de uma coluna de 120%, qualquer um divide e descobre que a meta da
+  // colega é R$ 5.000. Por isso a poda é AQUI, e não na tela: o dado não pode
+  // sair do servidor. A tela sozinha esconderia só de quem não abre o DevTools.
+  const resumosGrupo: Record<string, ResumoGrupo> = {}
+  for (const c of visiveis) {
+    if (c.modo !== 'grupo') continue
+    const linhas = rankingsVisiveis[c.id] || []
+    const r = resumoGrupo(linhas)
+    if (ehDono) {
+      resumosGrupo[c.id] = r
+    } else {
+      // Fica só a rosca (o %) e o placar de quantas bateram. O "R$ X de R$ Y" e
+      // o "faltam R$ Z" saem inteiros — os dois revelam o dinheiro do grupo.
+      resumosGrupo[c.id] = { pct: r.pct, bateram: r.bateram, participantes: r.participantes }
+      rankingsVisiveis[c.id] = linhas.map(l => l.profId === voceId ? l : ({
+        profId: l.profId, nome: l.nome, pos: l.pos, valor: 0, valorOculto: true,
+        pctMeta: l.pctMeta, bateuMeta: l.bateuMeta,
+        pctProprio: l.pctProprio, pctRecebidoMeta: l.pctRecebidoMeta, pctDoadoMeta: l.pctDoadoMeta,
+      }))
+    }
+  }
+
+  // A própria corrida também carrega dinheiro: `doacoes` traz "entregou R$ X" e
+  // `simulacoes` traz os valores de teste. Com a coluna da colega em 120% na
+  // tela, um "R$ 1.000" de doação entrega a meta dela por divisão — a mesma
+  // fresta que a poda do ranking fecha. Então o objeto também vai podado.
+  const corridasVisiveis = ehDono ? visiveis : visiveis.map(c => c.modo !== 'grupo' ? c : ({
+    ...c,
+    simulacoes: undefined,
+    doacoes: (c.doacoes || []).filter(d => !d.teste).map(d => ({ de: d.de, para: d.para, em: d.em, valor: 0 })),
+  }))
+
+  return NextResponse.json({ corridas: corridasVisiveis, rankings: rankingsVisiveis, voceId, medalhas, resumosGrupo })
 }
 
 // PUT — só o dono grava a lista inteira (criar/editar/excluir/reordenar).

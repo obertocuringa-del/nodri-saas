@@ -16,8 +16,8 @@
  */
 
 import { useMemo, useState } from 'react'
-import { Gift, X, Undo2, Target } from 'lucide-react'
-import type { CorridaInterna, LinhaRanking, DoacaoMeta } from '@/lib/corridasInternas'
+import { Gift, X, Undo2, Target, FlaskConical, RotateCcw } from 'lucide-react'
+import type { CorridaInterna, LinhaRanking, DoacaoMeta, ResumoGrupo } from '@/lib/corridasInternas'
 import { resumoGrupo, sobraDisponivel } from '@/lib/corridasInternas'
 
 const COR_ABAIXO = '#94a3b8'   // ainda não bateu
@@ -28,15 +28,25 @@ const ALTURA = 210
 
 const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
+export default function CorridaGrupo({ c, ranking, resumo: resumoProp, podeDoar, onDoacoes, onSimulacoes }: {
   c: CorridaInterna
   ranking: LinhaRanking[]
+  /** Vem pronto do servidor. No portal chega sem os R$ — só a % e o placar. */
+  resumo?: ResumoGrupo
   podeDoar?: boolean
   onDoacoes?: (doacoes: DoacaoMeta[]) => void
+  /** Só o salão simula. Ausente = sem botão de teste. */
+  onSimulacoes?: (simulacoes: Record<string, number>) => void
 }) {
   const [doando, setDoando] = useState<string | null>(null)
+  const [simulando, setSimulando] = useState(false)
+  const simulacoes = c.simulacoes || {}
+  const qtdSimulada = Object.keys(simulacoes).length
 
-  const resumo = useMemo(() => resumoGrupo(ranking), [ranking])
+  // Recalcular aqui só serve para a tela do salão, que tem os valores todos. No
+  // portal os R$ dos colegas nem chegam, e a soma daria um número errado.
+  const resumo = useMemo(() => resumoProp || resumoGrupo(ranking), [resumoProp, ranking])
+  const temValorDoGrupo = typeof resumo.metaTotal === 'number' && typeof resumo.produzido === 'number'
 
   // Teto do eixo. Nunca menos que 120% para sobrar céu acima da linha da meta —
   // sem isso, quem bate exatamente 100% encosta no topo e parece estourado.
@@ -49,7 +59,9 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
 
   function registrar(de: string, para: string, valor: number) {
     if (!onDoacoes) return
-    onDoacoes([...(c.doacoes || []), { de, para, valor, em: Date.now() }])
+    // Se a sobra de quem doa é simulada, a entrega também é teste.
+    const teste = typeof simulacoes[de] === 'number'
+    onDoacoes([...(c.doacoes || []), { de, para, valor, em: Date.now(), ...(teste ? { teste: true } : {}) }])
     setDoando(null)
   }
   function desfazer(i: number) {
@@ -77,16 +89,41 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
         <Rosca pct={resumo.pct} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', letterSpacing: 0.4, textTransform: 'uppercase' }}>Meta do grupo</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>
-            {moeda(resumo.produzido)}
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}> de {moeda(resumo.metaTotal)}</span>
-          </div>
+          {temValorDoGrupo ? (
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>
+              {moeda(resumo.produzido as number)}
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}> de {moeda(resumo.metaTotal as number)}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>
+              {Math.round(resumo.pct)}%<span style={{ fontSize: 13, fontWeight: 700, color: '#6b6860' }}> da meta do grupo</span>
+            </div>
+          )}
           <div style={{ fontSize: 12.5, color: '#57534e', marginTop: 2 }}>
             {resumo.bateram} de {resumo.participantes} bateram a própria meta
-            {resumo.metaTotal > resumo.produzido && <> · faltam {moeda(resumo.metaTotal - resumo.produzido)}</>}
+            {temValorDoGrupo && (resumo.metaTotal as number) > (resumo.produzido as number) &&
+              <> · faltam {moeda((resumo.metaTotal as number) - (resumo.produzido as number))}</>}
           </div>
         </div>
       </div>
+
+      {/* ── Modo teste ───────────────────────────────────────────────────── */}
+      {qtdSimulada > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: 10, padding: '9px 12px' }}>
+          <FlaskConical size={16} style={{ color: '#b45309', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: '#92400e' }}>
+            <strong>Modo teste:</strong> {qtdSimulada} faturamento{qtdSimulada > 1 ? 's' : ''} simulado{qtdSimulada > 1 ? 's' : ''}.
+            Vale só nesta tela — no portal das profissionais o número continua o real.
+          </div>
+          {onSimulacoes && (
+            <button onClick={() => { onDoacoes?.((c.doacoes || []).filter(d => !d.teste)); onSimulacoes({}) }}
+              title="Desfazer as simulações e as entregas que saíram delas"
+              style={{ border: '1.5px solid #f59e0b', background: '#fff', color: '#b45309', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+              <RotateCcw size={13} /> Desfazer tudo
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── O gráfico ────────────────────────────────────────────────────── */}
       {/*
@@ -115,10 +152,9 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
               <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, borderTop: '1px solid #d6d3cd', pointerEvents: 'none' }} />
 
               {ranking.map(l => {
-                const meta = Number(l.metaPessoal || 0)
-                const pctPropria = meta > 0 ? (l.valor / meta) * 100 : 0
-                const pctRecebido = meta > 0 ? (Number(l.recebido || 0) / meta) * 100 : 0
-                const pctDoado = meta > 0 ? (Number(l.doado || 0) / meta) * 100 : 0
+                const pctPropria = Number(l.pctProprio || 0)
+                const pctRecebido = Number(l.pctRecebidoMeta || 0)
+                const pctDoado = Number(l.pctDoadoMeta || 0)
                 const sobra = sobraDisponivel(l)
                 const clicavel = !!podeDoar && sobra > 0
                 const dentro = Math.min(pctPropria, 100)
@@ -135,10 +171,10 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
                     }}>
                     {/* rótulos acima da coluna */}
                     <div style={{ position: 'absolute', left: -6, right: -6, bottom: y(pctPropria + pctRecebido) + 4, textAlign: 'center', pointerEvents: 'none' }}>
-                      {Number(l.excedente || 0) > 0 && (
+                      {!l.valorOculto && Number(l.excedente || 0) > 0 && (
                         <div style={{ fontSize: 10.5, fontWeight: 900, color: '#15803d', whiteSpace: 'nowrap' }}>+{moeda(l.excedente || 0)}</div>
                       )}
-                      {Number(l.recebido || 0) > 0 && (
+                      {!l.valorOculto && Number(l.recebido || 0) > 0 && (
                         <div style={{ fontSize: 10, fontWeight: 800, color: COR_RECEBIDO, whiteSpace: 'nowrap' }}>+{moeda(l.recebido || 0)}</div>
                       )}
                       <div style={{ fontSize: 10.5, fontWeight: 800, color: '#57534e', fontVariantNumeric: 'tabular-nums' }}>{l.pctMeta ?? 0}%</div>
@@ -163,6 +199,10 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
                       height: Math.max(y(dentro), 3),
                       background: l.bateuMeta ? COR_BATEU : COR_ABAIXO,
                       borderRadius: (acima > 0 || pctRecebido > 0) ? '0 0 3px 3px' : '5px 5px 3px 3px',
+                      // Contorno âmbar tracejado: a coluna de teste não pode
+                      // passar por real nem de relance.
+                      outline: l.simulado ? '2px dashed #f59e0b' : undefined,
+                      outlineOffset: l.simulado ? -2 : undefined,
                     }} />
                   </div>
                 )
@@ -179,8 +219,14 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
                 return (
                   <div key={l.profId} style={{ flex: '1 0 64px', minWidth: 64, textAlign: 'center' }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={l.nome}>{l.nome}</div>
-                    <div style={{ fontSize: 10, color: '#6b6860', fontVariantNumeric: 'tabular-nums' }}>{moeda(l.valor)}</div>
-                    <div style={{ fontSize: 9.5, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>meta {moeda(Number(l.metaPessoal || 0))}</div>
+                    {l.valorOculto ? (
+                      <div style={{ fontSize: 10, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>{l.pctMeta ?? 0}% da meta</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 10, color: '#6b6860', fontVariantNumeric: 'tabular-nums' }}>{moeda(l.valor)}</div>
+                        <div style={{ fontSize: 9.5, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>meta {moeda(Number(l.metaPessoal || 0))}</div>
+                      </>
+                    )}
                     {!!podeDoar && sobra > 0 && (
                       <div style={{ fontSize: 9.5, fontWeight: 800, color: '#b45309', marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         <Gift size={10} /> {moeda(sobra)}
@@ -193,6 +239,26 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
           </div>
         </div>
       </div>
+
+      {onSimulacoes && (
+        simulando ? (
+          <PainelSimulacao
+            linhas={ranking} simulacoes={simulacoes}
+            onFechar={() => setSimulando(false)}
+            onAplicar={(profId, valor) => onSimulacoes({ ...simulacoes, [profId]: valor })}
+            onRemover={(profId) => {
+              const copia = { ...simulacoes }
+              delete copia[profId]
+              onSimulacoes(copia)
+            }}
+          />
+        ) : (
+          <button onClick={() => setSimulando(true)}
+            style={{ alignSelf: 'flex-start', border: '1.5px dashed #d6d3cd', background: '#fff', color: '#6b6860', borderRadius: 9, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FlaskConical size={13} /> Simular faturamento (teste)
+          </button>
+        )
+      )}
 
       {/* legenda */}
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 11, color: '#6b6860' }}>
@@ -219,9 +285,12 @@ export default function CorridaGrupo({ c, ranking, podeDoar, onDoacoes }: {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(c.doacoes || []).map((d, i) => (
               <div key={`${d.de}-${d.para}-${d.em}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1a1a1a' }}>
-                <Gift size={13} style={{ color: COR_RECEBIDO, flexShrink: 0 }} />
+                <Gift size={13} style={{ color: d.teste ? '#b45309' : COR_RECEBIDO, flexShrink: 0 }} />
+                {d.teste && <span style={{ fontSize: 9.5, fontWeight: 900, color: '#b45309', background: '#fef3c7', borderRadius: 20, padding: '1px 7px', flexShrink: 0 }}>TESTE</span>}
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <strong>{nomePor(d.de)}</strong> entregou <strong style={{ color: COR_RECEBIDO }}>{moeda(d.valor)}</strong> para <strong>{nomePor(d.para)}</strong>
+                  {/* Sem o valor quando quem olha é a profissional: o servidor
+                      manda a doação zerada, e escrever "R$ 0,00" seria mentira. */}
+                  <strong>{nomePor(d.de)}</strong> entregou{temValorDoGrupo && <> <strong style={{ color: COR_RECEBIDO }}>{moeda(d.valor)}</strong></>} para <strong>{nomePor(d.para)}</strong>
                 </span>
                 {podeDoar && (
                   <button onClick={() => desfazer(i)} title="Desfazer esta entrega"
@@ -333,6 +402,76 @@ function PainelDoacao({ origem, candidatas, onFechar, onEnviar }: {
             {v > sobra && <span style={{ color: '#dc2626', fontWeight: 700 }}> Acima da sobra disponível.</span>}
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+// ── Simulação de faturamento (só o salão) ───────────────────────────────────
+//
+// Serve para o dono ver o gráfico responder antes de ter dado real do mês: pôr
+// alguém acima da meta, conferir se a coluna sobe e se dá para entregar a sobra.
+// O valor fica gravado na corrida como qualquer outro campo, e sai daqui pelo
+// mesmo botão que o pôs.
+function PainelSimulacao({ linhas, simulacoes, onFechar, onAplicar, onRemover }: {
+  linhas: LinhaRanking[]
+  simulacoes: Record<string, number>
+  onFechar: () => void
+  onAplicar: (profId: string, valor: number) => void
+  onRemover: (profId: string) => void
+}) {
+  const [prof, setProf] = useState(linhas[0]?.profId || '')
+  const [valor, setValor] = useState('')
+  const alvo = linhas.find(l => l.profId === prof)
+  const meta = Number(alvo?.metaPessoal || 0)
+  const v = Number(valor.replace(',', '.')) || 0
+  const nomePor = (id: string) => linhas.find(l => l.profId === id)?.nome || id
+
+  return (
+    <div style={{ border: '1.5px solid #f59e0b', background: '#fffbeb', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <FlaskConical size={15} style={{ color: '#b45309' }} />
+        <strong style={{ fontSize: 13.5, color: '#1a1a1a', flex: 1 }}>Simular faturamento</strong>
+        <button onClick={onFechar} title="Fechar" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#6b6860', display: 'flex' }}><X size={16} /></button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <label style={{ flex: '1 1 170px', minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Profissional</span>
+          <select value={prof} onChange={e => { setProf(e.target.value); setValor('') }}
+            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #fde68a', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+            {linhas.map(l => <option key={l.profId} value={l.profId}>{l.nome} — meta {moeda(Number(l.metaPessoal || 0))}</option>)}
+          </select>
+        </label>
+        <label style={{ flex: '0 1 150px' }}>
+          <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Faturou</span>
+          <input value={valor} onChange={e => setValor(e.target.value)} inputMode="decimal"
+            placeholder={meta > 0 ? (meta * 1.2).toFixed(2).replace('.', ',') : '0,00'}
+            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #fde68a', borderRadius: 8, fontSize: 13 }} />
+        </label>
+        <button onClick={() => prof && v > 0 && onAplicar(prof, v)} disabled={!prof || v <= 0}
+          style={{
+            padding: '9px 16px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 800,
+            background: (prof && v > 0) ? '#b45309' : '#d6d3cd', color: '#fff',
+            cursor: (prof && v > 0) ? 'pointer' : 'not-allowed',
+          }}>Aplicar</button>
+      </div>
+      <div style={{ fontSize: 11, color: '#92400e' }}>
+        Sugestão: {meta > 0 ? moeda(meta * 1.2) : '—'} deixa {alvo?.nome} em 120%, com sobra para entregar.
+      </div>
+
+      {Object.keys(simulacoes).length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: '1px solid #fde68a', paddingTop: 9 }}>
+          {Object.entries(simulacoes).map(([id, val]) => (
+            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1a1a1a' }}>
+              <span style={{ flex: 1, minWidth: 0 }}><strong>{nomePor(id)}</strong> simulado em {moeda(val)}</span>
+              <button onClick={() => onRemover(id)} title="Desfazer esta simulação"
+                style={{ border: '1px solid #fde68a', background: '#fff', borderRadius: 7, padding: '3px 6px', cursor: 'pointer', color: '#92400e', display: 'flex' }}>
+                <Undo2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

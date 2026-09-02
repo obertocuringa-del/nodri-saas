@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Play, Pause, Trophy, X, Medal, Users } from 'lucide-react'
 import {
-  type CorridaInterna, type LinhaRanking, type MetricaCorrida, type DoacaoMeta,
+  type CorridaInterna, type LinhaRanking, type MetricaCorrida, type DoacaoMeta, type ResumoGrupo,
   METRICAS_CORRIDA, METRICAS_ESCOLHIVEIS, metricaInfo, statusCorrida, STATUS_CORRIDA,
   periodoLabel, formataValor, ridC,
 } from '@/lib/corridasInternas'
@@ -31,6 +31,7 @@ export default function CorridasInternas() {
   const [corridas, setCorridas] = useState<CorridaInterna[]>([])
   const [rankings, setRankings] = useState<Record<string, LinhaRanking[]>>({})
   const [medalhas, setMedalhas] = useState<{ profId: string; nome: string; total: number; corridas: { id: string; titulo: string }[] }[]>([])
+  const [resumos, setResumos] = useState<Record<string, ResumoGrupo>>({})
   const [profs, setProfs] = useState<ProfLeve[]>([])
   const [servicosRel, setServicosRel] = useState<{ nome: string; quantidade: number }[]>([])
   // Tipos de ocorrência que o salão cadastrou no Feedback Profissional — a
@@ -50,6 +51,7 @@ export default function CorridasInternas() {
       setCorridas(Array.isArray(d.corridas) ? d.corridas : [])
       setRankings(d.rankings && typeof d.rankings === 'object' ? d.rankings : {})
       setMedalhas(Array.isArray(d.medalhas) ? d.medalhas : [])
+      setResumos(d.resumosGrupo && typeof d.resumosGrupo === 'object' ? d.resumosGrupo : {})
     } catch { toast.error('Não foi possível carregar as corridas') }
     setLoading(false)
   }
@@ -184,7 +186,9 @@ export default function CorridasInternas() {
           {corridas.map(c => (
             <CardCorrida key={c.id} c={c} ranking={rankings[c.id] || []}
               onEdit={() => setEdit(c)} onExcluir={() => excluir(c.id)} onToggle={() => toggleAtiva(c)}
-              onDoacoes={(doacoes) => salvarLista(corridas.map(x => x.id === c.id ? { ...x, doacoes } : x))} />
+              resumo={resumos[c.id]}
+              onDoacoes={(doacoes) => salvarLista(corridas.map(x => x.id === c.id ? { ...x, doacoes } : x))}
+              onSimulacoes={(simulacoes) => salvarLista(corridas.map(x => x.id === c.id ? { ...x, simulacoes } : x))} />
           ))}
         </div>
       )}
@@ -198,10 +202,11 @@ export default function CorridasInternas() {
 }
 
 // ── Card de uma corrida (visão do salão) ──
-function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle, onDoacoes }: {
-  c: CorridaInterna; ranking: LinhaRanking[]
+function CardCorrida({ c, ranking, resumo, onEdit, onExcluir, onToggle, onDoacoes, onSimulacoes }: {
+  c: CorridaInterna; ranking: LinhaRanking[]; resumo?: ResumoGrupo
   onEdit: () => void; onExcluir: () => void; onToggle: () => void
   onDoacoes: (doacoes: DoacaoMeta[]) => void
+  onSimulacoes: (simulacoes: Record<string, number>) => void
 }) {
   const st = statusCorrida(c)
   const info = metricaInfo(c.metrica)
@@ -232,7 +237,7 @@ function CardCorrida({ c, ranking, onEdit, onExcluir, onToggle, onDoacoes }: {
 
       {/* O salão sempre vê os números: é quem precisa entender a diferença. */}
       {c.modo === 'grupo'
-        ? <CorridaGrupo c={c} ranking={ranking} podeDoar onDoacoes={onDoacoes} />
+        ? <CorridaGrupo c={c} ranking={ranking} resumo={resumo} podeDoar onDoacoes={onDoacoes} onSimulacoes={onSimulacoes} />
         : <Ranking ranking={ranking} c={c} />}
     </div>
   )
