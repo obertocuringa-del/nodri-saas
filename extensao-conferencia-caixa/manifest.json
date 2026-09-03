@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "NODRI — Conferência de Caixa",
+  "version": "1.0.0",
+  "description": "Lê o histórico de caixa do Avec e entrega ao NODRI quem fechou cada comanda, quanto entrou e em que forma de pagamento.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://admin.avec.beauty/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.nodri.com.br/*",
+        "https://nodri.com.br/*",
+        "https://*.nodri.com.br/*",
+        "https://nodri-saas.vercel.app/*",
+        "https://nodri-saas-jsx4.vercel.app/*",
+        "http://localhost:3000/*"
+      ],
+      "js": [
+        "ponte.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://admin.avec.beauty/*"
+      ],
+      "js": [
+        "avec.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

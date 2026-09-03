@@ -20,6 +20,12 @@
 // "R$ 16 em vez de R$ 32" — a comanda tinha 2 unidades de R$ 32, e o preço
 // estava certo. Comparar sempre `valor` com `valor`.
 
+import type { CaixaDoDia } from './caixasDia'
+import { donoDaComanda, recebidoPorComanda } from './caixasDia'
+
+/** Valor no padrão do Brasil — o texto do achado é lido por gente daqui. */
+const rs = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export type Gravidade = 'problema' | 'atencao' | 'nao_conferido'
 
 export interface Achado {
@@ -33,6 +39,8 @@ export interface Achado {
   texto: string
   /** Quanto está em jogo, em reais. Zero quando não dá para medir. */
   valorEmRisco: number
+  /** Responsável pelo caixa da comanda, quando o dado do caixa chegou. */
+  caixa?: string
 }
 
 export interface Atendimento {
@@ -108,9 +116,15 @@ export function conferirDia(
   atendimentos: Atendimento[],
   regras: RegraComposicao[],
   historico: Atendimento[] = [],
+  caixas: CaixaDoDia[] = [],
 ): Achado[] {
   const achados: Achado[] = []
-  const add = (a: Omit<Achado, 'id'>) => achados.push({ ...a, id: rid() })
+  const dono = donoDaComanda(caixas)
+  const recebido = recebidoPorComanda(caixas)
+  const temCaixa = caixas.length > 0
+
+  const add = (a: Omit<Achado, 'id'>) =>
+    achados.push({ ...a, id: rid(), caixa: dono.get(String(a.comanda)) || undefined })
 
   const ctx = (a: Atendimento) => ({
     comanda: String(a.num_comanda ?? ''),
@@ -141,9 +155,9 @@ export function conferirDia(
     if (Math.abs(esperado - Number(a.total)) > 0.02) {
       add({ ...ctx(a), gravidade: 'problema', tipo: 'total_nao_fecha',
         valorEmRisco: Math.max(esperado - Number(a.total), 0),
-        texto: `Total lançado R$ ${Number(a.total).toFixed(2)}, mas ${a.qtd}× R$ ${Number(a.valor).toFixed(2)}`
-          + (Number(a.desconto) ? ` menos R$ ${Number(a.desconto).toFixed(2)} de desconto` : '')
-          + ` dá R$ ${esperado.toFixed(2)}.` })
+        texto: `Total lançado R$ ${rs(a.total)}, mas ${a.qtd}× R$ ${rs(a.valor)}`
+          + (Number(a.desconto) ? ` menos R$ ${rs(Number(a.desconto))} de desconto` : '')
+          + ` dá R$ ${rs(esperado)}.` })
     }
   }
 
@@ -172,7 +186,7 @@ export function conferirDia(
 
     if (vezes < MINIMO_PARA_PADRAO) {
       add({ ...ctx(a), gravidade: 'nao_conferido', tipo: 'preco_sem_padrao', valorEmRisco: 0,
-        texto: `Cobrado R$ ${Number(a.valor).toFixed(2)}. Este serviço aparece com `
+        texto: `Cobrado R$ ${rs(a.valor)}. Este serviço aparece com `
           + `${contagem.size} preços diferentes e nenhum se repete o bastante para ser o normal.` })
       continue
     }
@@ -180,9 +194,9 @@ export function conferirDia(
     const dif = precoComum - Number(a.valor)
     add({ ...ctx(a), gravidade: 'atencao', tipo: 'preco_fora_do_normal',
       valorEmRisco: Math.max(dif, 0),
-      texto: `Cobrado R$ ${Number(a.valor).toFixed(2)}; o normal deste serviço é `
-        + `R$ ${precoComum.toFixed(2)} (${vezes} vezes). `
-        + (dif > 0 ? `Diferença de R$ ${dif.toFixed(2)} a menos.` : `Diferença de R$ ${(-dif).toFixed(2)} a mais.`) })
+      texto: `Cobrado R$ ${rs(a.valor)}; o normal deste serviço é `
+        + `R$ ${rs(precoComum)} (${vezes} vezes). `
+        + (dif > 0 ? `Diferença de R$ ${rs(dif)} a menos.` : `Diferença de R$ ${rs((-dif))} a mais.`) })
   }
 
   // ── 4. Regras de composição do salão ──────────────────────────────────────
@@ -230,6 +244,58 @@ export function conferirDia(
     if (!String(a.profissional || '').trim()) {
       add({ ...ctx(a), gravidade: 'atencao', tipo: 'sem_profissional', valorEmRisco: 0,
         texto: 'Item lançado sem profissional. A comissão deste serviço não tem dono.' })
+    }
+  }
+
+  // ── 6. Lançado × recebido ─────────────────────────────────────────────────
+  //
+  // A conferência de caixa de verdade: a soma dos itens da comanda contra o
+  // dinheiro que entrou por ela. Sem o dado do caixa isso é impossível — e
+  // então é dito, em vez de a tela deixar parecer que foi conferido.
+  const totalPorComanda = new Map<string, Atendimento[]>()
+  for (const a of atendimentos) {
+    const k = String(a.num_comanda ?? '').trim()
+    if (k) totalPorComanda.set(k, [...(totalPorComanda.get(k) || []), a])
+  }
+
+  if (!temCaixa) {
+    if (totalPorComanda.size > 0) {
+      add({ comanda: '—', cliente: '—', profissional: '—', servico: '—',
+        gravidade: 'nao_conferido', tipo: 'sem_dado_de_caixa', valorEmRisco: 0,
+        texto: `O valor recebido não foi conferido: o dado do caixa não chegou. `
+          + `${totalPorComanda.size} comanda(s) sem confronto entre o que foi lançado e o que entrou.` })
+    }
+  } else {
+    for (const [comanda, itens] of totalPorComanda) {
+      const lancado = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
+      const pago = recebido.get(comanda)
+
+      if (pago === undefined) {
+        // Comanda lançada que não apareceu em caixa nenhum: pode estar aberta
+        // ainda, então é ATENÇÃO e não PROBLEMA.
+        add({ ...ctx(itens[0]), comanda, gravidade: 'atencao', tipo: 'comanda_fora_do_caixa',
+          valorEmRisco: 0,
+          texto: `Comanda lançada (R$ ${rs(lancado)}) e não encontrada em nenhum caixa do dia. `
+            + `Pode estar aberta.` })
+        continue
+      }
+
+      const dif = lancado - pago
+      if (Math.abs(dif) > 0.02) {
+        add({ ...ctx(itens[0]), comanda, gravidade: 'problema', tipo: 'lancado_diferente_do_recebido',
+          valorEmRisco: Math.max(dif, 0),
+          texto: `Lançado R$ ${rs(lancado)} em itens, recebido R$ ${rs(pago)} no caixa. `
+            + (dif > 0 ? `Faltam R$ ${rs(dif)}.` : `Entraram R$ ${rs((-dif))} a mais.`) })
+      }
+    }
+
+    // Dinheiro que entrou por uma comanda que não existe nos lançamentos.
+    for (const [comanda, pago] of recebido) {
+      if (totalPorComanda.has(comanda)) continue
+      add({ comanda, cliente: '—', profissional: '—', servico: '—',
+        gravidade: 'problema', tipo: 'caixa_sem_lancamento', valorEmRisco: pago,
+        texto: `Entraram R$ ${rs(pago)} no caixa por esta comanda, e ela não tem `
+          + `nenhum item lançado no relatório.` })
     }
   }
 

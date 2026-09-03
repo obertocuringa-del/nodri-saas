@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } from '@/lib/conferenciaDia'
+import { chaveDoMes, totalDoCaixa, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,7 +85,19 @@ export async function GET(req: NextRequest) {
   const regras: RegraComposicao[] = Array.isArray((cfg as any)?.valor)
     ? (cfg as any).valor : REGRAS_PADRAO
 
-  const achados = conferirDia(doDia, regras, historico)
+  // ── O MOVIMENTO DE CAIXA, se a extensão já trouxe ─────────────────────────
+  //
+  // Parte híbrida: o que o relatório importado sabe (itens lançados) encontra
+  // aqui o que só a tela do Avec sabe (quem fechou, quanto entrou, em que
+  // forma). Se não veio, a conferência segue e diz que não conferiu o valor —
+  // nunca finge que conferiu.
+  const { data: cfgCaixa } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', chaveDoMes(data)).maybeSingle()
+  const folha = ((cfgCaixa as any)?.valor || {}) as FolhaCaixas
+  const caixas: CaixaDoDia[] = Array.isArray(folha[data]) ? folha[data] : []
+
+  const achados = conferirDia(doDia, regras, historico, caixas)
 
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))
   const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
@@ -113,6 +126,21 @@ export async function GET(req: NextRequest) {
     categoriasConhecidas: Array.from(new Set(
       [...doDia, ...todos].map(a => String(a.categoria || '').trim()).filter(Boolean),
     )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
+    // Resumo por caixa: cada recepcionista responde pelo seu, então a tela
+    // separa por responsável em vez de somar tudo num monte só.
+    caixas: caixas.map(c => ({
+      responsavel: c.responsavel,
+      abertura: c.abertura || null,
+      fechamento: c.fechamento || null,
+      comandas: c.comandas.length,
+      total: totalDoCaixa(c),
+      formas: c.comandas.reduce((acc: Record<string, number>, x) => {
+        const f = x.forma || 'Sem forma'
+        acc[f] = (acc[f] || 0) + x.valor
+        return acc
+      }, {}),
+    })),
+    temCaixa: caixas.length > 0,
     itens: doDia.length,
     comandas: comandas.size,
     faturado,
