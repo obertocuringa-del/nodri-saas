@@ -342,12 +342,19 @@ export function conferirDia(
     }
   }
 
-  // ── 5. Comanda sem profissional ───────────────────────────────────────────
+  // ── 5. Serviço sem profissional ───────────────────────────────────────────
+  //
+  // Vira PROBLEMA, e não atenção: serviço sem profissional não entra em
+  // comissão nenhuma e, até hoje, sumia do NODRI inteiro — o robô descartava a
+  // linha na importação. Um COMPLEMENTO de R$ 70 lançado assim ficava
+  // invisível no faturamento E fazia a conferência acusar a comanda de não ter
+  // complemento. O item existia; quem não existia era o profissional.
   for (const a of atendimentos) {
-    if (!String(a.profissional || '').trim()) {
-      add({ ...ctx(a), gravidade: 'atencao', tipo: 'sem_profissional', valorEmRisco: 0,
-        texto: 'Item lançado sem profissional. A comissão deste serviço não tem dono.' })
-    }
+    if (String(a.profissional || '').trim()) continue
+    add({ ...ctx(a), gravidade: 'problema', tipo: 'sem_profissional', valorEmRisco: 0,
+      texto: `Serviço lançado sem profissional: ${a.servico || 'sem nome'} `
+        + `(R$ ${rs(a.total)}). Não entra na comissão de ninguém, e some dos `
+        + `relatórios por profissional.` })
   }
 
   // ── 5a. Comanda paga sem passar por caixa ─────────────────────────────────
@@ -458,12 +465,24 @@ export function conferirDia(
       // conferência que grita todo dia deixa de ser lida. Fica em ATENÇÃO, com
       // a explicação provável, e sem valor em risco: não há dinheiro faltando
       // aqui — há dinheiro a mais, que é o produto.
+      // A explicação tem de dizer o que É, não o que talvez seja. São três
+      // situações diferentes, e chamar as três de "pode ser produto" faz o
+      // dono conferir de novo o que já estava conferido.
+      const porQue = produtos.length === 0
+        // Nenhum produto importado no dia inteiro: a causa provável é essa, e
+        // é uma frase só para o dia, não um palpite por comanda.
+        ? ' Nenhum produto foi importado para este dia — importe a planilha e confira de novo.'
+        : emProduto > 0
+          // A comanda TEM produto importado e mesmo assim sobrou: aí não é
+          // produto faltando, é diferença de verdade.
+          ? ' Os produtos desta comanda já estão contados, então esta diferença não é produto.'
+          : ' Há produtos importados neste dia, mas nenhum nesta comanda — confira a comanda no Avec.'
+
       add({ ...(itens[0] ? ctx(itens[0]) : { cliente: '—', profissional: '—', servico: '—' }),
         comanda, gravidade: 'atencao', tipo: 'recebido_a_mais',
         valorEmRisco: 0,
         texto: `Entraram R$ ${rs(-dif)} a mais do que o lançado`
-          + `${detalhe || ` (R$ ${rs(lancado)})`}, caixa R$ ${rs(pago)}.`
-          + (emProduto > 0 ? '' : ' Pode ser produto ainda não importado.') })
+          + `${detalhe || ` (R$ ${rs(lancado)})`}, caixa R$ ${rs(pago)}.` + porQue })
     }
 
     // Dinheiro que entrou por uma comanda que não existe nos lançamentos.
