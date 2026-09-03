@@ -82,6 +82,12 @@ export default function LojistasConfigPage() {
     setSalvandoConfig(false)
   }
 
+  // No celular o primeiro toque num botão costuma se perder: ele fecha o
+  // teclado, a página se reacomoda e o botão sai de debaixo do dedo antes de
+  // o clique nascer. Segurando o foco do campo, nada se mexe e o toque vale
+  // de primeira. No computador não muda nada.
+  const seguraFoco = (e: React.MouseEvent) => e.preventDefault()
+
   function copiarLink() {
     navigator.clipboard.writeText(linkPublico).then(() => toast.success('Link copiado!'))
   }
@@ -174,6 +180,37 @@ export default function LojistasConfigPage() {
         .ljc-input:focus { border-color: ${COR} !important; box-shadow: 0 0 0 3px ${COR}15; }
         .ljc-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
         .ljc-btn:hover:not(:disabled) { transform: translateY(-1px); }
+
+        /* ── CELULAR ─────────────────────────────────────────────────────
+           Tudo aqui é escopado nas classes .ljc-, então nenhuma outra tela
+           do sistema muda. */
+        @media (max-width: 640px) {
+          /* Cada ação ocupa a linha inteira. Dois botões lado a lado num
+             telefone dão 90px cada, e 90px de largura com 38px de altura é
+             um alvo em que se erra — principalmente com o teclado aberto,
+             que empurra a tela pra cima enquanto o dedo desce. */
+          .ljc-acoes { flex-direction: column !important; align-items: stretch !important; }
+          .ljc-acoes > .ljc-acao { width: 100% !important; justify-content: center !important;
+            min-height: 46px !important; font-size: 15px !important; }
+          /* O campo de digitar fica em cima, sozinho na linha */
+          .ljc-acoes > .ljc-input { width: 100% !important; flex: 1 1 100% !important; }
+          /* Nada de zoom automático: no iPhone, campo com fonte menor que
+             16px faz o Safari dar zoom ao focar, e a tela sai do lugar no
+             meio da digitação. */
+          .ljc-input { font-size: 16px !important; }
+          /* O hover de levantar 1px não existe no toque, e no Android ele
+             fica "preso" depois do toque, dando a impressão de travado. */
+          .ljc-btn:hover:not(:disabled) { transform: none; }
+          /* Os ícones de subir/descer/ocultar/excluir das listas: 16px de
+             alvo é menor que a ponta do dedo. */
+          .ljc-card button svg { pointer-events: none; }
+          .ljc-icone { min-width: 38px !important; min-height: 38px !important;
+            display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+          /* O link público inteiro, sem cortar, e a lista de serviços mais
+             curta pra não virar uma rolagem dentro da outra. */
+          .ljc-card code { font-size: 12px !important; }
+          .ljc-lista { max-height: 260px !important; }
+        }
       `}</style>
       {linkZapSalao && (
         <a href={linkZapSalao} target="_blank" rel="noopener noreferrer" title="Falar com o salão no WhatsApp"
@@ -198,9 +235,9 @@ export default function LojistasConfigPage() {
 
         {/* LINK PÚBLICO */}
         <SecaoConfig titulo="Link de Cadastro" subtitulo="Autocadastro do lojista, sem login" icone={<Link2 size={16} color="white" />} cor={COR}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="ljc-acoes" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <code style={{ flex: 1, minWidth: 200, background: '#f6f4ff', padding: '10px 12px', borderRadius: 8, fontSize: 13, color: COR, wordBreak: 'break-all' }}>{linkPublico}</code>
-            <button onClick={copiarLink} className="ljc-btn" style={btnGhost}><Copy size={14} /> Copiar</button>
+            <button onClick={copiarLink} onMouseDown={seguraFoco} className="ljc-btn ljc-acao" style={btnGhost}><Copy size={14} /> Copiar</button>
           </div>
           <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>Compartilhe esse link com os lojistas parceiros para que eles se cadastrem.</p>
         </SecaoConfig>
@@ -208,10 +245,16 @@ export default function LojistasConfigPage() {
         {/* GRUPO PROMOCIONAL */}
         <SecaoConfig titulo="Grupo Promocional" icone={<MessageCircle size={16} color="white" />} cor="#16a34a">
           <label style={lbl}>Link do Grupo WhatsApp</label>
-          <input className="ljc-input" value={whatsappLink} onChange={e => setWhatsappLink(e.target.value)} placeholder="https://chat.whatsapp.com/..." style={inp} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button onClick={salvarConfig} disabled={salvandoConfig} className="ljc-btn" style={btnPrimary}><Save size={14} /> Salvar</button>
-            {whatsappLink && <button onClick={removerGrupo} className="ljc-btn" style={btnDanger}><Trash2 size={14} /> Remover</button>}
+{/* O teclado do celular põe maiúscula na primeira letra e corrige palavra —
+              num endereço isso vira "Https://chat..." ou um trecho trocado, e o
+              link entra torto sem ninguém perceber. */}
+          <input className="ljc-input" value={whatsappLink} onChange={e => setWhatsappLink(e.target.value)}
+            placeholder="https://chat.whatsapp.com/..." style={inp}
+            type="url" inputMode="url" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+            onBlur={e => setWhatsappLink(e.target.value.trim())} />
+          <div className="ljc-acoes" style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button onClick={salvarConfig} onMouseDown={seguraFoco} disabled={salvandoConfig} className="ljc-btn ljc-acao" style={btnPrimary}><Save size={14} /> Salvar</button>
+            {whatsappLink && <button onClick={removerGrupo} onMouseDown={seguraFoco} className="ljc-btn ljc-acao" style={btnDanger}><Trash2 size={14} /> Remover</button>}
           </div>
           {!whatsappLink && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>Sem link configurado — o botão de entrar no grupo não aparece para os lojistas.</p>}
         </SecaoConfig>
@@ -220,25 +263,25 @@ export default function LojistasConfigPage() {
         <SecaoConfig titulo="Mensagem Automática" icone={<MessageCircle size={16} color="white" />} cor={COR2}>
           <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>Texto exibido ao lojista na tela de confirmação, junto do convite ao grupo.</p>
           <textarea className="ljc-input" value={mensagem} onChange={e => setMensagem(e.target.value)} rows={6} style={{ ...inp, resize: 'vertical' }} />
-          <div style={{ marginTop: 10 }}>
-            <button onClick={salvarConfig} disabled={salvandoConfig} className="ljc-btn" style={btnPrimary}><Save size={14} /> Salvar mensagem</button>
+          <div className="ljc-acoes" style={{ marginTop: 10 }}>
+            <button onClick={salvarConfig} onMouseDown={seguraFoco} disabled={salvandoConfig} className="ljc-btn ljc-acao" style={btnPrimary}><Save size={14} /> Salvar mensagem</button>
           </div>
         </SecaoConfig>
 
         {/* SERVIÇOS */}
         <SecaoConfig titulo="Serviços de Interesse" subtitulo="Salva sozinho a cada inclusão, exclusão ou mudança de ordem — não há botão de salvar aqui" icone={<ListChecks size={16} color="white" />} cor={COR}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <div className="ljc-acoes" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input className="ljc-input" value={novoServico} onChange={e => setNovoServico(e.target.value)} placeholder="Novo serviço..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarServico()} />
-            <button onClick={adicionarServico} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
+            <button onClick={adicionarServico} onMouseDown={seguraFoco} className="ljc-btn ljc-acao" style={btnPrimary}><Plus size={14} /> Adicionar</button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
+          <div className="ljc-lista" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
             {[...servicos].sort((a, b) => a.ordem - b.ordem).map((s, i, arr) => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: s.ativo ? '#fff' : '#f9fafb', border: '1px solid #ece9e2' }}>
                 <span style={{ flex: 1, fontSize: 13, color: s.ativo ? '#1a1a1a' : '#9ca3af', fontWeight: 600 }}>{s.nome}</span>
-                <button onClick={() => mover(s.id, -1)} disabled={i === 0} style={btnIcon} title="Subir"><ArrowUp size={13} /></button>
-                <button onClick={() => mover(s.id, 1)} disabled={i === arr.length - 1} style={btnIcon} title="Descer"><ArrowDown size={13} /></button>
-                <button onClick={() => alternarAtivo(s.id)} style={btnIcon} title={s.ativo ? 'Desativar' : 'Ativar'}>{s.ativo ? <Eye size={13} /> : <EyeOff size={13} />}</button>
-                <button onClick={() => excluirServico(s.id)} style={{ ...btnIcon, color: '#dc2626' }} title="Excluir"><Trash2 size={13} /></button>
+                <button onClick={() => mover(s.id, -1)} disabled={i === 0} className="ljc-icone" style={btnIcon} title="Subir"><ArrowUp size={13} /></button>
+                <button onClick={() => mover(s.id, 1)} disabled={i === arr.length - 1} className="ljc-icone" style={btnIcon} title="Descer"><ArrowDown size={13} /></button>
+                <button onClick={() => alternarAtivo(s.id)} className="ljc-icone" style={btnIcon} title={s.ativo ? 'Desativar' : 'Ativar'}>{s.ativo ? <Eye size={13} /> : <EyeOff size={13} />}</button>
+                <button onClick={() => excluirServico(s.id)} className="ljc-icone" style={{ ...btnIcon, color: '#dc2626' }} title="Excluir"><Trash2 size={13} /></button>
               </div>
             ))}
           </div>
@@ -247,15 +290,15 @@ export default function LojistasConfigPage() {
 
         {/* SEGMENTOS */}
         <SecaoConfig titulo="Segmentos da Loja" subtitulo={'Salva sozinho a cada inclusão ou exclusão — não há botão de salvar aqui. A opção "Outro" (com campo livre) aparece sempre por último'} icone={<Tag size={16} color="white" />} cor={COR2}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <div className="ljc-acoes" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input className="ljc-input" value={novoSegmento} onChange={e => setNovoSegmento(e.target.value)} placeholder="Novo segmento..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarSegmento()} />
-            <button onClick={adicionarSegmento} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
+            <button onClick={adicionarSegmento} onMouseDown={seguraFoco} className="ljc-btn ljc-acao" style={btnPrimary}><Plus size={14} /> Adicionar</button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {segmentos.map(s => (
               <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 20, background: '#f6f4ff', color: COR, fontSize: 13, fontWeight: 600 }}>
                 {s}
-                <button onClick={() => excluirSegmento(s)} style={{ border: 'none', background: 'transparent', color: COR, cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={12} /></button>
+                <button onClick={() => excluirSegmento(s)} className="ljc-icone" style={{ border: 'none', background: 'transparent', color: COR, cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={12} /></button>
               </span>
             ))}
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px', borderRadius: 20, background: '#f3f4f6', color: '#9ca3af', fontSize: 13, fontWeight: 600 }}>Outro (fixo)</span>
