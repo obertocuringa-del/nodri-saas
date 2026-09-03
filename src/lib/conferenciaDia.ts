@@ -309,21 +309,47 @@ export function conferirDia(
       }
 
       const dif = lancado - pago
-      if (Math.abs(dif) > 0.02) {
+      if (Math.abs(dif) <= 0.02) continue
+
+      // ── Faltou dinheiro: é problema, e é o que a conferência existe para
+      //    achar. O serviço foi lançado e o valor não entrou.
+      if (dif > 0) {
         add({ ...ctx(itens[0]), comanda, gravidade: 'problema', tipo: 'lancado_diferente_do_recebido',
-          valorEmRisco: Math.max(dif, 0),
+          valorEmRisco: dif,
           texto: `Lançado R$ ${rs(lancado)} em itens, recebido R$ ${rs(pago)} no caixa. `
-            + (dif > 0 ? `Faltam R$ ${rs(dif)}.` : `Entraram R$ ${rs((-dif))} a mais.`) })
+            + `Faltam R$ ${rs(dif)}.` })
+        continue
       }
+
+      // ── Entrou MAIS do que o lançado: quase sempre é PRODUTO ────────────
+      //
+      // O relatório que alimenta o NODRI é o de SERVIÇOS (0031) — conferi as
+      // categorias importadas e nenhuma é de produto. Produto vendido na
+      // comanda entra no caixa e não aparece aqui, então a conta fecha a menos
+      // POR CONSTRUÇÃO, não por erro de ninguém.
+      //
+      // Acusar isso como problema encheria a conferência de alarme falso, e
+      // conferência que grita todo dia deixa de ser lida. Fica em ATENÇÃO, com
+      // a explicação provável, e sem valor em risco: não há dinheiro faltando
+      // aqui — há dinheiro a mais, que é o produto.
+      add({ ...ctx(itens[0]), comanda, gravidade: 'atencao', tipo: 'recebido_a_mais',
+        valorEmRisco: 0,
+        texto: `Entraram R$ ${rs(-dif)} a mais do que os serviços lançados `
+          + `(serviços R$ ${rs(lancado)}, caixa R$ ${rs(pago)}). `
+          + `Normalmente é produto vendido na comanda, que não vem no relatório de serviços.` })
     }
 
     // Dinheiro que entrou por uma comanda que não existe nos lançamentos.
     for (const [comanda, pago] of recebido) {
       if (totalPorComanda.has(comanda)) continue
+      // Sem nenhum serviço lançado: as duas explicações inocentes são comuns —
+      // a comanda foi fechada depois da última importação, ou só teve produto.
+      // Por isso ATENÇÃO: acusar aqui seria acusar o relógio.
       add({ comanda, cliente: '—', profissional: '—', servico: '—',
-        gravidade: 'problema', tipo: 'caixa_sem_lancamento', valorEmRisco: pago,
-        texto: `Entraram R$ ${rs(pago)} no caixa por esta comanda, e ela não tem `
-          + `nenhum item lançado no relatório.` })
+        gravidade: 'atencao', tipo: 'caixa_sem_lancamento', valorEmRisco: 0,
+        texto: `Entraram R$ ${rs(pago)} no caixa por esta comanda, e ela não tem nenhum `
+          + `serviço lançado no relatório. Pode ter sido fechada depois da última `
+          + `importação, ou ter só produto.` })
     }
   }
 
