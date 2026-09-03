@@ -230,22 +230,46 @@
     return true
   }
 
-  /** Põe o "por página" no máximo. Devolve como desfazer. */
+  /**
+   * Põe o "por página" no máximo, e CONFERE que pegou.
+   *
+   * Conferir não é zelo exagerado: depois do Buscar o Avec remonta a listagem,
+   * e o seletor volta para 10 — inclusive substituindo o elemento que a gente
+   * tinha em mãos. Sem a verificação, a extensão ajustava um seletor que já
+   * não existia mais, lia 10 de 36 e batia na trava de leitura incompleta.
+   *
+   * Por isso o elemento é buscado DE NOVO a cada tentativa.
+   */
   async function prepararListagem() {
-    const sel = document.querySelector('select[name$="_length"]')
-    if (!sel) return async () => {}
-    const antes = sel.value
-    const maior = Array.from(sel.options)
-      .map(o => Number(o.value)).filter(n => Number.isFinite(n) && n > 0)
-      .sort((a, b) => b - a)[0]
-    if (maior && String(maior) !== antes) {
+    const achar = () => document.querySelector('select[name$="_length"]')
+    const primeiro = achar()
+    if (!primeiro) return async () => {}
+    const antes = primeiro.value
+
+    let maior = 0
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      const sel = achar()
+      if (!sel) break
+      maior = Array.from(sel.options)
+        .map(o => Number(o.value)).filter(n => Number.isFinite(n) && n > 0)
+        .sort((a, b) => b - a)[0] || 0
+      if (!maior) break
+      if (sel.value === String(maior)) {
+        // Já está no máximo — mas só vale se a tabela acompanhou.
+        const t = acharTabelaDeComandas()
+        const total = registrosNaListagem()
+        if (t && (total === null || t.corpo.length >= Math.min(total, maior))) break
+      }
       sel.value = String(maior)
       avisarMudanca(sel)
-      await sleep(900)
+      await sleep(1200)
     }
+
     return async () => {
       // Repor o tamanho da página devolve a listagem para a página 1, que é
       // exatamente como o dono a deixou.
+      const sel = achar()
+      if (!sel) return
       sel.value = antes
       avisarMudanca(sel)
       await sleep(300)
