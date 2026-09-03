@@ -20,6 +20,26 @@ import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal
 import toast from 'react-hot-toast'
 import type { Achado, RegraComposicao } from '@/lib/conferenciaDia'
 
+// ── Os alvos de uma regra, como a tela os manipula ──────────────────────────
+// O primeiro alvo vive em `exige` e os demais em `alternativas`. Essa divisão
+// existe para não invalidar nenhuma regra já salva: as antigas têm só `exige`.
+const alvos = (r: RegraComposicao): string[] => [r.exige ?? '', ...(r.alternativas || [])]
+
+function porAlvo(r: RegraComposicao, i: number, valor: string): RegraComposicao {
+  const lista = alvos(r)
+  lista[i] = valor
+  return { ...r, exige: lista[0] || '', alternativas: lista.slice(1) }
+}
+
+function semAlvo(r: RegraComposicao, i: number): RegraComposicao {
+  const lista = alvos(r).filter((_, k) => k !== i)
+  return { ...r, exige: lista[0] || '', alternativas: lista.slice(1) }
+}
+
+function maisUmAlvo(r: RegraComposicao): RegraComposicao {
+  return { ...r, alternativas: [...(r.alternativas || []), ''] }
+}
+
 // ── Conversa com a extensão de conferência de caixa ─────────────────────────
 //
 // A página não conhece o id da extensão de propósito: assim atualizar ou
@@ -244,14 +264,37 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                   onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
                   style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
                 <select value={rg.tipo || 'exige'}
-                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, tipo: e.target.value as 'exige' | 'proibe' } : x))}
+                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, tipo: e.target.value as RegraComposicao['tipo'] } : x))}
                   style={{ padding: '7px 6px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#fff', color: '#6b6860' }}>
                   <option value="exige">exige</option>
+                  <option value="um_so">exige só um de</option>
                   <option value="proibe">não pode ter</option>
                 </select>
-                <input list="conf-servicos" value={rg.exige} placeholder="HIGIENIZAÇÃO"
-                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, exige: e.target.value } : x))}
-                  style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+
+                {/* Os alvos. O primeiro mora em `exige` (é o que as regras
+                    antigas gravaram) e os demais em `alternativas` — assim
+                    nenhuma regra já salva precisa ser refeita. */}
+                <div style={{ flex: '1 1 260px', minWidth: 200, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {alvos(rg).map((alvo, k) => (
+                    <div key={k} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                      {k > 0 && <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5b4fcf', minWidth: 18 }}>ou</span>}
+                      <input list="conf-servicos" value={alvo} placeholder={k === 0 ? 'SHAMPOO' : 'TRATAMENTO'}
+                        onChange={e => setRegras(rs => rs.map((x, j) => j === i ? porAlvo(x, k, e.target.value) : x))}
+                        style={{ flex: 1, minWidth: 110, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                      {alvos(rg).length > 1 && (
+                        <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? semAlvo(x, k) : x))}
+                          title="Tirar esta opção"
+                          style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '4px 6px', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
+                          <Trash2 size={11} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmAlvo(x) : x))}
+                    style={{ alignSelf: 'flex-start', border: '1px dashed #c7d2fe', background: '#eef2ff', color: '#4338ca', borderRadius: 7, padding: '4px 9px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+                    + ou…
+                  </button>
+                </div>
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b6860', cursor: 'pointer' }}>
                   <input type="checkbox" checked={rg.ativa}
                     onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, ativa: e.target.checked } : x))} />
@@ -274,7 +317,15 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
               onClick={async () => {
                 // Regra sem os dois lados nunca dispara; some no salvamento em
                 // vez de ficar na lista dando a impressão de que está valendo.
-                const limpas = regras.filter(x => x.quando.trim() && x.exige.trim())
+                // Alternativa em branco é ruído: some no salvamento. Regra sem
+                // gatilho ou sem nenhum alvo nunca dispara — some também, em
+                // vez de ficar na lista dando impressão de que está valendo.
+                const limpas = regras
+                  .map(x => {
+                    const lista = alvos(x).map(a => a.trim()).filter(Boolean)
+                    return { ...x, exige: lista[0] || '', alternativas: lista.slice(1) }
+                  })
+                  .filter(x => x.quando.trim() && x.exige)
                 setSalvandoRegras(true)
                 const res = await fetch('/api/salon/conferencia-dia', {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -293,6 +344,11 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </div>
 
           <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 10, marginBottom: 0 }}>
+            Use <b>+ ou…</b> para dar alternativas: <i>Coloração exige Shampoo ou Tratamento
+            ou Terapia</i> é <b>uma</b> regra, e basta ter um deles. Com <b>exige só um de</b>,
+            ter dois também vira apontamento.
+          </p>
+          <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>
             A comparação é por <b>palavra inteira</b>: a regra &quot;COLORAÇÃO&quot; não pega
             &quot;DESCOLORAÇÃO&quot;, que é outro serviço.
           </p>

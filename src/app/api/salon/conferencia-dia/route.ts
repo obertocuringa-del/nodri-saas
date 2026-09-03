@@ -4,6 +4,7 @@ import { getSessao } from '@/lib/apiAuth'
 import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } from '@/lib/conferenciaDia'
 import { chaveDoMes, totalDoCaixa, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
 import type { PrecoDeTabela } from '@/lib/tabelaPrecos'
+import { chaveDoMes as chaveProdutos, type LinhaProduto } from '@/lib/produtosDia'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,7 +121,17 @@ export async function GET(req: NextRequest) {
   const tabela: PrecoDeTabela[] = Array.isArray((cfgTab as any)?.valor?.itens)
     ? (cfgTab as any).valor.itens : []
 
-  const achados = conferirDia(doDia, regras, historico, caixas, tabela)
+  // ── PRODUTOS do dia (relatório 0041) ──────────────────────────────────────
+  // Sem eles o confronto compara serviços contra serviços+produtos, e toda
+  // comanda que vendeu produto acusa diferença que não existe.
+  const { data: cfgProd } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', chaveProdutos(data)).maybeSingle()
+  const todosProdutos: LinhaProduto[] = Array.isArray((cfgProd as any)?.valor?.itens)
+    ? (cfgProd as any).valor.itens : []
+  const produtos = todosProdutos.filter(l => l.data_venda === data)
+
+  const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos)
 
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))
   const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
@@ -167,6 +178,8 @@ export async function GET(req: NextRequest) {
     // A tela precisa dizer QUAL régua usou: com a tabela, um preço fora dela é
     // problema; sem ela, é só "diferente do de costume".
     precosNaTabela: tabela.length,
+    produtosNoDia: produtos.length,
+    produtosNoMes: todosProdutos.length,
     avecUrl,
     itens: doDia.length,
     comandas: comandas.size,

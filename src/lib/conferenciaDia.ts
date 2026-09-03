@@ -22,8 +22,19 @@
 
 import type { PrecoDeTabela } from './tabelaPrecos'
 import { indicePorServico } from './tabelaPrecos'
+import type { LinhaProduto } from './produtosDia'
+import { totalPorComanda as produtosPorComanda, numeroComanda as numProd } from './produtosDia'
 import type { CaixaDoDia } from './caixasDia'
 import { donoDaComanda, recebidoPorComanda } from './caixasDia'
+
+/**
+ * Como a extensão nomeia a comanda que não passou por caixa.
+ *
+ * É o texto que o Avec escreve na coluna do responsável ("Não utiliza um
+ * caixa."), traduzido para um rótulo curto. Fica aqui como constante porque as
+ * duas pontas — o motor e a tela — precisam concordar sobre ele.
+ */
+export const SEM_CAIXA = 'Sem caixa'
 
 /** Valor no padrão do Brasil — o texto do achado é lido por gente daqui. */
 const rs = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -74,10 +85,30 @@ export interface Atendimento {
  */
 export interface RegraComposicao {
   id: string
-  tipo?: 'exige' | 'proibe'
+  /**
+   * exige  — precisa ter PELO MENOS UM dos alvos
+   * proibe — não pode ter NENHUM dos alvos
+   * um_so  — precisa ter EXATAMENTE UM: nem zero, nem dois
+   */
+  tipo?: 'exige' | 'proibe' | 'um_so'
   quando: string      // nome do serviço OU categoria que dispara a regra
-  exige: string       // o que precisa existir (exige) ou não pode existir (proibe)
+  exige: string       // primeiro alvo (mantido: é o que as regras antigas gravaram)
+  /**
+   * Os demais alvos, como alternativas.
+   *
+   * "Coloração exige Shampoo ou Tratamento ou Terapia" é uma regra só, com
+   * três alvos — e não três regras, que acusariam a comanda duas vezes por
+   * não ter as outras duas.
+   */
+  alternativas?: string[]
   ativa: boolean
+}
+
+/** Todos os alvos da regra: o primeiro mais as alternativas. */
+export function alvosDaRegra(r: RegraComposicao): string[] {
+  return [r.exige, ...(r.alternativas || [])]
+    .map(x => String(x || '').trim())
+    .filter(Boolean)
 }
 
 const norm = (s: any) => String(s ?? '')
@@ -120,6 +151,7 @@ export function conferirDia(
   historico: Atendimento[] = [],
   caixas: CaixaDoDia[] = [],
   tabela: PrecoDeTabela[] = [],
+  produtos: LinhaProduto[] = [],
 ): Achado[] {
   const achados: Achado[] = []
   const dono = donoDaComanda(caixas)
@@ -247,23 +279,41 @@ export function conferirDia(
   for (const [comanda, itens] of porComanda) {
     for (const r of regras) {
       if (!r.ativa) continue
-      const gatilho = norm(r.quando), exigido = norm(r.exige)
-      if (!gatilho || !exigido) continue
+      const gatilho = norm(r.quando)
+      const alvos = alvosDaRegra(r)
+      if (!gatilho || !alvos.length) continue
       const disparou = itens.find(i => bate(i, gatilho))
       if (!disparou) continue
 
-      const temOOutro = itens.find(i => bate(i, exigido))
+      // Quais dos alvos a comanda realmente tem. É a contagem que permite
+      // distinguir "nenhum", "um" e "mais de um" numa regra só.
+      const presentes = alvos.filter(alvo => itens.some(i => bate(i, norm(alvo))))
+      const lista = alvos.map(a => `"${a}"`).join(' ou ')
+      const modo = r.tipo || 'exige'
 
-      if ((r.tipo || 'exige') === 'proibe') {
-        if (!temOOutro) continue
+      if (modo === 'proibe') {
+        if (!presentes.length) continue
         add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_conflito', valorEmRisco: 0,
-          texto: `A comanda tem "${r.quando}" e "${r.exige}" juntos — e os dois não podem ir na mesma comanda.` })
+          texto: `A comanda tem "${r.quando}" e ${presentes.map(a => `"${a}"`).join(' e ')} `
+            + `— e não podem ir na mesma comanda.` })
         continue
       }
 
-      if (temOOutro) continue
+      if (modo === 'um_so') {
+        if (presentes.length === 1) continue
+        add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_um_so', valorEmRisco: 0,
+          texto: presentes.length === 0
+            ? `A comanda tem "${r.quando}" e não tem nenhum de: ${lista}. Precisa ter um.`
+            : `A comanda tem "${r.quando}" e ${presentes.map(a => `"${a}"`).join(' e ')} `
+              + `— só pode ter um deles.` })
+        continue
+      }
+
+      if (presentes.length) continue
       add({ ...ctx(disparou), comanda, gravidade: 'problema', tipo: 'regra_composicao', valorEmRisco: 0,
-        texto: `A comanda tem "${r.quando}" e não tem "${r.exige}".` })
+        texto: alvos.length === 1
+          ? `A comanda tem "${r.quando}" e não tem "${alvos[0]}".`
+          : `A comanda tem "${r.quando}" e não tem nenhum de: ${lista}.` })
     }
   }
 
@@ -273,6 +323,39 @@ export function conferirDia(
       add({ ...ctx(a), gravidade: 'atencao', tipo: 'sem_profissional', valorEmRisco: 0,
         texto: 'Item lançado sem profissional. A comissão deste serviço não tem dono.' })
     }
+  }
+
+  // ── 5a. Comanda paga sem passar por caixa ─────────────────────────────────
+  //
+  // O Avec marca essas comandas como "Não utiliza um caixa.". Elas apareciam
+  // só como um número no cartão do resumo — e um número não se resolve. Aqui
+  // cada uma vira um apontamento COM O NÚMERO DA COMANDA, que é o que permite
+  // ir ao Avec e acertar.
+  for (const c of caixas) {
+    if (norm(c.responsavel) !== norm(SEM_CAIXA)) continue
+    for (const x of c.comandas || []) {
+      const num = String(x.comanda || '').trim()
+      if (!num) continue
+      add({ comanda: num, cliente: '—', profissional: '—', servico: '—',
+        gravidade: 'atencao', tipo: 'comanda_sem_caixa',
+        valorEmRisco: 0,
+        texto: `Comanda ${num} recebeu R$ ${rs(x.valor)} sem passar por caixa nenhum. `
+          + `No Avec ela está como "não utiliza um caixa" — então esse valor não `
+          + `entra no fechamento de nenhuma recepcionista.` })
+    }
+  }
+
+  // ── 5b. Produto sem profissional ──────────────────────────────────────────
+  // Mesma exigência que já vale para o serviço: venda sem dono não entra em
+  // comissão de ninguém e não tem a quem perguntar depois.
+  for (const pr of produtos) {
+    if (String(pr.profissional || '').trim()) continue
+    add({ comanda: numProd(pr.num_comanda), cliente: pr.cliente || '—',
+      profissional: '—', servico: pr.produto || 'Produto',
+      gravidade: 'problema', tipo: 'produto_sem_profissional',
+      valorEmRisco: 0,
+      texto: `Produto vendido sem profissional: ${pr.produto || 'sem nome'} `
+        + `(R$ ${rs(pr.total)}). Venda sem dono não entra na comissão de ninguém.` })
   }
 
   // ── 6. Lançado × recebido ─────────────────────────────────────────────────
@@ -286,6 +369,16 @@ export function conferirDia(
     if (k) totalPorComanda.set(k, [...(totalPorComanda.get(k) || []), a])
   }
 
+  // O que a comanda teve de PRODUTO. Sem isto o confronto compara serviços
+  // contra serviços+produtos, e toda comanda com produto acusa diferença.
+  const prodComanda = produtosPorComanda(produtos)
+
+  // Comanda que só teve produto não existe na lista de atendimentos e sumiria
+  // do confronto — justamente a que mais parece "dinheiro sem lançamento".
+  for (const k of prodComanda.keys()) {
+    if (!totalPorComanda.has(k)) totalPorComanda.set(k, [])
+  }
+
   if (!temCaixa) {
     if (totalPorComanda.size > 0) {
       add({ comanda: '—', cliente: '—', profissional: '—', servico: '—',
@@ -295,13 +388,16 @@ export function conferirDia(
     }
   } else {
     for (const [comanda, itens] of totalPorComanda) {
-      const lancado = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
+      const emServico = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
+      const emProduto = prodComanda.get(comanda) || 0
+      const lancado = emServico + emProduto
       const pago = recebido.get(comanda)
 
       if (pago === undefined) {
         // Comanda lançada que não apareceu em caixa nenhum: pode estar aberta
         // ainda, então é ATENÇÃO e não PROBLEMA.
-        add({ ...ctx(itens[0]), comanda, gravidade: 'atencao', tipo: 'comanda_fora_do_caixa',
+        add({ ...(itens[0] ? ctx(itens[0]) : { cliente: '—', profissional: '—', servico: '—' }),
+          comanda, gravidade: 'atencao', tipo: 'comanda_fora_do_caixa',
           valorEmRisco: 0,
           texto: `Comanda lançada (R$ ${rs(lancado)}) e não encontrada em nenhum caixa do dia. `
             + `Pode estar aberta.` })
@@ -313,10 +409,15 @@ export function conferirDia(
 
       // ── Faltou dinheiro: é problema, e é o que a conferência existe para
       //    achar. O serviço foi lançado e o valor não entrou.
+      const detalhe = emProduto > 0
+        ? ` (serviços R$ ${rs(emServico)} + produtos R$ ${rs(emProduto)})`
+        : ''
+
       if (dif > 0) {
-        add({ ...ctx(itens[0]), comanda, gravidade: 'problema', tipo: 'lancado_diferente_do_recebido',
+        add({ ...(itens[0] ? ctx(itens[0]) : { cliente: '—', profissional: '—', servico: '—' }),
+          comanda, gravidade: 'problema', tipo: 'lancado_diferente_do_recebido',
           valorEmRisco: dif,
-          texto: `Lançado R$ ${rs(lancado)} em itens, recebido R$ ${rs(pago)} no caixa. `
+          texto: `Lançado R$ ${rs(lancado)}${detalhe}, recebido R$ ${rs(pago)} no caixa. `
             + `Faltam R$ ${rs(dif)}.` })
         continue
       }
@@ -332,11 +433,12 @@ export function conferirDia(
       // conferência que grita todo dia deixa de ser lida. Fica em ATENÇÃO, com
       // a explicação provável, e sem valor em risco: não há dinheiro faltando
       // aqui — há dinheiro a mais, que é o produto.
-      add({ ...ctx(itens[0]), comanda, gravidade: 'atencao', tipo: 'recebido_a_mais',
+      add({ ...(itens[0] ? ctx(itens[0]) : { cliente: '—', profissional: '—', servico: '—' }),
+        comanda, gravidade: 'atencao', tipo: 'recebido_a_mais',
         valorEmRisco: 0,
-        texto: `Entraram R$ ${rs(-dif)} a mais do que os serviços lançados `
-          + `(serviços R$ ${rs(lancado)}, caixa R$ ${rs(pago)}). `
-          + `Normalmente é produto vendido na comanda, que não vem no relatório de serviços.` })
+        texto: `Entraram R$ ${rs(-dif)} a mais do que o lançado`
+          + `${detalhe || ` (R$ ${rs(lancado)})`}, caixa R$ ${rs(pago)}.`
+          + (emProduto > 0 ? '' : ' Pode ser produto ainda não importado.') })
     }
 
     // Dinheiro que entrou por uma comanda que não existe nos lançamentos.

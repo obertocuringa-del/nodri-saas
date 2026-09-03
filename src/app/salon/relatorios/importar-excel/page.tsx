@@ -113,6 +113,9 @@ export default function ImportarExcelPage() {
       // Tabela de preços (relatório 0033). Planilha antiga não tem esta aba —
       // vem vazia, e o servidor mantém a tabela anterior em vez de apagá-la.
       const tabelaPrecos = sheetToJson(XLSX, wb, 'TABELA_PRECOS')
+      // Produtos vendidos, linha a linha (0041). Planilha antiga não tem esta
+      // aba — vem vazia, e o servidor não mexe no que já está guardado.
+      const produtosRaw = sheetToJson(XLSX, wb, 'PRODUTOS_RAW')
 
       // ── 2. Enviar dados agregados (rápido) ───────────────────────────────
       setProgresso(`Salvando ${periodos.length} períodos no banco...`)
@@ -188,6 +191,29 @@ export default function ImportarExcelPage() {
         }
       }
 
+      // ── 4c. Enviar os produtos vendidos ─────────────────────────────────
+      // São a peça que fecha a conta da comanda na conferência de caixa: sem
+      // eles, comanda com produto acusa dinheiro a mais que não existe.
+      let produtosSalvos = 0
+      if (produtosRaw.length > 0) {
+        const CHUNK = 2000
+        for (let i = 0; i < produtosRaw.length; i += CHUNK) {
+          setProgresso(`Salvando produtos vendidos: ${Math.min(i + CHUNK, produtosRaw.length)} de ${produtosRaw.length}...`)
+          try {
+            const resPr = await fetch('/api/salon/produtos-dia', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ linhas: produtosRaw.slice(i, i + CHUNK) }),
+            })
+            const dPr = await resPr.json()
+            if (dPr?.ok) produtosSalvos += dPr.total || 0
+            else { toast.error('Produtos não foram salvos: ' + (dPr?.error || 'erro')); break }
+          } catch {
+            toast.error('Produtos não foram salvos (falha de conexão)')
+            break
+          }
+        }
+      }
+
       // ── 5. Enviar agendamentos_raw em lotes ─────────────────────────────
       let agendSalvos = 0
       if (agendamentosRaw.length > 0) {
@@ -216,7 +242,7 @@ export default function ImportarExcelPage() {
 
       localStorage.removeItem('nodri_relatorios_v2')
       setProgresso('')
-      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos, agendamentos_salvos: agendSalvos, precos_salvos: precosSalvos })
+      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos, agendamentos_salvos: agendSalvos, precos_salvos: precosSalvos, produtos_salvos: produtosSalvos })
       toast.success(`${data1.periodos_salvos} períodos importados!`)
 
     } catch (e: any) {
@@ -376,6 +402,10 @@ export default function ImportarExcelPage() {
                   {/* A tabela de preços é a régua da conferência de caixa: se
                       vier zero, a conferência cai no preço "de costume" e o
                       dono precisa saber disso. */}
+                  <div className="rounded-xl p-3" style={{ background: '#ffffff', border: '1px solid #e0ddd8' }}>
+                    <div className="text-[9px] uppercase mb-1" style={{ color: '#767069' }}>Produtos vendidos</div>
+                    <div className="font-syne font-bold text-[22px]" style={{ color: '#b45309' }}>{resultado.produtos_salvos || 0}</div>
+                  </div>
                   <div className="rounded-xl p-3" style={{ background: '#ffffff', border: '1px solid #e0ddd8' }}>
                     <div className="text-[9px] uppercase mb-1" style={{ color: '#767069' }}>Preços na tabela</div>
                     <div className="font-syne font-bold text-[22px]" style={{ color: '#5b4fcf' }}>{resultado.precos_salvos || 0}</div>
