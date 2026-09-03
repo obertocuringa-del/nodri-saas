@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } from '@/lib/conferenciaDia'
 import { chaveDoMes, totalDoCaixa, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
+import type { PrecoDeTabela } from '@/lib/tabelaPrecos'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +98,16 @@ export async function GET(req: NextRequest) {
   const folha = ((cfgCaixa as any)?.valor || {}) as FolhaCaixas
   const caixas: CaixaDoDia[] = Array.isArray(folha[data]) ? folha[data] : []
 
-  const achados = conferirDia(doDia, regras, historico, caixas)
+  // ── A TABELA DE PREÇOS, se o robô já trouxe o 0033 ────────────────────────
+  // É a régua boa: diz quanto o serviço DEVE custar, em vez do que costuma
+  // custar. Sem ela o motor cai no histórico, como fazia antes.
+  const { data: cfgTab } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', 'tabela_precos').maybeSingle()
+  const tabela: PrecoDeTabela[] = Array.isArray((cfgTab as any)?.valor?.itens)
+    ? (cfgTab as any).valor.itens : []
+
+  const achados = conferirDia(doDia, regras, historico, caixas, tabela)
 
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))
   const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
@@ -141,6 +151,9 @@ export async function GET(req: NextRequest) {
       }, {}),
     })),
     temCaixa: caixas.length > 0,
+    // A tela precisa dizer QUAL régua usou: com a tabela, um preço fora dela é
+    // problema; sem ela, é só "diferente do de costume".
+    precosNaTabela: tabela.length,
     itens: doDia.length,
     comandas: comandas.size,
     faturado,

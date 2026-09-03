@@ -20,6 +20,8 @@
 // "R$ 16 em vez de R$ 32" — a comanda tinha 2 unidades de R$ 32, e o preço
 // estava certo. Comparar sempre `valor` com `valor`.
 
+import type { PrecoDeTabela } from './tabelaPrecos'
+import { indicePorServico } from './tabelaPrecos'
 import type { CaixaDoDia } from './caixasDia'
 import { donoDaComanda, recebidoPorComanda } from './caixasDia'
 
@@ -117,6 +119,7 @@ export function conferirDia(
   regras: RegraComposicao[],
   historico: Atendimento[] = [],
   caixas: CaixaDoDia[] = [],
+  tabela: PrecoDeTabela[] = [],
 ): Achado[] {
   const achados: Achado[] = []
   const dono = donoDaComanda(caixas)
@@ -162,8 +165,20 @@ export function conferirDia(
   }
 
   // ── 3. Preço fora do habitual ─────────────────────────────────────────────
-  // O "habitual" sai do histórico do próprio salão, não de uma tabela externa.
-  // Sem maioria clara, o serviço vai para NAO_CONFERIDO — nunca para PROBLEMA.
+  //
+  // Duas réguas, e a ordem entre elas importa.
+  //
+  // A TABELA OFICIAL (relatório 0033, que o robô traz) é a régua boa: ela diz
+  // quanto o serviço DEVE custar. Quando o serviço está nela, cobrar diferente
+  // é PROBLEMA, com o valor da diferença medido — não é palpite.
+  //
+  // O HISTÓRICO é a régua de reserva, para o serviço que ainda não está na
+  // tabela. Ele só diz o que costuma acontecer, não o que deveria: por isso
+  // continua gerando ATENÇÃO, e sem maioria clara vai para NÃO CONFERIDO.
+  // O índice é montado com o norm DESTE arquivo, de propósito: é ele que
+  // normaliza o serviço do lançamento logo abaixo, e as duas pontas têm de
+  // ser a mesma função.
+  const oficial = indicePorServico(tabela, norm)
   const porServico = new Map<string, number[]>()
   for (const a of [...historico, ...atendimentos]) {
     if (Number(a.valor) <= 0) continue
@@ -175,6 +190,19 @@ export function conferirDia(
   for (const a of atendimentos) {
     if (Number(a.valor) <= 0) continue        // já virou achado na regra 1
     const k = norm(a.servico)
+
+    const daTabela = oficial.get(k)
+    if (daTabela !== undefined) {
+      const dif = daTabela - Number(a.valor)
+      if (Math.abs(dif) > 0.02) {
+        add({ ...ctx(a), gravidade: 'problema', tipo: 'preco_fora_da_tabela',
+          valorEmRisco: Math.max(dif, 0),
+          texto: `Cobrado R$ ${rs(a.valor)}; a tabela de preços do salão diz R$ ${rs(daTabela)}. `
+            + (dif > 0 ? `Faltam R$ ${rs(dif)}.` : `Cobrado R$ ${rs(-dif)} a mais.`) })
+      }
+      continue                                 // a tabela já respondeu: histórico não opina
+    }
+
     const vals = porServico.get(k) || []
     const contagem = new Map<number, number>()
     for (const v of vals) contagem.set(v, (contagem.get(v) || 0) + 1)

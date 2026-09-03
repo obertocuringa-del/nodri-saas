@@ -56,6 +56,7 @@ interface Resultado {
   categoriasConhecidas?: string[]
   caixas?: ResumoCaixa[]
   temCaixa?: boolean
+  precosNaTabela?: number
 }
 
 /** Rótulo do filtro para o achado sem caixa identificado. */
@@ -379,6 +380,17 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Qual régua foi usada no preço. Sem a tabela oficial a conferência
+              só sabe o preço "de costume", e o dono precisa saber a diferença
+              antes de cobrar alguém por um apontamento. */}
+          {!r.precosNaTabela && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, color: '#92400e', marginBottom: 12 }}>
+              Sem a tabela de preços do salão. O preço está sendo conferido pelo
+              que é <b>habitual no histórico</b>, não pelo que <b>deveria</b> ser
+              cobrado. A tabela chega junto com a importação da planilha do robô.
             </div>
           )}
 
