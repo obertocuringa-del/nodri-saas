@@ -16,6 +16,41 @@ function gerarSlug(nomeSalao: string, token: string): string {
   return `${base}-${token.slice(0, 6)}`
 }
 
+/**
+ * De quem é, de direito, este link público.
+ *
+ * Existe porque salão novo já nasceu com o link de outro: a cópia do salão
+ * modelo levava o token e o slug junto. Dois salões com o mesmo link fazem o
+ * cadastro do lojista cair no salão errado — então quando há empate alguém
+ * precisa devolver o link e gerar o seu.
+ *
+ * Quem fica com ele: o salão modelo, se for um dos dois; senão o mais antigo,
+ * que é quem já divulgou o link por aí. Devolve null quando não há empate.
+ */
+async function donoLegitimo(slug: string, token: string): Promise<string | null> {
+  // Filtro no banco, não em memória: trazer a tabela inteira esbarraria no
+  // corte de 1000 linhas do PostgREST quando o número de salões crescer.
+  const sl = String(slug || '').replace(/[,()]/g, '')
+  const tk = String(token || '').replace(/[,()]/g, '')
+  const { data } = await supabaseAdmin
+    .from('salao_config').select('salao_id')
+    .eq('chave', 'lojistas_config')
+    .or(`valor->>slug.eq.${sl},valor->>token.eq.${tk}`)
+    .limit(50)
+  const iguais = data || []
+  if (iguais.length <= 1) return null
+
+  const { data: saloes } = await supabaseAdmin
+    .from('saloes').select('id, is_modelo, criado_em')
+    .in('id', iguais.map(r => r.salao_id))
+  const lista = saloes || []
+  const modelo = lista.find(x => x.is_modelo)
+  if (modelo) return modelo.id
+  const maisAntigo = [...lista].sort((a, b) =>
+    String(a.criado_em || '').localeCompare(String(b.criado_em || '')))[0]
+  return maisAntigo?.id || null
+}
+
 // Lê a config do módulo; gera token + slug na primeira vez (autocadastro lazy).
 // Se já existir um token sem slug (config antiga), faz o upgrade automaticamente.
 export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig> {
@@ -23,7 +58,25 @@ export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig>
   const atual = (data?.valor || {}) as Partial<LojistasConfig>
 
   if (atual.token && atual.slug) {
-    return { token: atual.token, slug: atual.slug, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
+    // Só devolvo o link se ele for mesmo deste salão. Se veio de carona na
+    // cópia do modelo, o salão gera o dele aqui — sem ninguém precisar pedir.
+    const dono = await donoLegitimo(atual.slug, atual.token)
+    if (!dono || dono === salaoId) {
+      return { token: atual.token, slug: atual.slug, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
+    }
+    const token = randomBytes(12).toString('hex')
+    const { data: salao } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
+    const novo: LojistasConfig = {
+      token,
+      slug: gerarSlug(salao?.nome || '', token),
+      // O link do grupo também veio de carona: é o WhatsApp do outro salão.
+      whatsapp_link: '',
+      mensagem: atual.mensagem || MENSAGEM_PADRAO,
+    }
+    await supabaseAdmin.from('salao_config').upsert(
+      { salao_id: salaoId, chave: 'lojistas_config', valor: novo, atualizado_em: new Date().toISOString() },
+      { onConflict: 'salao_id,chave' })
+    return novo
   }
 
   const token = atual.token || randomBytes(12).toString('hex')
@@ -47,14 +100,19 @@ export async function salvarConfig(salaoId: string, patch: Partial<Pick<Lojistas
 // Acha o salão dono de um token OU slug público (usado nas rotas /lojista/[token]).
 export async function getSalaoPorToken(tokenOuSlug: string): Promise<{ salaoId: string; config: LojistasConfig } | null> {
   const chave = tokenOuSlug.replace(/[,()]/g, '')
+  // `limit(1)` e não `maybeSingle()`: enquanto ainda houver salão com link
+  // duplicado do tempo da cópia, o maybeSingle devolvia erro e a página do
+  // lojista simplesmente não abria. Assim ela abre, e o duplicado se resolve
+  // sozinho na primeira vez que o dono entra nas configurações.
   const { data } = await supabaseAdmin
     .from('salao_config')
     .select('salao_id, valor')
     .eq('chave', 'lojistas_config')
     .or(`valor->>token.eq.${chave},valor->>slug.eq.${chave}`)
-    .maybeSingle()
-  if (!data) return null
-  return { salaoId: data.salao_id, config: data.valor as LojistasConfig }
+    .limit(1)
+  const linha = (data || [])[0]
+  if (!linha) return null
+  return { salaoId: linha.salao_id, config: linha.valor as LojistasConfig }
 }
 
 export async function getServicos(salaoId: string): Promise<LojistaServico[]> {

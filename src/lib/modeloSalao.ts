@@ -21,6 +21,7 @@ export type Sanitizador =
   | 'checklist'    // tira marcações: feito / feito_em / historico
   | 'gradeVazia'   // mantém títulos e cabeçalhos, zera as linhas
   | 'listaCompra'  // mantém o que comprar e o mínimo; zera estoque e pedidos
+  | 'semIdentidade' // mantém o texto padrão; tira token, slug e link do grupo
 
 export interface ChaveModelo {
   chave: string           // nome exato, ou prefixo quando `prefixo: true`
@@ -70,7 +71,12 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'escala_config', como: 'inteiro', rotulo: 'Configuração da escala' },
   { chave: 'enxovais_config', como: 'inteiro', rotulo: 'Configuração de enxovais' },
   { chave: 'kits_config', como: 'inteiro', rotulo: 'Configuração de kits' },
-  { chave: 'lojistas_config', como: 'inteiro', rotulo: 'Configuração de lojistas' },
+  // O token e o slug do link público são a IDENTIDADE do salão, não estrutura.
+  // Copiados inteiros, o salão novo nascia com o link de outro salão — e dois
+  // salões com o mesmo slug fazem o cadastro do lojista cair no salão errado.
+  // O link do grupo de WhatsApp é do salão pela mesma razão. Viaja só o texto
+  // padrão da mensagem, que é modelo de verdade.
+  { chave: 'lojistas_config', como: 'semIdentidade', rotulo: 'Configuração de lojistas' },
   { chave: 'lojistas_segmentos', como: 'inteiro', rotulo: 'Segmentos de lojistas' },
   { chave: 'lojistas_servicos', como: 'inteiro', rotulo: 'Serviços para lojistas' },
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
@@ -283,6 +289,19 @@ function limparListaCompra(valor: any): any {
 }
 
 /** Valor pronto para viajar: estrutura sim, preenchimento não. */
+/**
+ * Tira do valor tudo que identifica um salão específico.
+ *
+ * O que sobra é o que faz sentido num modelo: o texto padrão. Token e slug o
+ * salão novo gera sozinho na primeira vez que abre o módulo, e o link do grupo
+ * de WhatsApp é dele.
+ */
+function limparIdentidade(v: any): any {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return v
+  const { token, slug, whatsapp_link, ...resto } = v
+  return resto
+}
+
 export function sanitizar(chave: string, valor: any): any {
   const r = regraDaChave(chave)
   if (!r) return null
@@ -290,6 +309,7 @@ export function sanitizar(chave: string, valor: any): any {
   if (r.como === 'checklist') return limparChecklist(copia)
   if (r.como === 'listaCompra') return limparListaCompra(copia)
   if (r.como === 'gradeVazia') return limparGrade(copia)
+  if (r.como === 'semIdentidade') return limparIdentidade(copia)
   return copia
 }
 
