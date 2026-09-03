@@ -9,6 +9,14 @@ export const dynamic = 'force-dynamic'
 
 const CHAVE_REGRAS = 'conferencia_regras'
 
+// Endereço da tela de Comandas Finalizadas no Avec.
+//
+// Fica no banco e não no código da extensão: se o Avec mudar o endereço, o
+// dono corrige no painel e todas as máquinas passam a usar o novo — sem
+// reinstalar extensão em nenhuma delas.
+const CHAVE_AVEC = 'conferencia_avec_url'
+const AVEC_PADRAO = 'https://admin.avec.beauty/admin/financeiro/comanda/historico'
+
 // Conferência automática de um dia, sobre os atendimentos já importados.
 //
 // Não busca nada em sistema de fora: lê `atendimentos_raw`, que entra pela
@@ -92,6 +100,11 @@ export async function GET(req: NextRequest) {
   // aqui o que só a tela do Avec sabe (quem fechou, quanto entrou, em que
   // forma). Se não veio, a conferência segue e diz que não conferiu o valor —
   // nunca finge que conferiu.
+  const { data: cfgAvec } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', CHAVE_AVEC).maybeSingle()
+  const avecUrl = String((cfgAvec as any)?.valor?.url || '') || AVEC_PADRAO
+
   const { data: cfgCaixa } = await supabaseAdmin
     .from('salao_config').select('valor')
     .eq('salao_id', sess.salaoId).eq('chave', chaveDoMes(data)).maybeSingle()
@@ -154,6 +167,7 @@ export async function GET(req: NextRequest) {
     // A tela precisa dizer QUAL régua usou: com a tabela, um preço fora dela é
     // problema; sem ela, é só "diferente do de costume".
     precosNaTabela: tabela.length,
+    avecUrl,
     itens: doDia.length,
     comandas: comandas.size,
     faturado,
@@ -188,5 +202,26 @@ export async function PUT(req: NextRequest) {
     { onConflict: 'salao_id,chave' },
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // O endereço do Avec vem junto quando o dono o edita. Guardo só endereço do
+  // próprio Avec: um endereço trocado por engano faria a extensão abrir um
+  // site qualquer já logado no navegador dele.
+  if (typeof body?.avecUrl === 'string') {
+    const limpo = body.avecUrl.trim()
+    let valido = ''
+    try {
+      const u = new URL(limpo)
+      if (u.protocol === 'https:' && u.hostname.endsWith('avec.beauty')) valido = u.href
+    } catch { /* endereço inválido */ }
+    if (limpo && !valido) {
+      return NextResponse.json({ error: 'O endereço precisa ser https e do domínio avec.beauty' }, { status: 400 })
+    }
+    const { error: e2 } = await supabaseAdmin.from('salao_config').upsert(
+      { salao_id: sess.salaoId, chave: CHAVE_AVEC, valor: { url: valido || AVEC_PADRAO }, atualizado_em: new Date().toISOString() },
+      { onConflict: 'salao_id,chave' },
+    )
+    if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
+  }
+
   return NextResponse.json({ ok: true })
 }

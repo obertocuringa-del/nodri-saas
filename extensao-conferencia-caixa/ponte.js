@@ -29,7 +29,9 @@ window.addEventListener('message', (ev) => {
 
   if (d.tipo === 'coletar' || d.tipo === 'cancelar') {
     try {
-      chrome.runtime.sendMessage({ tipo: d.tipo, data: d.data }, () => {
+      // `url` vem da configuração do salão: se o Avec mudar o endereço da
+      // tela, resolve-se no painel do NODRI, sem reinstalar a extensão.
+      chrome.runtime.sendMessage({ tipo: d.tipo, data: d.data, url: d.url }, () => {
         void chrome.runtime.lastError
       })
     } catch {

@@ -188,6 +188,48 @@
     }
   }
 
+  /**
+   * Põe o período da tela no dia conferido e manda buscar.
+   *
+   * É o passo que dispensa a pessoa de configurar a tela à mão. Toca em três
+   * controles nomeados e em mais nada: os dois campos de data e o botão
+   * Buscar. Os botões de cada linha — editar, imprimir, EXCLUIR — não são
+   * tocados em hipótese alguma; é justamente por eles existirem ali que a
+   * extensão nunca clica dentro do corpo da tabela.
+   *
+   * Com o período no dia certo a lista vira uma página só: a leitura fica
+   * imediata em vez de varrer mil comandas do mês inteiro.
+   */
+  async function porODiaNaTela(dataAlvo) {
+    if (!dataAlvo) return false
+    const ini = document.querySelector('#dataini')
+    const fim = document.querySelector('#datafim')
+    if (!ini || !fim) return false
+    if (ini.value === dataAlvo && fim.value === dataAlvo) return true
+
+    ini.value = dataAlvo
+    avisarMudanca(ini)
+    fim.value = dataAlvo
+    avisarMudanca(fim)
+
+    const buscar = Array.from(document.querySelectorAll('button, a, input[type="submit"]'))
+      .find(b => /buscar/i.test(b.textContent || b.value || ''))
+    if (!buscar) return false
+
+    const antes = (acharTabelaDeComandas()?.corpo?.[0] || []).join('|')
+    buscar.click()
+
+    // Espera a tabela realmente responder ao novo período, em vez de dormir um
+    // tempo fixo e ler a lista antiga achando que é a nova.
+    await esperarPor(() => {
+      const t = acharTabelaDeComandas()
+      if (!t) return false
+      const agora = (t.corpo[0] || []).join('|')
+      return agora !== antes || t.corpo.length === 0
+    }, 20000, 400)
+    return true
+  }
+
   /** Põe o "por página" no máximo. Devolve como desfazer. */
   async function prepararListagem() {
     const sel = document.querySelector('select[name$="_length"]')
@@ -348,6 +390,10 @@
           diag: diagnostico(), url: location.href })
         return
       }
+
+      // Primeiro o período, depois o tamanho da página: filtrar antes deixa
+      // menos linha para paginar.
+      await porODiaNaTela(msg.data)
 
       const restaurar = await prepararListagem()
       try {

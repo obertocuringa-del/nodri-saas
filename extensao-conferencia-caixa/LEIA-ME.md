@@ -25,10 +25,13 @@ repetir o passo 3 (ou clicar em recarregar no card dela).
 
 ## Usar
 
-1. No Avec, abra **Financeiro › Comandas Finalizadas**, com o período incluindo
-   o dia que você quer conferir (o filtro de data é o da própria tela)
-2. No NODRI, abra a conferência daquele mesmo dia
+1. Deixe uma aba do **Avec logada** (qualquer tela dele serve)
+2. No NODRI, abra a conferência do dia que você quer conferir
 3. Clique em **Buscar caixas no Avec**
+
+Só isso. A extensão abre sozinha uma aba em segundo plano na tela de Comandas
+Finalizadas, põe a data do dia, lê e **fecha a aba**. A tela que você estava
+usando não é tocada.
 
 O botão só aparece se a extensão estiver instalada.
 
@@ -38,18 +41,28 @@ O botão só aparece se a extensão estiver instalada.
 comandas do dia que você está conferindo; as dos outros dias do período são
 descartadas.
 
-**O que ela mexe na tela:** o seletor de *quantos por página* e a navegação
-entre páginas. Ela põe no máximo, volta para a primeira página, percorre até a
-última e **devolve tudo como estava**. Ler só a página aberta traria um caixa
-pela metade, que é pior que não ler.
+**O que ela mexe:** na aba que ela mesma abriu, preenche os dois campos de
+data, clica em *Buscar*, ajusta o *quantos por página* e percorre as páginas.
+Depois fecha a aba.
+
+**No que ela nunca encosta:** os botões de cada linha da tabela — editar,
+imprimir e **excluir**. É justamente por eles existirem ali que a extensão só
+toca em controles nomeados, nunca em algo dentro do corpo da tabela.
 
 No fim, ela **confere se leu tudo**: o número de registros que a listagem diz
 ter tem de bater com o que foi lido. Se não bater, ela se recusa a entregar e
 pede para você reduzir o período — em vez de mandar um caixa incompleto, onde
 as comandas que faltaram apareceriam como dinheiro que não entrou.
 
-**Dica:** quanto menor o período no Avec, mais rápido. Com o período no dia que
-você quer conferir, é uma página só.
+Como ela mesma põe o período no dia, a lista costuma caber numa página só e a
+leitura é imediata.
+
+## Se o Avec mudar o endereço da tela
+
+O endereço **não está dentro da extensão**. Ele fica no NODRI, em
+*Conferência automática › Regras*, no campo **Endereço das Comandas
+Finalizadas no Avec**. Mudou lá, vale em todas as máquinas — sem reinstalar
+extensão em nenhuma.
 
 **Não faz:** não navega sozinha, não muda o filtro de data, não grava nada no
 Avec. Se a tela aberta não for a certa, ela **avisa e para**.
@@ -78,9 +91,9 @@ As mensagens possíveis:
 
 | Mensagem | O que fazer |
 |---|---|
-| "O Avec não está aberto" | Abrir Financeiro › Comandas Finalizadas numa aba |
-| "nenhuma está na tela certa" | Ir para Financeiro › Comandas Finalizadas |
-| "nenhuma é de \<data\>" | Ampliar o período da tela para incluir o dia |
+| "O Avec não está aberto" | Deixar uma aba do Avec logada |
+| "sua sessão do Avec ainda está ativa?" | Entrar de novo no Avec |
+| "nenhuma é de \<data\>" | Conferir o endereço da tela nas Regras |
 | "nenhuma tabela tem as colunas de comanda e valor" | Me mandar a lista de colunas que aparece junto |
 
 ## Se a extensão não estiver instalada

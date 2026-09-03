@@ -57,6 +57,7 @@ interface Resultado {
   caixas?: ResumoCaixa[]
   temCaixa?: boolean
   precosNaTabela?: number
+  avecUrl?: string
 }
 
 /** Rótulo do filtro para o achado sem caixa identificado. */
@@ -80,6 +81,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   const [caixaSel, setCaixaSel] = useState<string>('')
   const [buscandoCaixa, setBuscandoCaixa] = useState(false)
   const [temExtensao, setTemExtensao] = useState<boolean | null>(null)
+  const [avecUrl, setAvecUrl] = useState('')
 
   const conferir = useCallback(async () => {
     if (!data) return
@@ -88,7 +90,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       const res = await fetch(`/api/salon/conferencia-dia?data=${encodeURIComponent(data)}`, { credentials: 'include' })
       const d = await res.json()
       if (!res.ok) { setErro(d?.error || 'Não foi possível conferir'); setR(null) }
-      else { setR(d); setRegras(Array.isArray(d.regras) ? d.regras : []) }
+      else { setR(d); setRegras(Array.isArray(d.regras) ? d.regras : []); setAvecUrl(d.avecUrl || '') }
     } catch {
       setErro('Não foi possível conferir')
       setR(null)
@@ -130,7 +132,9 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       }
       const fim = () => { clearTimeout(prazo); window.removeEventListener('message', ouvir); toast.dismiss('caixa') }
       window.addEventListener('message', ouvir)
-      window.postMessage({ fonte: DA_PAGINA, tipo: 'coletar', data }, window.location.origin)
+      // O endereço vai junto: a extensão não guarda URL nenhuma, para uma
+      // mudança no Avec se resolver aqui e valer em todas as máquinas.
+      window.postMessage({ fonte: DA_PAGINA, tipo: 'coletar', data, url: avecUrl }, window.location.origin)
     })
 
     if (resposta?.erro || !Array.isArray(resposta?.caixas)) {
@@ -153,7 +157,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       toast.error(e?.message || 'Não consegui guardar o caixa.')
     }
     setBuscandoCaixa(false)
-  }, [data, conferir])
+  }, [data, conferir, avecUrl])
 
   if (!data) return null
 
@@ -274,7 +278,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                 setSalvandoRegras(true)
                 const res = await fetch('/api/salon/conferencia-dia', {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ regras: limpas }),
+                  body: JSON.stringify({ regras: limpas, avecUrl }),
                 })
                 setSalvandoRegras(false)
                 if (!res.ok) { toast.error('Não foi possível salvar as regras'); return }
@@ -292,6 +296,29 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             A comparação é por <b>palavra inteira</b>: a regra &quot;COLORAÇÃO&quot; não pega
             &quot;DESCOLORAÇÃO&quot;, que é outro serviço.
           </p>
+
+          {/* ── Endereço da tela do Avec ────────────────────────────────────
+              Fica aqui, e não dentro da extensão, para o dia em que o Avec
+              mudar o endereço: corrige-se num lugar e vale em todas as
+              máquinas, sem reinstalar extensão em nenhuma. */}
+          <div style={{ borderTop: '1px solid #e8e6e0', marginTop: 14, paddingTop: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>
+              Endereço das Comandas Finalizadas no Avec
+            </div>
+            <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 8px' }}>
+              É a tela que a extensão abre para buscar os caixas. Só mexa aqui se o
+              Avec mudar o endereço dela.
+            </p>
+            <input value={avecUrl} onChange={e => setAvecUrl(e.target.value)}
+              placeholder="https://admin.avec.beauty/admin/financeiro/comanda/historico"
+              type="url" inputMode="url" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+              onBlur={e => setAvecUrl(e.target.value.trim())}
+              style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1.5px solid #e0ddd8', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+            <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '6px 0 0' }}>
+              Salvo junto com as regras, no botão acima. Só aceita endereço do
+              próprio Avec.
+            </p>
+          </div>
         </div>
       )}
 
