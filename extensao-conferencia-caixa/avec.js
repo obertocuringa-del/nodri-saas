@@ -26,11 +26,22 @@
 //      espera ela aparecer e ficar parada (duas leituras iguais seguidas), em
 //      vez de dormir um tempo fixo e torcer.
 //
-// ── A única coisa que este script mexe na tela ─────────────────────────────
-// O seletor de "quantos por página". A tabela mostra 10 de cada vez e o dia
-// pode ter mais; ler só a primeira página devolveria um caixa pela metade —
-// que é pior que não ler. Ele põe no máximo, lê, e DEVOLVE ao valor anterior.
-// Nenhum dado do Avec é alterado, nada é salvo, nada é clicado além disso.
+// ── O que este script mexe na tela, e por quê ──────────────────────────────
+//
+// Dois controles de EXIBIÇÃO, os dois devolvidos ao estado anterior no fim:
+//
+//   · o "quantos por página", que ele põe no máximo;
+//   · a navegação entre páginas, que ele percorre até a última.
+//
+// A primeira versão lia só a página aberta. Com um mês de período na tela a
+// lista passa de mil comandas, e o dia procurado — por ser o mais recente —
+// cai lá no fim. A extensão lia as primeiras e dizia, com toda a convicção,
+// que não havia nenhuma comanda daquele dia.
+//
+// A busca da listagem não serve para isso: ela é do servidor e não procura
+// por data — digitar "03/09/2026" nela devolve um registro só.
+//
+// Nenhum dado do Avec é alterado, nada é salvo, nada é excluído.
 // ─────────────────────────────────────────────────────────────────────────────
 
 ;(() => {
@@ -170,30 +181,115 @@
     return d
   }
 
-  /**
-   * Põe a listagem no máximo por página, para o dia inteiro caber na tela.
-   *
-   * Devolve uma função que restaura o valor anterior. Ler só a primeira página
-   * traria um caixa pela metade, e meio caixa conferido é pior que nenhum:
-   * as comandas que ficaram de fora apareceriam como "sem dinheiro recebido".
-   */
-  async function mostrarTudo() {
+  /** Avisa a listagem que o controle mudou, no formato que ela escuta. */
+  function avisarMudanca(el) {
+    for (const tipo of ['input', 'keyup', 'change']) {
+      el.dispatchEvent(new Event(tipo, { bubbles: true }))
+    }
+  }
+
+  /** Põe o "por página" no máximo. Devolve como desfazer. */
+  async function prepararListagem() {
     const sel = document.querySelector('select[name$="_length"]')
-    if (!sel) return () => {}
+    if (!sel) return async () => {}
     const antes = sel.value
     const maior = Array.from(sel.options)
       .map(o => Number(o.value)).filter(n => Number.isFinite(n) && n > 0)
       .sort((a, b) => b - a)[0]
-    if (!maior || String(maior) === antes) return () => {}
-
-    sel.value = String(maior)
-    sel.dispatchEvent(new Event('change', { bubbles: true }))
-    await sleep(800)
+    if (maior && String(maior) !== antes) {
+      sel.value = String(maior)
+      avisarMudanca(sel)
+      await sleep(900)
+    }
     return async () => {
+      // Repor o tamanho da página devolve a listagem para a página 1, que é
+      // exatamente como o dono a deixou.
       sel.value = antes
-      sel.dispatchEvent(new Event('change', { bubbles: true }))
+      avisarMudanca(sel)
       await sleep(300)
     }
+  }
+
+  /**
+   * Quantos registros a listagem diz ter.
+   *
+   * O número vem com separador de milhar ("1,069 Registros"), então a vírgula
+   * e o ponto saem antes de virar número. Sem isso "1,069" viraria 1, e a
+   * checagem de leitura completa passaria batido — dizendo que estava tudo
+   * lido quando faltavam mil linhas.
+   */
+  function registrosNaListagem() {
+    const m = /de\s+([\d.,]+)\s+Registros/i.exec(document.body.innerText || '')
+    return m ? Number(String(m[1]).replace(/[.,]/g, '')) : null
+  }
+
+  /**
+   * Volta a listagem para a primeira página antes de começar a ler.
+   *
+   * Sem isso a leitura começa onde a lista estiver — se o dono já tinha
+   * navegado, ela lê do meio para o fim e devolve um pedaço, achando que leu
+   * tudo. Trocar o "por página" também não devolve para o começo: a paginação
+   * é do servidor e mantém a posição.
+   */
+  async function irParaPrimeiraPagina() {
+    for (let i = 0; i < 60; i++) {
+      const li = document.querySelector('.dataTables_paginate li.prev')
+      if (!li || /disabled/.test(li.className)) return
+      const t = acharTabelaDeComandas()
+      const antes = t?.corpo?.[0] ? t.corpo[0].join('|') : ''
+      ;(li.querySelector('a') || li).click()
+      await esperarPor(() => {
+        const novo = acharTabelaDeComandas()
+        const agora = novo?.corpo?.[0] ? novo.corpo[0].join('|') : ''
+        return agora && agora !== antes
+      }, 12000, 300)
+    }
+  }
+
+  /** O botão "Próximo →" da listagem, se ele ainda estiver ativo. */
+  function botaoProxima() {
+    const li = document.querySelector('.dataTables_paginate li.next')
+    if (!li || /disabled/.test(li.className)) return null
+    return li.querySelector('a') || li
+  }
+
+  /**
+   * Lê a listagem inteira, página por página.
+   *
+   * Ler só a página aberta traria um caixa pela metade — e meio caixa é pior
+   * que nenhum, porque as comandas que ficaram de fora aparecem como dinheiro
+   * que não entrou. O limite de 40 páginas existe só para nunca girar sem fim
+   * se a paginação se comportar de um jeito inesperado.
+   */
+  async function lerTodasAsPaginas() {
+    await irParaPrimeiraPagina()
+
+    const linhas = []
+    let cabecalhos = null
+    let paginas = 0
+
+    while (paginas < 40) {
+      const t = acharTabelaDeComandas()
+      if (!t) break
+      cabecalhos = t.cabecalhos
+      linhas.push(...t.corpo)
+      paginas++
+
+      const proxima = botaoProxima()
+      if (!proxima) break
+
+      const antes = t.corpo[0] ? t.corpo[0].join('|') : ''
+      proxima.click()
+      // Espera a tabela REALMENTE trocar, e não um tempo fixo: a primeira
+      // linha diferente é a prova de que a página virou.
+      await esperarPor(() => {
+        const novo = acharTabelaDeComandas()
+        const agora = novo?.corpo?.[0] ? novo.corpo[0].join('|') : ''
+        return agora && agora !== antes
+      }, 12000, 300)
+    }
+
+    return { cabecalhos, corpo: linhas, paginas }
   }
 
   // ── a leitura ──────────────────────────────────────────────────────────────
@@ -253,15 +349,27 @@
         return
       }
 
-      const restaurar = await mostrarTudo()
+      const restaurar = await prepararListagem()
       try {
-        await esperarEstabilizar(() => document.querySelectorAll('table tbody tr').length)
-
-        const t = acharTabelaDeComandas()
-        if (!t) {
+        if (!acharTabelaDeComandas()) {
           responder({ ok: false,
             erro: 'Achei a tela, mas nenhuma tabela tem as colunas de comanda e valor. '
                 + 'Confira se está em Financeiro › Comandas Finalizadas.',
+            diag: diagnostico(), url: location.href })
+          return
+        }
+
+        const total = registrosNaListagem()
+        const t = await lerTodasAsPaginas()
+
+        // A prova de que nada ficou para trás: o que a listagem diz ter e o
+        // que foi lido têm de bater. Meio caixa é pior que nenhum — as
+        // comandas ausentes apareceriam como dinheiro que não entrou.
+        if (total !== null && t.corpo.length < total) {
+          responder({ ok: false,
+            erro: `A listagem tem ${total} registros e só consegui ler ${t.corpo.length} `
+                + `em ${t.paginas} página(s). Reduza o período no Avec — de preferência `
+                + 'só o dia que você quer conferir — e clique de novo.',
             diag: diagnostico(), url: location.href })
           return
         }
@@ -271,15 +379,15 @@
         if (!caixas.length) {
           responder({ ok: false,
             erro: lidas > 0
-              ? `Li ${lidas} comanda(s), mas nenhuma é de ${msg.data}. `
-                + 'Ajuste o período da tela para incluir esse dia e clique de novo.'
+              ? `Li ${lidas} comanda(s) do período (${t.paginas} página(s)), e nenhuma é de ${msg.data}. `
+                + 'Confira se o período do Avec cobre esse dia.'
               : 'A tabela de comandas veio vazia.',
             diag: diagnostico(), url: location.href })
           return
         }
 
         responder({ ok: true, caixas, url: location.href,
-          lidas, deOutroDia, diag: diagnostico() })
+          lidas, deOutroDia, paginas: t.paginas, totalNaListagem: total, diag: diagnostico() })
       } finally {
         // Devolve a listagem como estava, dê certo ou não.
         await restaurar()

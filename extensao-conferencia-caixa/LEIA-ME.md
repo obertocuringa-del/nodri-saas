@@ -38,10 +38,18 @@ O botão só aparece se a extensão estiver instalada.
 comandas do dia que você está conferindo; as dos outros dias do período são
 descartadas.
 
-**A única coisa que mexe na tela:** o seletor de *quantos por página*. A lista
-mostra 10 de cada vez e o dia pode ter mais — ler só a primeira página traria
-um caixa pela metade, que é pior que não ler. Ela põe no máximo, lê, e
-**devolve ao valor anterior**.
+**O que ela mexe na tela:** o seletor de *quantos por página* e a navegação
+entre páginas. Ela põe no máximo, volta para a primeira página, percorre até a
+última e **devolve tudo como estava**. Ler só a página aberta traria um caixa
+pela metade, que é pior que não ler.
+
+No fim, ela **confere se leu tudo**: o número de registros que a listagem diz
+ter tem de bater com o que foi lido. Se não bater, ela se recusa a entregar e
+pede para você reduzir o período — em vez de mandar um caixa incompleto, onde
+as comandas que faltaram apareceriam como dinheiro que não entrou.
+
+**Dica:** quanto menor o período no Avec, mais rápido. Com o período no dia que
+você quer conferir, é uma página só.
 
 **Não faz:** não navega sozinha, não muda o filtro de data, não grava nada no
 Avec. Se a tela aberta não for a certa, ela **avisa e para**.
