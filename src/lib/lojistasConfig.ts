@@ -26,29 +26,36 @@ function gerarSlug(nomeSalao: string, token: string): string {
  *
  * Quem fica com ele: o salão modelo, se for um dos dois; senão o mais antigo,
  * que é quem já divulgou o link por aí. Devolve null quando não há empate.
+ *
+ * Devolve também o whatsapp_link do dono, porque é ele que diz se o link de
+ * grupo que este salão tem veio de carona ou foi ele que digitou.
  */
-async function donoLegitimo(slug: string, token: string): Promise<string | null> {
+async function donoLegitimo(slug: string, token: string): Promise<{ id: string; whatsapp_link: string } | null> {
   // Filtro no banco, não em memória: trazer a tabela inteira esbarraria no
   // corte de 1000 linhas do PostgREST quando o número de salões crescer.
   const sl = String(slug || '').replace(/[,()]/g, '')
   const tk = String(token || '').replace(/[,()]/g, '')
   const { data } = await supabaseAdmin
-    .from('salao_config').select('salao_id')
+    .from('salao_config').select('salao_id, valor')
     .eq('chave', 'lojistas_config')
     .or(`valor->>slug.eq.${sl},valor->>token.eq.${tk}`)
     .limit(50)
   const iguais = data || []
   if (iguais.length <= 1) return null
 
+  const doDono = (id: string) =>
+    String(((iguais.find(r => r.salao_id === id)?.valor || {}) as any).whatsapp_link || '')
+
   const { data: saloes } = await supabaseAdmin
     .from('saloes').select('id, is_modelo, criado_em')
     .in('id', iguais.map(r => r.salao_id))
   const lista = saloes || []
   const modelo = lista.find(x => x.is_modelo)
-  if (modelo) return modelo.id
+  if (modelo) return { id: modelo.id, whatsapp_link: doDono(modelo.id) }
   const maisAntigo = [...lista].sort((a, b) =>
     String(a.criado_em || '').localeCompare(String(b.criado_em || '')))[0]
-  return maisAntigo?.id || null
+  if (!maisAntigo) return null
+  return { id: maisAntigo.id, whatsapp_link: doDono(maisAntigo.id) }
 }
 
 // Lê a config do módulo; gera token + slug na primeira vez (autocadastro lazy).
@@ -61,7 +68,7 @@ export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig>
     // Só devolvo o link se ele for mesmo deste salão. Se veio de carona na
     // cópia do modelo, o salão gera o dele aqui — sem ninguém precisar pedir.
     const dono = await donoLegitimo(atual.slug, atual.token)
-    if (!dono || dono === salaoId) {
+    if (!dono || dono.id === salaoId) {
       return { token: atual.token, slug: atual.slug, whatsapp_link: atual.whatsapp_link || '', mensagem: atual.mensagem || MENSAGEM_PADRAO }
     }
     const token = randomBytes(12).toString('hex')
@@ -69,8 +76,13 @@ export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig>
     const novo: LojistasConfig = {
       token,
       slug: gerarSlug(salao?.nome || '', token),
-      // O link do grupo também veio de carona: é o WhatsApp do outro salão.
-      whatsapp_link: '',
+      // O link do grupo só é apagado se for LITERALMENTE o do salão dono do
+      // slug — aí sim veio de carona na cópia. Se o salão já trocou pelo grupo
+      // dele, apagar aqui é jogar fora o que a pessoa digitou; foi o que
+      // aconteceu com o Send Beauty, que salvou o link e viu sumir no
+      // recarregar seguinte.
+      whatsapp_link: atual.whatsapp_link && atual.whatsapp_link !== dono.whatsapp_link
+        ? atual.whatsapp_link : '',
       mensagem: atual.mensagem || MENSAGEM_PADRAO,
     }
     await supabaseAdmin.from('salao_config').upsert(
@@ -93,7 +105,11 @@ export async function getOuCriarConfig(salaoId: string): Promise<LojistasConfig>
 export async function salvarConfig(salaoId: string, patch: Partial<Pick<LojistasConfig, 'whatsapp_link' | 'mensagem'>>): Promise<LojistasConfig> {
   const atual = await getOuCriarConfig(salaoId)
   const novo: LojistasConfig = { ...atual, ...patch }
-  await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_config', valor: novo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  // O erro do upsert era descartado: uma gravação que falhasse virava
+  // "Configurações salvas!" na tela e nada no banco. Erro de gravar tem que
+  // chegar em quem clicou.
+  const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_config', valor: novo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  if (error) throw new Error(error.message)
   return novo
 }
 
@@ -124,7 +140,8 @@ export async function getServicos(salaoId: string): Promise<LojistaServico[]> {
 }
 
 export async function salvarServicos(salaoId: string, lista: LojistaServico[]): Promise<void> {
-  await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_servicos', valor: lista, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_servicos', valor: lista, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  if (error) throw new Error(error.message)
 }
 
 // "Outro" nunca é armazenado na lista — é sempre acrescentado por quem exibe o
@@ -139,7 +156,8 @@ export async function getSegmentos(salaoId: string): Promise<string[]> {
 
 export async function salvarSegmentos(salaoId: string, lista: string[]): Promise<void> {
   const limpo = Array.from(new Set(lista.map(s => String(s || '').trim()).filter(s => s && s !== 'Outro')))
-  await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_segmentos', valor: limpo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  const { error } = await supabaseAdmin.from('salao_config').upsert({ salao_id: salaoId, chave: 'lojistas_segmentos', valor: limpo, atualizado_em: new Date().toISOString() }, { onConflict: 'salao_id,chave' })
+  if (error) throw new Error(error.message)
 }
 
 // Adiciona um serviço manual (dedupe case-insensitive), usado no autocadastro público.

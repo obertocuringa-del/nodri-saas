@@ -93,6 +93,7 @@ export default function LojistasConfigPage() {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lista),
       })
       if (!res.ok) toast.error('Erro ao salvar serviços')
+      else toast.success('Serviços salvos', { id: 'serv' })
     } catch { toast.error('Erro de conexão') }
     setSalvandoServicos(false)
   }
@@ -138,6 +139,7 @@ export default function LojistasConfigPage() {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lista),
       })
       if (!res.ok) toast.error('Erro ao salvar segmentos')
+      else toast.success('Segmentos salvos', { id: 'seg' })
     } catch { toast.error('Erro de conexão') }
     setSalvandoSegmentos(false)
   }
@@ -224,7 +226,7 @@ export default function LojistasConfigPage() {
         </SecaoConfig>
 
         {/* SERVIÇOS */}
-        <SecaoConfig titulo="Serviços de Interesse" icone={<ListChecks size={16} color="white" />} cor={COR}>
+        <SecaoConfig titulo="Serviços de Interesse" subtitulo="Salva sozinho a cada inclusão, exclusão ou mudança de ordem — não há botão de salvar aqui" icone={<ListChecks size={16} color="white" />} cor={COR}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input className="ljc-input" value={novoServico} onChange={e => setNovoServico(e.target.value)} placeholder="Novo serviço..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarServico()} />
             <button onClick={adicionarServico} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
@@ -244,7 +246,7 @@ export default function LojistasConfigPage() {
         </SecaoConfig>
 
         {/* SEGMENTOS */}
-        <SecaoConfig titulo="Segmentos da Loja" subtitulo={'A opção "Outro" (com campo livre) aparece sempre por último, automaticamente'} icone={<Tag size={16} color="white" />} cor={COR2}>
+        <SecaoConfig titulo="Segmentos da Loja" subtitulo={'Salva sozinho a cada inclusão ou exclusão — não há botão de salvar aqui. A opção "Outro" (com campo livre) aparece sempre por último'} icone={<Tag size={16} color="white" />} cor={COR2}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input className="ljc-input" value={novoSegmento} onChange={e => setNovoSegmento(e.target.value)} placeholder="Novo segmento..." style={inp} onKeyDown={e => e.key === 'Enter' && adicionarSegmento()} />
             <button onClick={adicionarSegmento} className="ljc-btn" style={btnPrimary}><Plus size={14} /> Adicionar</button>
