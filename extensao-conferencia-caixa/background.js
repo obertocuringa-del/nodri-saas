@@ -12,7 +12,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const AVEC = 'https://admin.avec.beauty/'
-const TELA_CAIXA = /caixa|financeiro/i
+
+// A tela certa e' COMANDAS FINALIZADAS (/financeiro/comanda/historico).
+//
+// A primeira versao apontava para o Historico de Caixas. Olhando a tela de
+// verdade, ela nao serve: traz responsavel, abertura, fechamento e os TOTAIS
+// por forma de pagamento — e nenhum numero de comanda. Sem comanda nao ha
+// como confrontar item lancado com dinheiro recebido.
+const TELA_COMANDAS = /financeiro\/comanda/i
 
 function avisar(abaNodri, msg) {
   if (!abaNodri) return
@@ -23,7 +30,7 @@ function avisar(abaNodri, msg) {
 async function acharAba() {
   const abas = await chrome.tabs.query({ url: AVEC + '*' })
   if (!abas.length) return { aba: null, motivo: 'sem-avec' }
-  const naTela = abas.find(a => TELA_CAIXA.test(a.url || ''))
+  const naTela = abas.find(a => TELA_COMANDAS.test(a.url || ''))
   if (naTela) return { aba: naTela, motivo: '' }
   return { aba: null, motivo: 'tela-errada', abertas: abas.length }
 }
@@ -52,20 +59,21 @@ chrome.runtime.onMessage.addListener((msg, remetente) => {
     if (!aba && motivo === 'sem-avec') {
       avisar(abaNodri, {
         tipo: 'fim',
-        erro: 'O Avec não está aberto. Abra o histórico de caixa do dia numa aba e clique de novo.',
+        erro: 'O Avec não está aberto. Abra Financeiro › Comandas Finalizadas numa aba e clique de novo.',
       })
       return
     }
     if (!aba && motivo === 'tela-errada') {
       avisar(abaNodri, {
         tipo: 'fim',
-        erro: `O Avec está aberto (${abertas} aba(s)), mas nenhuma está na tela de caixa. `
-          + 'Abra Financeiro › Caixa › Histórico no dia que você quer conferir e clique de novo.',
+        erro: `O Avec está aberto (${abertas} aba(s)), mas nenhuma está na tela certa. `
+          + 'Abra Financeiro › Comandas Finalizadas, com o período incluindo o dia que '
+          + 'você quer conferir, e clique de novo.',
       })
       return
     }
 
-    avisar(abaNodri, { tipo: 'status', texto: 'Lendo o histórico de caixa…' })
+    avisar(abaNodri, { tipo: 'status', texto: 'Lendo as comandas finalizadas…' })
 
     const r = await perguntar(aba.id, { tipo: 'ler-caixa', data: msg.data })
 
