@@ -101,7 +101,25 @@ export interface RegraComposicao {
    * não ter as outras duas.
    */
   alternativas?: string[]
+  /**
+   * Serviços que a regra NÃO alcança, mesmo estando dentro do gatilho.
+   *
+   * Existe porque o gatilho costuma ser uma CATEGORIA — é o que faz uma linha
+   * cobrir o salão inteiro — e categoria quase sempre tem uma ovelha fora do
+   * padrão. "Toda Coloração exige Complemento" é verdade, menos para
+   * PIGMENTAÇÃO SOBRANCELHAS, que está na categoria Coloração e não leva
+   * complemento nenhum.
+   *
+   * Sem isto, a saída seria abrir mão da categoria e listar serviço por
+   * serviço — e regra que dá trabalho de manter é regra que envelhece errada.
+   */
+  exceto?: string[]
   ativa: boolean
+}
+
+/** Os serviços que a regra deixa de fora. */
+export function excecoesDaRegra(r: RegraComposicao): string[] {
+  return (r.exceto || []).map(x => String(x || '').trim()).filter(Boolean)
 }
 
 /** Todos os alvos da regra: o primeiro mais as alternativas. */
@@ -282,7 +300,14 @@ export function conferirDia(
       const gatilho = norm(r.quando)
       const alvos = alvosDaRegra(r)
       if (!gatilho || !alvos.length) continue
-      const disparou = itens.find(i => bate(i, gatilho))
+
+      // A exceção vale POR ITEM, não pela comanda: se a comanda tem uma
+      // coloração comum e uma pigmentação de sobrancelhas, a primeira continua
+      // exigindo complemento. Tirar a comanda inteira faria a exceção virar
+      // uma porta de saída para a regra toda.
+      const excecoes = excecoesDaRegra(r)
+      const disparou = itens.find(i =>
+        bate(i, gatilho) && !excecoes.some(e => bate(i, norm(e))))
       if (!disparou) continue
 
       // Quais dos alvos a comanda realmente tem. É a contagem que permite

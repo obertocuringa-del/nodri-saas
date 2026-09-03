@@ -40,6 +40,25 @@ function maisUmAlvo(r: RegraComposicao): RegraComposicao {
   return { ...r, alternativas: [...(r.alternativas || []), ''] }
 }
 
+// ── As exceções ─────────────────────────────────────────────────────────────
+// O gatilho costuma ser uma CATEGORIA, que é o que faz uma linha cobrir o
+// salão inteiro. Mas categoria quase sempre tem uma ovelha fora do padrão, e
+// sem poder tirá-la a saída seria abandonar a categoria e listar serviço por
+// serviço — regra que dá trabalho de manter é regra que envelhece errada.
+const excecoes = (r: RegraComposicao): string[] => r.exceto || []
+
+function porExcecao(r: RegraComposicao, i: number, valor: string): RegraComposicao {
+  const lista = [...excecoes(r)]
+  lista[i] = valor
+  return { ...r, exceto: lista }
+}
+
+const semExcecao = (r: RegraComposicao, i: number): RegraComposicao =>
+  ({ ...r, exceto: excecoes(r).filter((_, k) => k !== i) })
+
+const maisUmaExcecao = (r: RegraComposicao): RegraComposicao =>
+  ({ ...r, exceto: [...excecoes(r), ''] })
+
 // ── Conversa com a extensão de conferência de caixa ─────────────────────────
 //
 // A página não conhece o id da extensão de propósito: assim atualizar ou
@@ -260,9 +279,29 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             {regras.map((rg, i) => (
               <div key={rg.id} style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap', background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '9px 10px' }}>
                 <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>quando tiver</span>
-                <input list="conf-servicos" value={rg.quando} placeholder="COLORAÇÃO"
-                  onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
-                  style={{ flex: '1 1 170px', minWidth: 130, padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                <div style={{ flex: '1 1 190px', minWidth: 150, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <input list="conf-servicos" value={rg.quando} placeholder="COLORAÇÃO"
+                    onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
+                    style={{ padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+
+                  {excecoes(rg).map((ex, k) => (
+                    <div key={k} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b45309', minWidth: 38 }}>exceto</span>
+                      <input list="conf-servicos" value={ex} placeholder="PIGMENTAÇÃO SOBRANCELHAS"
+                        onChange={e => setRegras(rs => rs.map((x, j) => j === i ? porExcecao(x, k, e.target.value) : x))}
+                        style={{ flex: 1, minWidth: 90, padding: '6px 8px', border: '1.5px solid #fcd34d', background: '#fffbeb', borderRadius: 8, fontSize: 12 }} />
+                      <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? semExcecao(x, k) : x))}
+                        title="Tirar esta exceção"
+                        style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '4px 6px', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                  <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmaExcecao(x) : x))}
+                    style={{ alignSelf: 'flex-start', border: '1px dashed #fcd34d', background: '#fffbeb', color: '#b45309', borderRadius: 7, padding: '4px 9px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+                    + exceto…
+                  </button>
+                </div>
                 <select value={rg.tipo || 'exige'}
                   onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, tipo: e.target.value as RegraComposicao['tipo'] } : x))}
                   style={{ padding: '7px 6px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#fff', color: '#6b6860' }}>
@@ -323,7 +362,8 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                 const limpas = regras
                   .map(x => {
                     const lista = alvos(x).map(a => a.trim()).filter(Boolean)
-                    return { ...x, exige: lista[0] || '', alternativas: lista.slice(1) }
+                    const fora = excecoes(x).map(a => a.trim()).filter(Boolean)
+                    return { ...x, exige: lista[0] || '', alternativas: lista.slice(1), exceto: fora }
                   })
                   .filter(x => x.quando.trim() && x.exige)
                 setSalvandoRegras(true)
@@ -344,6 +384,12 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </div>
 
           <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 10, marginBottom: 0 }}>
+            Use <b>+ exceto…</b> para tirar um serviço da regra sem abrir mão da
+            categoria: <i>toda Coloração exige Complemento, exceto Pigmentação de
+            Sobrancelhas</i>. A exceção vale só para aquele serviço — se a mesma
+            comanda tiver uma coloração comum, ela continua sendo cobrada.
+          </p>
+          <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>
             Use <b>+ ou…</b> para dar alternativas: <i>Coloração exige Shampoo ou Tratamento
             ou Terapia</i> é <b>uma</b> regra, e basta ter um deles. Com <b>exige só um de</b>,
             ter dois também vira apontamento.
