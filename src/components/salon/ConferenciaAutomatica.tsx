@@ -621,7 +621,8 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           )}
 
           {aba === 'papel' && <ConferirPapel r={r} data={data} papel={papel} setPapel={setPapel}
-            salvando={salvandoPapel} setSalvando={setSalvandoPapel} aoSalvar={conferir} />}
+            salvando={salvandoPapel} setSalvando={setSalvandoPapel} aoSalvar={conferir}
+            caixaSel={caixaSel} />}
 
           {/* A leitura passou a ser por GRAVIDADE e, dentro dela, por COMANDA.
               Antes cada achado era um cartão solto, e uma comanda com quatro
@@ -736,7 +737,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
  * disse "foi zero". Essa diferença é o que mantém a gaveta NÃO CONFERIDO
  * honesta.
  */
-function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalvar }: {
+function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalvar, caixaSel }: {
   r: Resultado
   data: string
   papel: Record<string, string>
@@ -744,8 +745,24 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
   salvando: boolean
   setSalvando: (v: boolean) => void
   aoSalvar: () => void
+  caixaSel: string
 }) {
-  const lista = r.comandasDoDia || []
+  // ── O filtro de caixa vale aqui também ──────────────────────────────────
+  //
+  // Conferir papel é trabalho de uma recepcionista por vez: ela tem na mão as
+  // comandas DELA. Mostrar as 41 do dia quando ela só responde por 24 é
+  // obrigá-la a procurar — e procurar é onde se erra de linha.
+  const todas = r.comandasDoDia || []
+  const lista = caixaSel
+    ? todas.filter(c => (c.caixa || SEM_CAIXA) === caixaSel)
+    : todas
+
+  // ── Conferidas sobem; pendentes ficam embaixo ───────────────────────────
+  //
+  // "Assentada" é diferente de "tem número digitado": a linha só muda de lugar
+  // quando o campo é CONFIRMADO (Enter ou saída do campo). Reordenar a cada
+  // tecla faria a linha fugir de debaixo do dedo no meio da digitação.
+  const [assentadas, setAssentadas] = useState<Set<string>>(new Set())
 
   const comoNumero = (t: string): number | null => {
     const limpo = String(t ?? '').trim()
@@ -753,6 +770,34 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
     const n = Number(limpo.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'))
     return Number.isFinite(n) ? n : null
   }
+
+  // O que já estava salvo nasce no bloco das conferidas.
+  //
+  // Sem isto, ao reabrir o dia tudo apareceria como "faltando" — inclusive o
+  // que a pessoa digitou ontem — e ela reconferiria trabalho já feito.
+  // Depende só de `data`: dentro do mesmo dia quem manda é o que ela confirma
+  // na tela, não o que chegou do servidor.
+  useEffect(() => {
+    setAssentadas(new Set(
+      Object.keys(papel).filter(k => comoNumero(papel[k]) !== null)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
+
+  const assentar = (comanda: string, texto: string) => {
+    setAssentadas(a => {
+      const nova = new Set(a)
+      if (comoNumero(texto) !== null) nova.add(comanda)
+      else nova.delete(comanda)
+      return nova
+    })
+  }
+
+  // Conferidas primeiro, pendentes depois; dentro de cada bloco, por número.
+  const porNumero = (a: ComandaDoDia, b: ComandaDoDia) =>
+    (Number(a.comanda) || 0) - (Number(b.comanda) || 0)
+  const feitas = lista.filter(c => assentadas.has(c.comanda)).sort(porNumero)
+  const faltando = lista.filter(c => !assentadas.has(c.comanda)).sort(porNumero)
+  const ordenada = [...feitas, ...faltando]
 
   const digitadas = lista.filter(c => comoNumero(papel[c.comanda] || '') !== null).length
   const divergentes = lista.filter(c => {
@@ -804,13 +849,27 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 460, overflowY: 'auto', marginBottom: 12 }}>
-        {lista.map((c, i) => {
+        {ordenada.map((c, i) => {
+          // Faixa que separa o que já foi conferido do que falta.
+          const cabecalho = (i === 0 && feitas.length > 0)
+            ? `CONFERIDAS · ${feitas.length}`
+            : (i === feitas.length && faltando.length > 0 && feitas.length > 0)
+              ? `FALTANDO · ${faltando.length}`
+              : ''
           const txt = papel[c.comanda] ?? ''
           const v = comoNumero(txt)
           const bate = v !== null && Math.abs(v - c.total) <= 0.02
           const erra = v !== null && !bate
           return (
-            <div key={c.comanda} className="cp-linha"
+            <div key={c.comanda}>
+            {cabecalho && (
+              <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.6,
+                color: cabecalho.startsWith('CONFERIDAS') ? '#15803d' : '#b45309',
+                margin: i === 0 ? '0 0 5px' : '11px 0 5px' }}>
+                {cabecalho}
+              </div>
+            )}
+            <div className="cp-linha"
               style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
                 background: erra ? '#fef2f2' : bate ? '#f0fdf4' : '#fff',
                 border: `1px solid ${erra ? '#fca5a5' : bate ? '#86efac' : '#e8e6e0'}`,
@@ -827,13 +886,19 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
               <input
                 value={txt}
                 onChange={e => setPapel(p => ({ ...p, [c.comanda]: e.target.value }))}
+                onBlur={e => assentar(c.comanda, e.target.value)}
                 onKeyDown={e => {
                   if (e.key !== 'Enter') return
                   e.preventDefault()
-                  const campos = Array.from(document.querySelectorAll<HTMLInputElement>('.cp-valor'))
-                  const prox = campos[i + 1]
-                  if (prox) prox.focus()
-                  else (e.target as HTMLInputElement).blur()
+                  const alvo = e.target as HTMLInputElement
+                  assentar(c.comanda, alvo.value)
+                  // Pula para o próximo campo AINDA VAZIO, não para o de baixo:
+                  // com a lista se reorganizando, "o de baixo" muda de dono, e
+                  // a pessoa acabaria digitando na linha errada.
+                  const vazios = Array.from(document.querySelectorAll<HTMLInputElement>('.cp-valor'))
+                    .filter(x => x !== alvo && !x.value.trim())
+                  if (vazios.length) vazios[0].focus()
+                  else alvo.blur()
                 }}
                 className="cp-valor"
                 inputMode="decimal" placeholder="valor do papel"
@@ -847,6 +912,7 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
                   {v! > c.total ? '+' : '−'}{moeda(Math.abs(v! - c.total)).replace('R$', '').trim()}
                 </span>
               )}
+            </div>
             </div>
           )
         })}
