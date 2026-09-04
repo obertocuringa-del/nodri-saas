@@ -313,23 +313,6 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                     onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, quando: e.target.value } : x))}
                     style={{ padding: '7px 9px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
 
-                  {excecoes(rg).map((ex, k) => (
-                    <div key={k} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                      <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b45309', minWidth: 38 }}>exceto</span>
-                      <input list="conf-servicos" value={ex} placeholder="PIGMENTAÇÃO SOBRANCELHAS"
-                        onChange={e => setRegras(rs => rs.map((x, j) => j === i ? porExcecao(x, k, e.target.value) : x))}
-                        style={{ flex: 1, minWidth: 90, padding: '6px 8px', border: '1.5px solid #fcd34d', background: '#fffbeb', borderRadius: 8, fontSize: 12 }} />
-                      <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? semExcecao(x, k) : x))}
-                        title="Tirar esta exceção"
-                        style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '4px 6px', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
-                        <Trash2 size={11} />
-                      </button>
-                    </div>
-                  ))}
-                  <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmaExcecao(x) : x))}
-                    style={{ alignSelf: 'flex-start', border: '1px dashed #fcd34d', background: '#fffbeb', color: '#b45309', borderRadius: 7, padding: '4px 9px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
-                    + exceto…
-                  </button>
                 </div>
                 <select value={rg.tipo || 'exige'}
                   onChange={e => setRegras(rs => rs.map((x, j) => j === i ? { ...x, tipo: e.target.value as RegraComposicao['tipo'] } : x))}
@@ -372,6 +355,35 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                   style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '5px 7px', cursor: 'pointer', color: '#dc2626', display: 'flex' }}>
                   <Trash2 size={13} />
                 </button>
+
+                {/* ── A exceção, no FIM da frase ───────────────────────────
+                    Ela filtra o GATILHO (quais colorações estão livres), e por
+                    isso morava junto dele. Mas a regra é lida da esquerda para
+                    a direita — "Coloração exige Complemento, exceto Pigmentação
+                    de Sobrancelhas" — e no meio da frase ela travava a leitura.
+                    O rótulo diz "quando o serviço for" justamente para não
+                    parecer que a exceção é sobre o Complemento. */}
+                <div style={{ flexBasis: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 2 }}>
+                  {excecoes(rg).map((ex, k) => (
+                    <div key={k} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b45309' }}>
+                        exceto quando o serviço for
+                      </span>
+                      <input list="conf-servicos" value={ex} placeholder="PIGMENTAÇÃO SOBRANCELHAS"
+                        onChange={e => setRegras(rs => rs.map((x, j) => j === i ? porExcecao(x, k, e.target.value) : x))}
+                        style={{ flex: '1 1 200px', minWidth: 140, padding: '6px 9px', border: '1.5px solid #fcd34d', background: '#fffbeb', borderRadius: 8, fontSize: 12.5 }} />
+                      <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? semExcecao(x, k) : x))}
+                        title="Tirar esta exceção"
+                        style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '4px 6px', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                  <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmaExcecao(x) : x))}
+                    style={{ alignSelf: 'flex-start', border: '1px dashed #fcd34d', background: '#fffbeb', color: '#b45309', borderRadius: 7, padding: '4px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+                    + exceto…
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -413,9 +425,10 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </div>
 
           <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 10, marginBottom: 0 }}>
-            Use <b>+ exceto…</b> para tirar um serviço da regra sem abrir mão da
-            categoria: <i>toda Coloração exige Complemento, exceto Pigmentação de
-            Sobrancelhas</i>. A exceção vale só para aquele serviço — se a mesma
+            <b>+ exceto…</b> tira um serviço da regra sem abrir mão da categoria.
+            A regra se lê inteira, da esquerda para a direita: <i>quando tiver
+            Coloração, exige Complemento — exceto quando o serviço for Pigmentação
+            de Sobrancelhas</i>. A exceção vale só para aquele serviço — se a mesma
             comanda tiver uma coloração comum, ela continua sendo cobrada.
           </p>
           <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>
