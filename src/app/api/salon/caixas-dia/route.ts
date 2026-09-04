@@ -46,6 +46,23 @@ async function gravarDaPlanilha(salaoId: string, linhas: any[]) {
     return Number.isFinite(n) ? n : 0
   }
 
+  /**
+   * Limpa o nome do responsável, aqui também.
+   *
+   * O robô já entrega limpo, mas normalizar nas DUAS pontas é o que impede o
+   * dia em que uma versão diferente do robô mandar "Ruth - 15/01/2020 10:00"
+   * e a tela passar a mostrar isso como se fosse o nome de uma pessoa. Pior:
+   * "Não utiliza um caixa." precisa virar exatamente "Sem caixa", senão a
+   * regra que aponta comanda paga fora de caixa deixa de casar — e some, em
+   * silêncio, justamente o apontamento que ela existe para dar.
+   */
+  const limparResponsavel = (v: any) => {
+    const bruto = String(v ?? '').split(/\s+-\s+\d{2}\//)[0].trim()
+    const semAcento = bruto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    if (!bruto || semAcento.includes('nao utiliza')) return 'Sem caixa'
+    return bruto
+  }
+
   // dia → responsável → comandas
   const porDia = new Map<string, Map<string, ComandaNoCaixa[]>>()
   for (const l of linhas) {
@@ -53,7 +70,7 @@ async function gravarDaPlanilha(salaoId: string, linhas: any[]) {
     if (!dataValida(dia)) continue
     const comanda = soDigitos(l?.num_comanda)
     if (!comanda) continue
-    const resp = String(l?.caixa_responsavel ?? '').trim() || 'Sem caixa'
+    const resp = limparResponsavel(l?.caixa_responsavel)
     if (!porDia.has(dia)) porDia.set(dia, new Map())
     const doDia = porDia.get(dia)!
     if (!doDia.has(resp)) doDia.set(resp, [])
