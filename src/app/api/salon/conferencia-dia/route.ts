@@ -5,6 +5,7 @@ import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } fr
 import { chaveDoMes, totalDoCaixa, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
 import type { PrecoDeTabela } from '@/lib/tabelaPrecos'
 import { chaveDoMes as chaveProdutos, type LinhaProduto } from '@/lib/produtosDia'
+import { chaveDoMes as chavePapel, numeroComanda as numPapel, type FolhaPapel, type ValoresDoPapel } from '@/lib/conferenciaPapel'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,7 +132,56 @@ export async function GET(req: NextRequest) {
     ? (cfgProd as any).valor.itens : []
   const produtos = todosProdutos.filter(l => l.data_venda === data)
 
-  const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos)
+  // ── O PAPEL: o que foi digitado da comanda física ─────────────────────────
+  const { data: cfgPapel } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', chavePapel(data)).maybeSingle()
+  const folhaPapel = ((cfgPapel as any)?.valor || {}) as FolhaPapel
+  const papel: ValoresDoPapel = folhaPapel[data] || {}
+
+  const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos, papel)
+
+  // ── A lista de comandas do dia, para a tela do papel ──────────────────────
+  // A pessoa não deve digitar o número da comanda: o sistema já sabe quais são.
+  // Ela digita só o valor do papel — metade do trabalho, e some a classe de
+  // erro em que se digita o número errado e se comparam duas coisas sem relação.
+  const porComandaLista = new Map<string, { cliente: string; profissional: string; servicos: number }>()
+  for (const a of doDia) {
+    const k = String(a.num_comanda ?? '').trim()
+    if (!k) continue
+    const atual = porComandaLista.get(k) || { cliente: '', profissional: '', servicos: 0 }
+    porComandaLista.set(k, {
+      cliente: atual.cliente || String(a.cliente || ''),
+      profissional: atual.profissional || String(a.profissional || ''),
+      servicos: atual.servicos + (Number(a.total) || 0),
+    })
+  }
+  const prodPorComanda = new Map<string, number>()
+  for (const l of produtos) {
+    const k = numPapel(l.num_comanda)
+    if (k) prodPorComanda.set(k, (prodPorComanda.get(k) || 0) + (Number(l.total) || 0))
+  }
+  const recebidoPorComanda = new Map<string, number>()
+  for (const c of caixas) for (const x of c.comandas || []) {
+    const k = String(x.comanda || '').trim()
+    if (k) recebidoPorComanda.set(k, (recebidoPorComanda.get(k) || 0) + (Number(x.valor) || 0))
+  }
+  for (const k of prodPorComanda.keys()) {
+    if (!porComandaLista.has(k)) porComandaLista.set(k, { cliente: '', profissional: '', servicos: 0 })
+  }
+
+  const comandasDoDia = Array.from(porComandaLista.entries())
+    .map(([comanda, v]) => ({
+      comanda,
+      cliente: v.cliente || '—',
+      profissional: v.profissional || '—',
+      servicos: Number(v.servicos.toFixed(2)),
+      produtos: Number((prodPorComanda.get(comanda) || 0).toFixed(2)),
+      total: Number((v.servicos + (prodPorComanda.get(comanda) || 0)).toFixed(2)),
+      recebido: recebidoPorComanda.has(comanda) ? Number(recebidoPorComanda.get(comanda)!.toFixed(2)) : null,
+      caixa: caixas.find(c => (c.comandas || []).some(x => String(x.comanda).trim() === comanda))?.responsavel || null,
+    }))
+    .sort((a, b) => (Number(a.comanda) || 0) - (Number(b.comanda) || 0))
 
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))
   const faturado = doDia.reduce((s, a) => s + (Number(a.total) || 0), 0)
@@ -179,6 +229,8 @@ export async function GET(req: NextRequest) {
     // problema; sem ela, é só "diferente do de costume".
     precosNaTabela: tabela.length,
     produtosNoDia: produtos.length,
+    comandasDoDia,
+    papel,
     produtosNoMes: todosProdutos.length,
     avecUrl,
     itens: doDia.length,

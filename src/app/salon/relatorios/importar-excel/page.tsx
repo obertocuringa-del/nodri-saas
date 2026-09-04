@@ -116,6 +116,9 @@ export default function ImportarExcelPage() {
       // Produtos vendidos, linha a linha (0041). Planilha antiga não tem esta
       // aba — vem vazia, e o servidor não mexe no que já está guardado.
       const produtosRaw = sheetToJson(XLSX, wb, 'PRODUTOS_RAW')
+      // Comandas finalizadas: quem fechou e quanto entrou por comanda. É o que
+      // a extensão busca ao vivo — aqui vem pelo robô, para o dia anterior.
+      const comandasRaw = sheetToJson(XLSX, wb, 'COMANDAS_RAW')
 
       // ── 2. Enviar dados agregados (rápido) ───────────────────────────────
       setProgresso(`Salvando ${periodos.length} períodos no banco...`)
@@ -214,6 +217,27 @@ export default function ImportarExcelPage() {
         }
       }
 
+      // ── 4d. Enviar as comandas finalizadas ──────────────────────────────
+      let comandasSalvas = 0
+      if (comandasRaw.length > 0) {
+        const CHUNK = 2000
+        for (let i = 0; i < comandasRaw.length; i += CHUNK) {
+          setProgresso(`Salvando comandas do caixa: ${Math.min(i + CHUNK, comandasRaw.length)} de ${comandasRaw.length}...`)
+          try {
+            const resC = await fetch('/api/salon/caixas-dia', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ linhas: comandasRaw.slice(i, i + CHUNK) }),
+            })
+            const dC = await resC.json()
+            if (dC?.ok) comandasSalvas += dC.comandas || 0
+            else { toast.error('Comandas do caixa não salvas: ' + (dC?.error || 'erro')); break }
+          } catch {
+            toast.error('Comandas do caixa não salvas (falha de conexão)')
+            break
+          }
+        }
+      }
+
       // ── 5. Enviar agendamentos_raw em lotes ─────────────────────────────
       let agendSalvos = 0
       if (agendamentosRaw.length > 0) {
@@ -242,7 +266,7 @@ export default function ImportarExcelPage() {
 
       localStorage.removeItem('nodri_relatorios_v2')
       setProgresso('')
-      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos, agendamentos_salvos: agendSalvos, precos_salvos: precosSalvos, produtos_salvos: produtosSalvos })
+      setResultado({ ...data1, atendimentos_raw_salvos: rawSalvos, agendamentos_salvos: agendSalvos, precos_salvos: precosSalvos, produtos_salvos: produtosSalvos, comandas_salvas: comandasSalvas })
       toast.success(`${data1.periodos_salvos} períodos importados!`)
 
     } catch (e: any) {
@@ -402,6 +426,10 @@ export default function ImportarExcelPage() {
                   {/* A tabela de preços é a régua da conferência de caixa: se
                       vier zero, a conferência cai no preço "de costume" e o
                       dono precisa saber disso. */}
+                  <div className="rounded-xl p-3" style={{ background: '#ffffff', border: '1px solid #e0ddd8' }}>
+                    <div className="text-[9px] uppercase mb-1" style={{ color: '#767069' }}>Comandas do caixa</div>
+                    <div className="font-syne font-bold text-[22px]" style={{ color: '#4338ca' }}>{resultado.comandas_salvas || 0}</div>
+                  </div>
                   <div className="rounded-xl p-3" style={{ background: '#ffffff', border: '1px solid #e0ddd8' }}>
                     <div className="text-[9px] uppercase mb-1" style={{ color: '#767069' }}>Produtos vendidos</div>
                     <div className="font-syne font-bold text-[22px]" style={{ color: '#b45309' }}>{resultado.produtos_salvos || 0}</div>

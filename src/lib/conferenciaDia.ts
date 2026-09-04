@@ -22,6 +22,7 @@
 
 import type { PrecoDeTabela } from './tabelaPrecos'
 import { indicePorServico } from './tabelaPrecos'
+import type { ValoresDoPapel } from './conferenciaPapel'
 import type { LinhaProduto } from './produtosDia'
 import { totalPorComanda as produtosPorComanda, numeroComanda as numProd } from './produtosDia'
 import type { CaixaDoDia } from './caixasDia'
@@ -170,6 +171,7 @@ export function conferirDia(
   caixas: CaixaDoDia[] = [],
   tabela: PrecoDeTabela[] = [],
   produtos: LinhaProduto[] = [],
+  papel: ValoresDoPapel = {},
 ): Achado[] {
   const achados: Achado[] = []
   const dono = donoDaComanda(caixas)
@@ -496,6 +498,55 @@ export function conferirDia(
         texto: `Entraram R$ ${rs(pago)} no caixa por esta comanda, e ela não tem nenhum `
           + `serviço lançado no relatório. Pode ter sido fechada depois da última `
           + `importação, ou ter só produto.` })
+    }
+  }
+
+  // ── 7. O papel × o sistema ────────────────────────────────────────────────
+  //
+  // A única comparação com fonte de fora. Tudo o mais confronta Avec com Avec:
+  // se alguém digitou R$ 180 onde o papel dizia R$ 200, o lançamento e o caixa
+  // concordam em 180 e o erro passa. Só o papel pega isso.
+  //
+  // Quem não foi digitado NÃO vira zero e NÃO vira problema: vira "não
+  // conferido", junto com a contagem. Campo em branco quer dizer "não conferi",
+  // e tratar isso como "foi zero" seria inventar uma divergência.
+  const comandasComPapel = Object.keys(papel)
+  if (comandasComPapel.length) {
+    let conferidas = 0
+    for (const [comanda, itens] of totalPorComanda) {
+      const noPapel = papel[comanda]
+      if (noPapel === undefined) continue
+      conferidas++
+
+      const emServico = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
+      const noSistema = emServico + (prodComanda.get(comanda) || 0)
+      const dif = noPapel - noSistema
+      if (Math.abs(dif) <= 0.02) continue
+
+      add({ ...(itens[0] ? ctx(itens[0]) : { cliente: '—', profissional: '—', servico: '—' }),
+        comanda, gravidade: 'problema', tipo: 'papel_diferente_do_sistema',
+        valorEmRisco: Math.max(dif, 0),
+        texto: `Na comanda de papel está R$ ${rs(noPapel)}, e no sistema R$ ${rs(noSistema)}. `
+          + (dif > 0
+            ? `Foram lançados R$ ${rs(dif)} a menos do que o cliente pagou.`
+            : `Foram lançados R$ ${rs(-dif)} a mais do que a comanda de papel.`) })
+    }
+
+    // Papel digitado para uma comanda que o sistema não conhece.
+    for (const comanda of comandasComPapel) {
+      if (totalPorComanda.has(comanda)) continue
+      add({ comanda, cliente: '—', profissional: '—', servico: '—',
+        gravidade: 'atencao', tipo: 'papel_sem_comanda', valorEmRisco: 0,
+        texto: `A comanda ${comanda} foi digitada na conferência de papel `
+          + `(R$ ${rs(papel[comanda])}), e não existe nos lançamentos deste dia.` })
+    }
+
+    const faltam = totalPorComanda.size - conferidas
+    if (faltam > 0) {
+      add({ comanda: '—', cliente: '—', profissional: '—', servico: '—',
+        gravidade: 'nao_conferido', tipo: 'papel_incompleto', valorEmRisco: 0,
+        texto: `${faltam} comanda(s) sem o valor do papel digitado. `
+          + `O que foi digitado está conferido; o resto não.` })
     }
   }
 

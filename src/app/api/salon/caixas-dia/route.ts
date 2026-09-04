@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { chaveDoMes, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
+import { chaveDoMes, type CaixaDoDia, type ComandaNoCaixa, type FolhaCaixas } from '@/lib/caixasDia'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,71 @@ async function lerFolha(salaoId: string, chave: string): Promise<FolhaCaixas> {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as FolhaCaixas) : {}
 }
 
+/**
+ * Grava as linhas da aba COMANDAS_RAW, agrupando por dia e por responsável.
+ *
+ * Cada DIA presente no envio é substituído inteiro. Isso é o certo: reimportar
+ * é o jeito de corrigir, e somar por cima duplicaria comandas — cada duplicata
+ * viraria "entrou dinheiro a mais" na conferência.
+ *
+ * Os dias que NÃO vierem no envio ficam intactos: uma planilha de um período
+ * curto não pode apagar o que já estava guardado de outro.
+ */
+async function gravarDaPlanilha(salaoId: string, linhas: any[]) {
+  const soDigitos = (v: any) => {
+    const d = String(v ?? '').replace(/\D/g, '')
+    return d.replace(/^0+/, '') || d
+  }
+  const dinheiro = (v: any) => {
+    if (typeof v === 'number') return v
+    const t = String(v ?? '').replace(/[^\d,.-]/g, '')
+    if (!t) return 0
+    const n = Number(t.replace(/\./g, '').replace(',', '.'))
+    return Number.isFinite(n) ? n : 0
+  }
+
+  // dia → responsável → comandas
+  const porDia = new Map<string, Map<string, ComandaNoCaixa[]>>()
+  for (const l of linhas) {
+    const dia = String(l?.data ?? '').trim().slice(0, 10)
+    if (!dataValida(dia)) continue
+    const comanda = soDigitos(l?.num_comanda)
+    if (!comanda) continue
+    const resp = String(l?.caixa_responsavel ?? '').trim() || 'Sem caixa'
+    if (!porDia.has(dia)) porDia.set(dia, new Map())
+    const doDia = porDia.get(dia)!
+    if (!doDia.has(resp)) doDia.set(resp, [])
+    doDia.get(resp)!.push({ comanda, valor: dinheiro(l?.valor), forma: '' })
+  }
+
+  if (!porDia.size) {
+    return NextResponse.json({ ok: true, ignorado: true, comandas: 0,
+      aviso: 'Nenhuma linha de comanda reconhecida; nada foi alterado.' })
+  }
+
+  // Uma folha por mês, e dentro dela só os dias que vieram.
+  const porMes = new Map<string, FolhaCaixas>()
+  for (const [dia, resps] of porDia) {
+    const chave = chaveDoMes(dia)
+    if (!chave) continue
+    if (!porMes.has(chave)) porMes.set(chave, await lerFolha(salaoId, chave))
+    porMes.get(chave)![dia] = Array.from(resps.entries())
+      .map(([responsavel, comandas]) => ({ responsavel, comandas, em: Date.now() }))
+  }
+
+  const { error } = await supabaseAdmin.from('salao_config').upsert(
+    Array.from(porMes.entries()).map(([chave, folha]) => ({
+      salao_id: salaoId, chave, valor: folha, atualizado_em: new Date().toISOString(),
+    })),
+    { onConflict: 'salao_id,chave' },
+  )
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const total = Array.from(porDia.values())
+    .reduce((s, m) => s + Array.from(m.values()).reduce((t, c) => t + c.length, 0), 0)
+  return NextResponse.json({ ok: true, comandas: total, dias: porDia.size, meses: porMes.size })
+}
+
 export async function GET(req: NextRequest) {
   const sess = await getSessao()
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -40,6 +105,15 @@ export async function POST(req: NextRequest) {
   if (sess.role !== 'salon') return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
 
   const body = await req.json().catch(() => null)
+
+  // ── Dois remetentes, um destino ───────────────────────────────────────────
+  //
+  // A EXTENSÃO manda `{ data, caixas }` — um dia por vez, lido da tela ao vivo.
+  // O ROBÔ manda `{ linhas }` — a aba COMANDAS_RAW da planilha, com vários dias
+  // de uma vez. Os dois gravam no mesmo lugar, e é de propósito: quem conferir
+  // hoje pela extensão não perde o que o robô trouxer de madrugada, e vice-versa.
+  if (Array.isArray(body?.linhas)) return gravarDaPlanilha(sess.salaoId, body.linhas)
+
   const data = String(body?.data || '').trim()
   if (!dataValida(data)) return NextResponse.json({ error: 'Informe a data como DD/MM/AAAA' }, { status: 400 })
   if (!Array.isArray(body?.caixas)) return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })

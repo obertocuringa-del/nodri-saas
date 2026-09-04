@@ -97,6 +97,22 @@ interface Resultado {
   temCaixa?: boolean
   precosNaTabela?: number
   avecUrl?: string
+  produtosNoDia?: number
+  /** As comandas do dia, para a conferência do papel. */
+  comandasDoDia?: ComandaDoDia[]
+  /** O que já foi digitado do papel, comanda → valor. */
+  papel?: Record<string, number>
+}
+
+interface ComandaDoDia {
+  comanda: string
+  cliente: string
+  profissional: string
+  servicos: number
+  produtos: number
+  total: number
+  recebido: number | null
+  caixa: string | null
 }
 
 /** Rótulo do filtro para o achado sem caixa identificado. */
@@ -112,7 +128,10 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   const [r, setR] = useState<Resultado | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
-  const [abrindoRegras, setAbrindoRegras] = useState(false)
+  // Abas, e não tudo empilhado: a tela juntava resumo, caixas, regras e
+  // apontamentos numa coluna só, e virava um muro de dado. Cada aba responde a
+  // uma pergunta diferente, e só uma de cada vez.
+  const [aba, setAba] = useState<'achados' | 'papel' | 'regras'>('achados')
   const [regras, setRegras] = useState<RegraComposicao[]>([])
   const [salvandoRegras, setSalvandoRegras] = useState(false)
   // Cada recepcionista responde pelo caixa dela. Ver tudo junto é o padrão
@@ -121,6 +140,9 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   const [buscandoCaixa, setBuscandoCaixa] = useState(false)
   const [temExtensao, setTemExtensao] = useState<boolean | null>(null)
   const [avecUrl, setAvecUrl] = useState('')
+  // Os valores digitados da comanda de PAPEL, por comanda.
+  const [papel, setPapel] = useState<Record<string, string>>({})
+  const [salvandoPapel, setSalvandoPapel] = useState(false)
 
   const conferir = useCallback(async () => {
     if (!data) return
@@ -129,7 +151,18 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
       const res = await fetch(`/api/salon/conferencia-dia?data=${encodeURIComponent(data)}`, { credentials: 'include' })
       const d = await res.json()
       if (!res.ok) { setErro(d?.error || 'Não foi possível conferir'); setR(null) }
-      else { setR(d); setRegras(Array.isArray(d.regras) ? d.regras : []); setAvecUrl(d.avecUrl || '') }
+      else {
+        setR(d)
+        setRegras(Array.isArray(d.regras) ? d.regras : [])
+        setAvecUrl(d.avecUrl || '')
+        // O que já foi digitado antes volta como texto, para a pessoa poder
+        // corrigir em vez de digitar tudo de novo.
+        const vindos: Record<string, string> = {}
+        for (const [k, v] of Object.entries(d.papel || {})) {
+          vindos[k] = String(Number(v).toFixed(2)).replace('.', ',')
+        }
+        setPapel(vindos)
+      }
     } catch {
       setErro('Não foi possível conferir')
       setR(null)
@@ -229,10 +262,6 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             {buscandoCaixa ? <Loader2 size={13} className="animate-spin" /> : <Wallet size={13} />} Buscar caixas no Avec
           </button>
         )}
-        <button onClick={() => setAbrindoRegras(v => !v)}
-          style={{ border: '1px solid #e0ddd8', background: abrindoRegras ? '#f0eefb' : '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: abrindoRegras ? '#5b4fcf' : '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <SlidersHorizontal size={13} /> Regras
-        </button>
         {r && !r.semDados && (
           <button onClick={() => window.print()} className="no-mobile"
             style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -246,7 +275,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           precisar de deploy. A escolha é por lista dos serviços que existem de
           verdade nos lançamentos — digitar de cabeça erraria por um acento e a
           regra nunca dispararia, sem ninguém entender por quê. */}
-      {abrindoRegras && (
+      {aba === 'regras' && (
         <div style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>Exigências entre serviços</div>
           <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 4px' }}>
@@ -470,6 +499,27 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             {r.emRisco > 0 && <Selo titulo="Em risco" valor={moeda(r.emRisco)} destaque />}
           </div>
 
+          {/* ── Abas ────────────────────────────────────────────────────────
+              Três perguntas diferentes, uma de cada vez: o que o sistema achou,
+              o que o papel diz, e como as regras estão configuradas. */}
+          <div className="no-print" style={{ display: 'flex', gap: 6, borderBottom: '1.5px solid #e8e6e0', marginBottom: 14, flexWrap: 'wrap' }}>
+            {([
+              ['achados', `Apontamentos${daSelecao.length ? ` · ${daSelecao.length}` : ''}`],
+              ['papel', 'Conferir o papel'],
+              ['regras', 'Regras'],
+            ] as const).map(([id, rotulo]) => (
+              <button key={id} onClick={() => setAba(id)}
+                style={{
+                  border: 'none', borderBottom: `2.5px solid ${aba === id ? '#5b4fcf' : 'transparent'}`,
+                  background: 'transparent', padding: '8px 12px', marginBottom: -1.5,
+                  fontSize: 13, fontWeight: aba === id ? 900 : 700,
+                  color: aba === id ? '#5b4fcf' : '#6b6860', cursor: 'pointer',
+                }}>
+                {rotulo}
+              </button>
+            ))}
+          </div>
+
           {/* ── Os caixas do dia ────────────────────────────────────────────
               Quatro recepcionistas são quatro caixas, e juntar tudo num monte
               só é justamente o que impede achar de quem é a diferença. */}
@@ -515,7 +565,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           {/* Qual régua foi usada no preço. Sem a tabela oficial a conferência
               só sabe o preço "de costume", e o dono precisa saber a diferença
               antes de cobrar alguém por um apontamento. */}
-          {!r.precosNaTabela && (
+          {aba === 'achados' && !r.precosNaTabela && (
             <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, color: '#92400e', marginBottom: 12 }}>
               Sem a tabela de preços do salão. O preço está sendo conferido pelo
               que é <b>habitual no histórico</b>, não pelo que <b>deveria</b> ser
@@ -523,13 +573,16 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             </div>
           )}
 
-          {limpo && (
+          {aba === 'achados' && limpo && (
             <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#15803d' }}>
               <b>Nada a apontar.</b> {r.comandas} comanda(s) e {r.itens} item(ns) conferidos, sem divergência.
             </div>
           )}
 
-          {[['problema', problemas], ['atencao', atencoes], ['nao_conferido', naoConferidos]]
+          {aba === 'papel' && <ConferirPapel r={r} data={data} papel={papel} setPapel={setPapel}
+            salvando={salvandoPapel} setSalvando={setSalvandoPapel} aoSalvar={conferir} />}
+
+          {aba === 'achados' && [['problema', problemas], ['atencao', atencoes], ['nao_conferido', naoConferidos]]
             .filter(([, lista]) => (lista as Achado[]).length > 0)
             .map(([g, lista]) => {
               const c = CORES[g as keyof typeof CORES]
@@ -564,7 +617,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
               )
             })}
 
-          {naoConferidos.length > 0 && (
+          {aba === 'achados' && naoConferidos.length > 0 && (
             <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 11.5, color: '#6b6860', marginTop: 4 }}>
               <HelpCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>
@@ -575,6 +628,150 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * A conferência da comanda de PAPEL.
+ *
+ * A pessoa NÃO digita o número da comanda: o sistema já sabe quais são as do
+ * dia. Ela digita só o valor do papel — metade do trabalho, e some uma classe
+ * inteira de erro (digitar o número errado e comparar duas coisas sem relação).
+ *
+ * Enter pula para a linha seguinte, e o campo pinta de verde quando bate e de
+ * vermelho quando não bate, enquanto se digita. O objetivo do vermelho na hora
+ * é a pessoa corrigir o próprio erro de digitação no ato, em vez de gerar um
+ * apontamento falso que alguém vai investigar amanhã.
+ *
+ * Campo em branco NÃO vira zero: quem não digitou disse "não conferi", não
+ * disse "foi zero". Essa diferença é o que mantém a gaveta NÃO CONFERIDO
+ * honesta.
+ */
+function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalvar }: {
+  r: Resultado
+  data: string
+  papel: Record<string, string>
+  setPapel: React.Dispatch<React.SetStateAction<Record<string, string>>>
+  salvando: boolean
+  setSalvando: (v: boolean) => void
+  aoSalvar: () => void
+}) {
+  const lista = r.comandasDoDia || []
+
+  const comoNumero = (t: string): number | null => {
+    const limpo = String(t ?? '').trim()
+    if (!limpo) return null
+    const n = Number(limpo.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'))
+    return Number.isFinite(n) ? n : null
+  }
+
+  const digitadas = lista.filter(c => comoNumero(papel[c.comanda] || '') !== null).length
+  const divergentes = lista.filter(c => {
+    const v = comoNumero(papel[c.comanda] || '')
+    return v !== null && Math.abs(v - c.total) > 0.02
+  })
+
+  async function salvar() {
+    setSalvando(true)
+    try {
+      const res = await fetch('/api/salon/conferencia-papel', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data, valores: papel }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error || 'Falha ao salvar')
+      toast.success(`${d.conferidas} comanda(s) conferidas pelo papel.`)
+      aoSalvar()
+    } catch (e: any) {
+      toast.error(e?.message || 'Não consegui salvar a conferência do papel.')
+    }
+    setSalvando(false)
+  }
+
+  if (!lista.length) {
+    return (
+      <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#475569' }}>
+        Não há comandas neste dia para conferir.
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p style={{ fontSize: 12.5, color: '#6b6860', margin: '0 0 4px' }}>
+        Digite o valor que está escrito na <b>comanda de papel</b>. O número da
+        comanda já vem preenchido — você só confere o valor.
+      </p>
+      <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 12px' }}>
+        <b>Enter</b> pula para a próxima. Não precisa preencher todas: o que ficar
+        em branco aparece como <b>não conferido</b>, nunca como zero.
+      </p>
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <Selo titulo="Comandas" valor={String(lista.length)} />
+        <Selo titulo="Conferidas" valor={`${digitadas}`} />
+        {divergentes.length > 0 && <Selo titulo="Divergentes" valor={String(divergentes.length)} destaque />}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 460, overflowY: 'auto', marginBottom: 12 }}>
+        {lista.map((c, i) => {
+          const txt = papel[c.comanda] ?? ''
+          const v = comoNumero(txt)
+          const bate = v !== null && Math.abs(v - c.total) <= 0.02
+          const erra = v !== null && !bate
+          return (
+            <div key={c.comanda} className="cp-linha"
+              style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+                background: erra ? '#fef2f2' : bate ? '#f0fdf4' : '#fff',
+                border: `1px solid ${erra ? '#fca5a5' : bate ? '#86efac' : '#e8e6e0'}`,
+                borderRadius: 9, padding: '7px 10px' }}>
+              <span style={{ fontSize: 12.5, fontWeight: 900, color: '#1a1a1a', minWidth: 88 }}>
+                Comanda {c.comanda}
+              </span>
+              <span style={{ flex: '1 1 150px', minWidth: 110, fontSize: 12.5, color: '#57534e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.cliente}
+              </span>
+              <span style={{ fontSize: 12, color: '#9ca3af', minWidth: 108, fontVariantNumeric: 'tabular-nums' }}>
+                sistema {moeda(c.total)}
+              </span>
+              <input
+                value={txt}
+                onChange={e => setPapel(p => ({ ...p, [c.comanda]: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  const campos = Array.from(document.querySelectorAll<HTMLInputElement>('.cp-valor'))
+                  const prox = campos[i + 1]
+                  if (prox) prox.focus()
+                  else (e.target as HTMLInputElement).blur()
+                }}
+                className="cp-valor"
+                inputMode="decimal" placeholder="valor do papel"
+                style={{ width: 128, padding: '7px 9px', fontSize: 13, fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums', textAlign: 'right',
+                  border: `1.5px solid ${erra ? '#dc2626' : bate ? '#16a34a' : '#e0ddd8'}`,
+                  borderRadius: 8, outline: 'none',
+                  background: '#fff', color: erra ? '#b91c1c' : bate ? '#15803d' : '#1a1a1a' }} />
+              {erra && (
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b91c1c', minWidth: 92, fontVariantNumeric: 'tabular-nums' }}>
+                  {v! > c.total ? '+' : '−'}{moeda(Math.abs(v! - c.total)).replace('R$', '').trim()}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <button onClick={salvar} disabled={salvando}
+        style={{ border: 'none', background: '#16a34a', color: '#fff', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 800, cursor: salvando ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+        {salvando ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Fazer a última conferência
+      </button>
+      <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '8px 0 0' }}>
+        As divergências entram no diagnóstico junto das outras, na aba
+        <b> Apontamentos</b>.
+      </p>
     </div>
   )
 }
