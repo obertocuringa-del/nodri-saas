@@ -23,9 +23,20 @@ import type { Metadata } from 'next'
  * funcionar, então não troque `null` por omissão.
  */
 export const metadata: Metadata = {
-  title: null,
+  // O negrito do card do WhatsApp e o titulo da pagina.
+  //
+  // Sem titulo nenhum ele escrevia o dominio ("www.nodri.com.br"), que para a
+  // cliente nao quer dizer nada. Uma palavra so, e a palavra que descreve o
+  // que ela vai encontrar do outro lado.
+  //
+  // Palavra generica de proposito: serve a todo salao, e nenhum salao aparece
+  // com o nome do outro. O nome do salao a cliente ve na propria pagina, na
+  // logo, que ja e a dele.
+  title: 'Promoções',
   description: null,
   keywords: null,
+  // Continua sem og: e sem imagem. E o que impede o card de crescer e voltar
+  // a mostrar o print do sistema.
   openGraph: null,
   twitter: null,
 }
