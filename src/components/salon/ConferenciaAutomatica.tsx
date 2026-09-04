@@ -582,33 +582,76 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           {aba === 'papel' && <ConferirPapel r={r} data={data} papel={papel} setPapel={setPapel}
             salvando={salvandoPapel} setSalvando={setSalvandoPapel} aoSalvar={conferir} />}
 
+          {/* A leitura passou a ser por GRAVIDADE e, dentro dela, por COMANDA.
+              Antes cada achado era um cartão solto, e uma comanda com quatro
+              problemas virava quatro cartões repetindo o mesmo cabeçalho — o
+              olho lia quatro casos onde havia um. */}
           {aba === 'achados' && [['problema', problemas], ['atencao', atencoes], ['nao_conferido', naoConferidos]]
             .filter(([, lista]) => (lista as Achado[]).length > 0)
             .map(([g, lista]) => {
               const c = CORES[g as keyof typeof CORES]
               return (
                 <div key={String(g)} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: c.texto, letterSpacing: 0.6, marginBottom: 6 }}>
-                    {c.rotulo} · {(lista as Achado[]).length}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: c.texto, letterSpacing: 0.6 }}>
+                      {c.rotulo} · {(lista as Achado[]).length}
+                    </span>
+                    {(() => {
+                      const soma = (lista as Achado[]).reduce((s, a) => s + (a.valorEmRisco || 0), 0)
+                      return soma > 0 ? (
+                        <span style={{ fontSize: 11.5, fontWeight: 800, color: c.texto, opacity: .8, fontVariantNumeric: 'tabular-nums' }}>
+                          {moeda(soma)} em jogo
+                        </span>
+                      ) : null
+                    })()}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {(lista as Achado[]).map(a => (
-                      <div key={a.id} style={{ background: c.bg, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '10px 12px' }}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 900, color: c.texto }}>Comanda {a.comanda}</span>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1a1a1a' }}>{a.servico}</span>
-                          {a.valorEmRisco > 0 && (
-                            <span style={{ fontSize: 12, fontWeight: 900, color: c.texto }}>{moeda(a.valorEmRisco)}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {agruparPorComanda(lista as Achado[]).map(g => (
+                      <div key={g.comanda} style={{ background: c.bg, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '10px 12px' }}>
+                        {/* Cabeçalho: uma vez por comanda, não uma por achado */}
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: g.itens.length > 1 ? 6 : 3 }}>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: c.texto }}>
+                            {g.comanda === '—' ? 'Geral' : `Comanda ${g.comanda}`}
+                          </span>
+                          {g.cliente !== '—' && (
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1a1a1a' }}>{g.cliente}</span>
                           )}
-                          {a.caixa && (
+                          {g.risco > 0 && (
+                            <span style={{ fontSize: 12.5, fontWeight: 900, color: c.texto, fontVariantNumeric: 'tabular-nums' }}>
+                              {moeda(g.risco)}
+                            </span>
+                          )}
+                          {g.caixa && (
                             <span style={{ fontSize: 11, fontWeight: 800, color: '#6b6860', background: '#fff', border: '1px solid #e0ddd8', borderRadius: 6, padding: '1px 6px' }}>
-                              caixa {a.caixa}
+                              caixa {g.caixa}
+                            </span>
+                          )}
+                          {g.itens.length > 1 && (
+                            <span style={{ fontSize: 11, fontWeight: 800, color: c.texto, opacity: .75 }}>
+                              {g.itens.length} apontamentos
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 12.5, color: '#57534e', marginTop: 3 }}>{a.texto}</div>
-                        <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
-                          {a.cliente} · {a.profissional}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                          {g.itens.map(a => (
+                            <div key={a.id} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                              {g.itens.length > 1 && (
+                                <span style={{ color: c.texto, fontWeight: 900, lineHeight: 1.45, flexShrink: 0 }}>·</span>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12.5, color: '#3f3a34', lineHeight: 1.45 }}>
+                                  {a.servico && a.servico !== '—' && (
+                                    <b style={{ color: '#1a1a1a' }}>{a.servico} — </b>
+                                  )}
+                                  {a.texto}
+                                </div>
+                                {a.profissional && a.profissional !== '—' && (
+                                  <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 1 }}>{a.profissional}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
@@ -776,6 +819,31 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
   )
 }
 
+/**
+ * Junta os achados da mesma comanda num cartão só.
+ *
+ * Uma comanda com quatro problemas virava quatro cartões repetindo o mesmo
+ * cabeçalho — o olho lia quatro casos onde havia um, e a lista parecia o dobro
+ * do tamanho. O valor em risco é somado, porque é assim que ele é resolvido:
+ * de uma vez, naquela comanda.
+ */
+function agruparPorComanda(lista: Achado[]) {
+  const grupos = new Map<string, { comanda: string; cliente: string; caixa?: string; risco: number; itens: Achado[] }>()
+  for (const a of lista) {
+    const k = String(a.comanda)
+    if (!grupos.has(k)) {
+      grupos.set(k, { comanda: k, cliente: a.cliente || '—', caixa: a.caixa, risco: 0, itens: [] })
+    }
+    const g = grupos.get(k)!
+    if (g.cliente === '—' && a.cliente && a.cliente !== '—') g.cliente = a.cliente
+    if (!g.caixa && a.caixa) g.caixa = a.caixa
+    g.risco += a.valorEmRisco || 0
+    g.itens.push(a)
+  }
+  // Maior prejuízo primeiro: é por onde se começa a resolver.
+  return Array.from(grupos.values()).sort((a, b) => b.risco - a.risco)
+}
+
 /** Chip de filtro por caixa. */
 function chip(ativo: boolean): React.CSSProperties {
   return {
@@ -786,15 +854,22 @@ function chip(ativo: boolean): React.CSSProperties {
   }
 }
 
+/**
+ * Selo do resumo.
+ *
+ * `destaque` é vermelho e existe para UMA coisa só: o dinheiro em risco. Se
+ * tudo chamasse atenção, nada chamaria — e o número que precisa ser visto
+ * primeiro é sempre o mesmo.
+ */
 function Selo({ titulo, valor, destaque }: { titulo: string; valor: string; destaque?: boolean }) {
   return (
     <div style={{
-      border: `1px solid ${destaque ? '#fca5a5' : '#e8e6e0'}`,
+      border: `1.5px solid ${destaque ? '#fca5a5' : '#e8e6e0'}`,
       background: destaque ? '#fef2f2' : '#faf9f7',
-      borderRadius: 10, padding: '8px 14px', minWidth: 92,
+      borderRadius: 10, padding: '9px 15px', minWidth: 96,
     }}>
-      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 0.4 }}>{titulo}</div>
-      <div style={{ fontSize: 16, fontWeight: 900, color: destaque ? '#b91c1c' : '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: destaque ? '#b91c1c' : '#6b6860', textTransform: 'uppercase', letterSpacing: 0.5 }}>{titulo}</div>
+      <div style={{ fontSize: destaque ? 18 : 16, fontWeight: 900, color: destaque ? '#b91c1c' : '#1a1a1a', fontVariantNumeric: 'tabular-nums', lineHeight: 1.25 }}>{valor}</div>
     </div>
   )
 }
