@@ -11,6 +11,25 @@ import { buscarComCache } from '@/lib/fetchCache'
 
 const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+/** "2026-09-04T14:32:00Z" → "04/09/2026 14:32" */
+function dataHora(iso: string): string {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return String(iso || '')
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Chip do funil. Vira botão de verdade: precisa parecer clicável. */
+function chipFunil(ativo: boolean, fundo: string, cor: string): React.CSSProperties {
+  return {
+    background: ativo ? cor : fundo,
+    color: ativo ? '#fff' : cor,
+    border: `1.5px solid ${ativo ? cor : 'transparent'}`,
+    borderRadius: 10, padding: '10px 18px', fontWeight: 700, fontSize: 13.5,
+    cursor: 'pointer',
+    boxShadow: ativo ? '0 3px 10px rgba(0,0,0,.16)' : 'none',
+  }
+}
+
 export default function RecuperadosReport() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -21,6 +40,14 @@ export default function RecuperadosReport() {
   const [cfgBonus, setCfgBonus] = useState('')
   const [cfgJanela, setCfgJanela] = useState('')
   const [salvandoCfg, setSalvandoCfg] = useState(false)
+  // Qual lado do funil está aberto, e o filtro de data dela.
+  //
+  // O número sozinho não se audita: para conferir uma taxa de recuperação é
+  // preciso ver os nomes e as datas — é assim que se acha o contato repetido,
+  // o nome digitado errado e a cliente que voltou sem ninguém marcar.
+  const [funil, setFunil] = useState<'' | 'contatos' | 'voltaram'>('')
+  const [de, setDe] = useState('')
+  const [ate, setAte] = useState('')
 
   async function salvarCfg() {
     setSalvandoCfg(true)
@@ -55,6 +82,8 @@ export default function RecuperadosReport() {
 
   return (
     <div>
+      <style>{'.fun-chip{transition:transform .12s ease,box-shadow .12s ease,filter .12s ease} .fun-chip:hover{transform:translateY(-1px);filter:brightness(1.03);box-shadow:0 3px 10px rgba(0,0,0,.14)} .fun-chip:active{transform:translateY(0)}'}</style>
+
       {/* Sub-abas */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {([['recuperados', 'Recuperados'], ['carteira', 'Carteira & Pagamentos'], ['jogo', 'Sala de Recompensas'], ['desafios', 'Desafio 1×1'], ['arena', 'Arena NODRI']] as const).map(([v, l]) => (
@@ -126,14 +155,98 @@ export default function RecuperadosReport() {
         {card(<TrendingUp size={14} />, 'ROI (recuperado ÷ bônus)', `${data.roi}x`, '#0891b2')}
       </div>
 
-      {/* Funil */}
+      {/* Funil — os dois lados abrem a lista de nomes */}
       <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}>Funil de recuperação</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ background: '#ede9fe', color: '#5b21b6', borderRadius: 10, padding: '10px 18px', fontWeight: 700 }}>{data.total_contatos} contatadas</div>
+          <button onClick={() => setFunil(f => f === 'contatos' ? '' : 'contatos')} className="fun-chip"
+            style={chipFunil(funil === 'contatos', '#ede9fe', '#5b21b6')}>
+            {data.total_contatos} contatadas
+          </button>
           <span style={{ color: '#9ca3af' }}>→</span>
-          <div style={{ background: '#dcfce7', color: '#15803d', borderRadius: 10, padding: '10px 18px', fontWeight: 700 }}>{data.total_recuperados} voltaram ({data.taxa_conversao}%)</div>
+          <button onClick={() => setFunil(f => f === 'voltaram' ? '' : 'voltaram')} className="fun-chip"
+            style={chipFunil(funil === 'voltaram', '#dcfce7', '#15803d')}>
+            {data.total_recuperados} voltaram ({data.taxa_conversao}%)
+          </button>
+          {!funil && <span style={{ fontSize: 12, color: '#9ca3af' }}>clique para ver os nomes</span>}
         </div>
+
+        {funil && (() => {
+          const bruta: any[] = funil === 'contatos' ? (data.contatos || []) : (data.recuperados || [])
+          // O contato tem hora (ISO); o retorno vem em DD/MM/AAAA. Uma função
+          // só para os dois, senão o filtro pega um lado e não o outro.
+          const emDia = (v: any) => {
+            const t = funil === 'contatos' ? String(v.contato_em || '') : String(v.data_retorno || '')
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(t)
+            return m ? `${m[3]}-${m[2]}-${m[1]}` : t.slice(0, 10)
+          }
+          const lista = bruta.filter(v => {
+            const d = emDia(v)
+            if (de && d < de) return false
+            if (ate && d > ate) return false
+            return true
+          })
+          return (
+            <div style={{ marginTop: 14, borderTop: '1px solid #f0ede6', paddingTop: 12 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>De</span>
+                <input type="date" value={de} onChange={e => setDe(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>até</span>
+                <input type="date" value={ate} onChange={e => setAte(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 12.5 }} />
+                {(de || ate) && (
+                  <button onClick={() => { setDe(''); setAte('') }}
+                    style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: 12, fontWeight: 700, color: '#6b6860', cursor: 'pointer' }}>
+                    limpar
+                  </button>
+                )}
+                <div style={{ flex: 1 }} />
+                <span style={{ fontSize: 12, color: '#6b6860', fontWeight: 700 }}>
+                  {lista.length} de {bruta.length}
+                </span>
+              </div>
+
+              {lista.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: '#9ca3af', textAlign: 'center', padding: 14 }}>
+                  {bruta.length === 0
+                    ? (funil === 'contatos' ? 'Nenhum contato registrado.' : 'Nenhuma cliente voltou ainda.')
+                    : 'Nenhum registro nesse período.'}
+                </p>
+              ) : (
+                <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                    <thead><tr style={{ background: '#faf9f7' }}>
+                      {(funil === 'contatos'
+                        ? ['Cliente', 'Contatada em', 'Recepção', 'Voltou?']
+                        : ['Cliente', 'Voltou em', 'Recepção', 'Valor']
+                      ).map((h, k) => (
+                        <th key={h} style={{ padding: '7px 9px', textAlign: k === 0 ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 700 }}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {lista.map((v: any, k: number) => (
+                        <tr key={v.id || k} style={{ borderTop: '1px solid #f0ede6' }}>
+                          <td style={{ padding: '7px 9px', fontWeight: 600 }}>{v.cliente_nome}</td>
+                          <td style={{ padding: '7px 9px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {funil === 'contatos' ? dataHora(v.contato_em) : v.data_retorno}
+                          </td>
+                          <td style={{ padding: '7px 9px', textAlign: 'right', color: '#6b6860' }}>{v.recepcionista_nome}</td>
+                          <td style={{ padding: '7px 9px', textAlign: 'right', fontWeight: 700,
+                            color: funil === 'contatos' ? (v.voltou ? '#15803d' : '#9ca3af') : '#15803d' }}>
+                            {funil === 'contatos'
+                              ? (v.voltou ? `sim · ${v.data_retorno}` : 'ainda não')
+                              : moeda(v.valor_retorno)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Ranking recepção */}

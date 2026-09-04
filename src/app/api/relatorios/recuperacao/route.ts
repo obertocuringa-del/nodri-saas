@@ -191,6 +191,31 @@ export async function GET(req: NextRequest) {
         taxa_conversao: taxaConversao, faturamento_recuperado: faturamentoRecuperado, total_bonus: totalBonus,
         roi: totalBonus > 0 ? Math.round((faturamentoRecuperado / totalBonus) * 10) / 10 : 0,
         ranking, recuperados: recuperados.sort((a, b) => parseBR(b.data_retorno) - parseBR(a.data_retorno)),
+        // A lista de QUEM foi contatado, para o funil poder abrir.
+        //
+        // Antes só o número saía daqui, e número não se audita: quem quer
+        // conferir uma taxa de recuperação precisa ver os nomes e as datas —
+        // é assim que se descobre o contato repetido, o nome digitado errado
+        // e a cliente que voltou e ninguém marcou.
+        //
+        // `voltou` já vem calculado: a tela não deve refazer a regra da janela
+        // por conta própria, senão um dia as duas contas divergem e ninguém
+        // sabe qual está certa.
+        contatos: contatos.map((c: any) => {
+          const encontrou = recuperados.find(
+            (r: any) => r.cliente_nome === c.cliente_nome && r.contato_em === c.contato_em)
+          return {
+            id: c.id,
+            cliente_nome: c.cliente_nome,
+            celular: c.celular || '',
+            origem: c.origem || '',
+            recepcionista_nome: c.recepcionista_nome || '—',
+            contato_em: c.contato_em,
+            voltou: !!encontrou,
+            data_retorno: encontrou?.data_retorno || null,
+            valor_retorno: encontrou?.valor_retorno ?? null,
+          }
+        }),
       })
     }
 
