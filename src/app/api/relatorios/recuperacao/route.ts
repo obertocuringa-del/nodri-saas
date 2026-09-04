@@ -251,6 +251,29 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ ok: true, ...valor })
 }
 
+/**
+ * Apaga um contato registrado por engano.
+ *
+ * Faltava, e não era detalhe: cada contato entra no denominador da taxa de
+ * recuperação. Um registrado por engano — nome errado, clique duplo, teste —
+ * derruba a taxa da recepcionista para sempre, e não havia como desfazer.
+ *
+ * Só o dono apaga, e só dentro do próprio salão: o `eq('salao_id')` não é
+ * zelo, é o que impede um id de outro salão de ser apagado por adivinhação.
+ */
+export async function DELETE(req: NextRequest) {
+  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  const salaoId = await getSalaoId()
+  if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const id = new URL(req.url).searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
+  const { error } = await supabaseAdmin
+    .from('clientes_contatos').delete()
+    .eq('id', id).eq('salao_id', salaoId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(req: NextRequest) {
     if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const salaoId = await getSalaoId()
