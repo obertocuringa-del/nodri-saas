@@ -166,21 +166,40 @@ export async function GET(req: NextRequest) {
     const k = String(x.comanda || '').trim()
     if (k) recebidoPorComanda.set(k, (recebidoPorComanda.get(k) || 0) + (Number(x.valor) || 0))
   }
+  // Comandas que existem só no CAIXA entram na lista do mesmo jeito.
+  //
+  // A compra de pacote é o caso: não tem serviço executado, então não aparece
+  // no relatório 0031 — e a comanda sumia da conferência do papel, justamente
+  // uma das que mais precisa ser conferida, porque é dinheiro que entrou sem
+  // contrapartida em serviço.
   for (const k of prodPorComanda.keys()) {
+    if (!porComandaLista.has(k)) porComandaLista.set(k, { cliente: '', profissional: '', servicos: 0 })
+  }
+  for (const k of recebidoPorComanda.keys()) {
     if (!porComandaLista.has(k)) porComandaLista.set(k, { cliente: '', profissional: '', servicos: 0 })
   }
 
   const comandasDoDia = Array.from(porComandaLista.entries())
-    .map(([comanda, v]) => ({
+    .map(([comanda, v]) => {
+      const prod = prodPorComanda.get(comanda) || 0
+      const lancado = v.servicos + prod
+      const receb = recebidoPorComanda.has(comanda) ? Number(recebidoPorComanda.get(comanda)!.toFixed(2)) : null
+      // Sem serviço nem produto (compra de pacote), a referência do papel passa
+      // a ser o que entrou no caixa — é o único valor que o sistema tem para
+      // essa comanda, e comparar contra zero acusaria a comanda inteira.
+      const referencia = lancado > 0 ? lancado : (receb ?? 0)
+      return {
       comanda,
       cliente: v.cliente || '—',
       profissional: v.profissional || '—',
       servicos: Number(v.servicos.toFixed(2)),
-      produtos: Number((prodPorComanda.get(comanda) || 0).toFixed(2)),
-      total: Number((v.servicos + (prodPorComanda.get(comanda) || 0)).toFixed(2)),
-      recebido: recebidoPorComanda.has(comanda) ? Number(recebidoPorComanda.get(comanda)!.toFixed(2)) : null,
+      produtos: Number(prod.toFixed(2)),
+      total: Number(referencia.toFixed(2)),
+      soNoCaixa: lancado <= 0 && receb !== null,
+      recebido: receb,
       caixa: caixas.find(c => (c.comandas || []).some(x => String(x.comanda).trim() === comanda))?.responsavel || null,
-    }))
+      }
+    })
     .sort((a, b) => (Number(a.comanda) || 0) - (Number(b.comanda) || 0))
 
   const comandas = new Set(doDia.map(a => String(a.num_comanda)))

@@ -412,6 +412,13 @@ export function conferirDia(
   for (const k of prodComanda.keys()) {
     if (!totalPorComanda.has(k)) totalPorComanda.set(k, [])
   }
+  // E a que só existe no CAIXA também entra: compra de pacote não tem serviço
+  // executado, então nunca aparece no relatório de serviços. Sem isto ela
+  // sumia da conferência do papel — e é dinheiro que entrou sem contrapartida
+  // em serviço, das que mais precisam ser conferidas.
+  for (const k of recebido.keys()) {
+    if (!totalPorComanda.has(k)) totalPorComanda.set(k, [])
+  }
 
   if (!temCaixa) {
     if (totalPorComanda.size > 0) {
@@ -519,7 +526,12 @@ export function conferirDia(
       conferidas++
 
       const emServico = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
-      const noSistema = emServico + (prodComanda.get(comanda) || 0)
+      const lancado = emServico + (prodComanda.get(comanda) || 0)
+      // Comanda sem serviço nem produto — compra de pacote é o caso — não tem
+      // contra o que comparar a não ser o caixa. Medir contra zero acusaria a
+      // comanda inteira, e o erro seria do sistema, não do salão.
+      const noSistema = lancado > 0 ? lancado : (recebido.get(comanda) ?? 0)
+      if (noSistema <= 0) continue
       const dif = noPapel - noSistema
       if (Math.abs(dif) <= 0.02) continue
 
@@ -534,14 +546,17 @@ export function conferirDia(
 
     // Papel digitado para uma comanda que o sistema não conhece.
     for (const comanda of comandasComPapel) {
-      if (totalPorComanda.has(comanda)) continue
+      if (totalPorComanda.has(comanda) || recebido.has(comanda)) continue
       add({ comanda, cliente: '—', profissional: '—', servico: '—',
         gravidade: 'atencao', tipo: 'papel_sem_comanda', valorEmRisco: 0,
         texto: `A comanda ${comanda} foi digitada na conferência de papel `
           + `(R$ ${rs(papel[comanda])}), e não existe nos lançamentos deste dia.` })
     }
 
-    const faltam = totalPorComanda.size - conferidas
+    // O total de comandas inclui as que só existem no caixa: elas aparecem na
+    // tela do papel e portanto contam como "faltando conferir".
+    const universo = new Set([...totalPorComanda.keys(), ...recebido.keys()])
+    const faltam = universo.size - conferidas
     if (faltam > 0) {
       add({ comanda: '—', cliente: '—', profissional: '—', servico: '—',
         gravidade: 'nao_conferido', tipo: 'papel_incompleto', valorEmRisco: 0,
