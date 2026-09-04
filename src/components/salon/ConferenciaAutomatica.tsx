@@ -693,6 +693,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                                 {a.profissional && a.profissional !== '—' && (
                                   <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 1 }}>{a.profissional}</div>
                                 )}
+                                {!!a.detalhes?.length && <Detalhes itens={a.detalhes} cor={c.texto} />}
                               </div>
                             </div>
                           ))}
@@ -1015,6 +1016,47 @@ async function imprimirConferencia(
   const w = window.open('', '_blank', 'width=1000,height=760')
   if (!w) { toast.error('O navegador bloqueou a janela de impressão.'); return }
   w.document.write(html); w.document.close(); w.focus()
+}
+
+/**
+ * A lista de comandas por trás de um apontamento que fala de várias.
+ *
+ * Nasce fechada: aberta, ela empurraria os outros apontamentos para baixo toda
+ * vez que a tela carrega. Fechada, o número continua sendo o resumo — e quem
+ * precisa agir clica e vê quais são.
+ */
+function Detalhes({ itens, cor }: {
+  itens: Array<{ comanda: string; cliente: string; profissional: string }>
+  cor: string
+}) {
+  const [aberto, setAberto] = useState(false)
+  return (
+    <div style={{ marginTop: 5 }}>
+      <button onClick={() => setAberto(v => !v)} className="conf-titulo"
+        style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 11.5, fontWeight: 800, color: cor }}>
+        <ChevronRight size={12} style={{ transform: aberto ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease' }} />
+        {aberto ? 'esconder' : `ver quais (${itens.length})`}
+      </button>
+
+      {aberto && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6,
+          borderLeft: `2px solid ${cor}33`, paddingLeft: 9 }}>
+          {itens.map(d => (
+            <div key={d.comanda} style={{ fontSize: 12, color: '#3f3a34', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              <b style={{ color: '#1a1a1a', minWidth: 84 }}>Comanda {d.comanda}</b>
+              <span style={{ flex: '1 1 140px', minWidth: 110 }}>{d.cliente}</span>
+              <span style={{ color: d.profissional === 'Sem profissional lançado' ? '#b45309' : '#9ca3af',
+                fontWeight: d.profissional === 'Sem profissional lançado' ? 700 : 400 }}>
+                {d.profissional}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 /**

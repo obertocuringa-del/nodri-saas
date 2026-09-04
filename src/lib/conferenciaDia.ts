@@ -55,6 +55,15 @@ export interface Achado {
   valorEmRisco: number
   /** Responsável pelo caixa da comanda, quando o dado do caixa chegou. */
   caixa?: string
+  /**
+   * Quando um achado fala de VÁRIAS comandas, quais são elas.
+   *
+   * Existe porque "2 comandas sem o valor do papel" é um número, e número não
+   * se resolve: para agir é preciso saber QUAIS. O detalhe fica aqui e a tela
+   * abre no clique, em vez de virar dois apontamentos soltos que
+   * atrapalhariam a leitura das outras gavetas.
+   */
+  detalhes?: Array<{ comanda: string; cliente: string; profissional: string }>
 }
 
 export interface Atendimento {
@@ -556,11 +565,28 @@ export function conferirDia(
     // O total de comandas inclui as que só existem no caixa: elas aparecem na
     // tela do papel e portanto contam como "faltando conferir".
     const universo = new Set([...totalPorComanda.keys(), ...recebido.keys()])
-    const faltam = universo.size - conferidas
-    if (faltam > 0) {
+    // Quais comandas ficaram sem digitar — não só quantas.
+    const semPapel: Array<{ comanda: string; cliente: string; profissional: string }> = []
+    for (const comanda of universo) {
+      if (papel[comanda] !== undefined) continue
+      const itens = totalPorComanda.get(comanda) || []
+      const comCliente = itens.find(a => String(a.cliente || '').trim())
+      const comProf = itens.find(a => String(a.profissional || '').trim())
+      semPapel.push({
+        comanda,
+        cliente: String(comCliente?.cliente || '').trim() || 'Cliente não identificado',
+        // Sem profissional é informação, não lacuna: quem lê precisa saber que
+        // o lançamento veio assim, e não que o sistema não conseguiu ler.
+        profissional: String(comProf?.profissional || '').trim() || 'Sem profissional lançado',
+      })
+    }
+    semPapel.sort((a, b) => (Number(a.comanda) || 0) - (Number(b.comanda) || 0))
+
+    if (semPapel.length > 0) {
       add({ comanda: '—', cliente: '—', profissional: '—', servico: '—',
         gravidade: 'nao_conferido', tipo: 'papel_incompleto', valorEmRisco: 0,
-        texto: `${faltam} comanda(s) sem o valor do papel digitado. `
+        detalhes: semPapel,
+        texto: `${semPapel.length} comanda(s) sem o valor do papel digitado. `
           + `O que foi digitado está conferido; o resto não.` })
     }
   }
