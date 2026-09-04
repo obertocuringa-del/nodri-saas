@@ -16,8 +16,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal, Plus, Trash2, Save, Wallet } from 'lucide-react'
+import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal, Plus, Trash2, Save, Wallet, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { getLogoSalao } from '@/lib/logoSalao'
 import type { Achado, RegraComposicao } from '@/lib/conferenciaDia'
 
 // ── Os alvos de uma regra, como a tela os manipula ──────────────────────────
@@ -118,6 +119,21 @@ interface ComandaDoDia {
 /** Rótulo do filtro para o achado sem caixa identificado. */
 const SEM_CAIXA = 'Sem caixa'
 
+// Estilo desta tela. Fica numa constante, e não em `style` inline, porque
+// :hover e :active não existem em estilo inline — e era exatamente o que
+// faltava: os filtros de caixa não davam sinal nenhum de que eram clicáveis.
+//
+// A lista é junta com espaço, e não com quebra de linha, de propósito: crase
+// dentro de <style> fecha a string, e barra invertida some em algumas
+// ferramentas. Uma linha só não tem como quebrar.
+const CSS_CONF = [
+  '.conf-chip { transition: transform .12s ease, box-shadow .12s ease, filter .12s ease }',
+  '.conf-chip:hover { transform: translateY(-1px); filter: brightness(1.04); box-shadow: 0 3px 10px rgba(91,79,207,.22) }',
+  '.conf-chip:active { transform: translateY(0); box-shadow: none }',
+  '.conf-titulo { transition: opacity .12s ease }',
+  '.conf-titulo:hover { opacity: .68 }',
+].join(' ')
+
 const CORES = {
   problema:      { bg: '#fef2f2', borda: '#fca5a5', texto: '#b91c1c', rotulo: 'PROBLEMA' },
   atencao:       { bg: '#fffbeb', borda: '#fcd34d', texto: '#b45309', rotulo: 'ATENÇÃO' },
@@ -143,6 +159,13 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   // Os valores digitados da comanda de PAPEL, por comanda.
   const [papel, setPapel] = useState<Record<string, string>>({})
   const [salvandoPapel, setSalvandoPapel] = useState(false)
+  // Seções que abrem e fecham no clique do título.
+  //
+  // PROBLEMA nasce aberto de propósito: é o que exige ação, e uma tela que
+  // esconde o que precisa ser resolvido devolve para a pessoa o trabalho de
+  // procurar. O resto nasce fechado, que é o que tira o muro de dado.
+  const [aberto, setAberto] = useState<Record<string, boolean>>({ problema: true })
+  const alternar = (k: string) => setAberto(a => ({ ...a, [k]: !a[k] }))
 
   const conferir = useCallback(async () => {
     if (!data) return
@@ -244,6 +267,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
 
   return (
     <div style={{ border: '1.5px solid #e8e6e0', borderRadius: 14, background: '#fff', padding: 16, marginBottom: 16 }}>
+      <style>{CSS_CONF}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <ShieldCheck size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 200 }}>
@@ -263,7 +287,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </button>
         )}
         {r && !r.semDados && (
-          <button onClick={() => window.print()} className="no-mobile"
+          <button onClick={() => imprimirConferencia(r, data, caixaSel, daSelecao)} className="no-mobile"
             style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Printer size={13} /> Imprimir
           </button>
@@ -540,20 +564,24 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
                 <Wallet size={14} style={{ color: '#6b6860' }} />
-                <span style={{ fontSize: 11, fontWeight: 900, color: '#6b6860', letterSpacing: 0.5 }}>
+                <button onClick={() => alternar('caixas')} className="conf-titulo"
+                  style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    fontSize: 11, fontWeight: 900, color: '#6b6860', letterSpacing: 0.5 }}>
+                  <ChevronRight size={13} style={{ transform: aberto.caixas ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease' }} />
                   CAIXAS DO DIA · {caixas.length}
-                </span>
-                <button onClick={() => setCaixaSel('')}
+                </button>
+                <button className="conf-chip" onClick={() => setCaixaSel('')}
                   style={chip(!caixaSel)}>Todos</button>
                 {caixas.map(c => (
-                  <button key={c.responsavel} onClick={() => setCaixaSel(c.responsavel)}
+                  <button key={c.responsavel} className="conf-chip" onClick={() => setCaixaSel(c.responsavel)}
                     style={chip(caixaSel === c.responsavel)}>{c.responsavel}</button>
                 ))}
                 {(r.achados || []).some(a => !a.caixa) && (
-                  <button onClick={() => setCaixaSel(SEM_CAIXA)} style={chip(caixaSel === SEM_CAIXA)}>{SEM_CAIXA}</button>
+                  <button className="conf-chip" onClick={() => setCaixaSel(SEM_CAIXA)} style={chip(caixaSel === SEM_CAIXA)}>{SEM_CAIXA}</button>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div className={aberto.caixas ? '' : 'no-print'} style={{ display: aberto.caixas ? 'flex' : 'none', gap: 10, flexWrap: 'wrap' }}>
                 {caixas
                   .filter(c => !caixaSel || caixaSel === c.responsavel)
                   .map(c => (
@@ -605,7 +633,10 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
               const c = CORES[g as keyof typeof CORES]
               return (
                 <div key={String(g)} style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7, flexWrap: 'wrap' }}>
+                  <button onClick={() => alternar(String(g))} className="conf-titulo"
+                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7, flexWrap: 'wrap', width: '100%', textAlign: 'left' }}>
+                    <ChevronRight size={13} style={{ color: c.texto, transform: aberto[String(g)] ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease', flexShrink: 0 }} />
                     <span style={{ fontSize: 11, fontWeight: 900, color: c.texto, letterSpacing: 0.6 }}>
                       {c.rotulo} · {(lista as Achado[]).length}
                     </span>
@@ -617,8 +648,8 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                         </span>
                       ) : null
                     })()}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  </button>
+                  <div className="conf-corpo" style={{ display: aberto[String(g)] ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
                     {agruparPorComanda(lista as Achado[]).map(g => (
                       <div key={g.comanda} style={{ background: c.bg, border: `1px solid ${c.borda}`, borderRadius: 10, padding: '10px 12px' }}>
                         {/* Cabeçalho: uma vez por comanda, não uma por achado */}
@@ -832,6 +863,160 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
   )
 }
 
+
+/**
+ * O documento de conferência, para imprimir e entregar.
+ *
+ * Não é a tela impressa: é uma folha A4 própria, com a logo do salão, feita
+ * para ir à mão do responsável pelo caixa. A diferença importa — a pessoa que
+ * recebe uma folha com cara de documento trata o assunto como assunto; uma
+ * captura de tela ela deixa em cima do balcão.
+ *
+ * Cada apontamento vem com duas linhas em branco, "o que houve" e "como foi
+ * resolvido". São as duas perguntas que fecham um caso: a primeira registra o
+ * fato, a segunda encerra. Uma sem a outra vira anotação solta.
+ */
+async function imprimirConferencia(
+  r: Resultado, data: string, caixaSel: string, achados: Achado[],
+) {
+  const logo = await getLogoSalao()
+  const esc = (v: any) => String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const COR = '#5b4fcf'
+  const caixasMostrados = (r.caixas || []).filter(c => !caixaSel || c.responsavel === caixaSel)
+  const totalCaixa = caixasMostrados.reduce((s, c) => s + c.total, 0)
+  const comandasCaixa = caixasMostrados.reduce((s, c) => s + c.comandas, 0)
+
+  /** Duas pautas em branco, para escrever à mão. */
+  const pauta = () => `
+    <div class="pauta"><span class="rot">O que houve</span><span class="linha"></span></div>
+    <div class="pauta"><span class="rot">Como foi resolvido</span><span class="linha"></span></div>`
+
+  const secao = (titulo: string, cor: string, lista: Achado[]) => {
+    if (!lista.length) return ''
+    const soma = lista.reduce((s, a) => s + (a.valorEmRisco || 0), 0)
+    const grupos = agruparPorComanda(lista)
+    const corpo = grupos.map(g => `
+      <div class="caso">
+        <div class="caso-cab">
+          <b>${g.comanda === '—' ? 'Geral' : `Comanda ${esc(g.comanda)}`}</b>
+          ${g.cliente !== '—' ? `<span class="cli">${esc(g.cliente)}</span>` : ''}
+          ${g.caixa ? `<span class="tag">caixa ${esc(g.caixa)}</span>` : ''}
+          ${g.risco > 0 ? `<span class="risco">${esc(moeda(g.risco))}</span>` : ''}
+        </div>
+        ${g.itens.map(a => `<div class="item">${
+          a.servico && a.servico !== '—' ? `<b>${esc(a.servico)}</b> — ` : ''
+        }${esc(a.texto)}</div>`).join('')}
+        ${pauta()}
+      </div>`).join('')
+    return `<h2 style="color:${cor};border-color:${cor}">${titulo} · ${lista.length}${
+      soma > 0 ? ` <span class="soma">${esc(moeda(soma))} em jogo</span>` : ''
+    }</h2>${corpo}`
+  }
+
+  const porGrav = (g: string) => achados.filter(a => a.gravidade === g)
+
+  const linhasLivres = (n: number) =>
+    Array.from({ length: n }, () => '<div class="pauta"><span class="linha"></span></div>').join('')
+
+  const css = `
+    @page { size: A4 portrait; margin: 14mm }
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; font-size: 11.5px; line-height: 1.5 }
+    .hd { display: flex; justify-content: space-between; align-items: center;
+          border-bottom: 3px solid ${COR}; padding-bottom: 10px; margin-bottom: 16px }
+    .logo { max-height: 58px; max-width: 210px; object-fit: contain }
+    .brand { font-size: 22px; font-weight: 900; color: ${COR}; letter-spacing: .5px }
+    .hd-dir { text-align: right; font-size: 10px; color: #777 }
+    h1 { font-size: 18px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px }
+    .sub { font-size: 12px; color: #666; margin-bottom: 16px }
+    .sub b { color: #1a1a2e }
+    .resumo { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap }
+    .selo { border: 1.5px solid #e4e1ee; border-radius: 8px; padding: 8px 14px; min-width: 110px }
+    .selo .t { font-size: 8.5px; font-weight: 800; color: #777; text-transform: uppercase; letter-spacing: .5px }
+    .selo .v { font-size: 15px; font-weight: 900 }
+    .selo.risco { border-color: #fca5a5; background: #fef4f4 }
+    .selo.risco .t, .selo.risco .v { color: #b91c1c }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+         margin: 20px 0 9px; padding-bottom: 4px; border-bottom: 1.5px solid }
+    h2 .soma { font-size: 10.5px; font-weight: 700; opacity: .8 }
+    .caso { border: 1px solid #e4e1ee; border-radius: 8px; padding: 9px 11px;
+            margin-bottom: 9px; page-break-inside: avoid }
+    .caso-cab { margin-bottom: 3px }
+    .caso-cab b { font-size: 12.5px }
+    .cli { font-size: 11.5px; color: #444; margin-left: 7px }
+    .tag { font-size: 9px; border: 1px solid #ddd; border-radius: 5px;
+           padding: 1px 5px; margin-left: 7px; color: #666 }
+    .risco { font-size: 12px; font-weight: 900; color: #b91c1c; margin-left: 7px }
+    .item { font-size: 11px; color: #333; margin-top: 2px }
+    .pauta { display: flex; align-items: flex-end; gap: 6px; margin-top: 10px }
+    .pauta .rot { font-size: 8.5px; font-weight: 700; color: #888; white-space: nowrap }
+    .pauta .linha { flex: 1; border-bottom: 1px solid #b9b4ad; height: 14px }
+    .obs { border: 1px solid #e4e1ee; border-radius: 8px; padding: 11px 13px; margin-top: 6px }
+    .assin { display: flex; gap: 40px; margin-top: 34px; page-break-inside: avoid }
+    .assin div { flex: 1; text-align: center }
+    .assin .risca { border-top: 1px solid #1a1a2e; margin-bottom: 5px; height: 34px }
+    .assin span { font-size: 10px; color: #555 }
+    .rodape { margin-top: 22px; border-top: 1px solid #eee; padding-top: 7px;
+              font-size: 8.5px; color: #999; text-align: center }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact } }
+  `
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Conferência de caixa — ${esc(data)}</title><style>${css}</style></head><body>
+  <div class="hd">
+    ${logo ? `<img src="${logo}" class="logo"/>` : `<div class="brand">NODRI</div>`}
+    <div class="hd-dir">Emitido em ${esc(new Date().toLocaleDateString('pt-BR'))}</div>
+  </div>
+
+  <h1>Conferência de caixa</h1>
+  <div class="sub">
+    Dia <b>${esc(data)}</b> ·
+    ${caixaSel ? `Caixa <b>${esc(caixaSel)}</b>` : `<b>Todos os caixas</b>`}
+  </div>
+
+  <div class="resumo">
+    <div class="selo"><div class="t">Comandas</div><div class="v">${caixaSel ? comandasCaixa : r.comandas}</div></div>
+    <div class="selo"><div class="t">Faturado</div><div class="v">${esc(moeda(r.faturado))}</div></div>
+    ${caixasMostrados.length ? `<div class="selo"><div class="t">Total no caixa</div><div class="v">${esc(moeda(totalCaixa))}</div></div>` : ''}
+    ${r.emRisco > 0 ? `<div class="selo risco"><div class="t">Em risco</div><div class="v">${esc(moeda(r.emRisco))}</div></div>` : ''}
+  </div>
+
+  ${caixasMostrados.length ? `<h2 style="color:${COR};border-color:${COR}">Caixas</h2>
+    ${caixasMostrados.map(c => `<div class="caso">
+      <div class="caso-cab"><b>${esc(c.responsavel)}</b>
+        <span class="cli">${c.comandas} comanda(s) · ${esc(moeda(c.total))}</span>
+        ${c.abertura || c.fechamento ? `<span class="tag">${esc(c.abertura || '?')} – ${esc(c.fechamento || '?')}</span>` : ''}
+      </div>
+      <div class="pauta"><span class="rot">Observação do caixa</span><span class="linha"></span></div>
+      <div class="pauta"><span class="linha"></span></div>
+    </div>`).join('')}` : ''}
+
+  ${secao('Problemas', '#b91c1c', porGrav('problema'))}
+  ${secao('Atenção', '#b45309', porGrav('atencao'))}
+  ${secao('Não conferido', '#475569', porGrav('nao_conferido'))}
+
+  <h2 style="color:${COR};border-color:${COR}">Observações gerais</h2>
+  <div class="obs">${linhasLivres(6)}</div>
+
+  <div class="assin">
+    <div><div class="risca"></div><span>Responsável pelo caixa</span></div>
+    <div><div class="risca"></div><span>Conferido por</span></div>
+  </div>
+
+  <div class="rodape">
+    &quot;Não conferido&quot; não é erro: é o que o sistema não teve como julgar sozinho.
+  </div>
+
+  <script>window.onload=function(){window.print()}</script>
+</body></html>`
+
+  const w = window.open('', '_blank', 'width=1000,height=760')
+  if (!w) { toast.error('O navegador bloqueou a janela de impressão.'); return }
+  w.document.write(html); w.document.close(); w.focus()
+}
+
 /**
  * Junta os achados da mesma comanda num cartão só.
  *
@@ -857,13 +1042,22 @@ function agruparPorComanda(lista: Achado[]) {
   return Array.from(grupos.values()).sort((a, b) => b.risco - a.risco)
 }
 
-/** Chip de filtro por caixa. */
+/**
+ * Chip de filtro por caixa.
+ *
+ * Eram cinza-claro sobre branco, com 11,5px — davam para ler, não davam para
+ * VER. Um filtro que não se enxerga é um filtro que ninguém usa, e a divisão
+ * por caixa é metade do valor desta tela. Agora têm contraste, altura de alvo
+ * de verdade e reagem ao mouse (a animação vive na classe .conf-chip).
+ */
 function chip(ativo: boolean): React.CSSProperties {
   return {
-    border: `1px solid ${ativo ? '#5b4fcf' : '#e0ddd8'}`,
-    background: ativo ? '#f0eefb' : '#fff',
-    color: ativo ? '#5b4fcf' : '#6b6860',
-    borderRadius: 999, padding: '3px 11px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+    border: `1.5px solid ${ativo ? '#5b4fcf' : '#d6d2ea'}`,
+    background: ativo ? '#5b4fcf' : '#f6f5fc',
+    color: ativo ? '#fff' : '#4a4560',
+    borderRadius: 999, padding: '6px 15px', fontSize: 12.5, fontWeight: 800,
+    cursor: 'pointer', lineHeight: 1.3,
+    boxShadow: ativo ? '0 2px 8px rgba(91,79,207,.28)' : 'none',
   }
 }
 

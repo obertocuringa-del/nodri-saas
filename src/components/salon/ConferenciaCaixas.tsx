@@ -210,7 +210,15 @@ export default function ConferenciaCaixas() {
           no documento — aponta, e a decisão continua sendo de quem confere. */}
       {diaAberto && <ConferenciaAutomatica data={dataBR(diaAberto)} />}
 
-      {diaAberto && (
+      {/* ── O lançamento manual ───────────────────────────────────────────
+          Some da tela quando não há nada lançado. Ele nasceu antes da
+          conferência automática, e hoje é ela que faz o trabalho: manter um
+          bloco vazio embaixo só divide a atenção.
+
+          Mas ele NÃO foi removido: dia que já tenha lançamento manual continua
+          mostrando o que foi escrito. Sumir com o que alguém digitou é outra
+          coisa, e essa não foi pedida. */}
+      {diaAberto && (doc[diaAberto] || []).length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontWeight: 800, fontSize: 14 }}>{dataBR(diaAberto)}</span>
@@ -220,10 +228,6 @@ export default function ConferenciaCaixas() {
               <Plus size={13} /> Adicionar caixa
             </button>
           </div>
-
-          {(doc[diaAberto] || []).length === 0 && (
-            <p style={{ fontSize: 12.5, color: '#9ca3af', textAlign: 'center', padding: 14 }}>Nenhum caixa lançado neste dia.</p>
-          )}
 
           {(doc[diaAberto] || []).map((c, i) => (
             <div key={c.id} style={{ border: `1px solid ${c.status === 'inconsistente' && !c.finalizado ? '#fecaca' : '#e8e6e0'}`, borderRadius: 10, padding: '11px 13px', marginBottom: 8 }}>
