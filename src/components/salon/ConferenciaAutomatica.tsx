@@ -1026,7 +1026,7 @@ async function imprimirConferencia(
  * precisa agir clica e vê quais são.
  */
 function Detalhes({ itens, cor }: {
-  itens: Array<{ comanda: string; cliente: string; profissional: string }>
+  itens: Array<{ comanda: string; cliente: string; profissional: string; valor?: number }>
   cor: string
 }) {
   const [aberto, setAberto] = useState(false)
@@ -1051,6 +1051,12 @@ function Detalhes({ itens, cor }: {
                 fontWeight: d.profissional === 'Sem profissional lançado' ? 700 : 400 }}>
                 {d.profissional}
               </span>
+              {typeof d.valor === 'number' && (
+                <span style={{ marginLeft: 'auto', fontWeight: 800, color: '#1a1a1a',
+                  fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                  {moeda(d.valor)}
+                </span>
+              )}
             </div>
           ))}
         </div>

@@ -63,7 +63,7 @@ export interface Achado {
    * abre no clique, em vez de virar dois apontamentos soltos que
    * atrapalhariam a leitura das outras gavetas.
    */
-  detalhes?: Array<{ comanda: string; cliente: string; profissional: string }>
+  detalhes?: Array<{ comanda: string; cliente: string; profissional: string; valor?: number }>
 }
 
 export interface Atendimento {
@@ -566,14 +566,20 @@ export function conferirDia(
     // tela do papel e portanto contam como "faltando conferir".
     const universo = new Set([...totalPorComanda.keys(), ...recebido.keys()])
     // Quais comandas ficaram sem digitar — não só quantas.
-    const semPapel: Array<{ comanda: string; cliente: string; profissional: string }> = []
+    const semPapel: Array<{ comanda: string; cliente: string; profissional: string; valor: number }> = []
     for (const comanda of universo) {
       if (papel[comanda] !== undefined) continue
       const itens = totalPorComanda.get(comanda) || []
       const comCliente = itens.find(a => String(a.cliente || '').trim())
       const comProf = itens.find(a => String(a.profissional || '').trim())
+      // O valor do SISTEMA — é contra ele que o papel vai ser conferido.
+      // Comanda sem serviço nem produto (compra de pacote) usa o do caixa, que
+      // é o único valor que existe para ela.
+      const lancado = itens.reduce((s, a) => s + (Number(a.total) || 0), 0)
+        + (prodComanda.get(comanda) || 0)
       semPapel.push({
         comanda,
+        valor: lancado > 0 ? Number(lancado.toFixed(2)) : (recebido.get(comanda) ?? 0),
         cliente: String(comCliente?.cliente || '').trim() || 'Cliente não identificado',
         // Sem profissional é informação, não lacuna: quem lê precisa saber que
         // o lançamento veio assim, e não que o sistema não conseguiu ler.
