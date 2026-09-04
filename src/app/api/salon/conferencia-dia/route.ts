@@ -5,7 +5,8 @@ import { conferirDia, REGRAS_PADRAO, type Atendimento, type RegraComposicao } fr
 import { chaveDoMes, totalDoCaixa, type CaixaDoDia, type FolhaCaixas } from '@/lib/caixasDia'
 import type { PrecoDeTabela } from '@/lib/tabelaPrecos'
 import { chaveDoMes as chaveProdutos, type LinhaProduto } from '@/lib/produtosDia'
-import { chaveDoMes as chavePapel, numeroComanda as numPapel, type FolhaPapel, type ValoresDoPapel } from '@/lib/conferenciaPapel'
+import { chaveDoMes as chavePapel, chaveObs as chavePapelObs, numeroComanda as numPapel,
+  type FolhaPapel, type ValoresDoPapel, type FolhaObs, type ObsDoPapel } from '@/lib/conferenciaPapel'
 
 export const dynamic = 'force-dynamic'
 
@@ -139,7 +140,14 @@ export async function GET(req: NextRequest) {
   const folhaPapel = ((cfgPapel as any)?.valor || {}) as FolhaPapel
   const papel: ValoresDoPapel = folhaPapel[data] || {}
 
-  const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos, papel)
+  // As observacoes moram em chave propria (ver conferenciaPapel.ts).
+  const { data: cfgObs } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess.salaoId).eq('chave', chavePapelObs(data)).maybeSingle()
+  const folhaObs = ((cfgObs as any)?.valor || {}) as FolhaObs
+  const observacoes: ObsDoPapel = folhaObs[data] || {}
+
+  const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos, papel, observacoes)
 
   // ── A lista de comandas do dia, para a tela do papel ──────────────────────
   // A pessoa não deve digitar o número da comanda: o sistema já sabe quais são.
@@ -250,6 +258,7 @@ export async function GET(req: NextRequest) {
     produtosNoDia: produtos.length,
     comandasDoDia,
     papel,
+    observacoes,
     produtosNoMes: todosProdutos.length,
     avecUrl,
     itens: doDia.length,

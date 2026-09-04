@@ -16,7 +16,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal, Plus, Trash2, Save, Wallet, ChevronRight } from 'lucide-react'
+import { Loader2, ShieldCheck, HelpCircle, RefreshCw, Printer, SlidersHorizontal, Plus, Trash2, Save, Wallet, ChevronRight, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getLogoSalao } from '@/lib/logoSalao'
 import type { Achado, RegraComposicao } from '@/lib/conferenciaDia'
@@ -103,6 +103,8 @@ interface Resultado {
   comandasDoDia?: ComandaDoDia[]
   /** O que já foi digitado do papel, comanda → valor. */
   papel?: Record<string, number>
+  /** A observação escrita ao conferir o papel, comanda → texto. */
+  observacoes?: Record<string, string>
 }
 
 interface ComandaDoDia {
@@ -132,6 +134,10 @@ const CSS_CONF = [
   '.conf-chip:active { transform: translateY(0); box-shadow: none }',
   '.conf-titulo { transition: opacity .12s ease }',
   '.conf-titulo:hover { opacity: .68 }',
+  // A observação só ganha contorno quando recebe o foco: enquanto vazia ela
+  // fica quase invisível, para não disputar atenção com o campo do valor.
+  '.cp-obs:focus { border-color: #7c3aed !important; background: #fff !important }',
+  '.cp-obs::placeholder { color: #c9c5be }',
 ].join(' ')
 
 const CORES = {
@@ -158,6 +164,8 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
   const [avecUrl, setAvecUrl] = useState('')
   // Os valores digitados da comanda de PAPEL, por comanda.
   const [papel, setPapel] = useState<Record<string, string>>({})
+  // A observação de cada comanda, escrita durante a conferência do papel.
+  const [obs, setObs] = useState<Record<string, string>>({})
   const [salvandoPapel, setSalvandoPapel] = useState(false)
   // Seções que abrem e fecham no clique do título.
   //
@@ -185,6 +193,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           vindos[k] = String(Number(v).toFixed(2)).replace('.', ',')
         }
         setPapel(vindos)
+        setObs({ ...(d.observacoes || {}) })
       }
     } catch {
       setErro('Não foi possível conferir')
@@ -287,7 +296,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           </button>
         )}
         {r && !r.semDados && (
-          <button onClick={() => imprimirConferencia(r, data, caixaSel, daSelecao)} className="no-mobile"
+          <button onClick={() => imprimirConferencia(r, data, caixaSel, daSelecao, obs)} className="no-mobile"
             style={{ border: '1px solid #e0ddd8', background: '#fff', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, color: '#6b6860', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Printer size={13} /> Imprimir
           </button>
@@ -621,6 +630,7 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
           )}
 
           {aba === 'papel' && <ConferirPapel r={r} data={data} papel={papel} setPapel={setPapel}
+            obs={obs} setObs={setObs}
             salvando={salvandoPapel} setSalvando={setSalvandoPapel} aoSalvar={conferir}
             caixaSel={caixaSel} />}
 
@@ -699,6 +709,19 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                             </div>
                           ))}
                         </div>
+
+                        {g.obs && (
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 7,
+                            background: '#fff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '6px 9px' }}>
+                            <MessageSquare size={13} style={{ color: '#7c3aed', flexShrink: 0, marginTop: 2 }} />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 900, color: '#7c3aed', letterSpacing: .5 }}>
+                                OBSERVAÇÃO DA CONFERÊNCIA
+                              </div>
+                              <div style={{ fontSize: 12.5, color: '#3f3a34', lineHeight: 1.45 }}>{g.obs}</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -737,11 +760,13 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
  * disse "foi zero". Essa diferença é o que mantém a gaveta NÃO CONFERIDO
  * honesta.
  */
-function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalvar, caixaSel }: {
+function ConferirPapel({ r, data, papel, setPapel, obs, setObs, salvando, setSalvando, aoSalvar, caixaSel }: {
   r: Resultado
   data: string
   papel: Record<string, string>
   setPapel: React.Dispatch<React.SetStateAction<Record<string, string>>>
+  obs: Record<string, string>
+  setObs: React.Dispatch<React.SetStateAction<Record<string, string>>>
   salvando: boolean
   setSalvando: (v: boolean) => void
   aoSalvar: () => void
@@ -811,11 +836,12 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
       const res = await fetch('/api/salon/conferencia-papel', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data, valores: papel }),
+        body: JSON.stringify({ data, valores: papel, observacoes: obs }),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d?.error || 'Falha ao salvar')
-      toast.success(`${d.conferidas} comanda(s) conferidas pelo papel.`)
+      toast.success(`${d.conferidas} comanda(s) conferidas pelo papel`
+        + (d.observacoes ? ` · ${d.observacoes} observação(ões)` : '') + '.')
       aoSalvar()
     } catch (e: any) {
       toast.error(e?.message || 'Não consegui salvar a conferência do papel.')
@@ -839,7 +865,9 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
       </p>
       <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 12px' }}>
         <b>Enter</b> pula para a próxima. Não precisa preencher todas: o que ficar
-        em branco aparece como <b>não conferido</b>, nunca como zero.
+        em branco aparece como <b>não conferido</b>, nunca como zero. O que você
+        escrever em <b>observação</b> aparece junto do apontamento daquela comanda
+        e no documento impresso.
       </p>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -912,6 +940,19 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
                   {v! > c.total ? '+' : '−'}{moeda(Math.abs(v! - c.total)).replace('R$', '').trim()}
                 </span>
               )}
+              {/* A explicação, escrita na hora em que ela ainda é sabida.
+                  Fica discreta enquanto vazia para não competir com o valor,
+                  que é o que a pessoa veio digitar. */}
+              <input
+                value={obs[c.comanda] ?? ''}
+                onChange={e => setObs(o => ({ ...o, [c.comanda]: e.target.value }))}
+                className="cp-obs" maxLength={400}
+                placeholder="observação (ex.: cliente não lavou)"
+                title="Aparece junto do apontamento desta comanda e no documento impresso"
+                style={{ flex: '1 1 190px', minWidth: 150, padding: '7px 9px', fontSize: 12.5,
+                  border: `1.5px solid ${(obs[c.comanda] || '').trim() ? '#c4b5fd' : '#eeece7'}`,
+                  background: (obs[c.comanda] || '').trim() ? '#faf7ff' : '#fff',
+                  color: '#3f3a34', borderRadius: 8, outline: 'none' }} />
             </div>
             </div>
           )
@@ -945,6 +986,7 @@ function ConferirPapel({ r, data, papel, setPapel, salvando, setSalvando, aoSalv
  */
 async function imprimirConferencia(
   r: Resultado, data: string, caixaSel: string, achados: Achado[],
+  obs: Record<string, string> = {},
 ) {
   const logo = await getLogoSalao()
   const esc = (v: any) => String(v ?? '')
@@ -955,9 +997,17 @@ async function imprimirConferencia(
   const totalCaixa = caixasMostrados.reduce((s, c) => s + c.total, 0)
   const comandasCaixa = caixasMostrados.reduce((s, c) => s + c.comandas, 0)
 
-  /** Duas pautas em branco, para escrever à mão. */
-  const pauta = () => `
-    <div class="pauta"><span class="rot">O que houve</span><span class="linha"></span></div>
+  /**
+   * As duas pautas do caso.
+   *
+   * Quando a conferência já registrou a explicação, "o que houve" deixa de ser
+   * pergunta: entra a nota escrita, e sobra só "como foi resolvido". Deixar a
+   * linha em branco ali seria pedir de novo o que já foi respondido.
+   */
+  const pauta = (obs?: string) => `
+    ${obs
+      ? `<div class="nota"><span class="rot">Observação da conferência</span>${esc(obs)}</div>`
+      : `<div class="pauta"><span class="rot">O que houve</span><span class="linha"></span></div>`}
     <div class="pauta"><span class="rot">Como foi resolvido</span><span class="linha"></span></div>`
 
   const secao = (titulo: string, cor: string, lista: Achado[]) => {
@@ -975,7 +1025,7 @@ async function imprimirConferencia(
         ${g.itens.map(a => `<div class="item">${
           a.servico && a.servico !== '—' ? `<b>${esc(a.servico)}</b> — ` : ''
         }${esc(a.texto)}</div>`).join('')}
-        ${pauta()}
+        ${pauta(g.obs)}
       </div>`).join('')
     return `<h2 style="color:${cor};border-color:${cor}">${titulo} · ${lista.length}${
       soma > 0 ? ` <span class="soma">${esc(moeda(soma))} em jogo</span>` : ''
@@ -1020,6 +1070,10 @@ async function imprimirConferencia(
     .pauta { display: flex; align-items: flex-end; gap: 6px; margin-top: 10px }
     .pauta .rot { font-size: 8.5px; font-weight: 700; color: #888; white-space: nowrap }
     .pauta .linha { flex: 1; border-bottom: 1px solid #b9b4ad; height: 14px }
+    .nota { border-left: 3px solid #7c3aed; background: #f8f6ff; border-radius: 0 6px 6px 0;
+            padding: 5px 9px; margin-top: 8px; font-size: 11px; color: #2e2a3e }
+    .nota .rot { display: block; font-size: 8px; font-weight: 800; color: #7c3aed;
+                 text-transform: uppercase; letter-spacing: .5px; margin-bottom: 1px }
     .obs { border: 1px solid #e4e1ee; border-radius: 8px; padding: 11px 13px; margin-top: 6px }
     .assin { display: flex; gap: 40px; margin-top: 34px; page-break-inside: avoid }
     .assin div { flex: 1; text-align: center }
@@ -1059,6 +1113,29 @@ async function imprimirConferencia(
       <div class="pauta"><span class="rot">Observação do caixa</span><span class="linha"></span></div>
       <div class="pauta"><span class="linha"></span></div>
     </div>`).join('')}` : ''}
+
+  ${(() => {
+    // Nota escrita numa comanda que não gerou apontamento nenhum.
+    //
+    // Sem este bloco ela sumiria do papel: o documento é montado a partir dos
+    // achados, e uma comanda certa não tem achado. Mas a pessoa escreveu por
+    // algum motivo — e o motivo costuma ser justamente explicar por que a
+    // comanda está certa apesar de parecer estranha.
+    const comAchado = new Set(achados.map(a => String(a.comanda)))
+    const soltas = Object.entries(obs)
+      .filter(([comanda, texto]) => String(texto || '').trim() && !comAchado.has(comanda))
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'pt-BR', { numeric: true }))
+    if (!soltas.length) return ''
+    const nome = (comanda: string) =>
+      (r.comandasDoDia || []).find(c => c.comanda === comanda)?.cliente || ''
+    return `<h2 style="color:${COR};border-color:${COR}">Observações da conferência · ${soltas.length}</h2>
+      ${soltas.map(([comanda, texto]) => `<div class="caso">
+        <div class="caso-cab"><b>Comanda ${esc(comanda)}</b>
+          ${nome(comanda) ? `<span class="cli">${esc(nome(comanda))}</span>` : ''}
+        </div>
+        <div class="item">${esc(texto)}</div>
+      </div>`).join('')}`
+  })()}
 
   ${secao('Problemas', '#b91c1c', porGrav('problema'))}
   ${secao('Atenção', '#b45309', porGrav('atencao'))}
@@ -1140,15 +1217,17 @@ function Detalhes({ itens, cor }: {
  * de uma vez, naquela comanda.
  */
 function agruparPorComanda(lista: Achado[]) {
-  const grupos = new Map<string, { comanda: string; cliente: string; caixa?: string; risco: number; itens: Achado[] }>()
+  const grupos = new Map<string, { comanda: string; cliente: string; caixa?: string; obs?: string; risco: number; itens: Achado[] }>()
   for (const a of lista) {
     const k = String(a.comanda)
     if (!grupos.has(k)) {
-      grupos.set(k, { comanda: k, cliente: a.cliente || '—', caixa: a.caixa, risco: 0, itens: [] })
+      grupos.set(k, { comanda: k, cliente: a.cliente || '—', caixa: a.caixa, obs: a.observacao, risco: 0, itens: [] })
     }
     const g = grupos.get(k)!
     if (g.cliente === '—' && a.cliente && a.cliente !== '—') g.cliente = a.cliente
     if (!g.caixa && a.caixa) g.caixa = a.caixa
+    // A nota é da comanda, não do achado: uma vez no cartão, não uma por item.
+    if (!g.obs && a.observacao) g.obs = a.observacao
     g.risco += a.valorEmRisco || 0
     g.itens.push(a)
   }

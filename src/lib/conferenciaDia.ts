@@ -22,7 +22,7 @@
 
 import type { PrecoDeTabela } from './tabelaPrecos'
 import { indicePorServico } from './tabelaPrecos'
-import type { ValoresDoPapel } from './conferenciaPapel'
+import type { ValoresDoPapel, ObsDoPapel } from './conferenciaPapel'
 import type { LinhaProduto } from './produtosDia'
 import { totalPorComanda as produtosPorComanda, numeroComanda as numProd } from './produtosDia'
 import type { CaixaDoDia } from './caixasDia'
@@ -55,6 +55,14 @@ export interface Achado {
   valorEmRisco: number
   /** Responsável pelo caixa da comanda, quando o dado do caixa chegou. */
   caixa?: string
+  /**
+   * O que a pessoa escreveu ao conferir o papel dessa comanda.
+   *
+   * Fica ao lado do apontamento em vez de dentro do texto: o texto e do
+   * sistema, a nota e de quem conferiu, e quem le precisa saber quem disse o
+   * que.
+   */
+  observacao?: string
   /**
    * Quando um achado fala de VÁRIAS comandas, quais são elas.
    *
@@ -181,6 +189,7 @@ export function conferirDia(
   tabela: PrecoDeTabela[] = [],
   produtos: LinhaProduto[] = [],
   papel: ValoresDoPapel = {},
+  observacoes: ObsDoPapel = {},
 ): Achado[] {
   const achados: Achado[] = []
   const dono = donoDaComanda(caixas)
@@ -595,6 +604,17 @@ export function conferirDia(
         texto: `${semPapel.length} comanda(s) sem o valor do papel digitado. `
           + `O que foi digitado está conferido; o resto não.` })
     }
+  }
+
+  // ── A observacao escrita na conferencia gruda no apontamento ─────────────
+  //
+  // Quem confere o papel ja sabe a explicacao na hora ("cliente nao lavou").
+  // Se ela nao ficar colada no apontamento, alguem vai olhar o mesmo caso
+  // depois, sem a explicacao, e refazer a investigacao inteira. A nota nao
+  // apaga o apontamento de proposito: ela responde, o numero continua a vista.
+  for (const a of achados) {
+    const nota = observacoes[String(a.comanda)]
+    if (nota) a.observacao = nota
   }
 
   const peso: Record<Gravidade, number> = { problema: 0, atencao: 1, nao_conferido: 2 }
