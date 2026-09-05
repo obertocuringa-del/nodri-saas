@@ -4,6 +4,8 @@ import { Loader2, Trash2, Plus, ArrowLeft, Pencil, Check, X, ChevronDown, Chevro
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import ConferenciaServicos, { PreenchimentoServico } from '@/components/salon/ConferenciaServicos'
+import ServicosDaTabela, { type DadosDaTabela } from '@/components/salon/ServicosDaTabela'
+import ProfissionaisDoServico from '@/components/salon/ProfissionaisDoServico'
 
 interface Servico {
   id: string
@@ -43,6 +45,12 @@ export default function ServicosPage() {
   const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
   const [salvando, setSalvando] = useState(false)
   const [deletando, setDeletando] = useState<string | null>(null)
+  // Comparacao com a tabela de precos: quem nasceu dela e ainda nao foi
+  // configurado (verde) e quem sumiu dela (vermelho).
+  const [daTabela, setDaTabela] = useState<DadosDaTabela | null>(null)
+  // Profissionais habilitados no serviço aberto. `null` = ainda nao carregou;
+  // e diferente de "nenhum marcado", que e lista vazia.
+  const [profsDoServico, setProfsDoServico] = useState<string[] | null>(null)
 
   useEffect(() => { carregar() }, [])
 
@@ -64,6 +72,7 @@ export default function ServicosPage() {
     setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
     setEditando(null)
     setNovo(true)
+    setProfsDoServico(null)
     irAteOFormulario()
   }
 
@@ -91,12 +100,14 @@ export default function ServicosPage() {
     })
     setEditando(null)
     setNovo(true)
+    setProfsDoServico(null)
     irAteOFormulario()
   }
 
   function iniciarEdicao(s: Servico) {
     setEditando(s)
     setNovo(false)
+    setProfsDoServico(null)
     setForm({
       categoria: s.categoria,
       nome: s.nome,
@@ -111,6 +122,24 @@ export default function ServicosPage() {
   function cancelar() {
     setEditando(null)
     setNovo(false)
+    setProfsDoServico(null)
+  }
+
+  /**
+   * Grava quem faz o serviço.
+   *
+   * Silenciosa de proposito: o serviço em si ja foi salvo quando isto roda, e
+   * derrubar a tela com erro faria parecer que o serviço nao salvou.
+   */
+  async function gravarProfissionais(servicoId: string) {
+    if (profsDoServico === null) return
+    try {
+      await fetch('/api/servicos/profissionais', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servicoId, profissionais: profsDoServico }),
+      })
+    } catch { toast.error('O serviço foi salvo, mas não consegui gravar quem faz.') }
   }
 
   async function salvar() {
@@ -129,6 +158,10 @@ export default function ServicosPage() {
           body: JSON.stringify({ ...form, preco_fixo, preco_min, comissao_valor, ciclo_retorno_dias })
         })
         if (!res.ok) throw new Error()
+        // O id so existe depois de criar — por isso quem faz o serviço e
+        // gravado aqui, e nao junto: em serviço novo nao havia id para ligar.
+        const criado = await res.json().catch(() => null)
+        if (criado?.id) await gravarProfissionais(criado.id)
         toast.success('Serviço adicionado!')
       } else if (editando) {
         const res = await fetch('/api/servicos', {
@@ -137,6 +170,16 @@ export default function ServicosPage() {
           body: JSON.stringify({ id: editando.id, ...form, preco_fixo, preco_min, comissao_valor, ciclo_retorno_dias, ativo: editando.ativo })
         })
         if (!res.ok) throw new Error()
+        await gravarProfissionais(editando.id)
+        // Configurou: o selo verde sai. Ele marca "ainda nao passou pela sua
+        // mao", nao "novo para sempre".
+        if (daTabela?.marcados?.includes(editando.id)) {
+          fetch('/api/servicos/tabela', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'revisado', id: editando.id }),
+          }).catch(() => {})
+        }
         toast.success('Serviço atualizado!')
       }
       cancelar()
@@ -200,10 +243,18 @@ export default function ServicosPage() {
           recarregar={servicos.length}
         />
 
+        <ServicosDaTabela recarregar={servicos.length} aoMudar={setDaTabela} />
+
         {/* Formulário novo / edição */}
         {(novo || editando) && (
           <div id="form-servico" className="bg-nodri-card border border-nodri-border rounded-xl p-4 mb-6 space-y-3">
             <h2 className="text-[13px] font-semibold text-nodri-t1">{novo ? 'Novo Serviço' : 'Editar Serviço'}</h2>
+
+            <ProfissionaisDoServico
+              servicoId={editando?.id}
+              selecionados={profsDoServico}
+              aoMudar={setProfsDoServico}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -287,7 +338,21 @@ export default function ServicosPage() {
                       {itens.map(s => (
                         <div key={s.id} className={`flex items-start gap-2 px-3 py-2.5 ${!s.ativo ? 'opacity-40' : ''}`}>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[12px] text-nodri-t1 truncate font-medium">{s.nome}</p>
+                            <p className="text-[12px] text-nodri-t1 truncate font-medium">
+                              {s.nome}
+                              {daTabela?.marcados?.includes(s.id) && (
+                                <span title="Veio da tabela de preços e ainda não foi configurado"
+                                  className="ml-1.5 align-middle text-[9.5px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300 rounded px-1.5 py-0.5">
+                                  novo
+                                </span>
+                              )}
+                              {daTabela?.foraDaTabela?.some(f => f.id === s.id) && (
+                                <span title="Não está na tabela de preços do Avec — confira se saiu do cardápio"
+                                  className="ml-1.5 align-middle text-[9.5px] font-bold uppercase tracking-wide bg-red-100 text-red-800 border border-red-300 rounded px-1.5 py-0.5">
+                                  fora da tabela
+                                </span>
+                              )}
+                            </p>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                               <span className="text-[11px] font-medium text-nodri-cyan whitespace-nowrap">{fmtPreco(s)}</span>
                               {s.comissao_valor && (
