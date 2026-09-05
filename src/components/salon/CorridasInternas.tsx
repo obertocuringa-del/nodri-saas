@@ -450,7 +450,11 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
                 onChange={e => set({ metaIndividual: e.target.checked || undefined })}
                 style={{ width: 17, height: 17, marginTop: 1, flexShrink: 0 }} />
               <span>
-                <b>Cada uma contra a própria meta</b>
+                {/* NAO repetir "cada uma contra a propria meta": esse e o nome
+                    do tipo "Em grupo", logo acima no mesmo formulario. Dois
+                    campos com o mesmo nome na mesma tela fazem o dono marcar um
+                    achando que marcou o outro. */}
+                <b>Ganha quem bater a meta dela</b>
                 <span style={{ display: 'block', fontSize: 11.5, color: '#6b6860', marginTop: 2 }}>
                   O ranking continua por faturamento, mas <b>ganha quem bater a meta dela</b>.
                   A meta vem do perfil de cada uma — a manual, se estiver preenchida;
