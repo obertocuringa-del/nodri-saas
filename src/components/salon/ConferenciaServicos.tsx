@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Plus, EyeOff, Loader2, ChevronDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Plus, EyeOff, Loader2, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { norm } from '@/lib/tabelaPrecos'
 
@@ -48,6 +48,18 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [verValores, setVerValores] = useState(false)
   const [verTodos, setVerTodos] = useState(false)
+  // Fechado por padrão.
+  //
+  // O trabalho do dia a dia passou a ser o cartão da TABELA DE PREÇOS, logo
+  // abaixo: é ele que traz o cardápio oficial, com preço e categoria, e cadastra
+  // em lote. Este aqui olha o passado — nomes que a planilha usou e que muitas
+  // vezes são variação do que já existe ("MODELAGEM 71" para "Modelagem").
+  //
+  // Aberto, ele empurrava o cartão útil para baixo da dobra todo dia. Fechado,
+  // continua inteiro: mesma lista, mesmos botões, a um clique. Some da frente,
+  // não do sistema — o que ele mostra tem dinheiro atrás (serviço feito 2.275
+  // vezes sem cadastro), e apagar seria perder isso de vista para sempre.
+  const [aberto, setAberto] = useState(false)
 
   useEffect(() => {
     fetch('/api/servicos/conferencia')
@@ -108,10 +120,29 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
 
   return (
     <div className="mb-6 space-y-3">
-      {soAqui.length > 0 && (
+      {soAqui.length > 0 && !aberto && (
+        <button onClick={() => setAberto(true)}
+          className="w-full flex items-center gap-2 bg-amber-50/70 border border-amber-200 rounded-xl px-3.5 py-2.5 text-left hover:bg-amber-50 transition-colors">
+          <ChevronRight size={14} className="text-amber-600 shrink-0" />
+          <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+          <span className="text-[12px] text-amber-900 font-medium">
+            {soAqui.length === 1
+              ? '1 serviço da planilha não está cadastrado'
+              : `${soAqui.length} serviços da planilha não estão cadastrados`}
+          </span>
+          <span className="ml-auto text-[10.5px] text-amber-700/80 shrink-0">
+            já atendidos · ver
+          </span>
+        </button>
+      )}
+
+      {soAqui.length > 0 && aberto && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div className="flex items-start gap-2.5 mb-3">
-            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <button onClick={() => setAberto(false)} title="Recolher"
+              className="shrink-0 mt-0.5">
+              <ChevronDown size={16} className="text-amber-600" />
+            </button>
             <div>
               <p className="text-[13px] font-semibold text-amber-900">
                 {soAqui.length === 1
