@@ -132,12 +132,35 @@ export interface RegraComposicao {
    * serviço — e regra que dá trabalho de manter é regra que envelhece errada.
    */
   exceto?: string[]
+  /**
+   * A regra inteira fica de lado quando a comanda tem TAMBEM um destes.
+   *
+   * Diferente de `exceto`, e a diferenca importa. `exceto` fala do GATILHO:
+   * quais servicos nao disparam a regra. Este fala da COMANDA: o gatilho
+   * disparou, mas o que ele apontaria ja esta explicado por outro servico.
+   *
+   * O caso que pediu isso: "Pigmentacao Sobrancelhas NAO PODE ter Complemento"
+   * e verdade — sozinha ela nao leva complemento. Mas se a mesma cliente fez
+   * coloracao no cabelo, a coloracao OBRIGA um complemento, e ele entra na
+   * mesma comanda. A regra entao acusava a sobrancelha por um complemento que
+   * nunca foi dela.
+   *
+   * A busca ignora os itens que dispararam o gatilho — sem isso a condicao se
+   * desligaria sozinha: PIGMENTACAO SOBRANCELHAS mora na categoria Coloracao,
+   * entao ela mesma casaria com "Coloracao" e a regra nunca acusaria nada.
+   */
+  desativaSe?: string[]
   ativa: boolean
 }
 
 /** Os serviços que a regra deixa de fora. */
 export function excecoesDaRegra(r: RegraComposicao): string[] {
   return (r.exceto || []).map(x => String(x || '').trim()).filter(Boolean)
+}
+
+/** Serviços que, presentes na comanda, deixam a regra de lado. */
+export function desativadoresDaRegra(r: RegraComposicao): string[] {
+  return (r.desativaSe || []).map(x => String(x || '').trim()).filter(Boolean)
 }
 
 /** Todos os alvos da regra: o primeiro mais as alternativas. */
@@ -329,6 +352,19 @@ export function conferirDia(
       const disparou = itens.find(i =>
         bate(i, gatilho) && !excecoes.some(e => bate(i, norm(e))))
       if (!disparou) continue
+
+      // A comanda tem OUTRO serviço que explica o que a regra apontaria?
+      //
+      // Procura só entre os itens que NÃO são o gatilho. Sem esse filtro a
+      // condição se desligaria sozinha no caso que a criou: PIGMENTAÇÃO
+      // SOBRANCELHAS está na categoria Coloração, então ela mesma casaria com
+      // "Coloração" e a regra nunca acusaria coisa nenhuma.
+      const desativadores = desativadoresDaRegra(r)
+      if (desativadores.length) {
+        const outro = itens.some(i =>
+          !bate(i, gatilho) && desativadores.some(d => bate(i, norm(d))))
+        if (outro) continue
+      }
 
       // Quais dos alvos a comanda realmente tem. É a contagem que permite
       // distinguir "nenhum", "um" e "mais de um" numa regra só.

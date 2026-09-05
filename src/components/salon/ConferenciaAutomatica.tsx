@@ -46,6 +46,16 @@ function maisUmAlvo(r: RegraComposicao): RegraComposicao {
 // salão inteiro. Mas categoria quase sempre tem uma ovelha fora do padrão, e
 // sem poder tirá-la a saída seria abandonar a categoria e listar serviço por
 // serviço — regra que dá trabalho de manter é regra que envelhece errada.
+const desativadores = (r: RegraComposicao): string[] => r.desativaSe || []
+const porDesativador = (r: RegraComposicao, i: number, v: string): RegraComposicao => {
+  const lista = [...desativadores(r)]; lista[i] = v
+  return { ...r, desativaSe: lista }
+}
+const semDesativador = (r: RegraComposicao, i: number): RegraComposicao =>
+  ({ ...r, desativaSe: desativadores(r).filter((_, k) => k !== i) })
+const maisUmDesativador = (r: RegraComposicao): RegraComposicao =>
+  ({ ...r, desativaSe: [...desativadores(r), ''] })
+
 const excecoes = (r: RegraComposicao): string[] => r.exceto || []
 
 function porExcecao(r: RegraComposicao, i: number, valor: string): RegraComposicao {
@@ -415,6 +425,34 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
                   <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmaExcecao(x) : x))}
                     style={{ alignSelf: 'flex-start', border: '1px dashed #fcd34d', background: '#fffbeb', color: '#b45309', borderRadius: 7, padding: '4px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
                     + exceto…
+                  </button>
+                </div>
+
+                {/* ── A condição que desliga a regra na comanda ─────────────
+                    Outra coisa que a exceção acima. Aquela diz QUAIS serviços
+                    não disparam a regra; esta diz que o gatilho disparou, mas
+                    outro serviço da mesma comanda já explica o que ela
+                    apontaria — o complemento que é da coloração, e não da
+                    sobrancelha. */}
+                <div style={{ flexBasis: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 2 }}>
+                  {desativadores(rg).map((dz, k) => (
+                    <div key={k} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: '#0e7490' }}>
+                        não vale se a comanda tiver
+                      </span>
+                      <input list="conf-servicos" value={dz} placeholder="COLORAÇÃO"
+                        onChange={e => setRegras(rs => rs.map((x, j) => j === i ? porDesativador(x, k, e.target.value) : x))}
+                        style={{ flex: '1 1 200px', minWidth: 140, padding: '6px 9px', border: '1.5px solid #67e8f9', background: '#ecfeff', borderRadius: 8, fontSize: 12.5 }} />
+                      <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? semDesativador(x, k) : x))}
+                        title="Tirar esta condição"
+                        style={{ border: '1px solid #e8e6e0', background: '#fff', borderRadius: 7, padding: '4px 6px', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                  <button onClick={() => setRegras(rs => rs.map((x, j) => j === i ? maisUmDesativador(x) : x))}
+                    style={{ alignSelf: 'flex-start', border: '1px dashed #67e8f9', background: '#ecfeff', color: '#0e7490', borderRadius: 7, padding: '4px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+                    + não vale se…
                   </button>
                 </div>
               </div>
