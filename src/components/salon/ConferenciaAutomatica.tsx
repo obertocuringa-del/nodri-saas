@@ -103,6 +103,10 @@ interface Resultado {
   amostraDatas?: string[]
   regras?: RegraComposicao[]
   servicosConhecidos?: string[]
+  /** Nomes da tabela de preços — são os que o Avec usa ao lançar. */
+  servicosDaTabela?: string[]
+  /** Nomes que só existem no cadastro do NODRI; podem não bater com o Avec. */
+  servicosDoCadastro?: string[]
   categoriasConhecidas?: string[]
   caixas?: ResumoCaixa[]
   temCaixa?: boolean
@@ -330,14 +334,24 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             dela, inclusive os que ainda forem criados — <b>ou um serviço específico</b>.
           </p>
 
-          {/* Categorias primeiro na lista: é a escolha que cobre mais com menos
-              regra, e a que o dono quer na maioria das vezes. */}
+          {/* A ordem da lista é ordem de confiança.
+              Categoria primeiro: cobre mais com menos regra. Depois a TABELA DE
+              PREÇOS, que é de onde o Avec lança o procedimento — o nome dela é,
+              letra por letra, o que vai cair na planilha, e é o que faz a regra
+              casar. Por último o que só existe no cadastro daqui, que o dono
+              batizou à mão e pode não ser como o Avec escreve. */}
           <datalist id="conf-servicos">
             {(r?.categoriasConhecidas || []).map(c => (
               <option key={'c-' + c} value={c}>categoria — pega todos os serviços</option>
             ))}
+            {(r?.servicosDaTabela || []).map(sv => (
+              <option key={'t-' + sv} value={sv}>tabela de preços</option>
+            ))}
             {(r?.servicosConhecidos || []).map(sv => (
-              <option key={'s-' + sv} value={sv}>serviço</option>
+              <option key={'s-' + sv} value={sv}>já lançado na planilha</option>
+            ))}
+            {(r?.servicosDoCadastro || []).map(sv => (
+              <option key={'x-' + sv} value={sv}>só no cadastro — confira se o Avec escreve igual</option>
             ))}
           </datalist>
 

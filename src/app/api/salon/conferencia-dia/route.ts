@@ -12,6 +12,11 @@ export const dynamic = 'force-dynamic'
 
 const CHAVE_REGRAS = 'conferencia_regras'
 
+/** Só para comparar nomes entre planilha, cadastro e tabela. */
+const normaliza = (t: string) => String(t || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toUpperCase().replace(/\s+/g, ' ').trim()
+
 // Endereço da tela de Comandas Finalizadas no Avec.
 //
 // Fica no banco e não no código da extensão: se o Avec mudar o endereço, o
@@ -147,6 +152,17 @@ export async function GET(req: NextRequest) {
   const folhaObs = ((cfgObs as any)?.valor || {}) as FolhaObs
   const observacoes: ObsDoPapel = folhaObs[data] || {}
 
+  // ── Os nomes que a lista de sugestão das regras vai oferecer ─────────────
+  //
+  // Vinha só da planilha de atendimentos, e por isso serviço pouco feito não
+  // aparecia: para escrever "exceto Pigmentação Sobrancelhas" era preciso
+  // digitar de cabeça, e um acento errado faz a regra nunca casar em silêncio.
+  //
+  // Agora entram também o CADASTRO e a TABELA DE PREÇOS. São exatamente os
+  // nomes que o dono conhece — os que ele lê na tela de Serviços.
+  const { data: cadastroServicos } = await supabaseAdmin
+    .from('salao_servicos').select('nome, categoria').eq('salao_id', sess.salaoId)
+
   const achados = conferirDia(doDia, regras, historico, caixas, tabela, produtos, papel, observacoes)
 
   // ── A lista de comandas do dia, para a tela do papel ──────────────────────
@@ -229,14 +245,46 @@ export async function GET(req: NextRequest) {
     // servidor — e os nomes de serviço reais junto delas, para o dono escolher
     // de uma lista em vez de digitar de cabeça e errar o nome por um acento.
     regras,
-    servicosConhecidos: Array.from(new Set(
-      [...doDia, ...todos].map(a => String(a.servico || '').trim()).filter(Boolean),
-    )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
+    // ── As três origens dos nomes, em ordem de confiança ──────────────────
+    //
+    // A TABELA DE PREÇOS vem primeiro porque é dela que o procedimento é
+    // lançado no Avec: o nome que ela traz é, letra por letra, o nome que vai
+    // cair na planilha. Escolher daqui é o que garante que a regra case.
+    //
+    // Depois o que a planilha já usou, que é a prova viva de que o nome existe.
+    //
+    // Por último o que só está no cadastro do NODRI. Esse é legítimo, mas o
+    // dono batizou à mão — pode não ser como o Avec escreve, e aí a regra nunca
+    // casaria. Vai separado para a tela poder avisar, em vez de deixar isso ser
+    // descoberto por uma regra que não acusa nada.
+    ...(() => {
+      const daTabela = Array.from(new Set(
+        tabela.map(t => String(t.servico || '').trim()).filter(Boolean)))
+      const vistos = new Set(daTabela.map(normaliza))
+
+      const daPlanilha = Array.from(new Set([...doDia, ...todos]
+        .map(a => String(a.servico || '').trim())
+        .filter(n => n && !vistos.has(normaliza(n)))))
+      for (const n of daPlanilha) vistos.add(normaliza(n))
+
+      const soNoCadastro = Array.from(new Set((cadastroServicos || [])
+        .map((x: any) => String(x.nome || '').trim())
+        .filter((n: string) => n && !vistos.has(normaliza(n)))))
+
+      const ordena = (a: string[]) => a.sort((x, y) => x.localeCompare(y, 'pt-BR'))
+      return {
+        servicosDaTabela: ordena(daTabela),
+        servicosConhecidos: ordena(daPlanilha),
+        servicosDoCadastro: ordena(soNoCadastro as string[]),
+      }
+    })(),
     // Categorias vão separadas das dos serviços: escolher a categoria cobre
     // todos os serviços dela de uma vez, inclusive os que ainda vão nascer.
-    categoriasConhecidas: Array.from(new Set(
-      [...doDia, ...todos].map(a => String(a.categoria || '').trim()).filter(Boolean),
-    )).sort((x, y) => x.localeCompare(y, 'pt-BR')),
+    categoriasConhecidas: Array.from(new Set([
+      ...[...doDia, ...todos].map(a => String(a.categoria || '').trim()),
+      ...(cadastroServicos || []).map((x: any) => String(x.categoria || '').trim()),
+      ...tabela.map(t => String(t.categoria || '').trim()),
+    ].filter(Boolean))).sort((x, y) => x.localeCompare(y, 'pt-BR')),
     // Resumo por caixa: cada recepcionista responde pelo seu, então a tela
     // separa por responsável em vez de somar tudo num monte só.
     caixas: caixas.map(c => ({
