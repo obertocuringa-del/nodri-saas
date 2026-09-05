@@ -393,19 +393,26 @@ export async function GET() {
     }
   }
 
-  // ── A meta da colega tambem e dinheiro ───────────────────────────────────
+  // ── Na corrida de meta individual o portal ve SO a propria linha ─────────
   //
-  // No ranking com meta individual cada linha passa a carregar `metaPessoal`, o
-  // salario-alvo de outra pessoa. `ocultarValores` esconde na TELA, o que basta
-  // para quem nao abre o inspetor — e nao basta. Aqui a linha da colega perde a
-  // meta antes de sair daqui; a dela vai inteira, que e o objetivo do card.
+  // Quando cada uma corre contra a propria meta, a lista de colegas nao informa
+  // nada e atrapalha: ela ordena por faturamento, mas o numero ao lado e a % da
+  // meta de cada uma. Na tela isso vira "6o lugar com 20%" acima de "1o lugar
+  // com 16%" — parece erro do sistema e vira assunto de corredor.
+  //
+  // E carrega o que nao deve: `metaPessoal` e o salario-alvo de outra pessoa.
+  // Esconder na tela bastaria para quem nao abre o inspetor. A poda e AQUI: as
+  // linhas das colegas nao saem do servidor.
+  //
+  // Vale so para esta corrida. Ranking comum continua com a lista inteira — ali
+  // o alvo e o mesmo para todo mundo e a comparacao e o proprio jogo.
   if (!ehDono) {
     for (const c of visiveis) {
-      if (c.modo === 'grupo' || !c.metaIndividual) continue
+      if (c.modo === 'grupo' || !c.metaIndividual || c.metrica !== 'faturamento') continue
       const linhas = rankingsVisiveis[c.id]
       if (!linhas) continue
-      rankingsVisiveis[c.id] = linhas.map(l => l.profId === voceId ? l
-        : { ...l, metaPessoal: undefined, diasTrabalho: undefined })
+      const minha = linhas.find(l => l.profId === voceId)
+      rankingsVisiveis[c.id] = minha ? [{ ...minha, deQuantos: linhas.length }] : []
     }
   }
 

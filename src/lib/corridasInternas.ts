@@ -196,6 +196,14 @@ export interface LinhaRanking {
   simulado?: boolean
   /** Dias de trabalho no mês desta pessoa (só na linha dela, no portal). */
   diasTrabalho?: number
+  /**
+   * De quantas pessoas a corrida e, quando as outras linhas nao vieram.
+   *
+   * Na corrida de meta individual o portal recebe SO a linha dela. Sem este
+   * numero, "voce esta em 4o lugar" viraria "de 1" — a tela contaria o que
+   * chegou, e o que chegou e uma linha so de proposito.
+   */
+  deQuantos?: number
 }
 
 /**
