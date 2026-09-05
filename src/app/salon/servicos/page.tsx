@@ -241,6 +241,7 @@ export default function ServicosPage() {
           categorias={CATEGORIAS}
           aoCadastrar={iniciarNovoPreenchido}
           recarregar={servicos.length}
+          jaListados={(daTabela?.novos || []).map(n => n.servico)}
         />
 
         <ServicosDaTabela recarregar={servicos.length} aoMudar={setDaTabela} />

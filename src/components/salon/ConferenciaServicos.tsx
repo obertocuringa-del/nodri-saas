@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangle, Plus, EyeOff, Loader2, ChevronDown, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { norm } from '@/lib/tabelaPrecos'
 
 // Aviso no topo de Serviços do Salão: o que a planilha tem e o cadastro não.
 //
@@ -27,11 +28,19 @@ export interface PreenchimentoServico {
 
 const reais = (n: number) => `R$ ${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 
-export default function ConferenciaServicos({ categorias, aoCadastrar, recarregar }: {
+export default function ConferenciaServicos({ categorias, aoCadastrar, recarregar, jaListados }: {
   categorias: string[]
   aoCadastrar: (dados: PreenchimentoServico) => void
   /** Muda quando a lista de serviços muda, para reconferir depois de salvar. */
   recarregar?: number
+  /**
+   * Nomes que o cartão da TABELA DE PREÇOS já está mostrando logo abaixo.
+   *
+   * Sem isto o mesmo serviço aparece duas vezes na mesma tela, com dois botões
+   * de cadastrar — e quem clica nos dois cria duplicata. Some daqui, e não de
+   * lá, porque lá vem com o preço oficial e o cadastro em lote.
+   */
+  jaListados?: string[]
 }) {
   const [ausentes, setAusentes] = useState<Ausente[]>([])
   const [divergentes, setDivergentes] = useState<Divergente[]>([])
@@ -85,26 +94,38 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
       </div>
     )
   }
-  if (!ausentes.length && !divergentes.length) return null
+  // Tira os que a tabela de preços já lista abaixo. O contador do título sai
+  // daqui também: dizer "126" e mostrar 66 seria pior do que repetir.
+  const noOutroCartao = new Set((jaListados || []).map(norm))
+  const soAqui = noOutroCartao.size
+    ? ausentes.filter(a => !noOutroCartao.has(norm(a.nome)))
+    : ausentes
+  const escondidos = ausentes.length - soAqui.length
 
-  const mostrados = verTodos ? ausentes : ausentes.slice(0, 5)
+  if (!soAqui.length && !divergentes.length) return null
+
+  const mostrados = verTodos ? soAqui : soAqui.slice(0, 5)
 
   return (
     <div className="mb-6 space-y-3">
-      {ausentes.length > 0 && (
+      {soAqui.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div className="flex items-start gap-2.5 mb-3">
             <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-[13px] font-semibold text-amber-900">
-                {ausentes.length === 1
+                {soAqui.length === 1
                   ? '1 serviço da planilha não está cadastrado aqui'
-                  : `${ausentes.length} serviços da planilha não estão cadastrados aqui`}
+                  : `${soAqui.length} serviços da planilha não estão cadastrados aqui`}
               </p>
               <p className="text-[11px] text-amber-800/80 mt-0.5 leading-relaxed">
                 Foram atendidos e não aparecem na tabela de preços, na página do
                 cliente nem no cálculo de comissão. Se já existe com outro nome,
                 use <b>Já tenho</b> e o aviso some.
+                {escondidos > 0 && (
+                  <> Outros <b>{escondidos}</b> saíram daqui porque já aparecem na
+                  lista da tabela de preços, logo abaixo.</>
+                )}
               </p>
             </div>
           </div>
@@ -140,10 +161,10 @@ export default function ConferenciaServicos({ categorias, aoCadastrar, recarrega
             ))}
           </div>
 
-          {ausentes.length > 5 && (
+          {soAqui.length > 5 && (
             <button onClick={() => setVerTodos(v => !v)}
               className="mt-2 text-[11px] text-amber-800 font-semibold underline">
-              {verTodos ? 'Mostrar menos' : `Ver os outros ${ausentes.length - 5}`}
+              {verTodos ? 'Mostrar menos' : `Ver os outros ${soAqui.length - 5}`}
             </button>
           )}
         </div>
