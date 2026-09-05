@@ -3,7 +3,29 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAtendimentosRaw } from '@/lib/atendimentosCache'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { escritaBloqueadaSub, getSessao, sessaoModoCaixa } from '@/lib/apiAuth'
+
+/**
+ * Quem pode mexer na lista de espera, e até onde.
+ *
+ * A rota usava o bloqueio geral (`escritaBloqueadaSub`), que barra o MODO CAIXA
+ * em tudo. Só que a recepção nasce em Modo Caixa — está em RECEPCAO_PADRAO — e
+ * Modo Caixa existe justamente para "executar e adicionar". Resultado: quem usa
+ * a lista de espera o dia inteiro era exatamente quem não conseguia salvar.
+ *
+ * A régua passa a ser por operação:
+ *   ADICIONAR   — pode. É o trabalho dela: chegou cliente, entra na fila.
+ *   EXECUTAR    — pode. Marcar atendida/desistiu e anotar é andar com a fila.
+ *   REESCREVER  — não. Nome, telefone e serviço são a ficha de outra pessoa.
+ *   EXCLUIR     — não. Sumir com a fila de alguém não se desfaz.
+ */
+const CAMPOS_DE_EXECUCAO = new Set(['status', 'observacao'])
+
+async function quemEscreve() {
+  const s = await getSessao()
+  if (!s || s.role === 'profissional') return { pode: false, soExecucao: false }
+  return { pode: true, soExecucao: sessaoModoCaixa(s) }
+}
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -72,7 +94,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  // Adicionar é o trabalho da recepção — Modo Caixa entra aqui.
+  if (!(await quemEscreve()).pode) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const b = await req.json()
   if (!b.cliente_nome?.trim()) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
   const { data, error } = await supabaseAdmin.from('lista_espera').insert({
@@ -93,12 +116,19 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  const quem = await quemEscreve()
+  if (!quem.pode) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const b = await req.json()
   if (!b.id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
   const patch: any = { atualizado_em: new Date().toISOString() }
   for (const k of ['cliente_nome', 'telefone', 'servicos', 'data_desejada', 'horario_desejado', 'categoria', 'status', 'observacao']) {
-    if (b[k] !== undefined) patch[k] = b[k]
+    if (b[k] === undefined) continue
+    // Modo Caixa anda com a fila, mas não reescreve a ficha de ninguém. O campo
+    // é ignorado em silêncio de propósito: recusar a gravação inteira faria o
+    // "marcar como atendida" falhar por causa de um campo que a tela mandou
+    // junto sem que ninguém tenha editado.
+    if (quem.soExecucao && !CAMPOS_DE_EXECUCAO.has(k)) continue
+    patch[k] = b[k]
   }
   if (b.status === 'atendida') patch.atendida_em = new Date().toISOString()
   const { data, error } = await supabaseAdmin.from('lista_espera').update(patch).eq('id', b.id).eq('salao_id', salaoId).select().single()
@@ -109,6 +139,8 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const salaoId = await getSalaoId()
   if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  // Excluir continua fora do alcance do Modo Caixa: some com a fila de alguém
+  // e não se desfaz. O caminho dela é marcar como atendida ou desistiu.
   if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id não informado' }, { status: 400 })
