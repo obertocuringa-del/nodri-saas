@@ -55,6 +55,20 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   // de alguem lembrar.
   { chave: 'acesso_oculto_global', como: 'inteiro', rotulo: 'Acesso dos profissionais (o que nasce oculto)' },
 
+  // As regras da conferencia de caixa (aba Regras).
+  //
+  // Sao criterio de trabalho, nao dado: "quando tiver Coloracao, exige Shampoo
+  // ou Nutricao". Um salao novo nascer com esse criterio pronto vale mais do
+  // que nascer com a tela em branco, esperando alguem descobrir sozinho que a
+  // tela existe.
+  //
+  // CUIDADO ao alimentar o modelo: a regra cita servico e categoria PELO NOME.
+  // Nome generico ("Coloracao", "Corte") serve a qualquer salao; nome de marca
+  // ("COMBO ROUGE HAIR") e identidade de UM salao — no salao novo a regra nunca
+  // casa, e pior, ele nasce com o servico de outro escrito na tela dele.
+  // Quem curadoria isso e o dono do sistema, no painel do Salao Modelo.
+  { chave: 'conferencia_regras', como: 'inteiro', rotulo: 'Regras da conferência de caixa' },
+
   // Check lists — a estrutura vai, as marcações ficam
   { chave: 'checklist', como: 'checklist', rotulo: 'Check list do salão' },
   { chave: 'checklist_coordenacao', como: 'checklist', rotulo: 'Check list — Coordenação' },
