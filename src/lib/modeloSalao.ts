@@ -43,6 +43,18 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   // fica de fora pela regra acima.
   { chave: 'emissao_guias_mei', como: 'inteiro', rotulo: 'Emissão de guias do MEI' },
 
+  // O que o portal da profissional JA NASCE escondendo.
+  //
+  // E politica, nao dado: um mapa de area -> escondido, sem nome, telefone ou
+  // valor de ninguem. Viaja inteiro para o salao novo nascer com a decisao ja
+  // tomada — e o dono dele muda quando quiser, no proprio painel.
+  //
+  // Sem esta linha a chave caia na regra 4 e chegava VAZIA: salao novo nascia
+  // mostrando tudo, e o telefone das clientes aparecia para a profissional ate
+  // alguem lembrar de ir la desligar. Padrao de privacidade nao pode depender
+  // de alguem lembrar.
+  { chave: 'acesso_oculto_global', como: 'inteiro', rotulo: 'Acesso dos profissionais (o que nasce oculto)' },
+
   // Check lists — a estrutura vai, as marcações ficam
   { chave: 'checklist', como: 'checklist', rotulo: 'Check list do salão' },
   { chave: 'checklist_coordenacao', como: 'checklist', rotulo: 'Check list — Coordenação' },
