@@ -135,6 +135,32 @@ export interface CorridaInterna {
   ate: string                 // 'YYYY-MM'
   premio?: string             // texto do prêmio (opcional)
   meta?: number               // meta a bater (opcional) — mostra % e "bateu"
+  /**
+   * Cada uma corre contra a PROPRIA meta, sem deixar de ser ranking.
+   *
+   * A corrida em grupo ja fazia isso, mas ali nao ha vencedor. Aqui a disputa
+   * continua: ordena por faturamento, ha 1o lugar — so que "bateu" passa a ser
+   * a meta DELA, e nao um numero unico. E o unico jeito honesto de premiar
+   * quando as metas sao diferentes: com alvo unico, quem tem meta menor nunca
+   * ganha e quem tem meta maior ganha sem esforco.
+   *
+   * A meta vem da mesma fonte do card do perfil: a manual manda; vazia, vale a
+   * redistribuida automatica. Some com `meta` (o alvo unico) quando ligada.
+   */
+  metaIndividual?: boolean
+  /**
+   * Dias que cada uma realmente TRABALHA no mes, por profissional.
+   *
+   * Sem isto o "quanto por dia" divide pelos dias do calendario e mente: a
+   * manicure trabalha dois domingos e folga um dia por semana, entao setembro
+   * tem 30 dias mas ela trabalha uns 24. Dividir por 30 da uma meta diaria
+   * menor do que a real, e ela chega no fim do mes achando que estava no ritmo.
+   *
+   * Numero digitado, e nao calculado da folga do cadastro, porque a folga muda
+   * (troca de escala, feriado, falta combinada) e quem sabe o mes que vem e a
+   * gerencia, nao a tabela.
+   */
+  diasTrabalho?: Record<string, number>
   participantes?: string[]    // ids de profissionais; vazio/undefined = todos
   topPremiado?: number        // tamanho do pódio destacado (default 3)
   ocultarValores?: boolean    // esconder os números dos colegas (só posição)
@@ -168,6 +194,50 @@ export interface LinhaRanking {
   valorOculto?: boolean
   /** Este faturamento é simulado — não veio do relatório. */
   simulado?: boolean
+  /** Dias de trabalho no mês desta pessoa (só na linha dela, no portal). */
+  diasTrabalho?: number
+}
+
+/**
+ * O ritmo que falta: quanto ainda tem de sair, em quantos dias, por dia.
+ *
+ * Só faz sentido enquanto o mês corre — corrida que ainda não começou não tem
+ * ritmo, e a que acabou não tem mais o que correr atrás. Nesses casos devolve
+ * `null` e a tela não desenha o bloco, em vez de mostrar "faltam 0 dias".
+ *
+ * `diasTrabalho` é o total de dias que ela trabalha no mês. Os que ainda faltam
+ * saem proporcionalmente ao que resta do calendário: é aproximação, e por isso
+ * a tela diz "dias de trabalho que faltam" e não finge precisão de escala.
+ */
+export function ritmoQueFalta(
+  meta: number, feito: number, diasTrabalho?: number, hoje = new Date(),
+): { falta: number; dias: number; porDia: number; estimado: boolean } | null {
+  if (!(meta > 0)) return null
+  const falta = Math.max(meta - feito, 0)
+
+  const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()
+
+  // MESMA conta da tela de Metas do perfil (metasAnalitico): o dia de hoje NAO
+  // entra. Contar hoje daria 26 onde a outra tela diz 25, e a mesma pessoa
+  // veria dois "dias restantes" diferentes para o mesmo mes — a partir dai ela
+  // para de confiar nos dois numeros, nao so no errado.
+  const corridosQueFaltam = Math.max(diasNoMes - hoje.getDate(), 0)
+
+  const total = Number(diasTrabalho) || 0
+  const estimado = total > 0
+  const dias = estimado
+    ? Math.round((total * corridosQueFaltam) / diasNoMes)
+    : corridosQueFaltam
+
+  // Ultimo dia do mes: nao ha "por dia", ha o que falta. Dividir por zero ou
+  // por um dia inventado daria um numero que nao ajuda ninguem.
+  return { falta, dias, porDia: dias > 0 ? falta / dias : falta, estimado }
+}
+
+/** O mês de hoje cai dentro do período da corrida? */
+export function mesCorrente(c: CorridaInterna, hoje = new Date()): boolean {
+  const ym = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+  return (!c.de || c.de <= ym) && (!c.ate || c.ate >= ym)
 }
 
 export interface ResumoGrupo {

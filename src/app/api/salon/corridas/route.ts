@@ -228,6 +228,12 @@ export async function GET() {
       // pessoa — não faz sentido escolher outra: a meta do perfil é em dinheiro.
       const ehGrupo = c.modo === 'grupo'
 
+      // Ranking com meta individual: continua ranking (ordena por faturamento,
+      // tem 1o lugar), mas o "bateu" passa a ser a meta DELA. So faz sentido em
+      // dinheiro — a meta do perfil e em R$, comparar com quantidade de servico
+      // seria somar laranja com maca.
+      const usaMetaIndividual = !ehGrupo && !!c.metaIndividual && c.metrica === 'faturamento'
+
       // Faturamento simulado, só para o dono. O profissional recebe sempre o
       // número real: ver um valor inventado sobre o próprio mês, sem nenhum
       // aviso de que é teste, seria pior do que não ver a corrida.
@@ -247,7 +253,9 @@ export async function GET() {
 
       linhas.push({
         profId: p.id, nome: p.apelido || p.nome_completo || 'Profissional', valor, pos: 0,
-        ...(ehGrupo ? { metaPessoal: a.meta } : {}),
+        ...(ehGrupo || usaMetaIndividual ? { metaPessoal: a.meta } : {}),
+        ...(usaMetaIndividual && Number(c.diasTrabalho?.[p.id]) > 0
+          ? { diasTrabalho: Number(c.diasTrabalho![p.id]) } : {}),
         ...(ehSimulado ? { simulado: true } : {}),
       })
     }
@@ -298,6 +306,16 @@ export async function GET() {
         // "nenhuma ocorrência", e por isso o teste usa >= 0 e não > 0 como o
         // outro lado — senão a corrida mais exigente seria a única sem medalha.
         if (typeof c.meta === 'number' && c.meta >= 0) l.bateuMeta = l.valor <= c.meta
+      } else if (c.metaIndividual && c.metrica === 'faturamento') {
+        // Cada uma contra a propria meta. Quem ainda nao tem meta no periodo
+        // fica sem % e sem "bateu" — e diferente de ter meta e nao alcancar, e
+        // marcar como nao-batida acusaria a pessoa de algo que o salao e que
+        // nao definiu.
+        const mp = Number(l.metaPessoal || 0)
+        if (mp > 0) {
+          l.pctMeta = Number(((l.valor / mp) * 100).toFixed(0))
+          l.bateuMeta = l.valor >= mp
+        }
       } else if (typeof c.meta === 'number' && c.meta > 0) {
         l.pctMeta = Number(((l.valor / c.meta) * 100).toFixed(0))
         l.bateuMeta = l.valor >= c.meta
@@ -322,6 +340,10 @@ export async function GET() {
     // Na corrida em grupo o alvo não é `c.meta` (não existe um só): cada uma tem
     // o seu, vindo do perfil. Quem bateu o próprio alvo leva medalha igual.
     const limiteVale = c.modo === 'grupo' ? true
+      // Meta individual tem alvo sim — um por pessoa. Sem esta linha a corrida
+      // que o dono criou justamente para premiar meta individual seria a unica
+      // que nao da medalha.
+      : (c.metaIndividual && c.metrica === 'faturamento') ? true
       : metricaInfo(c.metrica).inversa
       ? (typeof c.meta === 'number' && c.meta >= 0)
       : (typeof c.meta === 'number' && c.meta > 0)
@@ -371,6 +393,22 @@ export async function GET() {
     }
   }
 
+  // ── A meta da colega tambem e dinheiro ───────────────────────────────────
+  //
+  // No ranking com meta individual cada linha passa a carregar `metaPessoal`, o
+  // salario-alvo de outra pessoa. `ocultarValores` esconde na TELA, o que basta
+  // para quem nao abre o inspetor — e nao basta. Aqui a linha da colega perde a
+  // meta antes de sair daqui; a dela vai inteira, que e o objetivo do card.
+  if (!ehDono) {
+    for (const c of visiveis) {
+      if (c.modo === 'grupo' || !c.metaIndividual) continue
+      const linhas = rankingsVisiveis[c.id]
+      if (!linhas) continue
+      rankingsVisiveis[c.id] = linhas.map(l => l.profId === voceId ? l
+        : { ...l, metaPessoal: undefined, diasTrabalho: undefined })
+    }
+  }
+
   // A própria corrida também carrega dinheiro: `doacoes` traz "entregou R$ X" e
   // `simulacoes` traz os valores de teste. Com a coluna da colega em 120% na
   // tela, um "R$ 1.000" de doação entrega a meta dela por divisão — a mesma
@@ -388,7 +426,9 @@ export async function GET() {
 
   const corridasVisiveis = ehDono ? visiveis : visiveis.map(c => {
     // A observação interna some para qualquer corrida, de qualquer tipo.
-    const { observacaoInterna, ...semNota } = c
+    // `diasTrabalho` é o mapa da escala de todo mundo: a profissional só
+    // precisa do número dela, que já viaja na linha do ranking.
+    const { observacaoInterna, diasTrabalho, ...semNota } = c
     if (semNota.modo !== 'grupo') return semNota
     return {
       ...semNota,

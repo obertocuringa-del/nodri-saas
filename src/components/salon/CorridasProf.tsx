@@ -5,10 +5,74 @@ import { Trophy, Medal, ChevronDown, ChevronRight } from 'lucide-react'
 import {
   type CorridaInterna, type LinhaRanking, type ResumoGrupo,
   metricaInfo, statusCorrida, STATUS_CORRIDA, periodoLabel,
+  ritmoQueFalta, mesCorrente,
 } from '@/lib/corridasInternas'
 import { Ranking } from './CorridasInternas'
 import CorridaGrupo from './CorridaGrupo'
 import { comoBotao } from '@/lib/acessibilidade'
+
+
+const real = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+/**
+ * O que a profissional precisa saber sobre a PROPRIA corrida.
+ *
+ * A posicao sozinha nao ajuda ninguem a agir: saber que esta em 3o lugar nao
+ * diz o que fazer amanha de manha. Meta, feito, quanto falta e quanto por dia
+ * dizem. Por isso este bloco so existe na linha dela — o numero da colega nem
+ * chega ao navegador.
+ *
+ * Os dias vem da escala que o salao configurou na corrida. Sem escala, a conta
+ * divide pelos dias do calendario, e a tela avisa que e por dia corrido — meta
+ * diaria menor do que a real, se ela nao trabalha todo dia.
+ */
+function MinhaMeta({ c, minha }: { c: CorridaInterna; minha: LinhaRanking }) {
+  const meta = Number(minha.metaPessoal || 0)
+  if (!(meta > 0)) return null
+
+  const feito = Number(minha.valor || 0)
+  const bateu = feito >= meta
+  const pct = Math.min(Math.round((feito / meta) * 100), 100)
+  const ritmo = mesCorrente(c) ? ritmoQueFalta(meta, feito, minha.diasTrabalho) : null
+
+  const selo = (rotulo: string, valor: string, cor: string) => (
+    <div style={{ flex: '1 1 108px', minWidth: 96, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 10, padding: '8px 11px' }}>
+      <div style={{ fontSize: 9.5, fontWeight: 900, color: '#9ca3af', letterSpacing: .5, textTransform: 'uppercase' }}>{rotulo}</div>
+      <div style={{ fontSize: 14.5, fontWeight: 900, color: cor, fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+    </div>
+  )
+
+  return (
+    <div style={{ background: '#faf9f7', border: '1.5px solid #e8e6e0', borderRadius: 12, padding: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7, gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12.5, fontWeight: 900, color: '#1a1a1a' }}>Sua meta nesta corrida</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: bateu ? '#15803d' : '#6b6860' }}>
+          {bateu ? 'meta batida' : `${pct}% da meta`}
+        </span>
+      </div>
+
+      <div style={{ height: 9, background: '#e8e6e0', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: bateu ? '#16a34a' : '#5b4fcf', borderRadius: 99 }} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        {selo('Meta', real(meta), '#1a1a1a')}
+        {selo('Você fez', real(feito), '#15803d')}
+        {selo('Falta', bateu ? '—' : real(meta - feito), bateu ? '#9ca3af' : '#b45309')}
+        {ritmo && !bateu && selo('Dias que faltam', String(ritmo.dias), '#1a1a1a')}
+        {ritmo && !bateu && selo('Por dia', real(ritmo.porDia), '#b91c1c')}
+      </div>
+
+      {ritmo && !bateu && (
+        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 7, lineHeight: 1.5 }}>
+          {ritmo.estimado
+            ? `Contando ${minha.diasTrabalho} dia(s) de trabalho no mês — folgas já descontadas.`
+            : 'Contando dias corridos. Se você folga durante a semana, o valor por dia é maior do que este.'}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Card "Corrida Interna" do portal do profissional — só leitura.
 // `destacarId` = id do profissional a destacar (quando o salão abre o perfil).
@@ -140,6 +204,8 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
                 </div>
               </div>
             )}
+
+            {minha && c.modo !== 'grupo' && <MinhaMeta c={c} minha={minha} />}
 
             {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 

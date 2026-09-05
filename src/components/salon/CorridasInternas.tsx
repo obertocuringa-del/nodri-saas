@@ -440,8 +440,28 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
             </div>
           </div>
 
+          {/* Meta de cada uma, no lugar de um alvo só.
+              Aparece apenas no faturamento: a meta do perfil é em dinheiro, e
+              oferecer isso numa corrida de "quantos produtos vendeu" faria o
+              dono ligar e a corrida parar de premiar. */}
+          {!ehGrupo && c.metrica === 'faturamento' && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer', fontSize: 13, color: '#57534e', background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 10, padding: '10px 12px' }}>
+              <input type="checkbox" checked={!!c.metaIndividual}
+                onChange={e => set({ metaIndividual: e.target.checked || undefined })}
+                style={{ width: 17, height: 17, marginTop: 1, flexShrink: 0 }} />
+              <span>
+                <b>Cada uma contra a própria meta</b>
+                <span style={{ display: 'block', fontSize: 11.5, color: '#6b6860', marginTop: 2 }}>
+                  O ranking continua por faturamento, mas <b>ganha quem bater a meta dela</b>.
+                  A meta vem do perfil de cada uma — a manual, se estiver preenchida;
+                  senão, a redistribuída automática.
+                </span>
+              </span>
+            </label>
+          )}
+
           <div className="ci-form-grid" style={{ display: ehGrupo ? 'none' : undefined }}>
-            <div>
+            <div style={{ display: c.metaIndividual && c.metrica === 'faturamento' ? 'none' : undefined }}>
               {/* Na corrida inversa a meta é um TETO, e chamar de "meta a bater"
                   faria o dono digitar o contrário do que quer. */}
               <label className="ci-lbl">{info.inversa ? 'Máximo aceito (opcional)' : 'Meta a bater (opcional)'}</label>
@@ -504,6 +524,45 @@ function FormCorrida({ corrida, profs, servicosRel, ocorridos, saving, onCancel,
               </button>
             )}
           </div>
+
+          {/* Dias de trabalho no mês, um por profissional.
+              Só quando a corrida é de meta individual: é aqui que o "quanto por
+              dia" do portal deixa de dividir pelos dias do calendário. */}
+          {!ehGrupo && c.metaIndividual && c.metrica === 'faturamento' && (() => {
+            const naCorrida = (c.participantes && c.participantes.length > 0)
+              ? profs.filter(p => c.participantes!.includes(p.id))
+              : profs
+            if (!naCorrida.length) return null
+            const dias = c.diasTrabalho || {}
+            const porDia = (id: string, v: string) => {
+              const n = Number(v)
+              const novo = { ...dias }
+              if (v === '' || !(n > 0)) delete novo[id]; else novo[id] = Math.min(31, Math.round(n))
+              set({ diasTrabalho: Object.keys(novo).length ? novo : undefined })
+            }
+            return (
+              <div>
+                <label className="ci-lbl">Dias de trabalho no mês (opcional)</label>
+                <div style={{ fontSize: 11.5, color: '#6b6860', margin: '0 0 8px', lineHeight: 1.5 }}>
+                  Quantos dias cada uma <b>realmente trabalha</b> no mês, já descontadas as
+                  folgas. É o que o portal usa para dizer &quot;falta tanto por dia&quot;.
+                  Em branco, a conta divide pelos dias do calendário — e a meta diária
+                  sai menor do que a real.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 230, overflowY: 'auto' }}>
+                  {naCorrida.map(p => (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 9, padding: '6px 10px' }}>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nome}</span>
+                      <input type="number" min={1} max={31} value={dias[p.id] ?? ''}
+                        onChange={e => porDia(p.id, e.target.value)}
+                        placeholder="dias"
+                        style={{ width: 84, padding: '5px 8px', fontSize: 12.5, fontWeight: 700, textAlign: 'right', border: '1.5px solid #e0ddd8', borderRadius: 8, outline: 'none' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 13, color: '#57534e' }}>
             <input type="checkbox" checked={!!c.ocultarValores} onChange={e => set({ ocultarValores: e.target.checked })} style={{ width: 17, height: 17 }} />
