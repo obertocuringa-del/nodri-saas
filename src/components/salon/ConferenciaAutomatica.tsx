@@ -521,6 +521,14 @@ export default function ConferenciaAutomatica({ data }: { data: string }) {
             ou Terapia</i> é <b>uma</b> regra, e basta ter um deles. Com <b>exige só um de</b>,
             ter dois também vira apontamento.
           </p>
+          <p style={{ fontSize: 11.5, color: '#0e7490', marginTop: 6, marginBottom: 0 }}>
+            <b>+ não vale se…</b> é outra coisa: desliga a regra quando a comanda tem
+            também outro serviço que já explica o caso. Ela mora na regra do serviço
+            <b> acusado</b>, não na do que explica — <i>Pigmentação de Sobrancelhas não
+            pode ter Complemento, não vale se a comanda tiver Coloração</i>, porque aí o
+            complemento é da coloração. Pôr essa condição na própria regra da Coloração
+            não faz efeito nenhum.
+          </p>
           <p style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>
             A comparação é por <b>palavra inteira</b>: a regra &quot;COLORAÇÃO&quot; não pega
             &quot;DESCOLORAÇÃO&quot;, que é outro serviço.
