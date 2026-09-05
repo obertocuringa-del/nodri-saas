@@ -32,6 +32,7 @@ export const AREAS_PORTAL: AreaPortal[] = [
   { chave: 'fat_acumulado',     label: 'Faturamento Acumulado (no resumo)' },
   { chave: 'ticket_medio',      label: 'Ticket Médio (no resumo)' },
   { chave: 'clientes_telefone', label: 'Telefone dos clientes (em Clientes Perdidos)' },
+  { chave: 'agend_telefone',    label: 'Telefone dos clientes (em Agendamentos)' },
 ]
 
 // Funde o padrão global do salão com a configuração individual do profissional.

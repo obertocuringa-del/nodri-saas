@@ -4275,7 +4275,9 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {ag.celular && <span className="text-[10px]" style={{color:'#9ca3af'}}>{ag.celular}</span>}
+                        {ag.celular && podeVer('agend_telefone') && (
+                          <span className="text-[10px]" style={{color:'#9ca3af'}}>{ag.celular}</span>
+                        )}
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                           style={{background:'#d1fae5',color:'#065f46'}}>{ag.status}</span>
                         <span className="text-[11px]" style={{color:'#5b4fcf'}}>{selecionado ? '▲' : '▼'}</span>
