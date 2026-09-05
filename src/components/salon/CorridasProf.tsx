@@ -194,13 +194,7 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
                     emojis saíram: sobrava um espaço de 22px desenhando nada. */}
                 <Trophy size={20} style={{ color: minha.pos <= 3 ? '#d97706' : '#16a34a', flexShrink: 0 }} />
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: '#15803d' }}>
-                  {/* `deQuantos` manda quando ele vem: na corrida de meta
-                      individual chega uma linha so, e contar o que chegou diria
-                      "de 1". */}
-                  Você está em <b>{minha.pos}º lugar</b>{(() => {
-                    const total = minha.deQuantos ?? ranking.length
-                    return total > 1 ? ` de ${total}` : ''
-                  })()}
+                  Você está em <b>{minha.pos}º lugar</b>{ranking.length > 1 ? ` de ${ranking.length}` : ''}
                   {/* Corrida de "menos é melhor" não tem % da meta — só o teto
                       cumprido ou não. Sem isto, quem estava dentro do limite não
                       via nada e parecia que a corrida não tinha alvo. */}
@@ -215,16 +209,9 @@ export default function CorridasProf({ destacarId }: { destacarId?: string }) {
 
             {c.descricao && <div style={{ fontSize: 12, color: '#57534e', whiteSpace: 'pre-wrap', background: '#faf9f7', borderRadius: 8, padding: '8px 10px' }}>{c.descricao}</div>}
 
-            {/* Corrida de meta individual, vista pela propria profissional: sem
-                lista de colegas. Ela ja tem acima a posicao e o painel da meta
-                dela, que e o que serve para agir. O dono continua com a lista
-                inteira, aqui e na tela do salao — `voceId` so vem preenchido
-                quando quem olha e a profissional. */}
             {c.modo === 'grupo'
               ? <CorridaGrupo c={c} ranking={ranking} resumo={resumos[c.id]} />
-              : (voceId && c.metaIndividual && c.metrica === 'faturamento')
-                ? null
-                : <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />}
+              : <Ranking ranking={ranking} c={c} destacarId={destacar} soPosicoes={c.ocultarValores} />}
             </>)}
           </div>
         )

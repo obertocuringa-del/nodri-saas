@@ -307,6 +307,18 @@ function Ranking({ ranking, c, destacarId, soPosicoes }: { ranking: LinhaRanking
             {!esconder && (
               <span style={{ fontSize: 13, fontWeight: 900, color: '#15803d', whiteSpace: 'nowrap' }}>{formataValor(c.metrica, l.valor)}</span>
             )}
+            {/* Quanto ainda falta para ESTA pessoa bater a meta dela.
+                A % diz o quão perto está; o R$ diz o que fazer. "16%" não
+                responde a pergunta que o dono faz olhando a lista — quanto
+                preciso puxar para ela fechar o mês. Só aparece onde a meta
+                existe, ou seja, na tela do salão: para a colega, `metaPessoal`
+                nem sai do servidor. */}
+            {typeof l.metaPessoal === 'number' && l.metaPessoal > 0 && !l.bateuMeta && (
+              <span title={`Meta: ${formataValor('faturamento', l.metaPessoal)}`}
+                style={{ fontSize: 12, fontWeight: 800, color: '#b45309', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                falta {formataValor('faturamento', Math.max(l.metaPessoal - l.valor, 0))}
+              </span>
+            )}
           </div>
         )
       })}

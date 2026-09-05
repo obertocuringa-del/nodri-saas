@@ -298,7 +298,31 @@ export async function GET() {
 
     // Métrica inversa ordena ao contrário: quem tem MENOS ocorrência lidera.
     const inversa = !!metricaInfo(c.metrica).inversa
-    linhas.sort((x, y) => inversa ? x.valor - y.valor : y.valor - x.valor)
+    const usaMI = !!c.metaIndividual && c.metrica === 'faturamento'
+
+    if (usaMI) {
+      // A % de cada uma sai ANTES de ordenar, porque agora ela é o critério.
+      //
+      // Ordenar por R$ com meta individual mentia na cara do dono: quem faturou
+      // mais nem sempre é quem está mais perto do próprio alvo. Na disputa real
+      // a VIEGAS estava com 20% da meta e aparecia em 6º, abaixo de quem tinha
+      // 16% — e a regra da corrida é justamente "só ganha quem bater a meta
+      // individual". O pódio contradizia o prêmio.
+      for (const l of linhas) {
+        const mp = Number(l.metaPessoal || 0)
+        if (mp > 0) {
+          l.pctMeta = Number(((l.valor / mp) * 100).toFixed(0))
+          l.bateuMeta = l.valor >= mp
+        }
+      }
+      // Quem ainda não tem meta no período vai para o fim (-1), sem ser marcada
+      // como não-batida: o salão é que não definiu o alvo dela.
+      linhas.sort((x, y) => (y.pctMeta ?? -1) - (x.pctMeta ?? -1)
+        || y.valor - x.valor
+        || x.nome.localeCompare(y.nome, 'pt-BR'))
+    } else {
+      linhas.sort((x, y) => inversa ? x.valor - y.valor : y.valor - x.valor)
+    }
     linhas.forEach((l, i) => {
       l.pos = i + 1
       if (inversa) {
@@ -306,16 +330,8 @@ export async function GET() {
         // "nenhuma ocorrência", e por isso o teste usa >= 0 e não > 0 como o
         // outro lado — senão a corrida mais exigente seria a única sem medalha.
         if (typeof c.meta === 'number' && c.meta >= 0) l.bateuMeta = l.valor <= c.meta
-      } else if (c.metaIndividual && c.metrica === 'faturamento') {
-        // Cada uma contra a propria meta. Quem ainda nao tem meta no periodo
-        // fica sem % e sem "bateu" — e diferente de ter meta e nao alcancar, e
-        // marcar como nao-batida acusaria a pessoa de algo que o salao e que
-        // nao definiu.
-        const mp = Number(l.metaPessoal || 0)
-        if (mp > 0) {
-          l.pctMeta = Number(((l.valor / mp) * 100).toFixed(0))
-          l.bateuMeta = l.valor >= mp
-        }
+      } else if (usaMI) {
+        // Já calculado antes da ordenação — aqui só a posição.
       } else if (typeof c.meta === 'number' && c.meta > 0) {
         l.pctMeta = Number(((l.valor / c.meta) * 100).toFixed(0))
         l.bateuMeta = l.valor >= c.meta
@@ -393,26 +409,25 @@ export async function GET() {
     }
   }
 
-  // ── Na corrida de meta individual o portal ve SO a propria linha ─────────
+  // ── Meta individual: a lista fica, o dinheiro da colega não ──────────────
   //
-  // Quando cada uma corre contra a propria meta, a lista de colegas nao informa
-  // nada e atrapalha: ela ordena por faturamento, mas o numero ao lado e a % da
-  // meta de cada uma. Na tela isso vira "6o lugar com 20%" acima de "1o lugar
-  // com 16%" — parece erro do sistema e vira assunto de corredor.
+  // A lista inteira é o que faz a corrida existir — ver a colega na frente é o
+  // que move. O que não pode viajar é o alvo dela: `metaPessoal` é o salário que
+  // o salão combinou com outra pessoa.
   //
-  // E carrega o que nao deve: `metaPessoal` e o salario-alvo de outra pessoa.
-  // Esconder na tela bastaria para quem nao abre o inspetor. A poda e AQUI: as
-  // linhas das colegas nao saem do servidor.
-  //
-  // Vale so para esta corrida. Ranking comum continua com a lista inteira — ali
-  // o alvo e o mesmo para todo mundo e a comparacao e o proprio jogo.
+  // O R$ da colega também sai, mesmo quando o dono deixou os valores à mostra.
+  // Aqui a % anda junto do valor, e as duas coisas na mesma linha entregam a
+  // meta por divisão: R$ 892,50 em 16% dá R$ 5.578. A % sozinha não entrega
+  // nada, e é ela que monta o ranking. A linha DELA vai inteira.
   if (!ehDono) {
     for (const c of visiveis) {
       if (c.modo === 'grupo' || !c.metaIndividual || c.metrica !== 'faturamento') continue
       const linhas = rankingsVisiveis[c.id]
       if (!linhas) continue
-      const minha = linhas.find(l => l.profId === voceId)
-      rankingsVisiveis[c.id] = minha ? [{ ...minha, deQuantos: linhas.length }] : []
+      rankingsVisiveis[c.id] = linhas.map(l => l.profId === voceId ? l : ({
+        profId: l.profId, nome: l.nome, pos: l.pos, valor: 0, valorOculto: true,
+        pctMeta: l.pctMeta, bateuMeta: l.bateuMeta,
+      }))
     }
   }
 
