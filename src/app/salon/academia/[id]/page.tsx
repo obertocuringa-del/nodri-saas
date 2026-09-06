@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, BookOpen, Clock } from 'lucide-react'
 
 const CAT_LABEL: Record<string, string> = {
+  gestao: ' Gestão do Negócio',
   financeiro: ' Gestão Financeira',
   marketing: ' Marketing e Vendas',
   equipe: ' Gestão de Equipe',

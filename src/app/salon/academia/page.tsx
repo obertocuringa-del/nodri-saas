@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Search, BookOpen, ChevronRight, TrendingUp, Users, ShoppingBag, Calendar, DollarSign } from 'lucide-react'
+import { ArrowLeft, Search, BookOpen, ChevronRight, TrendingUp, Users, ShoppingBag, Calendar, DollarSign, Briefcase } from 'lucide-react'
 
 const CATEGORIAS = [
+  { key: 'gestao',      label: 'Gestão do Negócio',    emoji: '', icon: Briefcase,    cor: 'from-slate-500 to-slate-700',    bg: 'bg-slate-50',   borda: 'border-slate-200' },
   { key: 'financeiro',   label: 'Gestão Financeira',   emoji: '', icon: DollarSign,  cor: 'from-emerald-500 to-emerald-700', bg: 'bg-emerald-50', borda: 'border-emerald-200' },
   { key: 'marketing',   label: 'Marketing e Vendas',   emoji: '', icon: TrendingUp,   cor: 'from-violet-500 to-violet-700',  bg: 'bg-violet-50',  borda: 'border-violet-200' },
   { key: 'equipe',      label: 'Gestão de Equipe',     emoji: '', icon: Users,        cor: 'from-blue-500 to-blue-700',      bg: 'bg-blue-50',    borda: 'border-blue-200' },
@@ -62,7 +63,7 @@ export default function AcademiaPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold">Academia NODRI</h1>
-              <p className="text-white/60 text-xs">{totalArtigos} artigos · 5 categorias</p>
+              <p className="text-white/60 text-xs">{totalArtigos} artigos · {CATEGORIAS.length} categorias</p>
             </div>
           </div>
           <p className="text-white/70 text-sm mt-2">

@@ -1458,6 +1458,466 @@ Essa produtividade real é a base para:
 • Trimestral: tendência de crescimento ou queda
 • Comparar com o histórico do mesmo profissional — mais útil que comparar entre pessoas diferentes`
   },
+
+  // ─── FINANCEIRO (segunda leva) ────────────────────────────────────────────
+  {
+    categoria: 'financeiro', emoji: '', ordem: 6,
+    titulo: 'Fluxo de caixa do salão: o passo a passo que funciona',
+    resumo: 'Saber quanto entrou não é fluxo de caixa. Veja o método em 4 etapas.',
+    conteudo: `Fluxo de caixa é o registro de tudo que entra e tudo que sai, na data em que acontece. Parece óbvio — e é justamente por parecer óbvio que quase ninguém faz direito.
+
+## O erro que invalida tudo
+
+Anotar só o que entrou. O caixa fica bonito no dia do movimento e some no dia do pagamento das comissões. Aí vem a frase de sempre: "o dinheiro sumiu".
+
+## Passo 1 — Separe entrada de receita
+
+Não são a mesma coisa:
+
+• **Receita** é o serviço prestado, no dia em que foi prestado
+• **Entrada** é o dinheiro que caiu na conta, no dia em que caiu
+
+Sinal de agendamento é entrada sem receita. Venda parcelada é receita sem entrada. Misturar as duas é o que faz o caixa mentir.
+
+## Passo 2 — Classifique cada saída
+
+Toda saída entra em uma de quatro caixas:
+
+• **Custo direto** — produto, comissão, imposto, taxa de cartão
+• **Custo operacional** — aluguel, energia, internet, contador, sistema
+• **Investimento** — equipamento, reforma, curso
+• **Retirada** — pró-labore e distribuição de lucro
+
+Sem essa separação você não consegue responder à pergunta mais importante do mês: o salão deu lucro, ou eu só tirei menos?
+
+## Passo 3 — Registre no dia
+
+Fluxo de caixa preenchido no fim do mês é ficção. A memória preenche as lacunas com o que parece razoável, não com o que aconteceu.
+
+Cinco minutos por dia resolvem. Trinta dias de uma vez, não.
+
+## Passo 4 — Projete os próximos 30 dias
+
+Essa é a parte que separa controle de contabilidade. Lance as contas que você já sabe que vão vencer e veja o saldo projetado.
+
+É assim que se descobre que o dia 10 do mês que vem vai apertar — com tempo de fazer alguma coisa a respeito.
+
+## O que olhar toda semana
+
+• Saldo de hoje
+• Contas a pagar dos próximos 15 dias
+• Contas a receber dos próximos 15 dias
+• Comparação com a mesma semana do mês anterior
+
+## Ação imediata
+
+Escolha uma data de início e não lance nada retroativo. Fluxo de caixa começa hoje, não no dia 1º do ano passado.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 7,
+    titulo: 'Como separar as finanças do salão das suas',
+    resumo: 'Enquanto for a mesma conta, nenhum número do negócio é confiável.',
+    conteudo: `Enquanto o dinheiro do salão e o seu dinheiro estiverem na mesma conta, nenhum número do negócio é confiável. Nem o lucro, nem o custo, nem a margem.
+
+## Por que isso trava tudo
+
+O salão parece dar lucro no mês em que você gastou pouco em casa, e prejuízo no mês da matrícula da escola. Nenhuma das duas informações é sobre o salão.
+
+## Passo 1 — Duas contas, sempre
+
+Uma conta para o negócio, uma conta para você. Todo recebimento entra na do negócio. Toda despesa do salão sai da do negócio. Sem exceção "só dessa vez".
+
+## Passo 2 — Defina o seu pró-labore
+
+Você precisa de um valor fixo, definido antes do mês começar, transferido em uma data marcada. É o pagamento de quem administra — não é a sobra.
+
+Como chegar no número:
+
+1. Some o que você precisa por mês para viver
+2. Veja se esse valor cabe no resultado do salão
+3. Se não couber, o problema é do salão — e agora você sabe disso
+
+## Passo 3 — Separe pró-labore de lucro
+
+São coisas diferentes:
+
+• **Pró-labore** — pagamento pelo seu trabalho de gestão, sai todo mês
+• **Lucro** — o que sobra depois de tudo, inclusive do seu pró-labore
+
+Se você também atende, existe ainda a comissão do que você produziu. Três valores, três origens.
+
+## Passo 4 — Nada de "depois eu devolvo"
+
+Tirar do caixa para uma emergência pessoal e devolver depois é o hábito que destrói qualquer controle. Se precisar mesmo, registre como adiantamento de lucro, com data e valor.
+
+## O teste
+
+Se alguém perguntasse agora quanto o salão lucrou no mês passado, sem contar o que você tirou, você saberia responder? Se não, é exatamente aqui que a gestão começa.
+
+## Ação imediata
+
+Abra a segunda conta esta semana. É a mudança de maior efeito e menor esforço de toda a gestão financeira.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 8,
+    titulo: 'Margem de lucro real: quanto o salão de fato ganha',
+    resumo: 'Faturamento alto com margem baixa é trabalhar muito para ganhar pouco.',
+    conteudo: `Margem de lucro é o que sobra do faturamento depois de todos os custos, em porcentagem. É o número que diz se o salão é um bom negócio ou um emprego caro.
+
+## A conta
+
+**Margem = (Faturamento − Custos totais) ÷ Faturamento × 100**
+
+Exemplo:
+
+• Faturamento: R$ 60.000
+• Custo direto (produto, comissão, imposto, cartão): R$ 30.000
+• Custo operacional (aluguel, energia, equipe fixa, sistema): R$ 22.000
+• Resultado: R$ 8.000
+• Margem: 13,3%
+
+## O que é uma margem saudável
+
+Não existe número universal, mas serve de referência:
+
+• Abaixo de 10% — o salão não suporta imprevisto
+• Entre 10% e 20% — faixa comum de salão organizado
+• Acima de 20% — costuma indicar bom controle de comissão e de ocupação
+
+## Os três lugares onde a margem se perde
+
+**1. Comissão acima do que o custo comporta.** É a causa mais frequente e a mais difícil de corrigir depois de acordada.
+
+**2. Ocupação baixa.** Cadeira parada consome custo operacional sem gerar receita. Um salão com 50% de ocupação precisa de margem muito maior por atendimento para chegar no mesmo resultado.
+
+**3. Serviço com preço antigo.** Produto subiu, preço não. Cada atendimento daquele serviço tira margem do conjunto.
+
+## Margem por serviço, não só do salão
+
+A margem geral esconde o essencial. É comum um salão com 13% de margem ter serviços com 35% e outros com 2% — e ninguém saber quais são quais.
+
+Calcule serviço por serviço uma vez. A lista costuma reorganizar a agenda inteira.
+
+## Ação imediata
+
+Pegue os três serviços que mais aparecem na sua agenda e calcule a margem de cada um. Se algum estiver abaixo de 10%, você achou o vazamento.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 9,
+    titulo: 'Comissão ou aluguel de cadeira: qual dá mais lucro',
+    resumo: 'Os dois funcionam. Quem decide é o seu custo e a ocupação da cadeira.',
+    conteudo: `Não existe modelo melhor no geral. Existe o modelo que fecha com o seu custo, o seu volume e o perfil da profissional.
+
+## Comissão
+
+O salão fornece estrutura, produto e clientela, e divide o valor do serviço.
+
+**A favor:** você controla preço, agenda e padrão de atendimento. A cliente é do salão.
+
+**Contra:** todo o risco é seu. Cadeira vazia custa e não gera nada.
+
+## Aluguel de cadeira
+
+A profissional paga um valor fixo pelo espaço e fica com o que produzir.
+
+**A favor:** receita previsível, independente do movimento do mês.
+
+**Contra:** você perde controle sobre preço, horário e padrão. E a clientela tende a ser dela, não do salão.
+
+## A conta que decide
+
+O aluguel só faz sentido se for maior do que a margem que aquela cadeira deixaria no modelo de comissão.
+
+**Passo 1** — Custo da cadeira por mês: custo operacional total ÷ número de cadeiras
+
+**Passo 2** — No modelo de comissão, quanto essa cadeira deixa por mês: faturamento dela × margem
+
+**Passo 3** — Compare com o aluguel que você cobraria
+
+Se a cadeira produz bem, comissão costuma render mais para o salão. Se produz pouco ou de forma imprevisível, o aluguel transfere o risco.
+
+## Não esqueça a vacância
+
+Cadeira alugada também fica vazia entre uma profissional e outra. O valor precisa comportar um ou dois meses parados por ano — senão a conta só fecha no papel.
+
+## O modelo misto
+
+Alguns salões cobram um fixo menor mais uma porcentagem sobre a produção. Reduz o risco dos dois lados e costuma ser mais fácil de negociar do que o aluguel cheio.
+
+## Ação imediata
+
+Calcule o custo mensal de uma cadeira do seu salão. Sem esse número, qualquer valor de aluguel é chute.`
+  },
+
+  // ─── MARKETING (segunda leva) ─────────────────────────────────────────────
+  {
+    categoria: 'marketing', emoji: '', ordem: 6,
+    titulo: 'Agenda vazia: o que fazer nos próximos 30 dias',
+    resumo: 'A ordem de ações que custa menos e responde mais rápido.',
+    conteudo: `Agenda vazia pede resposta rápida — e resposta rápida quase nunca é anúncio. Anúncio traz gente nova, que é o cliente mais caro e mais demorado de conquistar.
+
+Esta é a ordem do mais barato para o mais caro.
+
+## Semana 1 — Quem já veio
+
+Levante quem não aparece há 60, 90 e 180 dias. Essa lista já existe dentro do seu histórico e quase nunca é usada.
+
+Mensagem individual: com o nome, com o último serviço feito e com um motivo real para voltar. Nada de disparo igual para todo mundo — além de ter resposta baixa, derruba o número do salão.
+
+## Semana 2 — Quem está vindo
+
+A cliente que já está na cadeira é a venda mais barata que existe.
+
+• Recepção com uma sugestão pronta para cada perfil
+• Reagendamento antes de ela sair do salão
+• Um serviço complementar oferecido no momento certo
+
+Elevar o ticket médio em 15% costuma dar mais resultado do que trazer dez clientes novas.
+
+## Semana 3 — Os horários mortos
+
+Terça e quarta custam igual ao sábado. Uma ação específica para esses dias, com desconto calculado dentro da margem, ocupa horário que hoje não gera nada.
+
+## Semana 4 — Aí sim, o cliente novo
+
+Com as três frentes anteriores rodando, você já sabe o seu ticket médio, a sua taxa de retorno e a margem do serviço que vai anunciar. Só agora o anúncio tem como ser medido.
+
+## O que não fazer
+
+• Desconto linear em tudo — corrói margem e ensina a cliente a esperar promoção
+• Promoção sem prazo definido
+• Anunciar serviço que você não consegue entregar em volume
+
+## Ação imediata
+
+Puxe a lista de quem não volta há 90 dias. Ela costuma ser maior do que qualquer campanha traria em um mês.`
+  },
+
+  // ─── EQUIPE (segunda leva) ────────────────────────────────────────────────
+  {
+    categoria: 'equipe', emoji: '', ordem: 8,
+    titulo: 'Como sair da cadeira sem o salão parar',
+    resumo: 'O plano em 5 etapas para o salão funcionar quando você não está.',
+    conteudo: `Se você sumir por quinze dias, o salão continua funcionando? Para a maioria dos donos que também atende, a resposta é não. E isso não é falta de equipe: é falta de estrutura.
+
+## Por que trava
+
+Tudo passa por você — preço, exceção, compra, escala, cliente insatisfeita, conferência do caixa. Enquanto for assim, o salão cresce até o limite da sua agenda e para ali.
+
+## Etapa 1 — Escreva o que só está na sua cabeça
+
+Abertura, fechamento, atendimento, compra, conferência. Cada rotina vira uma lista com os passos e o responsável. É a etapa mais chata e a que resolve mais.
+
+## Etapa 2 — Reduza a agenda aos poucos
+
+Bloqueie meio dia por semana para administrar. Não é folga: é horário de trabalho em outra função. Depois de dois meses, dois turnos.
+
+## Etapa 3 — Escolha quem responde no seu lugar
+
+Não precisa ser gerente com título. Precisa ser uma pessoa com autoridade definida e limite claro: até onde ela decide sozinha, e a partir de onde ela liga para você.
+
+## Etapa 4 — Transfira decisões, não só tarefas
+
+Delegar tarefa é dizer o que fazer. Delegar decisão é dizer qual resultado se espera e deixar o caminho com a pessoa. Só o segundo libera o seu tempo de verdade.
+
+## Etapa 5 — Teste antes de precisar
+
+Escolha um dia cheio e não vá. Anote o que deu errado. O que deu errado é a lista da próxima rodada — e é muito melhor descobrir isso num sábado planejado do que numa emergência.
+
+## O sinal de que está funcionando
+
+Quando as perguntas que chegam até você mudam de "o que eu faço?" para "decidi assim, tudo bem?".
+
+## Ação imediata
+
+Escreva hoje a rotina de abertura do salão. Uma folha. É por onde todo mundo começa.`
+  },
+
+  // ─── GESTÃO DO NEGÓCIO ────────────────────────────────────────────────────
+  {
+    categoria: 'gestao', emoji: '', ordem: 1,
+    titulo: 'Gestão de salão: por onde começar',
+    resumo: 'A ordem certa das quatro frentes, para não organizar tudo ao mesmo tempo.',
+    conteudo: `Gestão de salão tem quatro frentes: financeiro, preço, pessoas e cliente. Tentar arrumar as quatro ao mesmo tempo é o motivo mais comum de desistir na terceira semana.
+
+Esta é a ordem que funciona.
+
+## Primeiro: financeiro
+
+Antes de qualquer decisão, você precisa saber quanto entra, quanto sai e quanto sobra.
+
+• Separe a conta do salão da sua
+• Registre entrada e saída todo dia
+• Classifique custo direto, custo operacional e retirada
+• Descubra o custo operacional mensal
+
+Sem esse bloco, tudo o que vem depois é chute com cara de decisão.
+
+## Segundo: preço
+
+Com o custo na mão, o preço deixa de ser opinião.
+
+• Calcule o custo de cada serviço, com produto, tempo e comissão
+• Defina a margem mínima que você aceita
+• Ajuste os serviços que estiverem abaixo dela
+• Reveja a tabela a cada seis meses
+
+## Terceiro: pessoas
+
+Só agora — porque comissão e regra dependem do preço e do custo.
+
+• Escreva as regras do espaço e faça assinar
+• Defina a comissão dentro do teto que a margem permite
+• Estabeleça uma rotina de feedback
+• Avalie por critério, não por impressão
+
+## Quarto: cliente
+
+Com o resto de pé, atrair cliente vira investimento em vez de tapa-buraco.
+
+• Meça ticket médio e frequência de retorno
+• Recupere quem sumiu antes de buscar quem nunca veio
+• Padronize o atendimento
+• Só então invista em divulgação paga
+
+## Por que a ordem importa
+
+Atrair cliente para um salão com preço errado só acelera o prejuízo. Cada frente resolvida torna a seguinte mais fácil — e mais barata.
+
+## Ação imediata
+
+Escolha uma frente e trabalhe nela por 30 dias. Uma frente resolvida vale mais do que quatro começadas.`
+  },
+  {
+    categoria: 'gestao', emoji: '', ordem: 2,
+    titulo: 'Os 7 erros de gestão que quebram um salão',
+    resumo: 'Nenhum deles aparece de uma vez. Todos aparecem no extrato.',
+    conteudo: `Salão raramente fecha por um motivo só. Fecha por acumular alguns destes sete, por tempo demais.
+
+## 1. Confundir faturamento com lucro
+
+O mês em que mais entrou dinheiro pode ter sido o de menor resultado. Faturamento é volume; lucro é o que sobra. Quem acompanha só o primeiro descobre o segundo tarde.
+
+## 2. Preço baseado no concorrente
+
+O preço da vizinha carrega o custo dela — o aluguel dela, a comissão que ela paga, a marca que ela usa. Copiar é herdar um custo que você não conhece e chamar isso de estratégia.
+
+## 3. Comissão definida sem conta
+
+É o erro mais caro porque é o mais difícil de desfazer. Comissão acordada acima do que a margem comporta transforma cada atendimento em prejuízo — e reduzir depois gera conflito e saída de equipe.
+
+## 4. Regras combinadas, nunca escritas
+
+Horário, falta, uso de material, serviço entre a equipe, agenda fechada. Enquanto estiver só na conversa, cada pessoa guarda a versão que lhe convém — e o dono vira quem "mudou as regras".
+
+## 5. O dono dentro da cadeira o dia inteiro
+
+Quem atende quarenta horas por semana não administra: faz caixa e apaga incêndio. O salão cresce até o limite da agenda do dono e para ali.
+
+## 6. Não medir nada
+
+Ticket médio, taxa de ocupação, retorno de cliente e margem por serviço. Sem esses quatro, toda decisão é opinião — inclusive as boas, que não podem ser repetidas porque ninguém sabe por que funcionaram.
+
+## 7. Postura passiva
+
+Esperar o movimento voltar, esperar a economia melhorar, esperar a equipe se motivar sozinha. Mês parado não avisa com antecedência: ele é a soma de decisões que não foram tomadas dois meses antes.
+
+## Como usar esta lista
+
+Marque quantos dos sete acontecem hoje no seu salão. Comece pelo que dá para resolver esta semana — normalmente o 4 e o 6.`
+  },
+  {
+    categoria: 'gestao', emoji: '', ordem: 3,
+    titulo: 'Quanto custa abrir um salão de beleza',
+    resumo: 'A lista completa de investimento, com o bloco que quase todo mundo esquece.',
+    conteudo: `Abrir salão tem quatro blocos de custo. O erro clássico é planejar os três primeiros e esquecer o quarto — que é justamente o que mantém a porta aberta.
+
+## 1. Estrutura física
+
+• Reforma, elétrica e hidráulica
+• Lavatórios, cadeiras, espelhos e bancadas
+• Recepção e área de espera
+• Climatização e iluminação
+• Equipamentos: secadores, chapinhas, autoclave, vaporizador
+
+É onde a maioria gasta mais do que precisa. Cadeira boa dura dez anos; parede de efeito dura uma temporada.
+
+## 2. Legalização
+
+• Abertura da empresa e honorários do contador
+• Alvará de funcionamento e licença sanitária
+• Corpo de bombeiros
+• Exigências específicas do seu município
+• Contrato de locação e caução
+
+## 3. Estoque inicial e marca
+
+• Produto de lavatório, coloração e tratamento
+• Descartáveis, toalhas e capas
+• Identidade visual, fachada e placa
+• Presença digital e material de divulgação
+
+## 4. Capital de giro — o bloco esquecido
+
+Salão novo não fatura no primeiro mês o que vai faturar no décimo. Enquanto isso, aluguel, energia, equipe e produto acontecem normalmente.
+
+**Reserve o equivalente a seis meses de custo operacional.** É a diferença entre atravessar a curva de aprendizado e fechar antes que ela termine.
+
+## Como montar a sua tabela
+
+1. Liste cada item com valor pesquisado, não estimado
+2. Some os quatro blocos
+3. Acrescente 15% para o que você não previu — sempre existe
+4. Só então decida o tamanho do espaço
+
+## O número que importa mais
+
+Antes de assinar o contrato, calcule quanto o salão precisa faturar por mês para se pagar. Se esse número parecer distante da realidade do bairro, o problema está no projeto — não vai ser resolvido no esforço.
+
+## Ação imediata
+
+Monte a lista dos quatro blocos antes de visitar qualquer ponto. O ponto certo depende do orçamento, e não o contrário.`
+  },
+  {
+    categoria: 'gestao', emoji: '', ordem: 4,
+    titulo: 'Curso, consultoria ou sistema: o que cada um resolve',
+    resumo: 'Os três servem para coisas diferentes. Confundir custa tempo e dinheiro.',
+    conteudo: `É comum um gestor fazer curso atrás de curso e continuar sem saber o custo do próprio salão. Não é culpa do curso: é que cada ferramenta resolve um problema diferente.
+
+## Curso resolve o que você não sabe
+
+Serve quando falta conhecimento: como se calcula um preço, o que é margem, como funciona um contrato de parceria, o que é depreciação.
+
+**Limite:** curso entrega método, não entrega o seu número. Terminada a aula, alguém ainda precisa somar produto, comissão, energia e tempo de cadeira — serviço por serviço, todo mês.
+
+## Consultoria resolve o que é específico do seu caso
+
+Serve quando você já entende a lógica mas tem uma situação particular: uma sociedade desequilibrada, uma comissão herdada, uma reestruturação de equipe.
+
+**Limite:** é pontual e proporcional ao tempo de quem atende. Termina, e a rotina volta a depender de você.
+
+## Sistema resolve a repetição
+
+Serve para o que precisa acontecer todo mês, sempre igual: fechamento, comissão, custo por serviço, estoque, agenda, indicadores.
+
+**Limite:** sistema não decide por você. Ele entrega o número certo, na hora certa. A decisão continua sendo sua.
+
+## A ordem que funciona
+
+1. **Sistema** primeiro, para os números existirem
+2. **Curso** para entender o que os números querem dizer
+3. **Consultoria** quando houver uma decisão grande a tomar
+
+Fazer na ordem inversa é o que produz a sensação de já ter estudado bastante e continuar no mesmo lugar.
+
+## O teste
+
+Se você fizesse um curso excelente amanhã, teria tempo de aplicar tudo na mão, todo mês, sem parar? Se a resposta for não, o gargalo não é conhecimento.
+
+## Ação imediata
+
+Escreva as três perguntas que você mais gostaria de responder sobre o seu salão. Se nenhuma delas depende de aprender algo novo, você já sabe por onde começar.`
+  },
 ]
 
 export async function POST(req: NextRequest) {
@@ -1468,12 +1928,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // Remove existentes e insere novos
-    await supabaseAdmin.from('academia_artigos').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    const { data, error } = await supabaseAdmin.from('academia_artigos').insert(ARTIGOS).select()
+    // Insere só o que ainda não existe.
+    //
+    // Antes isto apagava a tabela inteira e reinseria. Funcionava enquanto o
+    // seed era a única origem dos artigos — mas quem edita um texto pelo painel
+    // perdia a edição na próxima rodada. Comparar por título mantém o seed
+    // sendo a fonte da verdade dos artigos novos sem passar por cima do resto.
+    const { data: existentes } = await supabaseAdmin
+      .from('academia_artigos')
+      .select('titulo')
+
+    const jaTem = new Set((existentes || []).map(a => a.titulo))
+    const novos = ARTIGOS.filter(a => !jaTem.has(a.titulo))
+
+    if (!novos.length) {
+      return NextResponse.json({ ok: true, inseridos: 0, total: jaTem.size })
+    }
+
+    const { data, error } = await supabaseAdmin.from('academia_artigos').insert(novos).select()
     if (error) throw error
 
-    return NextResponse.json({ ok: true, inseridos: data?.length })
+    return NextResponse.json({ ok: true, inseridos: data?.length, total: jaTem.size + (data?.length || 0) })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
