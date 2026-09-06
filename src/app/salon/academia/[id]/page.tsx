@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, Clock } from 'lucide-react'
 
 const CAT_LABEL: Record<string, string> = {
   gestao: ' Gestão do Negócio',
+  recepcao: ' Recepção',
   financeiro: ' Gestão Financeira',
   marketing: ' Marketing e Vendas',
   equipe: ' Gestão de Equipe',

@@ -1918,6 +1918,1022 @@ Se você fizesse um curso excelente amanhã, teria tempo de aplicar tudo na mão
 
 Escreva as três perguntas que você mais gostaria de responder sobre o seu salão. Se nenhuma delas depende de aprender algo novo, você já sabe por onde começar.`
   },
+
+  // ─── RECEPÇÃO ─────────────────────────────────────────────────────────────
+  {
+    categoria: 'recepcao', emoji: '', ordem: 1,
+    titulo: 'A rotina da recepção: o que fazer em cada hora do dia',
+    resumo: 'A recepção não é o balcão. É o setor que decide a ocupação da agenda.',
+    conteudo: `Recepção sem rotina definida vira atendimento reativo: responde mensagem, recebe pagamento, atende telefone. Tudo importante — e nenhum desses gera faturamento novo.
+
+A diferença está no que acontece nos intervalos.
+
+## Antes de abrir
+
+• Conferir a agenda do dia inteiro, profissional por profissional
+• Marcar os horários vagos com caneta — são eles o trabalho do dia
+• Ver quem tem aniversário na semana
+• Checar o ambiente: recepção limpa, cheiro, música, café
+
+## Primeira hora
+
+• Confirmar os agendamentos de amanhã, um por um
+• Registrar quem não confirmou para uma segunda tentativa à tarde
+• Avisar a profissional sobre qualquer mudança da agenda dela
+
+Confirmação feita de véspera derruba falta. Feita no mesmo dia, só avisa que você vai perder o horário.
+
+## Durante o movimento
+
+• Receber pelo nome e avisar a profissional que a cliente chegou
+• Oferecer água, café, revista — sempre, não só quando lembra
+• Acompanhar o tempo de espera e avisar antes da cliente perguntar
+• Lançar o serviço na comanda na hora, nunca depois
+
+## No fechamento de cada atendimento
+
+Este é o momento de maior valor do dia inteiro:
+
+1. Perguntar se ficou bom
+2. Reagendar o próximo horário antes de a cliente sair
+3. Oferecer o produto de manutenção do serviço que ela acabou de fazer
+4. Registrar observação relevante na ficha dela
+
+Cliente que sai sem próximo horário marcado volta, em média, muito mais tarde do que a que sai com data definida.
+
+## Nos horários vagos
+
+• Puxar a lista de quem não vem há mais de 60 dias e chamar
+• Preencher buraco da agenda de hoje com quem está na lista de espera
+• Atualizar cadastros incompletos
+
+## No fim do dia
+
+• Conferir o caixa contra os lançamentos
+• Separar o que ficou pendente para amanhã
+• Deixar a agenda do dia seguinte revisada
+
+## Ação imediata
+
+Imprima esta rotina e cole na recepção. O que não está escrito depende de alguém lembrar — e em dia cheio ninguém lembra.`
+  },
+  {
+    categoria: 'recepcao', emoji: '', ordem: 2,
+    titulo: 'O que a recepção fala: respostas para as situações do dia',
+    resumo: 'As dez conversas que mais acontecem, e o que responder em cada uma.',
+    conteudo: `Recepcionista não precisa de script decorado. Precisa de uma direção para as conversas que se repetem todo dia — porque é na hesitação que se perde agendamento.
+
+## 1. "Quanto custa?"
+
+Nunca responda só o número. Preço solto vira comparação de preço.
+
+Pergunte primeiro: comprimento do cabelo, o que ela já fez, o que ela quer alcançar. Depois dê a faixa e explique o que está incluso. Termine sempre com uma pergunta de agendamento.
+
+## 2. "Vou ver e te aviso"
+
+É o "não" educado. Não insista no preço — ofereça data.
+
+"Sem problema. Quer que eu segure um horário na quinta às 14h? Se não der, você me avisa e eu libero."
+
+## 3. "Está caro"
+
+Não baixe o preço. Mostre o que compõe.
+
+Se ela continuar achando caro, ofereça o serviço menor da mesma família, não o mesmo serviço mais barato.
+
+## 4. "Quero desmarcar"
+
+Pergunte o motivo antes de aceitar. Metade das desmarcações é remarcação disfarçada.
+
+"Claro. Prefere que eu já passe para outro dia dessa semana?"
+
+## 5. Cliente atrasada
+
+Combine antes qual é a tolerância e aplique igual para todo mundo. Ligue faltando dez minutos, não depois do horário.
+
+## 6. Cliente insatisfeita no balcão
+
+Escute inteiro, sem interromper e sem justificar. Repita o que entendeu. Nunca decida na frente das outras clientes: leve para um canto e chame quem pode resolver.
+
+## 7. "Consigo hoje?"
+
+Antes de dizer não, olhe a lista de espera e os encaixes possíveis. "Hoje não consigo" fecha a porta. "Hoje eu consigo às 18h, ou amanhã às 10h" mantém aberta.
+
+## 8. Cliente sumida que reaparece
+
+Não cobre a ausência, nem brincando. Receba como quem estava esperando: "Que bom te ver. Vamos fazer o mesmo da última vez ou você quer mudar?"
+
+## 9. Ela pergunta por uma profissional que saiu
+
+Não comente o motivo da saída. Fale do salão: "Ela não está mais com a gente. A [nome] faz exatamente esse trabalho e eu já reservei um horário para você conhecer."
+
+## 10. Na hora de pagar
+
+É o melhor momento de venda do dia. Uma sugestão só, ligada ao serviço feito. Depois, o reagendamento.
+
+## Ação imediata
+
+Escolha as três situações que mais acontecem no seu salão e escreva a resposta com a sua recepção. Escrita junto, ela usa. Escrita por você e entregue pronta, ela esquece.`
+  },
+  {
+    categoria: 'recepcao', emoji: '', ordem: 3,
+    titulo: 'Como a recepção enche a agenda',
+    resumo: 'Reagendamento, encaixe e lista de espera — as três alavancas.',
+    conteudo: `Agenda cheia raramente vem de cliente nova. Vem de três movimentos que a recepção faz, ou deixa de fazer, todos os dias.
+
+## Alavanca 1 — Reagendar antes de a cliente sair
+
+É a mais barata e a mais esquecida.
+
+A cliente está satisfeita, com o cabelo pronto, na sua frente. É o momento de maior disposição que ela vai ter no mês inteiro.
+
+**Como fazer:** não pergunte "quer marcar o próximo?" — a resposta fácil é "depois eu vejo". Pergunte com data: "Seu retorno é daqui a quatro semanas, dia 12. Prefere de manhã ou à tarde?"
+
+## Alavanca 2 — Encaixar em cima do buraco
+
+Todo dia aparece um buraco: alguém desmarca, alguém falta, um serviço termina antes.
+
+**Como fazer:** tenha sempre à mão uma lista curta de quem topa ser chamada em cima da hora. Cliente que mora perto, que faz serviço rápido, que já disse que tem flexibilidade. Uma mensagem em três minutos preenche o que ficaria vazio.
+
+## Alavanca 3 — Lista de espera de verdade
+
+Lista de espera não é o papel onde se anota nome. É uma lista que alguém olha.
+
+**Como fazer:** registre nome, serviço desejado, profissional e a faixa de horário que serve. Sem esses quatro campos, ninguém consegue usar a lista quando o buraco aparece.
+
+## O que atrapalha as três
+
+• **Agenda só na cabeça da profissional.** A recepção não consegue encaixar o que não enxerga.
+• **Regra de bloqueio indefinida.** Se cada uma fecha a agenda quando quer, a recepção não sabe o que pode oferecer.
+• **Tempo de serviço errado no sistema.** Se a escova está marcada como 30 minutos e leva 50, o encaixe atrasa tudo e a recepção para de encaixar.
+
+## Os números que a recepção deveria acompanhar
+
+• Taxa de reagendamento na saída — quantas saem com próximo horário marcado
+• Horários vagos preenchidos no mesmo dia
+• Clientes chamadas da lista de espera por semana
+
+Sem medir, essas três alavancas dependem do humor do dia.
+
+## Ação imediata
+
+Comece pela primeira. Meça, por uma semana, quantas clientes saem do salão com o próximo horário marcado. Esse número costuma ser bem menor do que o esperado — e é o mais fácil de subir.`
+  },
+  {
+    categoria: 'recepcao', emoji: '', ordem: 4,
+    titulo: 'Meta e bonificação da recepção',
+    resumo: 'Como premiar o que a recepção controla, sem transformar o balcão em pressão.',
+    conteudo: `Recepção sem meta vira setor de apoio. Recepção com meta errada vira vendedora chata. A diferença está em premiar só aquilo que ela consegue controlar.
+
+## O erro mais comum
+
+Dar à recepção a meta de faturamento geral do salão. Ela não controla a agenda das profissionais, nem o preço, nem a qualidade do serviço. Meta sobre o que não se controla não motiva: frustra.
+
+## O que a recepção realmente controla
+
+• Taxa de reagendamento na saída
+• Preenchimento de horário vago no mesmo dia
+• Confirmação de agendamento feita com antecedência
+• Venda de produto de manutenção
+• Retorno de cliente inativa que ela chamou
+
+Esses cinco são medíveis e dependem diretamente do trabalho dela.
+
+## Como montar
+
+**Escolha no máximo três indicadores.** Mais que isso vira planilha e ninguém acompanha.
+
+Sugestão de partida:
+
+1. **Reagendamento na saída** — peso maior, porque é o que mais sustenta a agenda
+2. **Venda de produto** — em unidades ou em valor
+3. **Retorno de inativas** — número de clientes que voltaram por contato dela
+
+## Quanto pagar
+
+A bonificação precisa ser sentida e caber na margem. Duas regras práticas:
+
+• O valor total do bônus não pode ultrapassar a margem gerada pelo resultado extra
+• O bônus tem que ser previsível: ela precisa saber, no dia 15, quanto já conquistou
+
+## O que evita o efeito chato
+
+• Sugestão ligada ao serviço feito, nunca oferta aleatória
+• Uma sugestão por atendimento, não três
+• Nada de comissão sobre desconto: se a venda saiu com desconto, o bônus acompanha o desconto
+
+## Acompanhamento
+
+Meta comunicada no dia 1 e cobrada no dia 30 não muda comportamento. Mostre o parcial toda semana — é o acompanhamento que faz o número subir, não o prêmio.
+
+## Ação imediata
+
+Escolha um indicador só para começar, o de reagendamento. Rode 30 dias, veja o efeito na agenda e só então acrescente o segundo.`
+  },
+  {
+    categoria: 'recepcao', emoji: '', ordem: 5,
+    titulo: 'Como treinar uma recepcionista nova em 30 dias',
+    resumo: 'O plano semana a semana, para ela não aprender só olhando.',
+    conteudo: `A forma mais comum de treinar recepção é sentar a pessoa ao lado de alguém e esperar que ela absorva. Funciona em parte, e leva meses. Com um plano, leva quatro semanas.
+
+## Semana 1 — Conhecer o salão
+
+Ela não atende ainda. Observa e estuda.
+
+• Todos os serviços: o que é, quanto tempo leva, para quem serve
+• A tabela de preços inteira, com o que está incluso em cada item
+• Quem faz o quê na equipe
+• As regras do espaço
+• O sistema: onde agenda, onde lança, onde consulta
+
+**Ao fim da semana:** ela deve conseguir explicar cinco serviços sem consultar nada.
+
+## Semana 2 — Acompanhar
+
+Ela fica ao lado, ouve os atendimentos e assume as tarefas de menor risco.
+
+• Receber e acomodar a cliente
+• Oferecer água e café
+• Avisar a profissional
+• Registrar cadastro
+
+**Ao fim da semana:** ela recebe sozinha, com alguém por perto.
+
+## Semana 3 — Assumir com rede
+
+Agora ela atende, e alguém confere.
+
+• Agendar por telefone e mensagem
+• Lançar comanda
+• Confirmar agendamentos do dia seguinte
+• Fazer o reagendamento na saída
+
+**Ao fim da semana:** revisar juntos os agendamentos que ela fez, procurando erro de tempo e de profissional.
+
+## Semana 4 — Autonomia com acompanhamento
+
+Ela toca o dia. Você acompanha os números, não cada atendimento.
+
+• Rotina completa, da abertura ao fechamento
+• Conferência de caixa com supervisão
+• Primeiras ações de lista de espera
+
+**Ao fim da semana:** conversa de avaliação com pontos fortes, pontos a desenvolver e o que muda no mês seguinte.
+
+## O que precisa estar pronto antes do primeiro dia
+
+• A rotina da recepção escrita
+• A tabela de preços atualizada
+• As respostas para as situações comuns
+• O acesso dela no sistema, com a permissão certa
+
+Sem esses quatro, o treinamento vira improviso e você repete tudo na próxima contratação.
+
+## Ação imediata
+
+Monte a pasta com esses quatro documentos uma vez. Ela serve para todas as próximas recepcionistas.`
+  },
+
+  // ─── EQUIPE (terceira leva) ───────────────────────────────────────────────
+  {
+    categoria: 'equipe', emoji: '', ordem: 9,
+    titulo: 'O papel do gerente: o que ele decide e o que sobe',
+    resumo: 'Gerente sem alçada definida vira mensageiro entre a equipe e você.',
+    conteudo: `Contratar gerente não resolve nada sozinho. O que resolve é definir o que essa pessoa decide sem perguntar — e, principalmente, o que ela não decide.
+
+## O sintoma de alçada indefinida
+
+A equipe pula o gerente e vai direto em você. E ele descobre as decisões depois, junto com todo mundo. A partir daí ninguém mais o leva a sério, e a função vira custo sem retorno.
+
+## O que o gerente deve decidir sozinho
+
+• Encaixe, remarcação e bloqueio de agenda
+• Cortesia dentro de um limite de valor definido
+• Compra de reposição até um teto mensal
+• Escala do dia e cobertura de falta
+• Resolução de reclamação até um valor de desconto ou refação
+
+Se você precisa aprovar cada um desses, não existe gerente: existe alguém organizando a sua fila de aprovações.
+
+## O que sempre sobe para o dono
+
+• Contratação e desligamento
+• Mudança de preço e de comissão
+• Investimento e compra fora da rotina
+• Alteração de regra do espaço
+• Conflito que envolva sócio ou família
+
+## O que ele acompanha toda semana
+
+• Ocupação da agenda por profissional
+• Ticket médio
+• Faltas e atrasos
+• Reclamações abertas
+• Estoque em nível crítico
+
+Gerente que só apaga incêndio não gerencia. Ele precisa de uma lista de números que é obrigado a olhar.
+
+## Como comunicar à equipe
+
+A alçada precisa ser anunciada na frente de todos, uma vez, com clareza: "a partir de hoje, isto, isto e isto se resolve com ela; ela decide e me informa depois".
+
+Sem esse anúncio, cada pessoa testa o limite individualmente — e você acaba desautorizando o gerente sem perceber.
+
+## A regra que sustenta tudo
+
+Quando alguém passar por cima dele e vier falar com você, a resposta é sempre a mesma: "já falou com ela?". Duas ou três vezes bastam para a estrutura se firmar.
+
+## Ação imediata
+
+Escreva as duas listas — o que ele decide e o que sobe — em uma folha só. É o documento mais importante da função.`
+  },
+  {
+    categoria: 'equipe', emoji: '', ordem: 10,
+    titulo: 'Como treinar a equipe sem parar o salão',
+    resumo: 'Treinamento que depende de fechar a casa não acontece. Veja o formato que acontece.',
+    conteudo: `Todo dono sabe que precisa treinar a equipe. Quase nenhum consegue, porque o plano sempre esbarra na mesma pergunta: e quem atende enquanto isso?
+
+A saída não é achar um dia livre. É mudar o formato.
+
+## Regra 1 — Curto e frequente vence longo e raro
+
+Trinta minutos por semana rendem mais que quatro horas por trimestre. Assunto pequeno, aplicado no dia seguinte, fixa. Treinamento longo vira evento e some.
+
+## Regra 2 — Use o horário morto
+
+Terça de manhã, quarta antes do movimento, o começo do dia em mês fraco. O horário que hoje não gera receita é o mais barato que existe para treinar.
+
+## Regra 3 — Um tema por vez
+
+Escolha um assunto por mês e trabalhe ele em quatro encontros curtos. Exemplo de um mês sobre venda no atendimento:
+
+• Semana 1 — o que oferecer para cada serviço
+• Semana 2 — como oferecer sem parecer insistente
+• Semana 3 — o que responder quando a cliente diz não
+• Semana 4 — revisão com casos reais da semana
+
+## Regra 4 — Quem ensina é de dentro, quando dá
+
+A profissional que faz a melhor escova ensina escova. Além de sair de graça, valoriza quem ensina e cria referência interna. Guarde o treinamento externo para o que ninguém na casa domina.
+
+## Regra 5 — Todo treinamento termina com uma tarefa
+
+Sem tarefa, o encontro vira conversa. A tarefa precisa ser pequena e verificável: "esta semana, cada uma oferece o produto de manutenção para toda cliente de coloração".
+
+## Calendário do ano
+
+Monte doze temas em janeiro e siga. Sugestão de eixos que se repetem bem:
+
+• Técnica e novidade de produto
+• Atendimento e experiência
+• Venda e ticket médio
+• Organização, higiene e processo
+
+## O erro que mata o hábito
+
+Desmarcar quando o dia está cheio. Se desmarcar duas vezes, a equipe entende que aquilo é opcional — e nunca mais volta a ser prioridade.
+
+## Ação imediata
+
+Marque os quatro encontros deste mês na agenda agora, com dia e hora. Tema definido depois; o horário reservado primeiro.`
+  },
+  {
+    categoria: 'equipe', emoji: '', ordem: 11,
+    titulo: 'Organograma do salão: quem responde pelo quê',
+    resumo: 'Sem dono definido, toda tarefa é de todo mundo — e não é de ninguém.',
+    conteudo: `Salão pequeno costuma achar que organograma é coisa de empresa grande. Mas organograma não é hierarquia: é a lista de quem responde por cada coisa.
+
+E ela existe mesmo quando não está escrita. A diferença é que, não escrita, o nome que aparece em todas as linhas é o seu.
+
+## Como montar em uma folha
+
+Liste as áreas do salão e coloque um nome em cada uma. Um nome, não dois.
+
+• **Agenda e recepção** — quem responde pela ocupação
+• **Estoque e compras** — quem controla, quem autoriza
+• **Financeiro** — quem lança, quem confere, quem paga
+• **Equipe** — quem acompanha desempenho e resolve conflito
+• **Limpeza e ambiente** — quem responde pelo padrão do espaço
+• **Redes sociais e comunicação** — quem posta, quem responde mensagem
+• **Manutenção** — quem chama o técnico e acompanha
+
+## A regra do responsável único
+
+Uma área pode ter várias pessoas executando. Mas só uma responde por ela.
+
+Quando duas pessoas respondem, na prática nenhuma responde: cada uma supõe que a outra fez. É a causa mais comum de "achei que você tinha resolvido".
+
+## Separe executar de decidir
+
+Para cada área, defina dois nomes:
+
+• Quem **faz** no dia a dia
+• Quem **decide** quando o padrão não se aplica
+
+Muitas vezes é a mesma pessoa. Quando não é, precisa estar claro — senão a decisão sempre volta para você.
+
+## Onde as áreas costumam ficar órfãs
+
+Três áreas quase nunca têm dono em salão pequeno, e são justamente as que mais custam quando falham:
+
+1. **Conferência do caixa** — todo mundo fecha, ninguém confere
+2. **Cadastro de cliente** — todo mundo cadastra, ninguém corrige
+3. **Manutenção preventiva** — só aparece quando quebra
+
+## Como usar no dia a dia
+
+Cole a folha em algum lugar visível. Quando alguém perguntar "com quem eu falo sobre isso?", a resposta está na parede, não em você.
+
+## Ação imediata
+
+Escreva as áreas e coloque um nome em cada. Se o seu nome aparecer em mais de três, você já achou o próximo passo do plano de sair da cadeira.`
+  },
+
+  // ─── OPERAÇÃO (segunda leva) ──────────────────────────────────────────────
+  {
+    categoria: 'operacao', emoji: '', ordem: 6,
+    titulo: 'Como escrever o POP do seu salão',
+    resumo: 'Procedimento Operacional Padrão sem complicação: o passo a passo do passo a passo.',
+    conteudo: `POP é a descrição escrita de como uma tarefa é feita no seu salão. Serve para que o resultado seja o mesmo independentemente de quem faz — e para que treinar alguém novo não dependa da sua memória.
+
+## O que ele não é
+
+Não é manual de cem páginas, não engessa o estilo de ninguém e não substitui técnica. É o mínimo que precisa acontecer sempre.
+
+## Por onde começar
+
+Não tente escrever tudo. Comece pelas três tarefas onde o erro custa mais caro no seu salão. Normalmente são:
+
+1. Abertura e fechamento
+2. Atendimento no lavatório
+3. Esterilização e descarte
+
+## A estrutura de um POP
+
+Cada um cabe em uma folha e tem cinco partes:
+
+• **Nome da tarefa** — o que é
+• **Responsável** — quem faz
+• **Quando** — em que momento acontece
+• **Passo a passo** — a sequência, em frases curtas de ação
+• **Como saber que ficou certo** — o resultado esperado, em uma linha
+
+A última parte é a que quase todo mundo esquece, e é a que permite conferir.
+
+## Como escrever sem travar
+
+Não escreva de cabeça. Acompanhe alguém executando a tarefa e anote o que a pessoa faz, na ordem em que faz. Depois limpe: tire o que é hábito pessoal, mantenha o que é necessário.
+
+Quinze minutos por tarefa, uma tarefa por semana. Em três meses o salão inteiro está documentado.
+
+## Como fazer virar rotina
+
+• Deixe o POP onde a tarefa acontece, não numa pasta
+• Use na integração de todo mundo que entra
+• Revise quando mudar produto, equipamento ou processo
+• Quando algo der errado, pergunte primeiro se o POP estava certo — antes de culpar a pessoa
+
+## O teste
+
+Peça para alguém que nunca fez a tarefa executá-la só com o papel na mão. O que ela travar é o que está faltando no texto.
+
+## Ação imediata
+
+Escolha a rotina de abertura e escreva hoje. É a mais fácil, a mais usada, e a que mostra à equipe para que serve o formato.`
+  },
+  {
+    categoria: 'operacao', emoji: '', ordem: 7,
+    titulo: 'Reunião de equipe: as pautas do ano inteiro',
+    resumo: 'Um tema por mês, definido em janeiro. Acabou a reunião que vira desabafo.',
+    conteudo: `Reunião sem pauta tem sempre o mesmo roteiro: alguém reclama, alguém se defende, todo mundo sai cansado e nada muda. Com um tema definido por mês, ela vira ferramenta de gestão.
+
+## O formato que funciona
+
+• **Uma hora, no máximo.** Passou disso, a atenção acabou
+• **Um tema por reunião.** Assunto solto não gera decisão
+• **Números primeiro, tema depois.** Cinco minutos de resultado do mês antes de qualquer assunto
+• **Termina com tarefa.** Quem faz, o quê e até quando
+
+## A estrutura de cada encontro
+
+1. Resultado do mês anterior — ocupação, ticket médio, retorno de cliente
+2. O que foi combinado na reunião passada e o que aconteceu
+3. O tema do mês
+4. Combinados novos, escritos na frente de todos
+5. Uma volta rápida: cada pessoa fala uma coisa que precisa
+
+O item 2 é o que dá seriedade ao processo. Sem ele, tudo o que é combinado morre na porta.
+
+## Doze temas para o ano
+
+• **Janeiro** — metas do ano e regras do espaço
+• **Fevereiro** — padrão de atendimento
+• **Março** — venda no atendimento: o que oferecer em cada serviço
+• **Abril** — organização, higiene e esterilização
+• **Maio** — datas do meio do ano e preparo de agenda cheia
+• **Junho** — controle de produto e desperdício
+• **Julho** — desenvolvimento: o que cada uma quer aprender
+• **Agosto** — experiência da cliente, do estacionamento ao pós-atendimento
+• **Setembro** — recuperação de cliente que sumiu
+• **Outubro** — preparação para o fim de ano
+• **Novembro** — escala, folga e combinados de dezembro
+• **Dezembro** — fechamento do ano, reconhecimento e prévia do próximo
+
+## O que não fazer na reunião
+
+• Corrigir uma pessoa específica na frente das outras — isso é conversa individual
+• Anunciar mudança de comissão sem ter conversado antes com cada uma
+• Trazer problema sem trazer a decisão junto
+
+## Se a equipe não participa
+
+Quase sempre é porque nada do que já foi dito ali virou realidade. Cumpra um combinado pequeno e a participação volta sozinha.
+
+## Ação imediata
+
+Marque as doze datas do ano agora, uma por mês. Data reservada com antecedência é o que impede a reunião de ser adiada para sempre.`
+  },
+  {
+    categoria: 'operacao', emoji: '', ordem: 8,
+    titulo: 'Vigilância sanitária: a lista do que precisa estar em ordem',
+    resumo: 'Ninguém é notificado por não saber. É notificado por não ter.',
+    conteudo: `Fiscalização não avisa que vem. E a maior parte das notificações não é por algo grave: é por documento que não existe ou registro que ninguém fazia.
+
+Esta é a lista para conferir antes, e não depois.
+
+## Documentação do estabelecimento
+
+• Alvará de funcionamento vigente
+• Licença sanitária
+• Certificado do corpo de bombeiros
+• Contrato de coleta de resíduos, quando o município exigir
+• Comprovante de controle de pragas
+
+## Esterilização
+
+É o ponto mais cobrado em salão com serviço de unhas e barbearia.
+
+• Autoclave com manutenção em dia
+• Registro de cada ciclo, com data e responsável
+• Teste de eficácia na periodicidade exigida
+• Material embalado, datado e guardado em local fechado
+• Separação clara entre o que está limpo e o que está sujo
+
+Sem o registro dos ciclos, ter a autoclave não comprova nada.
+
+## Produtos
+
+• Todos com registro ou notificação válida
+• Dentro da validade, inclusive os fracionados
+• Rótulo legível no que foi transferido para outro frasco
+• Ficha de segurança dos produtos químicos acessível
+• Nada proibido em circulação — a lista muda, e conferir é trabalho de estoque
+
+## Descarte
+
+• Lixo comum separado do lixo contaminado
+• Recipiente adequado para perfurocortante
+• Descarte de químicos conforme a regra do município
+
+## Estrutura
+
+• Pia com água corrente e sabonete líquido na área de atendimento
+• Papel toalha descartável
+• Superfícies laváveis
+• Banheiro com o mínimo exigido
+• Ventilação adequada nas áreas de química
+
+## Pessoas
+
+• EPI disponível e entregue com registro de recebimento
+• Ficha de anamnese assinada nos serviços que exigem
+• Comprovação de treinamento em biossegurança, quando aplicável
+
+## Como transformar em rotina
+
+Faça disto um check list mensal com responsável definido. Conferido todo mês, a visita da fiscalização deixa de ser um evento.
+
+## Ação imediata
+
+Passe a lista hoje e marque só o que falta. O que falta costuma ser papel, não estrutura — e papel se resolve numa tarde.`
+  },
+  {
+    categoria: 'operacao', emoji: '', ordem: 9,
+    titulo: 'A rotina do gestor: o que olhar por dia, semana e mês',
+    resumo: 'Gestão não é estar disponível o tempo todo. É olhar as coisas certas na hora certa.',
+    conteudo: `A maior parte dos donos administra por interrupção: resolve o que aparece. O resultado é sensação de trabalhar o dia inteiro sem sair do lugar, porque o urgente sempre expulsa o importante.
+
+A saída é ter uma rotina com dia e hora marcados.
+
+## Todo dia — 15 minutos
+
+• Agenda de amanhã: quantos horários vagos
+• Caixa de ontem: conferido e batendo
+• Alguma reclamação aberta
+• Alguma falta ou atraso para tratar
+
+Feito de manhã, antes do movimento. É diagnóstico, não é resolver.
+
+## Toda semana — 1 hora
+
+Escolha um dia fixo e proteja o horário.
+
+• Ocupação por profissional na semana que passou
+• Ticket médio da semana
+• Contas a pagar dos próximos 15 dias
+• Estoque em nível crítico
+• Uma conversa individual com alguém da equipe
+• Encontro curto de treinamento
+
+## Todo mês — meio período
+
+• Fechamento: faturamento, custo direto, custo operacional, resultado
+• Margem por serviço nos três serviços de maior volume
+• Clientes que não voltam há mais de 90 dias
+• Reunião de equipe com o tema do mês
+• Meta do mês seguinte, distribuída por profissional
+
+## A cada seis meses
+
+• Revisão da tabela de preços contra o custo atual
+• Revisão da comissão contra a margem
+• Avaliação formal de cada profissional
+• Conferência de documentos e licenças
+
+## A regra que faz funcionar
+
+Bloqueie na agenda como se fosse cliente. Horário de gestão que só acontece quando sobra tempo nunca acontece — porque nunca sobra.
+
+## O sinal de que está funcionando
+
+Você começa a saber dos problemas antes de eles virarem urgência. É essa a diferença entre administrar e apagar incêndio.
+
+## Ação imediata
+
+Marque o bloco semanal de uma hora. Um só. Depois de um mês rodando, acrescente o diário de quinze minutos.`
+  },
+
+  // ─── MARKETING (terceira leva) ────────────────────────────────────────────
+  {
+    categoria: 'marketing', emoji: '', ordem: 7,
+    titulo: 'Planejamento anual: da meta do ano à ação da semana',
+    resumo: 'Meta anual que não vira tarefa de segunda-feira é só um número bonito.',
+    conteudo: `Quase todo salão define uma meta em janeiro e não olha mais para ela. Não é falta de disciplina: é que faltou o caminho entre o número do ano e o que se faz na segunda-feira.
+
+## Passo 1 — O número do ano sai do custo, não do desejo
+
+Comece pelo que o salão precisa: custo operacional do ano, mais o lucro que você quer, mais a reserva que pretende formar. Esse é o piso.
+
+Depois olhe o histórico. Se o número do piso for muito distante do ano anterior, o problema não é meta — é estrutura.
+
+## Passo 2 — Divida por mês, com peso
+
+Dividir por doze é o erro clássico. Dezembro não é igual a fevereiro.
+
+Use o histórico do ano passado para dar peso a cada mês. Se dezembro representou 12% do ano e fevereiro 6%, mantenha essa proporção na meta nova.
+
+## Passo 3 — Divida por profissional
+
+A meta do salão sozinha não move ninguém. Cada pessoa precisa saber o número dela, e ele precisa ser possível: considere dias trabalhados, serviços que ela faz e ticket médio dela.
+
+## Passo 4 — Transforme em ação de semana
+
+Este é o passo que quase todo mundo pula.
+
+Para cada mês, defina no máximo três ações concretas. Exemplo para um mês:
+
+• Semana 1 — chamar todas as clientes inativas há mais de 90 dias
+• Semana 2 — campanha do serviço de maior margem
+• Semana 3 — ação de ocupação para terça e quarta
+• Semana 4 — reagendamento de fim de mês
+
+## Passo 5 — Acompanhamento visível
+
+Meta que a equipe só vê no dia 30 não muda comportamento. Parcial na parede, atualizado toda semana, muda.
+
+## O calendário que ajuda
+
+Marque no plano as datas que já existem: início de estação, feriados, volta às aulas, fim de ano e o aniversário do salão. Ação preparada com 30 dias custa metade e rende o dobro de uma montada na semana anterior.
+
+## Ação imediata
+
+Pegue o faturamento mês a mês do ano passado e calcule o peso de cada mês. É a base de tudo, e leva vinte minutos.`
+  },
+  {
+    categoria: 'marketing', emoji: '', ordem: 8,
+    titulo: 'Serviço novo: como decidir se entra na sua tabela',
+    resumo: 'Nem toda tendência cabe no seu salão. Cinco perguntas antes de comprar o equipamento.',
+    conteudo: `Toda temporada aparece um serviço novo, com fornecedor animado e colega dizendo que está vendendo muito. Algumas dessas novidades sustentam o salão por anos. Outras viram equipamento encostado.
+
+Estas cinco perguntas separam uma coisa da outra.
+
+## 1. A minha cliente pede, ou eu que quero oferecer?
+
+Olhe o histórico: quantas pessoas perguntaram por isso nos últimos meses? Demanda existente é o sinal mais confiável que existe. Demanda imaginada é o mais caro.
+
+## 2. Qual o custo real da primeira execução?
+
+Some tudo antes de decidir:
+
+• Equipamento
+• Curso ou formação de quem vai executar
+• Estoque inicial de produto
+• Tempo de cadeira que o serviço ocupa
+
+O custo do treinamento costuma ser esquecido e costuma ser o maior.
+
+## 3. Cabe no meu espaço e na minha agenda?
+
+Serviço longo em salão com poucas cadeiras pode render bem por atendimento e mal por hora. Faça a conta por hora de cadeira, não por serviço.
+
+## 4. Quantos atendimentos por mês pagam o investimento?
+
+Divida o investimento total pela margem do serviço. O resultado é quantos atendimentos você precisa só para empatar.
+
+Se esse número for maior do que a demanda que você identificou na pergunta 1, a resposta já apareceu.
+
+## 5. Combina com o que o salão é?
+
+Serviço que não conversa com o resto da tabela confunde a cliente e não é indicado por ninguém da equipe. Nem toda oportunidade é sua oportunidade.
+
+## Como testar sem investir
+
+• Ofereça primeiro em formato menor, com o equipamento alugado ou emprestado
+• Faça uma lista de espera antes de comprar: se não encher, você economizou
+• Comece com uma profissional só, para medir com clareza
+
+## Quando tirar um serviço da tabela
+
+A mesma conta serve para o contrário. Serviço com volume baixo e margem baixa ocupa espaço na tabela, no estoque e na cabeça da equipe. Retirar também é decisão de gestão.
+
+## Ação imediata
+
+Antes do próximo lançamento, responda às cinco perguntas por escrito. Se travar em qualquer uma, é ali que está o risco.`
+  },
+
+  // ─── ATENDIMENTO (segunda leva) ───────────────────────────────────────────
+  {
+    categoria: 'atendimento', emoji: '', ordem: 5,
+    titulo: 'Mimos e cortesias: encantar sem furar a margem',
+    resumo: 'Cada item é barato. O total do mês costuma ser um susto.',
+    conteudo: `Café, água aromatizada, bombom na saída, brinde de aniversário, taça no sábado. Tudo isso constrói experiência — e tudo isso é despesa que quase nenhum salão soma.
+
+O objetivo aqui não é cortar. É saber quanto custa, para poder escolher.
+
+## Primeiro: descubra o número
+
+Some tudo o que foi gasto com mimo no mês passado e divida pelo número de atendimentos. Você chega ao custo do mimo por cliente.
+
+Com esse número na mão, a conversa muda: deixa de ser "está caro?" e passa a ser "vale este valor por cliente?".
+
+## Defina um teto
+
+Escolha um percentual do faturamento — normalmente algo pequeno — e trate como orçamento fechado do mês. Dentro do teto, gaste com liberdade. Fora dele, precisa de decisão.
+
+Sem teto, o gasto cresce sozinho, porque cada item isolado sempre parece barato.
+
+## O que gera mais efeito por real gasto
+
+Nem todo mimo vale o mesmo. Os que mais são lembrados:
+
+• **Personalização** — a cliente ser recebida pelo nome e ter a preferência dela anotada custa zero e ganha de qualquer brinde
+• **Conforto no momento certo** — água antes da química, apoio para o pescoço no lavatório
+• **Cuidado com o tempo dela** — avisar do atraso antes de ela perguntar
+• **Lembrança útil** — amostra do produto de manutenção do serviço que ela acabou de fazer, que ainda ajuda a vender depois
+
+Os que menos rendem costumam ser os mais caros: brinde genérico sem relação com o serviço.
+
+## Cortesia é outra coisa
+
+Mimo é experiência. Cortesia é serviço não cobrado — e tem custo maior, porque envolve produto, cadeira e, às vezes, comissão.
+
+Cortesia precisa de três regras escritas:
+
+1. Em que situação ela acontece
+2. Qual o limite de valor
+3. Se paga comissão ou não
+
+Sem isso, cada exceção vira precedente e a conta cresce sem ninguém perceber.
+
+## Ação imediata
+
+Levante o gasto com mimos do mês passado. Só o fato de existir um número já muda a forma como as decisões são tomadas.`
+  },
+  {
+    categoria: 'atendimento', emoji: '', ordem: 6,
+    titulo: 'Ficha de anamnese: o que perguntar e por quê',
+    resumo: 'Protege juridicamente e melhora o atendimento. Só funciona se for antes.',
+    conteudo: `Anamnese é a conversa registrada antes do serviço. Em procedimento químico, é o documento que separa um problema de um processo.
+
+E, fora o lado jurídico, é o que permite que a próxima profissional saiba o que foi feito.
+
+## Quando é obrigatória na prática
+
+• Toda química: coloração, descoloração, alisamento, permanente
+• Procedimentos com risco de reação: cílios, sobrancelha, depilação
+• Qualquer serviço em cliente que relate alergia ou tratamento de saúde
+
+## O que perguntar
+
+**Sobre a saúde**
+
+• Alergia a algum produto, medicamento ou material
+• Problema de pele ou couro cabeludo em tratamento
+• Gestação ou amamentação
+• Uso de medicação de uso contínuo
+• Quimioterapia ou tratamento recente
+
+**Sobre o histórico do cabelo**
+
+• O que foi feito nos últimos doze meses, com qual produto
+• Quando foi a última química e onde foi feita
+• Uso de henna, produto de progressiva caseira ou tintura de farmácia
+• Se já teve reação a algum procedimento
+
+A pergunta sobre produto caseiro é a mais importante e a que mais gente esquece — é ela que evita a maior parte dos acidentes de química.
+
+**Sobre a expectativa**
+
+• O que ela quer alcançar
+• Quanto tempo tem disponível hoje
+• Quanto pretende investir na manutenção
+
+## O que precisa constar
+
+• Data e assinatura da cliente
+• Nome de quem atendeu
+• Registro do teste de mecha, quando feito
+• Observação do que foi orientado, inclusive quando a orientação foi contrária ao que ela queria
+
+Esse último item é o que protege de verdade: registrar que o risco foi explicado e que ela optou por seguir.
+
+## O erro que anula tudo
+
+Preencher depois. Ficha assinada após o problema não tem valor nenhum — e ainda demonstra que o processo não existia.
+
+## Como não virar burocracia
+
+Ficha curta, preenchida na primeira visita e apenas atualizada nas seguintes. A partir da segunda vez, são trinta segundos.
+
+## Ação imediata
+
+Monte uma ficha só, com esses três blocos. Comece a usar em toda química a partir de amanhã — sem exceção, inclusive nas clientes antigas.`
+  },
+  {
+    categoria: 'atendimento', emoji: '', ordem: 7,
+    titulo: 'As perguntas que revelam o que a cliente quer',
+    resumo: 'Ela raramente diz o que precisa. Diz o que sabe pedir.',
+    conteudo: `A cliente chega pedindo escova. Se ninguém perguntar mais nada, ela sai com uma escova — e o salão nunca fica sabendo que ela tem um casamento em três semanas, que odeia o próprio corte e que compraria o produto se alguém explicasse qual usar.
+
+Não é venda forçada. É descobrir o que ela veio buscar de verdade.
+
+## Antes do serviço
+
+• O que te trouxe aqui hoje?
+• Você tem algum evento ou compromisso nas próximas semanas?
+• O que você mais gosta no seu cabelo hoje? E o que menos gosta?
+• Tem alguma coisa que já te fizeram e você não quer repetir?
+
+A pergunta sobre o que ela não quer repetir vale por todas as outras. É ali que aparece a insatisfação que ela não ia mencionar.
+
+## Sobre a rotina dela
+
+• Quanto tempo você tem de manhã para arrumar o cabelo?
+• Você usa secador e prancha em casa? Com que frequência?
+• Que produtos você tem hoje em casa?
+
+Essas três definem se o corte proposto é sustentável e abrem a conversa de produto de forma natural — porque a recomendação passa a responder a um problema que ela mesma descreveu.
+
+## Durante o serviço
+
+• Está bom o volume, ou você prefere mais leve?
+• A temperatura da água está confortável?
+• Você prefere conversar ou aproveitar para descansar?
+
+A última pergunta melhora a experiência mais do que qualquer mimo. Nem toda cliente quer conversa, e quase ninguém pergunta.
+
+## No fim
+
+• Ficou do jeito que você imaginava?
+• Quer que eu já deixe marcado o seu retorno?
+• Quer que eu anote o que usamos hoje, para você lembrar?
+
+## O que fazer com as respostas
+
+Registrar. Uma anamnese e uma conversa excelentes que ficam só na memória de quem atendeu não servem quando a profissional muda, falta ou sai.
+
+Ficha da cliente com preferência, histórico e observação é o que transforma bom atendimento em padrão do salão — e não em qualidade de uma pessoa só.
+
+## Ação imediata
+
+Escolha três perguntas desta lista e combine com a equipe que elas serão feitas em todo atendimento desta semana. Depois compare o ticket médio.`
+  },
+
+  // ─── GESTÃO (segunda leva) ────────────────────────────────────────────────
+  {
+    categoria: 'gestao', emoji: '', ordem: 5,
+    titulo: 'Salão em casa: como profissionalizar',
+    resumo: 'Atender em casa reduz custo. Também esconde custo — e é aí que mora o risco.',
+    conteudo: `Atender em casa é um modelo legítimo e, para muita gente, o mais rentável. O problema é quando ele funciona por parecer barato, e não por ser lucrativo.
+
+## O custo que some
+
+Sem aluguel separado, é comum concluir que o custo é quase zero. Não é.
+
+Continua existindo:
+
+• Energia, água e gás usados no atendimento
+• Internet e telefone
+• Produto e descartável
+• Depreciação de cadeira, lavatório e secador
+• O seu tempo, que tem valor
+
+**Como resolver:** estime a fração da casa usada para o trabalho e trate essa fração como custo do negócio. Se o espaço ocupa um quarto de casa, um quarto da conta de luz é do salão.
+
+Sem isso, o preço nasce baixo e a conta parece boa por anos, até você tentar se mudar para um ponto comercial e descobrir que o preço não sustenta.
+
+## O que precisa estar regularizado
+
+• Empresa aberta, mesmo em regime simplificado
+• Consulta prévia na prefeitura: nem toda zona permite
+• Regra do condomínio, quando houver
+• Descarte adequado de resíduos
+• Estrutura mínima de higiene e esterilização — a exigência sanitária é a mesma de um salão de rua
+
+## O que separa o profissional do informal
+
+Não é o tamanho do espaço. É o processo:
+
+• Agenda com horário definido, não "aparece que eu atendo"
+• Tabela de preços escrita
+• Ficha de cliente e anamnese
+• Espaço de atendimento separado da área da família
+• Entrada e horário combinados
+
+## Os dois riscos maiores
+
+**1. A casa invade o trabalho.** Interrupção de família, animal circulando, campainha. Cada uma delas custa uma cliente que não volta e não explica por quê.
+
+**2. O trabalho invade a casa.** Atender fora do horário porque "já estou aqui mesmo" é o começo de trabalhar todos os dias sem perceber.
+
+Horário definido resolve os dois.
+
+## Quando faz sentido sair
+
+Quando a agenda está cheia no horário disponível e a limitação passa a ser espaço, e não demanda. Antes disso, mudar só aumenta o custo.
+
+## Ação imediata
+
+Calcule a fração da casa que o salão usa e traga esse valor para dentro do seu custo. Refaça o preço com o número novo — é a conta que sustenta o próximo passo.`
+  },
+  {
+    categoria: 'gestao', emoji: '', ordem: 6,
+    titulo: 'Quando dá vontade de desistir: o que checar antes',
+    resumo: 'Quase sempre o cansaço tem uma causa específica. E causa específica tem solução.',
+    conteudo: `Quase todo dono de salão passa por isso. A diferença entre quem atravessa e quem fecha raramente é força de vontade — é ter conseguido nomear o problema.
+
+Antes de qualquer decisão grande, passe por estas cinco perguntas.
+
+## 1. É o negócio ou é o cansaço?
+
+São coisas diferentes e se confundem com facilidade.
+
+Um salão que dá lucro e esgota o dono tem problema de estrutura, não de viabilidade. Um salão que não dá lucro e é leve tem problema de conta. O primeiro se resolve delegando, o segundo se resolve calculando.
+
+Olhe o resultado dos últimos seis meses antes de responder.
+
+## 2. Qual é exatamente o número que assusta?
+
+"Está difícil" não se resolve. "A margem caiu de 18% para 6% em quatro meses" se resolve.
+
+Vá atrás do número: é faturamento que caiu, custo que subiu, comissão que ficou alta ou preço que ficou velho? Cada uma dessas tem um caminho diferente — e nenhum deles é fechar.
+
+## 3. Quantas horas por semana você está dentro da cadeira?
+
+Se a resposta passa de trinta, você não está administrando: está trabalhando no salão e cuidando dele nas sobras. Nenhum negócio melhora nessa condição.
+
+## 4. Qual problema você adiou por mais tempo?
+
+Quase sempre existe um: uma conversa com alguém da equipe, uma comissão que precisa mudar, um sócio, um preço que devia ter subido no ano passado.
+
+O peso raramente vem do volume de tarefas. Vem daquela pendência específica que reaparece todo dia.
+
+## 5. Quem sabe dos seus números além de você?
+
+Carregar sozinho torna tudo maior do que é. Contador, sócio, alguém de confiança do setor — dividir o número costuma reduzir o problema à metade só por deixar de ser segredo.
+
+## O que fazer com as respostas
+
+Escolha uma das cinco e resolva só ela nos próximos trinta dias. Tentar arrumar tudo ao mesmo tempo é o que produziu o cansaço.
+
+## Se depois disso a decisão for encerrar
+
+Encerrar com planejamento é gestão, não fracasso: fechar contrato, encerrar corretamente com a equipe, vender o que dá para vender, quitar o que precisa ser quitado. Muita gente perde mais dinheiro na saída desorganizada do que perdeu operando.
+
+## Ação imediata
+
+Responda às cinco por escrito, hoje. No papel, o problema quase sempre é menor e mais específico do que parecia na cabeça.`
+  },
 ]
 
 export async function POST(req: NextRequest) {

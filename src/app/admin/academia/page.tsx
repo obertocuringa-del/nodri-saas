@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 
 const CATEGORIAS = [
   { key: 'gestao',      label: ' Gestão do Negócio' },
+  { key: 'recepcao',    label: ' Recepção' },
   { key: 'financeiro',   label: ' Gestão Financeira' },
   { key: 'marketing',   label: ' Marketing e Vendas' },
   { key: 'equipe',      label: ' Gestão de Equipe' },
