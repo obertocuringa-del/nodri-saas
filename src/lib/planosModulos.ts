@@ -27,6 +27,18 @@ export interface ModuloNodri {
   chave: ChaveModulo
   rotulo: string
   descricao: string
+  /**
+   * O que o módulo entrega, em linhas curtas — para VENDER, não para catalogar.
+   *
+   * A vitrine mostrava só o nome do módulo com um cadeado. "Relatórios" com
+   * cadeado não diz a ninguém que ali dentro está quem sumiu, quanto cada
+   * cliente vale e a corrida da equipe — e ninguém compra o que não sabe que
+   * existe.
+   *
+   * Escrito a partir do inventário real do sistema (01/09/2026), e não do que
+   * seria bonito prometer: cada linha aponta para uma tela que existe.
+   */
+  destaques: string[]
   nomesNoBanco: string[]
 }
 
@@ -35,30 +47,62 @@ export const MODULOS_NODRI: ModuloNodri[] = [
     chave: 'profissionais',
     rotulo: 'Profissionais',
     descricao: 'Ficha completa da equipe, contratação, avaliações, metas e documentos.',
+    destaques: [
+      'Ficha com 19 abas por profissional',
+      'Contrato, distrato, entrevista e plano de carreira',
+      'Avaliações, POPs e ocorrências',
+      'Metas individuais e faturamento de cada uma',
+      'Portal com login próprio para a profissional',
+    ],
     nomesNoBanco: ['PROFISSIONAIS'],
   },
   {
     chave: 'academia',
     rotulo: 'Academia NODRI',
     descricao: 'Aulas e materiais de gestão de salão.',
+    destaques: [
+      'Aulas de gestão de salão',
+      'Materiais para aplicar na sua equipe',
+    ],
     nomesNoBanco: ['ACADEMIA NODRI'],
   },
   {
     chave: 'calculadora',
     rotulo: 'Calculadora / Financeira',
     descricao: 'As oito calculadoras, boletos, fluxo de caixa, comissões, empréstimos e descontos consolidados.',
+    destaques: [
+      'Custo real de cada serviço — o custo, não o preço',
+      'Ponto de equilíbrio: quanto precisa entrar para não faltar',
+      'Receitas, despesas e gráficos com médias de mercado',
+      'Aluguel de cadeira e faturamento por m²',
+      'DRE, fluxo de caixa, comissões e boletos a pagar',
+    ],
     nomesNoBanco: ['CALCULADORA / FINANCEIRA'],
   },
   {
     chave: 'relatorios',
     rotulo: 'Relatórios',
     descricao: 'Importação dos atendimentos, análise de clientes, metas, corridas com ranking e DRE.',
+    destaques: [
+      'Quem sumiu, quem voltou e quem está em risco de sumir',
+      'Quanto cada cliente já deixou no salão, e o ticket dela',
+      'O que vender junto: combos que a sua base já compra',
+      'Metas por profissional, com redistribuição automática',
+      'Corridas internas com ranking — 11 formas de disputar',
+    ],
     nomesNoBanco: ['RELATÓRIOS'],
   },
   {
     chave: 'suite',
     rotulo: 'Suite NODRI e alcance',
     descricao: 'Aplicativo de WhatsApp, vitrine pública do salão, ações comerciais e parcerias com lojistas.',
+    destaques: [
+      'Confirmação de agendamento pelo WhatsApp, em lote',
+      'Envio de listas, arquivos e pesquisas para a base inteira',
+      'Vitrine própria: um link com promoções, preços e agendamento',
+      'Campanhas e ações comerciais com foto e preço',
+      'Parcerias com lojistas da região',
+    ],
     nomesNoBanco: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista', 'Enviar Lista c/ Arquivo'],
   },
 ]

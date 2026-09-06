@@ -33,7 +33,7 @@ export default function VitrineModulos({ ativos }: Props) {
 
       <div style={{
         display: 'grid', gap: 12,
-        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(238px, 1fr))',
       }}>
         {PLANOS_NODRI.map(plano => {
           // O que ESTE plano acrescenta em relação ao anterior — é o que faz
@@ -62,21 +62,53 @@ export default function VitrineModulos({ ativos }: Props) {
                 {plano.resumo}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {plano.modulos.map(chave => {
+              {/* ── O que este plano acrescenta, por extenso ──────────────
+                  Antes cada plano listava os NOMES dos seus módulos, com
+                  cadeado. "Relatórios 🔒" não diz a ninguém que ali dentro
+                  está quem sumiu, quanto cada cliente vale e a corrida da
+                  equipe — e ninguém compra o que não sabe que existe.
+
+                  Do segundo plano em diante, só o que ele ACRESCENTA aparece
+                  aberto. Repetir a lista inteira quatro vezes faria a diferença
+                  de preço desaparecer no meio da repetição, que é exatamente o
+                  que a pessoa está tentando enxergar ao comparar. */}
+              {anterior && (
+                <div style={{
+                  fontSize: 11, fontWeight: 800, color: '#16a34a',
+                  background: '#f0fdf4', border: '1px solid #bbf7d0',
+                  borderRadius: 7, padding: '5px 9px', marginBottom: 10,
+                }}>
+                  Tudo do {anterior.nome}, mais:
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                {(anterior ? novos : plano.modulos).map(chave => {
                   const m = moduloPorChave(chave)
                   if (!m) return null
                   const ativo = tem(chave)
-                  const novo = novos.includes(chave)
                   return (
-                    <div key={chave} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      fontSize: 11.5,
-                      fontWeight: novo ? 700 : 500,
-                      color: ativo ? '#16a34a' : novo ? '#3f3a5c' : '#a8a4b8',
-                    }}>
-                      {ativo ? <Check size={12} /> : <Lock size={11} />}
-                      <span>{m.rotulo}</span>
+                    <div key={chave}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        fontSize: 12, fontWeight: 800,
+                        color: ativo ? '#16a34a' : '#3f3a5c', marginBottom: 4,
+                      }}>
+                        {ativo ? <Check size={12} /> : <Lock size={11} />}
+                        <span>{m.rotulo}</span>
+                      </div>
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none',
+                        display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {m.destaques.map(d => (
+                          <li key={d} style={{
+                            display: 'flex', gap: 6, fontSize: 11,
+                            color: ativo ? '#4b7a5a' : '#6b6860', lineHeight: 1.45,
+                          }}>
+                            <span style={{ color: '#c4bfd8', flexShrink: 0 }}>—</span>
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )
                 })}
@@ -86,9 +118,21 @@ export default function VitrineModulos({ ativos }: Props) {
         })}
       </div>
 
-      <div style={{ textAlign: 'center', fontSize: 11.5, color: '#8b8798', marginTop: 18, lineHeight: 1.6 }}>
-        Check list, calendários, setores, feedback, lojistas, currículos e ações comerciais
-        <br />estão em todos os planos, sem cobrança à parte.
+      {/* A base não é rodapé: é argumento.
+          De 28 telas do sistema, 24 vêm em qualquer plano. Escondida em letra
+          cinza, essa informação parecia ressalva; ela é o motivo de o plano de
+          R$ 50 já valer a pena. */}
+      <div style={{
+        marginTop: 18, background: '#faf9ff', border: '1px solid #e8e5f5',
+        borderRadius: 12, padding: '12px 16px', textAlign: 'center',
+      }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: '#3f3a5c', marginBottom: 4 }}>
+          Em todos os planos, sem cobrança à parte
+        </div>
+        <div style={{ fontSize: 11, color: '#6b6860', lineHeight: 1.6 }}>
+          Check list por setor, organograma, calendários, feedback de cliente e da equipe,
+          currículos, lista de espera, mural de recados, auditoria e sub-logins por permissão.
+        </div>
       </div>
     </div>
   )
