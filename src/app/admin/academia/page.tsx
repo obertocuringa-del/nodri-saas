@@ -16,6 +16,7 @@ const CATEGORIAS = [
   { key: 'equipe',      label: ' Gestão de Equipe' },
   { key: 'atendimento', label: ' Atendimento e Vendas' },
   { key: 'operacao',    label: ' Operação e Agenda' },
+  { key: 'patrimonio',  label: ' Patrimônio e Risco' },
 ]
 
 

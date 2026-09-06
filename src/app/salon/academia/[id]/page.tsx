@@ -12,6 +12,7 @@ const CAT_LABEL: Record<string, string> = {
   equipe: ' Gestão de Equipe',
   atendimento: ' Atendimento e Vendas',
   operacao: ' Operação e Agenda',
+  patrimonio: ' Patrimônio e Risco',
 }
 
 interface Artigo {

@@ -18,6 +18,8 @@ async function roteador(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/cadastro') ||
     pathname.startsWith('/landing') ||
+    // FAQ publico: vitrine, indexavel, sem dado de ninguem dentro.
+    pathname.startsWith('/perguntas-frequentes') ||
     // Planos: pagina por convite. Quem valida o convite e a propria pagina
     // (via /api/leads/validar); o middleware so precisa deixar chegar.
     pathname.startsWith('/planos') ||

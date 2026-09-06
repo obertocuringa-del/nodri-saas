@@ -2934,6 +2934,748 @@ Encerrar com planejamento é gestão, não fracasso: fechar contrato, encerrar c
 
 Responda às cinco por escrito, hoje. No papel, o problema quase sempre é menor e mais específico do que parecia na cabeça.`
   },
+
+  // ─── PATRIMÔNIO E RISCO ───────────────────────────────────────────────────
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 1,
+    titulo: 'LGPD no salão: o que fazer com os dados da cliente',
+    resumo: 'Cadastro, WhatsApp e foto são dado pessoal. A lei vale para salão também.',
+    conteudo: `Salão coleta muito mais dado pessoal do que imagina: nome, telefone, endereço, data de nascimento, histórico de saúde na anamnese e foto. A Lei Geral de Proteção de Dados se aplica a qualquer empresa, inclusive à de dois funcionários.
+
+A boa notícia é que, para um salão, o essencial cabe em poucas práticas.
+
+## O princípio que resolve quase tudo
+
+Você só pode usar o dado para a finalidade pela qual ele foi coletado — e deve guardar só o que precisa.
+
+Telefone coletado para confirmar horário serve para confirmar horário e para falar do salão. Não serve para ser repassado a terceiros.
+
+## O que fazer na prática
+
+**1. Colete só o necessário.** Cadastro com dez campos obrigatórios é risco a mais sem benefício. Nome, telefone, e o que o serviço exigir.
+
+**2. Diga para que serve.** Uma linha no cadastro basta: para que os dados são usados e como a pessoa pede para sair da lista.
+
+**3. Peça consentimento separado para o que não é óbvio.** Confirmar agendamento é esperado. Receber promoção e ter a foto publicada não são — cada um precisa de um aceite próprio.
+
+**4. Controle quem acessa.** Nem toda pessoa da equipe precisa ver o cadastro inteiro. Acesso é por função, não por confiança.
+
+**5. Tenha um caminho de saída.** A cliente pode pedir para ser removida da lista de mensagens ou para apagar os dados dela. Precisa existir alguém que saiba fazer isso.
+
+## Dado sensível exige mais cuidado
+
+Informação de saúde — alergia, medicação, gestação, tratamento — é categoria especial na lei. Fica registrada porque é necessária à segurança do procedimento, mas não circula fora de quem atende.
+
+## Os três erros mais comuns em salão
+
+• Planilha de clientes no celular pessoal de quem já saiu da equipe
+• Grupo de WhatsApp com todas as clientes, onde uma vê o número da outra — use lista de transmissão
+• Foto de cliente publicada sem autorização escrita
+
+## O que fazer se houver vazamento
+
+Se a base cair na mão errada, a lei pede comunicação aos titulares e à autoridade. Registrar o que aconteceu e quando é parte da resposta.
+
+## Ação imediata
+
+Responda a três perguntas: quem tem acesso à base de clientes, onde ela está guardada e como alguém pede para sair dela. Se travar em qualquer uma, é ali que está o risco.
+
+Este conteúdo é orientação de gestão. Para o caso concreto, consulte um advogado.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 2,
+    titulo: 'Direito de imagem: o antes e depois que dá problema',
+    resumo: 'A foto é sua, mas o rosto é dela. Um termo curto resolve.',
+    conteudo: `Foto de cliente é o melhor material de divulgação que um salão tem. Também é o que mais gera processo por dano moral no setor — e quase sempre por um detalhe evitável.
+
+## A regra
+
+A imagem de uma pessoa pertence a ela. Ter tirado a foto no seu salão, com o seu equipamento, não transfere esse direito.
+
+Publicar sem autorização é irregular mesmo quando a foto é bonita, mesmo quando a cliente gostou do resultado, e mesmo quando ela viu você fotografando.
+
+## O que resolve
+
+Um termo curto, assinado uma vez, dizendo:
+
+• Que ela autoriza o uso da imagem
+• Em quais canais — redes sociais, site, material impresso
+• Por quanto tempo
+• Se o uso pode ser em anúncio pago ou só em conteúdo comum
+• Que ela pode revogar a autorização, e como
+
+Cabe em meia página e pode ir junto com a ficha de cadastro.
+
+## Os pontos que costumam ser esquecidos
+
+**Anúncio pago é diferente de post.** Autorizar aparecer no perfil não é autorizar virar peça de campanha paga. Deixe isso explícito no termo.
+
+**Menor de idade.** A autorização é do responsável, sempre, e por escrito.
+
+**Revogação.** Se ela pedir para tirar, tire — inclusive dos destaques antigos. Discutir sai muito mais caro do que apagar.
+
+**Foto de equipe.** O mesmo vale para a profissional. E, quando ela sai do salão, vale conversar sobre o material antigo.
+
+## O que também protege
+
+• Não publique nada que identifique endereço, rotina ou dado pessoal ao fundo da foto
+• Cuidado com a foto de "antes": ela mostra alguém no pior momento, e é a que mais gera desconforto
+• Combine antes o que será publicado, e não depois de já ter postado
+
+## O caso mais delicado
+
+Cliente que não gostou do resultado e vê a própria foto no perfil do salão. É a origem mais comum de conflito. Publicar só depois de ela confirmar que gostou evita quase todos os casos.
+
+## Ação imediata
+
+Monte o termo de uso de imagem e passe a colher junto com o cadastro. Para as fotos que já estão publicadas, peça autorização das principais — ou substitua.
+
+Este conteúdo é orientação de gestão. Para o caso concreto, consulte um advogado.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 3,
+    titulo: 'Quanto vale o seu salão',
+    resumo: 'A conta para vender, comprar ou colocar preço numa cota de sociedade.',
+    conteudo: `A pergunta aparece em três momentos: quando alguém quer comprar, quando um sócio quer sair, e quando você pensa em vender. Nos três, o valor não é o que você investiu — é o que o negócio gera.
+
+## O que NÃO define o valor
+
+• Quanto você gastou na reforma
+• Quanto custaram os equipamentos
+• Quantos anos o salão tem
+• O carinho que você tem pelo lugar
+
+Investimento passado é custo afundado. Quem compra está comprando o futuro.
+
+## A base do cálculo
+
+O valor parte do **lucro operacional mensal recorrente** — o que sobra depois de todos os custos, incluindo um pró-labore de mercado para quem administra.
+
+Esse último ajuste é o que quase ninguém faz. Se você trabalha de graça no salão, o lucro está inflado: quem comprar vai precisar pagar alguém para fazer o que você faz.
+
+**Valor aproximado = lucro mensal ajustado × múltiplo**
+
+O múltiplo em negócios pequenos de serviço costuma ficar numa faixa de poucas dezenas de meses, e varia conforme:
+
+• Dependência do dono — quanto mais o salão depende de você, menor
+• Contrato de aluguel — prazo longo e renovável aumenta
+• Equipe estável e com contrato — aumenta
+• Carteira de clientes registrada e ativa — aumenta muito
+• Concentração — se uma profissional responde por metade do faturamento, diminui
+
+## O que soma por fora
+
+• Equipamento, mobiliário e estoque, avaliados pelo valor de mercado atual
+• Ponto comercial, quando o contrato é transferível
+
+## O que reduz
+
+• Passivo trabalhista em aberto
+• Dívida com fornecedor
+• Processo em andamento
+• Licenças vencidas
+
+## O que mais aumenta o valor antes de vender
+
+Três coisas, e nenhuma é reforma:
+
+1. **Números organizados.** Quem compra desconta o que não consegue conferir.
+2. **Menos dependência do dono.** Salão que roda sem você vale substancialmente mais.
+3. **Base de clientes registrada.** Carteira que está só na cabeça das profissionais não é ativo transferível.
+
+## Ação imediata
+
+Calcule o lucro dos últimos doze meses já descontando um pró-labore de mercado. É esse número, e não o faturamento, que abre qualquer negociação.
+
+Para a venda em si, envolva contador e advogado: a forma jurídica da transação muda o imposto e o risco.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 4,
+    titulo: 'Sociedade no salão: como dividir e como sair',
+    resumo: 'A maioria das sociedades quebra pelo que não foi combinado no começo.',
+    conteudo: `Sociedade em salão costuma nascer de amizade e confiança, e é exatamente por isso que quase nunca é escrita. O problema não aparece no primeiro ano — aparece quando um dos dois muda de vida.
+
+## As quatro perguntas do começo
+
+Se elas não têm resposta escrita, a sociedade tem um problema esperando data.
+
+**1. Quem entrou com o quê?** Dinheiro, ponto, equipamento, carteira de clientes, trabalho. São contribuições diferentes e precisam estar valoradas.
+
+**2. Quem faz o quê?** Sócio que atende e sócio que administra têm cargas diferentes. Se os dois atendem, a divisão do que sobra é mais simples; se um só administra, o pró-labore precisa reconhecer isso.
+
+**3. Como cada um é remunerado?** São três coisas separadas: comissão pelo que produz, pró-labore pela função de gestão, e distribuição de lucro pela cota. Misturar as três é a causa número um de briga.
+
+**4. Quem decide o quê?** Defina um valor a partir do qual a decisão precisa dos dois. Abaixo dele, cada um resolve na sua área.
+
+## O desequilíbrio mais comum
+
+Um sócio atende muito e o outro atende pouco, mas os dois dividem o lucro igualmente. Enquanto o faturamento cresce, ninguém reclama. Quando aperta, vira o assunto.
+
+**Como evitar:** separe claramente a remuneração pelo trabalho da remuneração pela cota. Quem produz mais recebe mais de comissão; o lucro se divide pela participação.
+
+## A cláusula que ninguém escreve e todo mundo precisa
+
+**Como um sócio sai.**
+
+• Como a cota é avaliada — a fórmula, definida antes, não na hora da briga
+• Em quantas parcelas é paga
+• Se o outro sócio tem preferência na compra
+• O que acontece com a clientela de quem sai
+• Se existe impedimento de abrir salão nas proximidades, por quanto tempo
+
+Definir isso no começo é barato e desconfortável. Definir no fim é caro e, às vezes, impossível.
+
+## Sinais de que a sociedade está se desfazendo
+
+• Decisões tomadas sem consultar o outro
+• Um dos dois parou de olhar os números
+• Retirada fora do combinado
+• A equipe percebendo o desalinhamento e escolhendo lado
+
+Nenhum deles melhora sozinho com o tempo.
+
+## Ação imediata
+
+Se a sua sociedade não tem contrato, escreva as quatro perguntas do começo e responda junto com o sócio. A conversa é desconfortável por uma hora e evita anos de desgaste.
+
+Para formalizar, procure um advogado: contrato social bem feito é mais barato que qualquer dissolução.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 5,
+    titulo: 'Comprar um salão pronto: o que conferir antes',
+    resumo: 'Você compra a estrutura e a clientela — mas também as dívidas, se não olhar.',
+    conteudo: `Comprar salão em funcionamento economiza a fase mais difícil: montar do zero e esperar a agenda encher. Em troca, você assume o que já está lá — inclusive o que não aparece na visita.
+
+## O que conferir nos números
+
+Peça, e não aceite estimativa verbal:
+
+• Faturamento mês a mês dos últimos 24 meses
+• Extrato bancário e das operadoras de cartão do mesmo período
+• Relação de despesas fixas
+• Contrato de aluguel: valor, prazo, reajuste e se é transferível
+
+O cruzamento entre o faturamento declarado e o extrato das operadoras é o teste mais revelador da negociação.
+
+## O que conferir na clientela
+
+Este é o ativo mais valioso e o mais frágil.
+
+• Quantas clientes ativas nos últimos 90 dias
+• Ticket médio real
+• Concentração: quanto do faturamento depende de uma única profissional
+• A carteira está registrada no sistema ou na cabeça das pessoas?
+
+Se metade do movimento vem de uma profissional que não vai ficar, você está comprando móveis.
+
+## O que conferir na equipe
+
+• Modelo de contratação de cada pessoa e desde quando
+• Contratos assinados e, no caso de parceria, notas emitidas
+• Passivo trabalhista: processos em andamento ou risco conhecido
+• Quem pretende continuar depois da venda
+
+Passivo trabalhista é o risco que mais surpreende comprador de salão. Um profissional sem contrato adequado por anos é uma conta que pode chegar depois.
+
+## O que conferir na estrutura
+
+• Licenças e alvarás vigentes e transferíveis
+• Estado real dos equipamentos e idade de cada um
+• Estoque: quantidade, validade e o que é obsoleto
+• Dívidas com fornecedor
+
+## A forma da compra importa
+
+Comprar as cotas da empresa é diferente de comprar apenas os ativos. No primeiro caso, você herda o histórico inteiro — inclusive o que ainda não apareceu. Esta é a decisão que mais muda o risco da operação, e é onde advogado e contador se pagam.
+
+## Como pagar
+
+Parcelar parte do valor condicionada à manutenção do faturamento protege os dois lados: você contra a carteira que evapora, e o vendedor contra a suspeita de que os números eram inflados.
+
+## Ação imediata
+
+Antes de qualquer proposta, peça os 24 meses de faturamento e os extratos. Se houver resistência em mostrar, você já tem uma informação importante.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 6,
+    titulo: 'Segunda unidade: quando faz sentido abrir',
+    resumo: 'Quase todo mundo abre cedo demais — e o problema não é dinheiro.',
+    conteudo: `Abrir a segunda unidade é o passo que mais parece crescimento e mais frequentemente destrói o resultado da primeira. Não porque a ideia seja ruim, mas porque costuma acontecer antes da hora.
+
+## Os quatro pré-requisitos
+
+Se algum deles falhar, o segundo salão vai consumir a energia e o caixa do primeiro.
+
+**1. A primeira unidade roda sem você.** Este é o de longe mais importante. Se o salão atual depende da sua presença, abrir o segundo apenas divide o dono em dois lugares — e piora os dois.
+
+**2. A primeira unidade dá lucro consistente.** Doze meses de lucro, não três. Segunda unidade não conserta margem ruim: ela multiplica a margem que você já tem, inclusive quando ela é negativa.
+
+**3. Existe caixa para seis meses da nova.** A unidade nova demora a encher a agenda. Se ela precisar do caixa da antiga para respirar, as duas ficam apertadas.
+
+**4. Existe quem gerencie a nova.** Contratada e treinada **antes** de abrir, dentro da unidade que já funciona. Gerente contratado na semana da inauguração aprende no lugar mais caro possível.
+
+## O que se ganha e o que se perde
+
+**Ganha:** diluição de custos administrativos, poder de compra, e uma marca que fica maior que uma pessoa.
+
+**Perde:** simplicidade. Tudo o que era informal precisa virar processo escrito, porque agora existe em dois lugares.
+
+## O que precisa estar escrito antes
+
+• POP de cada rotina
+• Tabela de preços e regra de desconto
+• Modelo de contratação e comissão
+• Padrão de atendimento
+• Indicadores acompanhados por unidade
+
+Se hoje isso não existe na primeira unidade, escrever é o verdadeiro primeiro passo da expansão.
+
+## As alternativas que quase ninguém considera
+
+Antes de abrir outro endereço, duas opções costumam render mais por real investido:
+
+• **Aumentar a ocupação da unidade atual.** Se você opera a 60%, existe metade de um salão dentro do que já existe.
+• **Ampliar o espaço atual.** Mais cadeiras no mesmo aluguel diluem custo em vez de duplicá-lo.
+
+## Ação imediata
+
+Responda com honestidade: se você ficasse trinta dias fora, o que aconteceria com a unidade atual? A resposta define se a conversa sobre a segunda deve começar agora ou daqui a um ano.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 7,
+    titulo: 'PGR e PCMSO: as obrigações que quase ninguém tem',
+    resumo: 'Salão com funcionário registrado precisa dos dois. E a fiscalização cobra.',
+    conteudo: `São duas obrigações de segurança e saúde do trabalho que a maioria dos salões descobre existir quando o contador avisa — ou quando a fiscalização aparece.
+
+## O que é cada um
+
+**PGR — Programa de Gerenciamento de Riscos.** O documento que lista os riscos do ambiente de trabalho e o que a empresa faz para reduzir cada um. Em salão, os riscos típicos são químico (produtos), biológico (contato com sangue em manicure e barbearia), ergonômico (ficar em pé, postura no lavatório) e de acidente (tesoura, navalha, autoclave).
+
+**PCMSO — Programa de Controle Médico de Saúde Ocupacional.** O acompanhamento de saúde de quem trabalha: exame admissional, periódico e demissional, definidos a partir dos riscos que o PGR mapeou.
+
+Um depende do outro: o PCMSO é montado com base no PGR.
+
+## Quem precisa
+
+A regra alcança empresa com empregado registrado. Microempresas de menor grau de risco têm formatos simplificados, e a exigência exata depende do enquadramento e do número de funcionários.
+
+O ponto prático: se você tem alguém em regime CLT, presuma que precisa e confirme com o contador ou com uma empresa de segurança do trabalho.
+
+## E quem só tem profissional parceiro?
+
+A obrigação recai sobre quem tem empregado. Mas atenção ao efeito colateral: em uma discussão sobre vínculo, a ausência total de qualquer estrutura de segurança do trabalho reforça a tese de informalidade.
+
+Além disso, o cuidado com EPI e ambiente vale para todo mundo que trabalha no espaço, independente do contrato.
+
+## O que sustenta os documentos no dia a dia
+
+Ter o PDF não basta. O que a fiscalização verifica é a prática:
+
+• EPI disponível e entregue com registro de recebimento assinado
+• Treinamento de uso registrado
+• Ventilação adequada na área de química
+• Descarte correto de perfurocortante
+• Exames em dia
+
+## Quanto custa
+
+Menos do que a maioria imagina, e muito menos do que a multa. Empresas de segurança do trabalho atendem microempresa com pacote mensal.
+
+## Ação imediata
+
+Pergunte ao seu contador se a sua empresa está enquadrada na exigência. Se estiver e você não tiver os documentos, essa é a pendência de menor custo e maior risco da sua lista.`
+  },
+  {
+    categoria: 'patrimonio', emoji: '', ordem: 8,
+    titulo: 'Nota fiscal do profissional parceiro',
+    resumo: 'A nota não é burocracia: é o que sustenta a parceria se ela for questionada.',
+    conteudo: `No modelo de parceria, o salão retém a parte dele e repassa a cota-parte da profissional. Esse repasse precisa ser documentado — e é justamente a parte que mais fica pendente.
+
+## Por que a nota importa tanto
+
+Se a relação for questionada, o conjunto de provas da parceria é: contrato escrito, homologação quando exigida, e o histórico de notas emitidas mês a mês.
+
+Faltando a nota, sobra um pagamento recorrente e de valor variável para uma pessoa que trabalha no seu espaço — que é exatamente como se parece um salário informal.
+
+## Quem emite para quem
+
+A profissional parceira emite nota contra o salão, referente ao serviço prestado a ele. É ela quem emite; o salão é o tomador.
+
+Esse é o ponto que mais gera confusão. É comum o salão emitir no lugar dela "para facilitar" — e isso enfraquece exatamente o que a nota deveria proteger.
+
+## O problema real: ela não emite
+
+Acontece o tempo todo, e por motivos concretos: não sabe fazer, o CNPJ está irregular, o município mudou o sistema, ou simplesmente esquece.
+
+**O que funciona:**
+
+• Definir uma data fixa no mês, sempre a mesma
+• Vincular o repasse à entrega da nota — o combinado precisa estar no contrato
+• Ensinar uma vez, com calma, mostrando a tela
+• Acompanhar quem entregou e quem não entregou, com uma lista
+
+## Cuidado com o CNPJ irregular
+
+MEI com guia atrasada não consegue emitir e pode ser desenquadrado. Quando isso acontece, a parceria fica sem base documental — e o risco é do salão.
+
+Acompanhar a regularidade do CNPJ de cada parceira não é intromissão: é proteção dos dois lados.
+
+## O que guardar
+
+• Contrato de parceria assinado
+• Comprovante de homologação, quando houver
+• Nota de cada mês
+• Comprovante do repasse
+
+Guardados juntos, por profissional. No dia em que forem necessários, ninguém vai ter tempo de procurar.
+
+## Ação imediata
+
+Levante quem está com nota em atraso e quem está com CNPJ irregular. Essas duas listas costumam se sobrepor, e resolvê-las é o trabalho de uma semana.
+
+Este conteúdo é orientação de gestão. Regras variam por município e por enquadramento: confirme com o seu contador.`
+  },
+
+  // ─── FINANCEIRO (terceira leva) ───────────────────────────────────────────
+  {
+    categoria: 'financeiro', emoji: '', ordem: 10,
+    titulo: 'Antecipação de recebíveis: quanto custa de verdade',
+    resumo: 'É o crédito mais caro que o salão usa — e o único que ninguém chama de crédito.',
+    conteudo: `Antecipar o recebimento do cartão parece resolver o caixa. E resolve, no dia. O problema é que quase ninguém calcula a taxa que está pagando por isso.
+
+## O que é
+
+Você vendeu parcelado e receberia em trinta, sessenta e noventa dias. A operadora oferece o dinheiro agora, descontando um percentual. Esse percentual é juro.
+
+## A conta que muda a percepção
+
+Uma taxa que parece pequena por mês vira um número grande no ano.
+
+Se antecipar custa 2% ao mês, o custo anual equivalente passa de 26%. É mais caro que boa parte do crédito bancário — e mais caro que quase todo parcelamento de fornecedor.
+
+**Como calcular o seu:** pegue o valor bruto que seria recebido e o valor efetivamente creditado. A diferença, dividida pelo bruto, é a taxa daquela antecipação. Depois, considere o prazo que foi adiantado.
+
+## Quando antecipar faz sentido
+
+• Para pagar uma dívida que custa mais caro que a antecipação
+• Para comprar com desconto à vista maior do que a taxa
+• Para não atrasar comissão ou aluguel, quando o atraso custaria mais
+
+## Quando não faz
+
+• Como hábito mensal. Antecipar todo mês significa que o salão opera com capital de giro insuficiente, e a antecipação virou uma mensalidade permanente
+• Para cobrir uma despesa que poderia esperar
+• Sem comparar com outras fontes de crédito
+
+## A saída estrutural
+
+Antecipação recorrente é sintoma, não doença. As causas costumam ser três:
+
+1. **Capital de giro insuficiente** — resolver isso uma vez elimina o custo para sempre
+2. **Prazo de recebimento maior que o de pagamento** — negociar prazo com fornecedor custa nada
+3. **Parcelamento longo demais oferecido à cliente** — se o salão parcela em seis e recebe em seis, o descasamento é estrutural
+
+## O que pouca gente negocia
+
+A taxa de antecipação é negociável, especialmente com volume. Vale cotar em mais de uma operadora uma vez por ano.
+
+## Ação imediata
+
+Some quanto você pagou de antecipação nos últimos doze meses. Esse número costuma ser suficiente para justificar a formação do capital de giro que acabaria com a necessidade.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 11,
+    titulo: 'Inadimplência, fiado e pacote não pago',
+    resumo: 'Como cobrar sem perder a cliente — e como não precisar cobrar.',
+    conteudo: `Salão trabalha com serviço entregue na hora, então a inadimplência costuma ser pequena. Quando aparece, é por três caminhos: fiado, pacote parcelado e cheque ou link não pago.
+
+## Prevenir vale mais que cobrar
+
+**Fiado.** Se existir, precisa de regra escrita: valor máximo, prazo, e o que acontece se não pagar. Sem regra, o limite é a simpatia da recepção no dia — e cresce sozinho.
+
+**Pacote.** O desenho mais seguro é o pacote pago antes, com desconto justamente por isso. Se for parcelado, use recorrência no cartão em vez de combinar pagamento manual todo mês.
+
+**Sinal.** Para serviço longo e de produto caro, sinal não é desconfiança: é o que garante que a agenda bloqueada tem lastro.
+
+## A régua de cobrança
+
+O que funciona é ser rápido e educado. Quanto mais tempo passa, menor a chance de receber e maior o constrangimento.
+
+**Dia 1 após o vencimento** — mensagem simples, tom de lembrete. Muita gente só esqueceu.
+
+**Dia 7** — segunda mensagem, agora oferecendo forma de pagamento: link, PIX, parcelamento.
+
+**Dia 15** — contato por ligação, feito por uma pessoa só, sempre a mesma.
+
+**Dia 30** — proposta de acordo. Receber parte agora costuma valer mais do que insistir no total.
+
+## O tom importa
+
+Nunca cobre na frente de outras clientes, nunca em grupo, e nunca com a profissional que atende. A cobrança sai da gestão, não do relacionamento.
+
+Uma frase que resolve a maior parte dos casos: "Passando para lembrar do valor em aberto. Quer que eu mande o link ou prefere PIX?".
+
+## Quando parar
+
+Defina um valor abaixo do qual não vale a energia da cobrança. Para valores pequenos, o custo do desgaste é maior que o crédito.
+
+O que não pode acontecer é a pessoa continuar sendo atendida acumulando débito — isso vira precedente e a equipe percebe.
+
+## O registro que falta
+
+Quase todo salão não sabe quanto tem a receber. Sem esse número, a inadimplência só aparece quando incomoda.
+
+## Ação imediata
+
+Levante hoje tudo que está em aberto, com nome, valor e data. Só a existência da lista já reduz o problema, porque ele deixa de ser invisível.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 12,
+    titulo: 'Quanto custa de energia cada serviço',
+    resumo: 'Secador, chapinha e lavatório consomem. E isso quase nunca entra no preço.',
+    conteudo: `Energia costuma entrar na conta como custo fixo mensal, dividido por todo mundo. Só que serviços consomem de forma muito diferente — e os que consomem mais costumam ser os que ficaram com o preço defasado.
+
+## A conta, em três passos
+
+**1. Descubra o custo do seu kWh.** Está na conta de luz: divida o valor total pelo consumo em kWh. Use o valor cheio, com impostos e bandeira.
+
+**2. Levante a potência de cada equipamento.** Está na etiqueta, em watts. Ordem de grandeza típica:
+
+• Secador profissional — alto consumo
+• Chapinha e babyliss — consumo médio, mas ficam ligados muito tempo
+• Chuveiro do lavatório — costuma ser o maior de todos
+• Vaporizador e climatizador de secagem — alto
+• Iluminação e ar-condicionado — contínuos, e por isso somam muito no mês
+
+**3. Multiplique.** Potência em watts, dividida por mil, vezes as horas de uso, vezes o custo do kWh.
+
+Uma escova longa com secador e chapinha, mais a água quente do lavatório, tem um custo de energia bem diferente do de um corte seco.
+
+## O que fazer com o número
+
+Não é para virar linha na comanda. É para entrar no custo do serviço, junto com produto e tempo de cadeira — especialmente nos serviços longos e de muito calor.
+
+Serviço que dura três horas usa três horas de ar-condicionado, iluminação e equipamento. Se o preço dele foi calculado só com produto e comissão, ele está subsidiado pelos serviços rápidos.
+
+## Onde estão as economias reais
+
+• **Chuveiro do lavatório** — o maior consumo isolado da maioria dos salões. Reduzir o tempo de água aberta rende mais que qualquer outra medida
+• **Equipamento ligado ocioso** — chapinha esquentando o dia inteiro entre um atendimento e outro
+• **Iluminação** — troca por LED se paga rápido e ainda melhora o resultado visual do trabalho
+• **Horário de pico** — em algumas tarifas, o horário faz diferença
+
+## O erro de simplesmente cortar
+
+Reduzir consumo mexendo em conforto — ar-condicionado desligado, luz fraca — economiza pouco e custa cliente. A economia boa vem de desperdício, não de experiência.
+
+## Ação imediata
+
+Calcule o custo de energia dos três serviços mais longos da sua tabela. Se algum deles estiver com preço parado há mais de um ano, você acabou de achar parte do motivo da margem apertada.`
+  },
+  {
+    categoria: 'financeiro', emoji: '', ordem: 13,
+    titulo: 'Precificação de noiva e evento',
+    resumo: 'Não é um serviço maior. É outro serviço, com outra estrutura de custo.',
+    conteudo: `Atendimento de noiva é o serviço com maior potencial de margem do salão — e o que mais dá prejuízo quando é precificado como "penteado mais maquiagem".
+
+## O que entra no preço, além do serviço
+
+**Exclusividade da agenda.** Noiva ocupa o horário mais valioso da semana, e normalmente bloqueia mais tempo do que o combinado. Some o custo do que deixou de ser atendido.
+
+**Teste.** Quase sempre há um ensaio antes. Ele tem produto, tempo e cadeira, e precisa estar no preço — cobrado à parte ou embutido.
+
+**Deslocamento e horário atípico.** Atendimento fora do salão, de madrugada ou em feriado tem custo diferente. Inclui transporte, tempo de trajeto e, às vezes, hora extra da equipe.
+
+**Equipe.** Noiva raramente vem sozinha. Se o pacote inclui madrinhas e mãe, cada uma consome uma profissional em paralelo.
+
+**Risco.** É um serviço sem segunda chance. Isso justifica margem maior, não menor.
+
+## A estrutura que funciona
+
+Monte como pacote com itens claros:
+
+• Teste
+• Dia: noiva
+• Acompanhantes, por pessoa
+• Deslocamento, por faixa de distância
+• Horário especial, quando aplicável
+
+Preço fechado sem detalhamento gera a discussão mais comum do setor: a cliente achando que "estava incluso".
+
+## Sinal e contrato
+
+Para evento, sinal não é opcional. A data fica bloqueada com meses de antecedência, e uma desistência tardia é impossível de repor.
+
+O contrato precisa dizer:
+
+• O que está incluso, item por item
+• Horário de início e duração prevista
+• Valor, sinal e forma de pagamento
+• Política de cancelamento por prazo
+• O que acontece em caso de atraso da cliente
+
+## O erro de dar desconto no pacote grande
+
+É intuitivo e quase sempre errado. Quanto mais pessoas, mais profissionais alocadas e menos flexibilidade — o custo cresce junto, e às vezes mais rápido que a receita.
+
+## O ganho que fica de fora da conta
+
+Casamento é o evento com maior circulação de clientes potenciais. Vale tratar cada atendimento de noiva como ação de marketing — com autorização de imagem combinada antes, e um convite para as acompanhantes voltarem.
+
+## Ação imediata
+
+Pegue o último atendimento de noiva que você fez e recalcule com todos os itens acima. A diferença entre o que foi cobrado e o custo real costuma surpreender.`
+  },
+
+  // ─── OPERAÇÃO (terceira leva) ─────────────────────────────────────────────
+  {
+    categoria: 'operacao', emoji: '', ordem: 10,
+    titulo: 'Barbearia: o que muda na gestão',
+    resumo: 'Ticket menor, volume maior e recorrência curta. A conta é outra.',
+    conteudo: `Barbearia e salão feminino parecem negócios vizinhos e operam de forma bem diferente. Quem administra os dois com a mesma lógica erra dos dois lados.
+
+## As quatro diferenças que mudam tudo
+
+**1. Recorrência curta e previsível.** O cliente volta a cada duas a quatro semanas, quase sempre no mesmo intervalo. Isso torna a base de clientes muito mais previsível — e torna a perda de um cliente muito mais cara, porque são doze a vinte atendimentos por ano.
+
+**2. Ticket menor, volume maior.** A margem por atendimento é menor, então a conta vive de ocupação. Cadeira parada em barbearia dói mais rápido do que em salão.
+
+**3. Tempo curto e padronizado.** Serviços de trinta a sessenta minutos permitem uma grade muito mais densa — e exigem pontualidade, porque um atraso arrasta o dia inteiro.
+
+**4. Produto de revenda pesa mais.** Pomada, óleo, shampoo. A venda de produto costuma representar uma fatia relevante do faturamento, o que não acontece na mesma proporção no salão.
+
+## O indicador principal
+
+Em barbearia, o número que manda é **atendimentos por cadeira por dia**. Ele responde melhor que o ticket médio, porque o ticket varia pouco.
+
+Acompanhe também o **intervalo médio de retorno**. Quando ele começa a subir, é o primeiro sinal de queda — bem antes de aparecer no faturamento.
+
+## O que funciona na agenda
+
+• Encaixe é regra, não exceção: com serviço curto, sempre cabe mais um
+• Ordem de chegada e agendamento podem conviver, desde que o cliente saiba qual é qual
+• Horário de pico bem definido — fim de tarde e sábado concentram tudo
+
+## Higiene e conformidade
+
+Barbearia tem exigência sanitária maior por causa da navalha e do contato com pele:
+
+• Lâmina descartável, sempre, com descarte em recipiente próprio
+• Esterilização registrada de tudo que é reutilizável
+• Toalha por cliente
+
+É o ponto mais cobrado em fiscalização, e o mais visível para o cliente atento.
+
+## Fidelização
+
+O modelo de assinatura funciona melhor em barbearia do que em qualquer outro segmento de beleza, justamente pela recorrência previsível. Mas só fecha a conta se o custo do atendimento couber na mensalidade considerando o uso máximo.
+
+## Ação imediata
+
+Calcule os seus atendimentos por cadeira por dia e o intervalo médio de retorno. Esses dois números explicam quase todo o resultado de uma barbearia.`
+  },
+  {
+    categoria: 'operacao', emoji: '', ordem: 11,
+    titulo: 'Procedimento estético no salão: o que checar antes',
+    resumo: 'Ticket alto atrai. Mas a exigência e o risco são de outra categoria.',
+    conteudo: `Incluir estética no salão — limpeza de pele, micropigmentação, depilação a laser, procedimentos injetáveis — aumenta o ticket e traz um perfil de cliente novo. Também muda o nível de exigência legal e de responsabilidade.
+
+## Primeiro: quem pode fazer o quê
+
+Esta é a pergunta que precede todas as outras. Cada procedimento tem uma exigência de formação e, alguns, de registro em conselho profissional.
+
+Procedimento invasivo, com agulha ou injetável, entra em outro território: envolve profissional habilitado, e a atuação fora da habilitação expõe tanto o profissional quanto o estabelecimento.
+
+**Antes de oferecer qualquer procedimento novo, confirme:** que formação a lei exige, se há registro em conselho, e se o seu estabelecimento tem licença compatível.
+
+## O que a estrutura precisa ter
+
+• Sala fechada, com privacidade real
+• Superfícies laváveis e maca com proteção descartável
+• Pia na sala ou muito próxima
+• Esterilização com registro, quando houver material reutilizável
+• Descarte de perfurocortante
+• Licença sanitária que contemple a atividade — nem todo alvará de salão cobre estética
+
+## Documentação por atendimento
+
+Aqui a exigência é maior que no cabelo:
+
+• Ficha de anamnese detalhada, assinada
+• Termo de consentimento específico do procedimento, explicando riscos e resultados esperados
+• Registro fotográfico com autorização de imagem
+• Orientação de pós-procedimento entregue por escrito
+
+O termo de consentimento é o documento central. Ele precisa deixar claro que resultado estético é expectativa, não garantia.
+
+## Seguro e responsabilidade
+
+Procedimento estético tem risco de intercorrência. Vale conversar sobre responsabilidade civil e sobre a existência de seguro — assunto que quase nenhum salão levanta antes de precisar.
+
+## A conta
+
+Equipamento de estética é caro e costuma ser financiado. Antes de comprar:
+
+• Quantos atendimentos por mês pagam a parcela
+• Quanto tempo de sala cada sessão ocupa
+• Qual a recorrência real do procedimento
+• Se existe demanda medida, e não suposta
+
+Equipamento parado é a forma mais cara de descobrir que não havia demanda.
+
+## Ação imediata
+
+Antes de anunciar qualquer procedimento novo, escreva as três respostas: quem está habilitado a executar, se a licença cobre, e quantos atendimentos por mês pagam o investimento.
+
+Este conteúdo é orientação de gestão. As regras variam por conselho, estado e município: confirme antes de operar.`
+  },
+  {
+    categoria: 'operacao', emoji: '', ordem: 12,
+    titulo: 'Negociação com distribuidor: como comprar melhor',
+    resumo: 'O desconto está quase sempre disponível. Ele só não é oferecido.',
+    conteudo: `Produto é um dos maiores custos do salão, e é onde existe mais espaço de negociação inexplorado. A maior parte dos salões compra pelo preço de tabela porque nunca pediu diferente.
+
+## O que se negocia além do preço
+
+O desconto direto costuma ter pouco espaço. O resto tem muito:
+
+• **Prazo de pagamento.** Trinta ou quarenta e cinco dias em vez de à vista melhora o caixa mais que 5% de desconto
+• **Frete.** Muitas vezes some a partir de um valor de pedido
+• **Bonificação.** Produto extra sem cobrança a cada volume comprado
+• **Treinamento.** Marca boa treina a sua equipe de graça — é o benefício mais subaproveitado
+• **Material de apoio.** Display, tabela, amostra para revenda
+• **Exclusividade regional.** Quando você é o único da região com a marca, isso vale para os dois lados
+
+## Como chegar na conversa preparado
+
+Distribuidor negocia com quem mostra número.
+
+Leve: quanto você compra por mês, o histórico dos últimos meses, e quanto pretende comprar. Volume previsível vale mais que volume grande e irregular.
+
+## O erro de concentrar tudo em um
+
+Depender de um único fornecedor tira todo o seu poder de negociação e cria risco de desabastecimento. Mas pulverizar demais também: você perde volume em cada um.
+
+O equilíbrio comum é um fornecedor principal, com o volume que dá poder de barganha, e um segundo ativo para o essencial.
+
+## Compre por consumo, não por promoção
+
+A promoção que leva a estocar seis meses de produto imobiliza caixa, ocupa espaço e corre risco de validade. Só vale quando o desconto supera o custo do dinheiro parado — e quando o produto tem giro comprovado.
+
+## O que conferir em toda entrega
+
+• Nota conferida contra o pedido, item por item
+• Validade dos lotes recebidos
+• Preço cobrado igual ao negociado — divergência acontece mais do que parece
+
+## Revise uma vez por ano
+
+Cote os mesmos itens em pelo menos três fornecedores anualmente. Não necessariamente para trocar: para saber se o seu preço continua competitivo. Só a cotação já costuma melhorar a condição atual.
+
+## Ação imediata
+
+Liste os cinco produtos que você mais compra e o valor mensal de cada um. Com esse número na mão, marque uma conversa com o seu representante. É a reunião de maior retorno por hora que existe na gestão do salão.`
+  },
 ]
 
 export async function POST(req: NextRequest) {

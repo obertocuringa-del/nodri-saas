@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: base,              lastModified: agora, changeFrequency: 'weekly',  priority: 1 },
     // /planos NAO entra: e pagina por convite, nao vitrine.
+    { url: `${base}/perguntas-frequentes`, lastModified: agora, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/trabalhe-conosco`, lastModified: agora, changeFrequency: 'monthly', priority: 0.5 },
   ]
 }
