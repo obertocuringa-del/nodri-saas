@@ -55,8 +55,8 @@ const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo:
   totalDeprec: {
     titulo: 'Total a ser Depreciado',
     oque: 'Equipamentos e móveis se desgastam com o tempo e perdem valor. Depreciar é reconhecer esse custo mês a mês.',
-    como: 'Coloque o valor de tudo que vai se desgastar: secadores, cadeiras, espelhos, lavatórios. O sistema divide por 60 meses (5 anos) automaticamente.',
-    exemplo: 'Equipamentos R$ 30.000 ÷ 60 meses = R$ 500/mês de depreciação.',
+    como: 'Coloque o valor de tudo que vai se desgastar: secadores, cadeiras, espelhos, lavatórios. O sistema divide por 84 meses (7 anos) automaticamente.',
+    exemplo: 'Equipamentos R$ 30.000 ÷ 84 meses = R$ 357,14/mês de depreciação.',
     porque: 'Sem calcular depreciação, quando os equipamentos quebrarem você não terá dinheiro para repor. É como guardar um pouquinho todo mês para a reposição.',
   },
   aluguel: {
