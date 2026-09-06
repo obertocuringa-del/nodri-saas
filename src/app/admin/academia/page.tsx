@@ -51,6 +51,25 @@ export default function AdminAcademiaPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [expandido, setExpandido] = useState<string | null>(null)
+  const [carregandoNovos, setCarregandoNovos] = useState(false)
+
+  // Traz para o banco os artigos que já existem no código e ainda não foram
+  // inseridos. O seed compara por título e nunca sobrescreve o que está lá,
+  // então dá para clicar quantas vezes quiser sem perder edição nenhuma.
+  const carregarNovos = async () => {
+    setCarregandoNovos(true)
+    try {
+      const r = await fetch('/api/academia/seed', { method: 'POST' })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Falha ao carregar')
+      alert(d.inseridos ? `${d.inseridos} artigo(s) adicionado(s).` : 'Nenhum artigo novo para adicionar.')
+      await carregar()
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setCarregandoNovos(false)
+    }
+  }
 
   const carregar = async () => {
     setLoading(true)
@@ -141,12 +160,22 @@ export default function AdminAcademiaPage() {
               <p className="text-xs text-gray-500">{artigos.length} artigos · {artigos.filter(a => a.ativo).length} visíveis</p>
             </div>
           </div>
-          <button
-            onClick={abrirNovo}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
-          >
-            <Plus size={16} /> Novo Artigo
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={carregarNovos}
+              disabled={carregandoNovos}
+              className="flex items-center gap-2 bg-white border border-gray-200 hover:border-amber-500 text-gray-700 font-medium px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+              title="Insere na Academia os artigos que existem no código e ainda não estão no banco. Não altera nem apaga os que já existem."
+            >
+              <Plus size={16} /> {carregandoNovos ? 'Carregando...' : 'Carregar artigos novos'}
+            </button>
+            <button
+              onClick={abrirNovo}
+              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
+            >
+              <Plus size={16} /> Novo Artigo
+            </button>
+          </div>
         </div>
       </div>
 
