@@ -50,6 +50,22 @@ const DESTAQUES_APOSENTADOS = JSON.stringify([
   { titulo: 'Alertas que importam', desc: 'Cliente sumindo e queda de faturamento' },
 ])
 
+// As quatro dores salvas no painel são exatamente as quatro primeiras do
+// código, e nenhuma delas fala de preço ou de custo — que é o assunto mais
+// doloroso do setor e o terreno mais forte da NODRI. O código passou a ter
+// oito; enquanto o valor salvo fosse considerado, as quatro novas nunca
+// apareceriam, porque o que vem do banco substitui a lista inteira.
+//
+// Mesma proteção dos outros: a comparação é pelo conteúdo exato. No instante
+// em que alguém mexer nas dores pelo editor da vitrine, deixa de bater e o que
+// foi escrito passa a valer.
+const DORES_APOSENTADAS = JSON.stringify([
+  { titulo: 'O mês fecha e você não sabe se sobrou', desc: 'O dinheiro entra e sai, mas ninguém consegue dizer quanto o salão deu de lucro de verdade — nem quanto custa manter a porta aberta.' },
+  { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
+  { titulo: 'Cliente some e ninguém percebe', desc: 'Aquela cliente que vinha todo mês parou de aparecer. Você só percebe quando ela já está em outro salão há meio ano.' },
+  { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
+])
+
 function normalizaDestaques(v: any): string {
   if (!Array.isArray(v)) return ''
   return JSON.stringify(v.map((d: any) => ({ titulo: String(d?.titulo ?? '').trim(), desc: String(d?.desc ?? '').trim() })))
@@ -65,6 +81,11 @@ export function semTextosAposentados(salvo: Record<string, any>): Record<string,
   }
   if (saida.destaques && normalizaDestaques(saida.destaques) === DESTAQUES_APOSENTADOS) {
     delete saida.destaques
+  }
+  // Reaproveita normalizaDestaques: dor e destaque têm o mesmo formato
+  // (titulo + desc), então a normalização serve para os dois.
+  if (saida.dores && normalizaDestaques(saida.dores) === DORES_APOSENTADAS) {
+    delete saida.dores
   }
   return saida
 }
