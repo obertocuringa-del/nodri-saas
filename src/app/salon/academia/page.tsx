@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Search, BookOpen, ChevronRight, TrendingUp, Users, ShoppingBag,
   Calendar, DollarSign, Briefcase, ConciergeBell, ShieldCheck, Compass, X,
+  Route, Printer,
 } from 'lucide-react'
 
 // ── Academia: organizada por assunto ────────────────────────────────────────
@@ -221,6 +222,45 @@ export default function AcademiaPage() {
         ) : (
           /* ── 1. INÍCIO ─────────────────────────────────────────────────── */
           <>
+            {/* Trilhas e materiais vem ANTES da lista de artigos: sao os dois
+                caminhos de quem chega sem pergunta formada. Quem ja sabe o que
+                procura usa a busca la em cima e nem passa por aqui. */}
+            <div className="grid gap-3 sm:grid-cols-2 mb-7">
+              <button
+                onClick={() => router.push('/salon/academia/trilhas')}
+                className="text-left bg-gradient-to-br from-[#4b3fb5] to-[#5b4fcf] text-white rounded-2xl p-4 hover:shadow-lg transition group flex items-center gap-3"
+              >
+                <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+                  <Route size={21} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-sm">Trilhas</p>
+                  <p className="text-white/70 text-xs leading-snug">
+                    Caminhos na ordem certa, com marcação de lido.
+                  </p>
+                </div>
+                <ChevronRight size={18} className="text-white/50 flex-shrink-0" />
+              </button>
+
+              <button
+                onClick={() => router.push('/salon/academia/materiais')}
+                className="text-left bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg transition group flex items-center gap-3"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-nodri-cyan to-[#0891b2] flex items-center justify-center flex-shrink-0">
+                  <Printer size={21} className="text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-gray-800 text-sm group-hover:text-nodri-cyan transition-colors">
+                    Materiais para imprimir
+                  </p>
+                  <p className="text-gray-500 text-xs leading-snug">
+                    Fichas e formulários em branco, com a sua logo.
+                  </p>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 flex-shrink-0" />
+              </button>
+            </div>
+
             {inicio.length > 0 && (
               <section className="mb-7">
                 <div className="flex items-center gap-2 mb-3">

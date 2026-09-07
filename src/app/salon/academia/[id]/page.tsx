@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, BookOpen, Clock } from 'lucide-react'
+import { ArrowLeft, BookOpen, Clock, Printer } from 'lucide-react'
+import { marcarLido } from '@/lib/academiaLidos'
+import { abrirImpressaoA4, conteudoArtigoParaHtml, escaparHtml } from '@/lib/impressaoA4'
 
 const CAT_LABEL: Record<string, string> = {
   gestao: ' Gestão do Negócio',
@@ -70,7 +72,13 @@ export default function ArtigoPage() {
     if (!id) return
     fetch(`/api/academia/${id}`)
       .then(r => r.json())
-      .then(d => { setArtigo(d.artigo); setLoading(false) })
+      .then(d => {
+        setArtigo(d.artigo)
+        setLoading(false)
+        // Abrir conta como ler. É o que alimenta o progresso das trilhas sem
+        // exigir que a pessoa lembre de marcar nada.
+        if (d.artigo?.titulo) marcarLido(d.artigo.titulo)
+      })
       .catch(() => setLoading(false))
   }, [id])
 
@@ -88,6 +96,21 @@ export default function ArtigoPage() {
             <BookOpen size={16} className="text-nodri-amber" />
             <span className="text-sm text-gray-500">Academia NODRI</span>
           </div>
+
+          {artigo && (
+            <button
+              onClick={() => abrirImpressaoA4(
+                artigo.titulo,
+                (artigo.resumo ? `<div class="resumo">${escaparHtml(artigo.resumo)}</div>` : '')
+                  + conteudoArtigoParaHtml(artigo.conteudo),
+                'Academia NODRI'
+              )}
+              title="Imprimir ou salvar em PDF"
+              className="ml-auto flex items-center gap-1.5 text-gray-500 hover:text-nodri-cyan text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 hover:border-nodri-cyan/40 transition"
+            >
+              <Printer size={14} /> <span className="hidden sm:inline">Imprimir</span>
+            </button>
+          )}
         </div>
       </div>
 
