@@ -517,7 +517,7 @@ export default function DepartamentoPage() {
               <span style={{ color: '#5b4fcf', fontSize: 13, transform: menuFerrOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
             </button>
             {menuFerrOpen && (
-              <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: 360, overflowY: 'auto', padding: 6 }}>
+              <div style={{ position: 'absolute', top: '108%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e0ddd8', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,.16)', maxHeight: '70vh', overflowY: 'auto', padding: 6 }}>
                 <button onClick={() => { setFerramentaAberta(''); setMenuFerrOpen(false) }}
                   style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: !ferramentaAberta ? '#f0eefb' : 'transparent', color: !ferramentaAberta ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: !ferramentaAberta ? 900 : 700, cursor: 'pointer' }}>
                   PENDÊNCIAS DO SETOR
@@ -550,6 +550,42 @@ export default function DepartamentoPage() {
                               onClick={() => { setFerramentaAberta(`conteudo:${f.conteudoSlug}:${pp.id}`); setMenuFerrOpen(false) }}
                               style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 6, background: 'transparent', color: '#6b7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>
                               {pp.titulo}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* As DEMANDAS do setor (e os sub-itens delas) existiam só na
+                    barra do computador. No celular o menu parava nas
+                    ferramentas, e quem entrava pelo telefone simplesmente não
+                    enxergava metade das páginas do setor. */}
+                {demandasSetor.map(d => {
+                  const slug = slugDemanda(d)
+                  const idDem = `demanda:${slug}`
+                  const at = ferramentaAberta === idDem
+                  const subs = SUBDEMANDAS[slug] || []
+                  const exp = demandaExpandida === slug
+                  return (
+                    <div key={idDem}>
+                      <button
+                        onClick={() => {
+                          if (subs.length) { setDemandaExpandida(x => (x === slug ? '' : slug)) }
+                          else { setFerramentaAberta(idDem); setMenuFerrOpen(false) }
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderRadius: 8, background: at ? '#f0eefb' : 'transparent', color: at ? '#5b4fcf' : '#374151', fontSize: 12.5, fontWeight: at ? 900 : 700, cursor: 'pointer' }}>
+                        <span>{d.toUpperCase()}</span>
+                        {subs.length > 0 && <span style={{ fontSize: 10, color: '#9ca3af', transform: exp ? 'rotate(180deg)' : 'none' }}>▼</span>}
+                      </button>
+                      {exp && subs.length > 0 && (
+                        <div style={{ marginLeft: 10, paddingLeft: 8, borderLeft: '1px solid #e8e6e0' }}>
+                          {subs.map(sb => (
+                            <button key={sb.id}
+                              onClick={() => { setFerramentaAberta(`sub:${sb.id}`); setMenuFerrOpen(false) }}
+                              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', border: 'none', borderRadius: 6, background: ferramentaAberta === `sub:${sb.id}` ? '#f0eefb' : 'transparent', color: ferramentaAberta === `sub:${sb.id}` ? '#5b4fcf' : '#6b7280', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                              {sb.label}
                             </button>
                           ))}
                         </div>
