@@ -368,8 +368,15 @@ export default function PerguntasFrequentesPage() {
           <h2 style={{ fontSize: 'clamp(20px,2.4vw,26px)', fontWeight: 900, color: MARINHO, marginBottom: 12, letterSpacing: '-.5px' }}>
             Sua dúvida não estava aqui?
           </h2>
-          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 26px' }}>
+          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 18px' }}>
             Fale com a gente. Respondemos sobre gestão de salão mesmo que você ainda não seja cliente.
+          </p>
+          <p style={{ color: '#4a5568', fontSize: 14.5, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 26px' }}>
+            Ou faça o{' '}
+            <a href="/diagnostico" style={{ color: '#046b85', fontWeight: 700 }}>
+              diagnóstico do seu salão em 10 perguntas
+            </a>{' '}
+            e veja onde estão os pontos cegos.
           </p>
           <a href="/#contato" style={{
             display: 'inline-flex', alignItems: 'center', gap: 9,

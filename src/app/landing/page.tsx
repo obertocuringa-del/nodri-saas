@@ -530,6 +530,41 @@ export default function LandingPage({ cfgInicial }: any) {
         </div>
       </section>
 
+      {/* CHAMADA PARA O DIAGNÓSTICO -------------------------------------------
+          Entra logo depois das dores de propósito: a pessoa acabou de se
+          reconhecer em uma delas, e a pergunta seguinte que ela se faz é "será
+          que é o meu caso?". O diagnóstico responde isso com as respostas dela
+          mesma, o que convence mais do que qualquer argumento nosso. */}
+      <section style={{ padding: '0 20px clamp(34px,4.5vw,54px)', maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{
+          background: MARINHO, borderRadius: 18, padding: 'clamp(26px,3.6vw,44px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 'clamp(18px,3vw,40px)', flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: '1 1 340px', minWidth: 0 }}>
+            <div style={{
+              display: 'inline-block', padding: '6px 14px', borderRadius: 999,
+              background: 'rgba(0,181,216,.18)', color: '#7fe3fb', fontSize: 11,
+              fontWeight: 800, letterSpacing: '.5px', marginBottom: 14, textTransform: 'uppercase',
+            }}>2 minutos · sem cadastro</div>
+            <h2 style={{
+              color: '#fff', fontSize: 'clamp(21px,2.9vw,32px)', fontWeight: 900,
+              letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: 10,
+            }}>Você sabe os números do seu salão?</h2>
+            <p style={{ color: 'rgba(255,255,255,.75)', fontSize: 15.5, lineHeight: 1.7, maxWidth: 520 }}>
+              Dez perguntas. Nenhuma sobre o que você acha — todas sobre um
+              número que ou você tem, ou não tem. No fim, você vê onde o
+              dinheiro está escapando.
+            </p>
+          </div>
+          <a href="/diagnostico" style={{
+            flexShrink: 0, display: 'inline-block', padding: '16px 34px', borderRadius: 12,
+            background: CIANO, color: '#04263a', fontWeight: 800, fontSize: 15.5,
+            textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,181,216,.28)',
+          }}>Fazer o diagnóstico →</a>
+        </div>
+      </section>
+
       {/* COMPARAÇÃO ----------------------------------------------------------
           A pergunta que todo dono faz é "mas isso o outro sistema não faz?".
           Responder de frente é mais honesto e mais forte do que fingir que
