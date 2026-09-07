@@ -50,14 +50,22 @@ export async function POST(req: NextRequest) {
 
   const placar = dominados !== null && total ? `${dominados} de ${total}` : 'não informado'
 
-  const linhas = [
-    `${nome} — WhatsApp ${celular}`,
-    `Resultado do diagnóstico: ${placar} números sob controle.`,
-    fracos.length ? `Pontos cegos: ${fracos.join(', ')}.` : '',
-  ].filter(Boolean)
+  // O contato é gravado DUAS vezes no fluxo: quando a pessoa entra no
+  // diagnóstico e quando termina. Assim quem começou e desistiu não se perde —
+  // e, para quem terminou, a segunda notificação chega com o placar, que é o
+  // que abre a conversa de venda.
+  const concluido = b?.etapa === 'fim'
+
+  const linhas = concluido
+    ? [
+        `${nome} — WhatsApp ${celular}`,
+        `Resultado: ${placar} números sob controle.`,
+        fracos.length ? `Pontos cegos: ${fracos.join(', ')}.` : '',
+      ].filter(Boolean)
+    : [`${nome} — WhatsApp ${celular}`, 'Começou o diagnóstico agora.']
 
   const { error: erroNotif } = await supabaseAdmin.from('notificacoes').insert({
-    titulo: 'Novo contato pelo diagnóstico',
+    titulo: concluido ? 'Diagnóstico concluído' : 'Novo contato pelo diagnóstico',
     mensagem: linhas.join(' '),
     tipo: 'info',
     para_todos: false,
@@ -69,6 +77,10 @@ export async function POST(req: NextRequest) {
   if (erroNotif) {
     return NextResponse.json({ erro: 'Não foi possível enviar. Tente novamente.' }, { status: 500 })
   }
+
+  // Só na abertura: gravar de novo no fim criaria um contato duplicado na
+  // tela de Contatos para a mesma pessoa.
+  if (concluido) return NextResponse.json({ ok: true, emContatos: true })
 
   // Extra, tolerante a falha: sem o sql/leads_diagnostico.sql a tabela recusa
   // por causa do not null em email e sistema_atual, e está tudo bem — a

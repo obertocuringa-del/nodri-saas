@@ -33,17 +33,20 @@ export const metadata: Metadata = {
   },
 }
 
+const AREAS = [...new Set(PERGUNTAS.map(p => p.area))]
+
+// Dado estruturado sem as perguntas. Elas deixaram de ficar visíveis antes da
+// resposta, e anunciar em JSON-LD o que o leitor não vê é justamente o que o
+// buscador trata como conteúdo escondido.
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'Quiz',
+  '@type': 'WebApplication',
   name: 'Diagnóstico de gestão para salão de beleza',
-  about: 'Gestão financeira, precificação e operação de salão de beleza',
-  educationalLevel: 'Gestores de salão de beleza, barbearia e clínica de estética',
-  hasPart: PERGUNTAS.map(p => ({
-    '@type': 'Question',
-    name: p.pergunta,
-    acceptedAnswer: { '@type': 'Answer', text: `${p.porque} ${p.oQueFazer}` },
-  })),
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'Dez perguntas sobre os números de um salão de beleza — custo, preço, comissão, agenda, cliente e risco — com resultado imediato e orientação sobre o que fazer em cada ponto cego.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
 }
 
 export default function DiagnosticoPage() {
@@ -76,6 +79,13 @@ export default function DiagnosticoPage() {
         }
         .dg-campo::placeholder { color: rgba(255,255,255,.45) }
         .dg-campo:focus { border-color: ${CIANO}; background: rgba(255,255,255,.14) }
+        .dg-campo-claro {
+          width: 100%; padding: 14px 16px; border-radius: 11px;
+          border: 1.5px solid #e3e8f0; background: #fbfdfe; color: #1a2230;
+          font-size: 16px; font-family: inherit; outline: none;
+        }
+        .dg-campo-claro::placeholder { color: #9aa8b8 }
+        .dg-campo-claro:focus { border-color: ${CIANO}; background: #fff }
         .dg-refazer {
           background: none; border: none; cursor: pointer; font-family: inherit;
           color: #7d8fa5; font-size: 13.5px; font-weight: 600; text-decoration: underline;
@@ -134,38 +144,46 @@ export default function DiagnosticoPage() {
         <Quiz />
       </main>
 
-      {/* As perguntas por extenso. Existe por dois motivos: é o conteúdo que o
-          buscador lê (o quiz é montado por JavaScript), e serve a quem prefere
-          só olhar a lista antes de responder. */}
+      {/* O que o diagnóstico mede — sem entregar as perguntas.
+          A lista literal das dez ficava aqui e tinha um efeito ruim: quem lia
+          antes de responder já sabia o que estava sendo medido, e o resultado
+          deixava de valer. As perguntas por extenso, com o porquê e o que
+          fazer, aparecem no RESULTADO. O que fica nesta seção é conteúdo real
+          sobre os assuntos — que é o que o buscador precisa ler. */}
       <section style={{ background: '#fff', borderTop: '1px solid #e3e8f0', marginTop: 30, padding: 'clamp(34px,4.4vw,54px) 20px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <h2 style={{
             fontSize: 'clamp(20px,2.6vw,27px)', fontWeight: 900, color: MARINHO,
             marginBottom: 10, letterSpacing: '-0.5px',
-          }}>As dez perguntas do diagnóstico</h2>
-          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, marginBottom: 26 }}>
-            Todas saíram de dúvidas reais de donos de salão. Nenhuma foi inventada
-            para o teste.
+          }}>O que o diagnóstico mede</h2>
+          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, marginBottom: 24 }}>
+            São dez perguntas em {AREAS.length} frentes da gestão de um salão de
+            beleza. Todas saíram de dúvidas reais de donos de salão, e nenhuma é
+            sobre opinião: cada uma trata de um número que você tem ou não tem.
           </p>
 
-          <ol className="dg-lista" style={{ paddingLeft: 20, margin: 0 }}>
-            {PERGUNTAS.map(p => (
-              <li key={p.id}>
-                <strong>{p.pergunta}</strong> {p.porque}
-              </li>
+          <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+            {AREAS.map(a => (
+              <div key={a} style={{
+                border: '1px solid #e3e8f0', borderRadius: 11, padding: '13px 15px',
+                background: '#fbfdfe', borderLeft: `3px solid ${CIANO}`,
+              }}>
+                <p style={{ fontWeight: 800, color: MARINHO, fontSize: 14 }}>{a}</p>
+              </div>
             ))}
-          </ol>
-
-          <div style={{ marginTop: 30, paddingTop: 22, borderTop: '1px solid #eef2f7' }}>
-            <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7 }}>
-              Quer as respostas antes de responder? Elas estão nas{' '}
-              <a href="/perguntas-frequentes" style={{ color: '#046b85', fontWeight: 700 }}>
-                perguntas frequentes sobre gestão de salão
-              </a>.
-            </p>
           </div>
+
+          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, marginTop: 24 }}>
+            No fim você recebe o placar, os pontos cegos com o motivo de cada um
+            importar, e o que fazer a respeito. Se quiser as respostas prontas
+            antes disso, elas estão nas{' '}
+            <a href="/perguntas-frequentes" style={{ color: '#046b85', fontWeight: 700 }}>
+              perguntas frequentes sobre gestão de salão
+            </a>.
+          </p>
         </div>
       </section>
+
     </div>
   )
 }

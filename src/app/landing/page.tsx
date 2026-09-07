@@ -526,6 +526,43 @@ export default function LandingPage({ cfgInicial }: any) {
         </div>
       </section>
 
+      {/* FAIXA DAS PERGUNTAS FREQUENTES ---------------------------------------
+          Vem ANTES dos cards de dor, para quebrar o bloco de informação e dar
+          uma saída a quem chegou com uma pergunta específica em vez de uma dor.
+
+          É a mesma família da faixa do diagnóstico, mas na versão clara: duas
+          faixas escuras iguais na mesma página disputariam a atenção, e a do
+          diagnóstico é a que precisa ganhar. */}
+      <section style={{ padding: 'clamp(28px,3.6vw,44px) 20px 0', maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{
+          background: '#eef7fb', border: '1px solid #cfe8f2', borderRadius: 18,
+          padding: 'clamp(22px,3vw,36px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: 'clamp(16px,3vw,36px)', flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+            <div style={{
+              display: 'inline-block', padding: '6px 14px', borderRadius: 999,
+              background: '#d7eef7', color: '#046b85', fontSize: 11, fontWeight: 800,
+              letterSpacing: '.5px', marginBottom: 13, textTransform: 'uppercase',
+            }}>Respostas diretas</div>
+            <h2 style={{
+              color: MARINHO, fontSize: 'clamp(20px,2.7vw,30px)', fontWeight: 900,
+              letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: 9,
+            }}>Dúvidas de quem administra salão</h2>
+            <p style={{ color: '#4a5568', fontSize: 15.5, lineHeight: 1.7, maxWidth: 540 }}>
+              Precificação, comissão, custo operacional, salão parceiro, estoque
+              e agenda. Sem enrolação, do jeito que a pergunta chega — e você
+              ainda pode mandar a sua.
+            </p>
+          </div>
+          <a href="/perguntas-frequentes" style={{
+            flexShrink: 0, display: 'inline-block', padding: '15px 30px', borderRadius: 12,
+            background: '#fff', color: MARINHO, fontWeight: 800, fontSize: 15,
+            textDecoration: 'none', border: `2px solid ${MARINHO}`,
+          }}>Ver as perguntas →</a>
+        </div>
+      </section>
+
       {/* ── AS DORES ──────────────────────────────────────────────────────
           Quatro situações concretas em vez de adjetivos. Quem se reconhece em
           uma delas já entendeu para que serve o sistema, sem precisar que
