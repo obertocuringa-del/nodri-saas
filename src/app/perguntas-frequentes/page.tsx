@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Perguntar from './Perguntar'
 
 // ── FAQ público ─────────────────────────────────────────────────────────────
 //
@@ -291,6 +292,13 @@ export default function PerguntasFrequentesPage() {
         }
         .faq-item[open] summary::before { content: "–"; }
         .faq-item summary:hover { background: #f7fafc; }
+        .fq-campo {
+          width: 100%; padding: 13px 15px; border-radius: 11px;
+          border: 1.5px solid #e3e8f0; background: #fbfdfe; color: #1a2230;
+          font-size: 15px; font-family: inherit; outline: none; resize: vertical;
+        }
+        .fq-campo::placeholder { color: #9aa8b8 }
+        .fq-campo:focus { border-color: ${CIANO}; background: #fff }
         .faq-resp { padding: 0 22px 20px 54px; }
         .faq-resp p { color: #4a5568; font-size: 14.5px; line-height: 1.7; margin: 0 0 10px; }
         .faq-resp p:last-child { margin-bottom: 0; }
@@ -362,28 +370,20 @@ export default function PerguntasFrequentesPage() {
 
         <div style={{
           background: '#fff', border: '1px solid #e3e8f0', borderRadius: 16,
-          padding: 'clamp(26px,3.5vw,40px)', textAlign: 'center', marginTop: 10,
+          padding: 'clamp(26px,3.5vw,40px)', marginTop: 10,
         }}>
-          <div style={{ width: 40, height: 3, borderRadius: 3, background: CIANO, margin: '0 auto 18px' }} />
-          <h2 style={{ fontSize: 'clamp(20px,2.4vw,26px)', fontWeight: 900, color: MARINHO, marginBottom: 12, letterSpacing: '-.5px' }}>
-            Sua dúvida não estava aqui?
-          </h2>
-          <p style={{ color: '#4a5568', fontSize: 15, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 18px' }}>
-            Fale com a gente. Respondemos sobre gestão de salão mesmo que você ainda não seja cliente.
-          </p>
-          <p style={{ color: '#4a5568', fontSize: 14.5, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 26px' }}>
-            Ou faça o{' '}
-            <a href="/diagnostico" style={{ color: '#046b85', fontWeight: 700 }}>
-              diagnóstico do seu salão em 10 perguntas
-            </a>{' '}
-            e veja onde estão os pontos cegos.
-          </p>
-          <a href="/#contato" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 9,
-            padding: '16px 36px', borderRadius: 12, textDecoration: 'none',
-            background: MARINHO, color: '#fff', fontWeight: 800, fontSize: 15.5,
-            boxShadow: '0 8px 26px rgba(13,42,86,.22)',
-          }}>Falar com a NODRI →</a>
+          <Perguntar />
+
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #eef2f7', textAlign: 'center' }}>
+            <p style={{ color: '#4a5568', fontSize: 14.5, lineHeight: 1.8 }}>
+              Prefere falar agora?{' '}
+              <a href="/#contato" style={{ color: '#046b85', fontWeight: 700 }}>Fale com a NODRI</a>
+              {' '}· Ou faça o{' '}
+              <a href="/diagnostico" style={{ color: '#046b85', fontWeight: 700 }}>
+                diagnóstico do seu salão em 10 perguntas
+              </a>.
+            </p>
+          </div>
         </div>
       </main>
     </div>

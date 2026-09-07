@@ -24,6 +24,8 @@ async function roteador(request: NextRequest) {
     pathname.startsWith('/diagnostico') ||
     // Contato do diagnostico: quem responde ainda nao tem conta.
     pathname === '/api/diagnostico/lead' ||
+    // Pergunta enviada pelo FAQ: quem pergunta ainda nao tem conta.
+    pathname === '/api/perguntas' ||
     // Planos: pagina por convite. Quem valida o convite e a propria pagina
     // (via /api/leads/validar); o middleware so precisa deixar chegar.
     pathname.startsWith('/planos') ||
