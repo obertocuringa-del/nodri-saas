@@ -58,6 +58,13 @@ export const LANDING_PADRAO = {
     { titulo: 'Você não sabe qual profissional dá lucro', desc: 'Todo mundo parece ocupado. Mas quem realmente traz resultado, quem só ocupa cadeira e quem está caindo mês a mês? Sem número, é achismo.' },
     { titulo: 'Cliente some e ninguém percebe', desc: 'Aquela cliente que vinha todo mês parou de aparecer. Você só percebe quando ela já está em outro salão há meio ano.' },
     { titulo: 'Tudo depende de você estar presente', desc: 'Se você viaja ou adoece, a rotina desmonta. Nada está escrito, tudo está na sua cabeça e no caderno da recepção.' },
+    // Os quatro abaixo cobrem custo, preço e comissão — o terreno mais doloroso
+    // do setor e o que os quatro primeiros não tocavam. Saíram dos ganchos de
+    // conteúdo, que por sua vez saíram de dúvida real escrita por dono de salão.
+    { titulo: 'Você não sabe o custo real de cada serviço', desc: 'Produto medido no olho, comissão combinada por fora e a taxa do cartão que ninguém somou. O preço parece certo até alguém juntar as três coisas.' },
+    { titulo: 'A comissão foi combinada sem conta', desc: 'É o acerto mais caro do salão e o mais difícil de desfazer: quando a margem não comporta, reduzir depois vira conflito e saída de equipe.' },
+    { titulo: 'O preço saiu da tabela da vizinha', desc: 'O preço dela carrega o aluguel dela, a marca dela e a comissão dela. Copiar é herdar um custo que você não conhece.' },
+    { titulo: 'Agenda cheia e margem no chão', desc: 'Tem serviço na sua tabela que deixa 35% e outro que deixa 2%. Sem calcular um a um, não dá para saber qual é qual.' },
   ],
 
   // Comparação com o concorrente.
