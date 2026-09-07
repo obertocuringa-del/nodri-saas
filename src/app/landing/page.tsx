@@ -797,7 +797,7 @@ export default function LandingPage({ cfgInicial }: any) {
           <div>
             {cfg.footer_email ? (
               <div>
-                <a href={`mailto:${cfg.footer_email}`} style={{ color: CIANO, textDecoration: 'none' }}>
+                <a href={`mailto:${cfg.footer_email}`} style={{ color: CIANO, textDecoration: 'none', overflowWrap: 'anywhere' }}>
                   {cfg.footer_email}
                 </a>
               </div>
@@ -805,7 +805,7 @@ export default function LandingPage({ cfgInicial }: any) {
             {cfg.footer_whatsapp ? (
               <div>
                 <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer"
-                  style={{ color: CIANO, textDecoration: 'none' }}>
+                  style={{ color: CIANO, textDecoration: 'none', overflowWrap: 'anywhere' }}>
                   Falar no WhatsApp
                 </a>
               </div>

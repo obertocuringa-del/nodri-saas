@@ -2915,13 +2915,12 @@ Use números reais. Seja direto.`
                   {(() => {
                     const lucroReal = fatN > 0 ? resultOp / fatN * 100 : 0
                     const acimaPE = fatN >= pe && pe > 0
-                    let cor = '#10b981', icone = '', titulo = 'SAUDÁVEL', msg = 'Parabéns! O salão está lucrando e acima do ponto de equilíbrio.'
-                    if (!acimaPE || lucroReal < 0) { cor='#ef4444'; icone=''; titulo='ATENÇÃO URGENTE'; msg='O salão está operando abaixo do ponto de equilíbrio. Os gastos superam a receita.' }
-                    else if (lucroReal < 10) { cor='#f59e0b'; icone=''; titulo='ATENÇÃO'; msg='O salão cobre os custos, mas a margem de lucro está baixa. É hora de revisar os gastos.' }
+                    let cor = '#10b981', titulo = 'SAUDÁVEL', msg = 'Parabéns! O salão está lucrando e acima do ponto de equilíbrio.'
+                    if (!acimaPE || lucroReal < 0) { cor='#ef4444'; titulo='ATENÇÃO URGENTE'; msg='O salão está operando abaixo do ponto de equilíbrio. Os gastos superam a receita.' }
+                    else if (lucroReal < 10) { cor='#f59e0b'; titulo='ATENÇÃO'; msg='O salão cobre os custos, mas a margem de lucro está baixa. É hora de revisar os gastos.' }
                     return (
                       <div className="p-5 border-b" style={{background:`${cor}08`,borderColor:`${cor}30`}}>
                         <div className="flex items-center gap-4">
-                          <div className="text-4xl">{icone}</div>
                           <div className="flex-1">
                             <p className="text-lg font-bold" style={{color:cor}}>Situação: {titulo}</p>
                             <p className="text-sm mt-1" style={{color:'#767069'}}>{msg}</p>

@@ -2,6 +2,9 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+// Mapa compartilhado com os cards de celular da página de pendências: sem
+// isso, as duas telas pintavam o mesmo setor de cores diferentes.
+import { CHAVES_SETOR as CHAVES, CORES_SETOR as CORES } from '@/lib/coresDepartamento'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ORGANOGRAMA DOS DEPARTAMENTOS (somente no computador — no celular a página
@@ -40,28 +43,6 @@ interface Props {
 const norm = (s: string) => (s || '').toUpperCase().trim()
   .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
 
-// Palavras-chave que identificam cada setor na hierarquia. A ordem importa:
-// o primeiro que casar leva. Setor que não casar com nada vai para "Outros",
-// então nenhum departamento some do organograma.
-const CHAVES: Record<string, string[]> = {
-  contabilidade: ['CONTABIL'],
-  gerencia:      ['GERENCIA', 'GERENTE'],
-  administrativo:['ADMINISTRATIVO'],
-  financeiro:    ['FINANCEIRO'],
-  comercial:     ['COMERCIAL', 'VENDAS'],
-  marketing:     ['MARKETING'],
-  rh:            ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'],
-  compras:       ['COMPRAS', 'ESTOQUE'],
-  qualidade:     ['PROCESSO', 'QUALIDADE'],
-  tecnica:       ['RESPONSAVEL TECNICA', 'TECNICA'],
-  coordenador:   ['COORDENADOR', 'COORDENACAO'],
-  recepcao:      ['RECEPCAO'],
-  profissionais: ['PROFISSIONAIS'],
-  gerais:        ['SERVICOS GERAIS', 'LIMPEZA'],
-  manutencao:    ['MANUTENCAO'],
-  dosagem:       ['DOSAGEM'],
-  cafe:          ['CAFE', 'COPA', 'CAFETERIA'],
-}
 
 // Descrições genéricas de cada função (só sugestão inicial — o salão edita).
 const PADRAO: Record<string, { icone: string; linhas: string[] }> = {
@@ -100,17 +81,6 @@ function corLegivel(cor: string): string {
   return `rgb(${q(r)}, ${q(g)}, ${q(b)})`
 }
 
-// Cor por posição na hierarquia: o ramo inteiro compartilha a mesma cor, então
-// bate o olho e se sabe de que área é a caixa.
-const CORES: Record<string, string> = {
-  contabilidade: '#6b7280', qualidade: '#6b7280', tecnica: '#6b7280',
-  gerencia: '#5b4fcf',
-  administrativo: '#0891b2', financeiro: '#0891b2', compras: '#0891b2',
-  rh: '#7c3aed',
-  marketing: '#db2777', comercial: '#db2777',
-  coordenador: '#ea580c', recepcao: '#ea580c', profissionais: '#ea580c',
-  dosagem: '#ea580c', gerais: '#ea580c', manutencao: '#ea580c', cafe: '#ea580c',
-}
 
 // Os quatro ramos do nível 2, na ordem em que aparecem. Sair da marcação
 // solta para uma lista é o que permite ao desenho saber qual é o PRIMEIRO e

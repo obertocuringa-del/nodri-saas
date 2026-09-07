@@ -7,6 +7,7 @@ import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import { urlPublica } from '@/lib/urlPublica'
 import OrganogramaDepartamentos from '@/components/salon/OrganogramaDepartamentos'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { corDoSetor } from '@/lib/coresDepartamento'
 
 interface Profissional {
   id: string
@@ -407,10 +408,12 @@ export default function PendenciasPage() {
         {isMobile && departamentos.length > 0 && (
           <div>
             <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold mb-3">Departamentos</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {departamentos.map(d => {
-                const cor = d.departamento_cor || '#5b4fcf'
-                const icone = d.nome_completo === 'ADMINISTRATIVO' ? '' : d.nome_completo === 'FINANCEIRO' ? '' : d.nome_completo === 'RECEPÇÃO' ? '' : ''
+                // Mesma cor que o organograma do computador usa: a do RAMO da
+                // estrutura, não uma por setor. Antes cada card saía de um tom
+                // diferente e a tela virava um mosaico sem significado.
+                const cor = corDoSetor(d.nome_completo, d.departamento_cor)
                 const temPend = (d.pendencias_abertas || 0) > 0
                 const doPortal = solicPorSetor[d.id] || 0   // pedido feito pela profissional
                 return (
@@ -418,7 +421,6 @@ export default function PendenciasPage() {
                     onClick={() => router.push(`/salon/departamentos/${d.id}`)}
                     className={`cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
                     style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${doPortal > 0 ? '#dc2626' : temPend ? '#7f1d1d' : cor + '40'}` }}>
-                    <div className="text-3xl">{icone}</div>
                     <div>
                       <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>
                       {doPortal > 0 && (
@@ -457,7 +459,7 @@ export default function PendenciasPage() {
                     <optgroup label="── Departamentos ──">
                       {departamentos.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.nome_completo === 'ADMINISTRATIVO' ? '' : p.nome_completo === 'FINANCEIRO' ? '' : p.nome_completo === 'RECEPÇÃO' ? '' : ''} {p.nome_completo}
+                          {p.nome_completo}
                         </option>
                       ))}
                     </optgroup>
