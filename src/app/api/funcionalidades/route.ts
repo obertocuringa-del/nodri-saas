@@ -4,10 +4,11 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { FUNCIONALIDADES_CATALOGO } from '@/lib/funcionalidadesCatalogo'
 import { FUNCIONALIDADES_CATALOGO_2 } from '@/lib/funcionalidadesCatalogo2'
+import { FUNCIONALIDADES_CATALOGO_3 } from '@/lib/funcionalidadesCatalogo3'
 
 // O catalogo vive em dois arquivos so para nao virar um arquivo de mil linhas
 // que ninguem abre. Aqui eles voltam a ser uma lista so.
-const CATALOGO = [...FUNCIONALIDADES_CATALOGO, ...FUNCIONALIDADES_CATALOGO_2]
+const CATALOGO = [...FUNCIONALIDADES_CATALOGO, ...FUNCIONALIDADES_CATALOGO_2, ...FUNCIONALIDADES_CATALOGO_3]
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
