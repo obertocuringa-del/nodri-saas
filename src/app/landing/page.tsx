@@ -6,6 +6,35 @@ import Carrossel, { type Midia } from '@/components/Carrossel'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { Instagram, Facebook, Youtube } from 'lucide-react'
 
+// ── Cor por área do negócio ─────────────────────────────────────────────────
+//
+// A vitrine inteira era navy, ciano e branco. Sem variação, os oito cards de
+// dor liam como a mesma informação repetida oito vezes, e o olho não achava
+// onde parar.
+//
+// A paleta não foi inventada aqui: é a mesma que as 79 funcionalidades já
+// usam por categoria. Assim a cor diz DE QUE PARTE do negócio a dor é —
+// dinheiro, equipe, cliente, rotina — em vez de enfeitar.
+//
+// A escolha é por palavra do texto, e não por posição: o dono edita e reordena
+// esses cards pelo painel, e a cor precisa continuar certa depois disso. Quem
+// não casar com nada cai no ciclo, que garante variação sem repetir vizinho.
+const CORES_AREA: { cor: string; palavras: string[] }[] = [
+  { cor: '#0f766e', palavras: ['custo', 'lucro', 'sobrou', 'dinheiro', 'preço', 'margem', 'caixa', 'faturamento'] },
+  { cor: '#5b4fcf', palavras: ['profissional', 'comissão', 'equipe', 'contrato'] },
+  { cor: '#be123c', palavras: ['cliente', 'agenda', 'retorno'] },
+  { cor: '#b45309', palavras: ['depende', 'rotina', 'presente', 'processo', 'estoque'] },
+]
+const CICLO = ['#0f766e', '#5b4fcf', '#be123c', '#b45309', '#0d6efd', '#475569']
+
+function corDaDor(titulo: string, desc: string, i: number) {
+  const t = `${titulo} ${desc}`.toLowerCase()
+  for (const { cor, palavras } of CORES_AREA) {
+    if (palavras.some(w => t.includes(w))) return cor
+  }
+  return CICLO[i % CICLO.length]
+}
+
 // O @ do perfil sai da própria URL cadastrada, para não existir um segundo
 // campo dizendo a mesma coisa — e desencontrar dele no dia em que um dos dois
 // for editado e o outro não.
@@ -577,15 +606,21 @@ export default function LandingPage({ cfgInicial }: any) {
         </p>
 
         <div className="nodri-4col">
-          {((cfg as any).dores || []).map((d: any, i: number) => (
-            <div key={i} style={{
-              background: '#fff', borderRadius: 16, padding: 26,
-              border: '1px solid #e3e8f0', borderTop: `4px solid ${CIANO}`,
-            }}>
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 10, lineHeight: 1.35 }}>{d.titulo}</h3>
-              <p style={{ color: '#6b7280', fontSize: 14.5, lineHeight: 1.7 }}>{d.desc}</p>
-            </div>
-          ))}
+          {((cfg as any).dores || []).map((d: any, i: number) => {
+            // Ciano saiu daqui: era a mesma cor dos botões, e cor de ação usada
+            // como enfeite faz o olho perder a referência do que é clicável.
+            const cor = corDaDor(d.titulo || '', d.desc || '', i)
+            return (
+              <div key={i} style={{
+                background: '#fff', borderRadius: 16, padding: 26,
+                border: '1px solid #e3e8f0', borderTop: `4px solid ${cor}`,
+              }}>
+                <div style={{ width: 26, height: 3, borderRadius: 3, background: cor, marginBottom: 14 }} />
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 10, lineHeight: 1.35 }}>{d.titulo}</h3>
+                <p style={{ color: '#6b7280', fontSize: 14.5, lineHeight: 1.7 }}>{d.desc}</p>
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -698,16 +733,27 @@ export default function LandingPage({ cfgInicial }: any) {
       </section>
 
       {/* BENEFÍCIOS */}
-      <section style={{ padding: 'clamp(34px,4.5vw,54px) 20px clamp(40px,5.5vw,62px)', maxWidth: 1080, margin: '0 auto', background: '#fff', borderTop: '1px solid #e3e8f0' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
-        <div className="nodri-4col">
-          {(cfg.beneficios || []).map((b: any, i: number) => (
-            <div key={i} style={{ background: '#f7fafc', borderRadius: 16, padding: 26, border: '1px solid #e3e8f0' }}>
-              <div style={{ width: 34, height: 4, borderRadius: 4, background: CIANO, marginBottom: 16 }} />
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 9, lineHeight: 1.35 }}>{b.titulo}</h3>
-              <p style={{ color: '#6b7280', lineHeight: 1.7, fontSize: 14.5 }}>{b.desc}</p>
-            </div>
-          ))}
+      {/* Fundo levemente tingido: a seção de cima é branca, e duas brancas
+          coladas viram um bloco só. E os cards passam a branco, para o
+          contraste se inverter e cada um se destacar do fundo. */}
+      <section style={{ padding: 'clamp(34px,4.5vw,54px) 20px clamp(40px,5.5vw,62px)', background: '#f2f6fa', borderTop: '1px solid #e3e8f0' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <h2 style={{ textAlign: 'center', fontSize: 'clamp(23px,3.2vw,35px)', fontWeight: 900, color: MARINHO, marginBottom: 40, letterSpacing: '-0.5px' }}>{cfg.beneficios_titulo}</h2>
+          <div className="nodri-4col">
+            {(cfg.beneficios || []).map((b: any, i: number) => {
+              // Mesma regra dos cards de dor: a cor diz de que área é o
+              // benefício. Antes eram todos o mesmo filete ciano, e a fileira
+              // lia como uma informação repetida.
+              const cor = corDaDor(b.titulo || '', b.desc || '', i)
+              return (
+                <div key={i} style={{ background: '#fff', borderRadius: 16, padding: 26, border: '1px solid #e3e8f0' }}>
+                  <div style={{ width: 34, height: 4, borderRadius: 4, background: cor, marginBottom: 16 }} />
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: MARINHO, marginBottom: 9, lineHeight: 1.35 }}>{b.titulo}</h3>
+                  <p style={{ color: '#6b7280', lineHeight: 1.7, fontSize: 14.5 }}>{b.desc}</p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
