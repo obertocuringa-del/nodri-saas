@@ -14,7 +14,7 @@ import { Mail, Link as LinkIcon, Check, X, Loader2, Phone } from 'lucide-react'
 // contato, só passa a valer.
 
 interface Lead {
-  id: string; nome: string; sobrenome?: string; email: string; celular?: string
+  id: string; nome: string; sobrenome?: string; email?: string; celular?: string
   estado?: string; cidade?: string; tipo_estabelecimento?: string
   sistema_atual: string; objetivo?: string
   token: string; liberado_em?: string | null; criado_em: string
@@ -98,16 +98,21 @@ export default function Contatos() {
                   </span>
                 </div>
 
+                {/* Junta só o que existe. O contato vindo do diagnóstico tem
+                    nome e WhatsApp e mais nada — montado com separador fixo,
+                    ele apareceria começando por " · ". */}
                 <div className="text-[11.5px] text-nodri-t2 mt-1">
-                  {l.email}{l.celular ? ` · ${l.celular}` : ''}
-                  {l.cidade ? ` · ${l.cidade}${l.estado ? '/' + l.estado : ''}` : ''}
+                  {[l.email, l.celular, l.cidade ? `${l.cidade}${l.estado ? '/' + l.estado : ''}` : '']
+                    .filter(Boolean).join(' · ')}
                 </div>
 
                 {/* O que muda a conversa de venda fica em destaque. */}
                 <div className="flex gap-2 flex-wrap mt-2">
-                  <span className="text-[10px] px-2 py-1 rounded bg-nodri-cyan/10 text-nodri-cyan font-semibold">
-                    Usa hoje: {l.sistema_atual}
-                  </span>
+                  {l.sistema_atual && (
+                    <span className="text-[10px] px-2 py-1 rounded bg-nodri-cyan/10 text-nodri-cyan font-semibold">
+                      Usa hoje: {l.sistema_atual}
+                    </span>
+                  )}
                   {l.tipo_estabelecimento && (
                     <span className="text-[10px] px-2 py-1 rounded bg-nodri-surface text-nodri-t2">{l.tipo_estabelecimento}</span>
                   )}

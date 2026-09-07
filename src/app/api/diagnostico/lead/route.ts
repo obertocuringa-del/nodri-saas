@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('leads').insert({
       nome,
       celular,
-      objetivo: `Diagnóstico: ${placar}.${fracos.length ? ' Pontos cegos: ' + fracos.join(', ') + '.' : ''}`,
+      // Redigido para ler bem depois do "Quer:" que a tela de Contatos põe na frente.
+      objetivo: `ajuda com o que apareceu no diagnóstico — ${placar} sob controle.`
+        + `${fracos.length ? ' Pontos cegos: ' + fracos.join(', ') + '.' : ''}`,
       token: randomBytes(9).toString('base64url'),
     })
   } catch {
