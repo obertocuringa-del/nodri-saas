@@ -75,13 +75,13 @@ export const PERGUNTAS: Pergunta[] = [
       'Duas contas e um pró-labore fixo, com valor e data definidos antes do mês começar. É a mudança de maior efeito e menor esforço que existe.',
   },
   {
-    id: 'reserva',
-    area: 'Financeiro',
-    pergunta: 'Se o movimento cair pela metade por três meses, o salão aguenta?',
+    id: 'contratos',
+    area: 'Risco',
+    pergunta: 'Todo mundo que trabalha no seu salão tem contrato assinado?',
     porque:
-      'Reserva não é luxo, é o que separa um trimestre ruim de um fechamento. E ela some sem ninguém perceber quando está misturada com o capital de giro.',
+      'Sem contrato, regras assinadas e nota emitida, o que sobra numa discussão trabalhista é um pagamento recorrente para alguém que trabalha no seu espaço — que é exatamente como se parece um salário informal. E quem responde é o salão.',
     oQueFazer:
-      'Separe as duas: giro é o dinheiro que faz o mês rodar, reserva é o que você não toca.',
+      'Levante quem está sem contrato e quem está com nota atrasada. As duas listas costumam se sobrepor, e resolvê-las é trabalho de uma semana.',
   },
   {
     id: 'ocupacao',

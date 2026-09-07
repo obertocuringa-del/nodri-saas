@@ -69,6 +69,13 @@ export default function DiagnosticoPage() {
           margin-bottom: 2px;
         }
         .dg-opcao-desc { display: block; font-size: 13px; color: #7d8fa5; }
+        .dg-campo {
+          width: 100%; padding: 14px 16px; border-radius: 11px;
+          border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.09);
+          color: #fff; font-size: 15px; font-family: inherit; outline: none;
+        }
+        .dg-campo::placeholder { color: rgba(255,255,255,.45) }
+        .dg-campo:focus { border-color: ${CIANO}; background: rgba(255,255,255,.14) }
         .dg-refazer {
           background: none; border: none; cursor: pointer; font-family: inherit;
           color: #7d8fa5; font-size: 13.5px; font-weight: 600; text-decoration: underline;

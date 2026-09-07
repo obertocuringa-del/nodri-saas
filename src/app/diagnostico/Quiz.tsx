@@ -12,9 +12,10 @@ import { PERGUNTAS, OPCOES, PONTOS_MAXIMOS, faixaDe } from '@/lib/diagnostico'
 // Clicar na resposta já avança. Botão de "próxima" seria um clique a mais para
 // não fazer nada, e cada clique a mais custa gente no meio do caminho.
 //
-// Nada é enviado a lugar nenhum: o resultado é calculado aqui e mostrado na
-// hora. Pedir e-mail antes de entregar aumentaria o cadastro e derrubaria a
-// conclusão, que é onde este conteúdo convence.
+// O resultado é calculado aqui e aparece na hora, sem pedir nada. O contato
+// vem DEPOIS: quem já viu os próprios pontos cegos está no pico de interesse,
+// e quem preenche ali quer mesmo falar. Pedir antes de entregar aumentaria o
+// cadastro e derrubaria a conclusão, que é onde este conteúdo convence.
 
 const MARINHO = '#0d2a56'
 const CIANO = '#00b5d8'
@@ -23,6 +24,12 @@ export default function Quiz() {
   const [respostas, setRespostas] = useState<Record<string, number>>({})
   const [i, setI] = useState(0)
   const [pronto, setPronto] = useState(false)
+
+  const [nome, setNome] = useState('')
+  const [celular, setCelular] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [enviado, setEnviado] = useState(false)
+  const [erro, setErro] = useState('')
 
   const total = PERGUNTAS.length
   const atual = PERGUNTAS[i]
@@ -44,6 +51,41 @@ export default function Quiz() {
   const faixa = faixaDe(pontos)
   const pendentes = PERGUNTAS.filter(p => (respostas[p.id] ?? 0) < 2)
   const dominados = total - pendentes.length
+
+  // Máscara simples: só formata o que a pessoa digita, sem impedir de digitar.
+  // Máscara que bloqueia tecla é a que mais irrita em celular.
+  const mascarar = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 11)
+    if (d.length <= 2) return d
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+  }
+
+  const enviar = async () => {
+    setErro('')
+    setEnviando(true)
+    try {
+      const r = await fetch('/api/diagnostico/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome,
+          celular,
+          pontos: dominados,
+          total,
+          fracos: pendentes.map(p => p.area),
+        }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(d?.erro || 'Não foi possível enviar.')
+      setEnviado(true)
+    } catch (e: any) {
+      setErro(e?.message || 'Não foi possível enviar. Tente novamente.')
+    } finally {
+      setEnviando(false)
+    }
+  }
 
   if (pronto) {
     return (
@@ -101,24 +143,81 @@ export default function Quiz() {
         )}
 
         <div style={{
-          marginTop: 30, padding: 'clamp(22px,3vw,30px)', borderRadius: 14,
+          marginTop: 30, padding: 'clamp(22px,3vw,32px)', borderRadius: 14,
           background: MARINHO, textAlign: 'center',
         }}>
-          <h3 style={{ color: '#fff', fontSize: 'clamp(17px,2.2vw,22px)', fontWeight: 900, marginBottom: 10, letterSpacing: '-0.3px' }}>
-            {pendentes.length > 0
-              ? 'Esses números existem. Só ninguém tem tempo de calcular.'
-              : 'Você já sabe as contas. A NODRI faz elas sozinha.'}
-          </h3>
-          <p style={{ color: 'rgba(255,255,255,.75)', fontSize: 14.5, lineHeight: 1.7, maxWidth: 520, margin: '0 auto 20px' }}>
-            A NODRI calcula custo, margem, comissão e ocupação a partir do que
-            você já lança no dia a dia — serviço por serviço, todo mês, sem
-            planilha.
-          </p>
-          <a href="/#contato" style={{
-            display: 'inline-block', padding: '15px 34px', borderRadius: 11,
-            background: CIANO, color: '#04263a', fontWeight: 800, fontSize: 15,
-            textDecoration: 'none',
-          }}>Quero ver funcionando</a>
+          {enviado ? (
+            <>
+              <h3 style={{ color: '#fff', fontSize: 'clamp(17px,2.2vw,22px)', fontWeight: 900, marginBottom: 10, letterSpacing: '-0.3px' }}>
+                Recebido, {nome.split(' ')[0]}.
+              </h3>
+              <p style={{ color: 'rgba(255,255,255,.75)', fontSize: 14.5, lineHeight: 1.7, maxWidth: 480, margin: '0 auto' }}>
+                Vamos chamar no seu WhatsApp com o resultado em mãos, para falar
+                dos pontos que apareceram aqui. Se preferir adiantar, é só falar
+                com a gente pelo botão do canto.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ color: '#fff', fontSize: 'clamp(17px,2.2vw,22px)', fontWeight: 900, marginBottom: 10, letterSpacing: '-0.3px' }}>
+                {pendentes.length > 0
+                  ? 'Quer ajuda com os pontos que apareceram?'
+                  : 'Você já sabe as contas. A NODRI faz elas sozinha.'}
+              </h3>
+              <p style={{ color: 'rgba(255,255,255,.75)', fontSize: 14.5, lineHeight: 1.7, maxWidth: 500, margin: '0 auto 20px' }}>
+                Deixe o nome e o WhatsApp que a gente chama para mostrar como a
+                NODRI calcula esses números a partir do que você já lança no dia
+                a dia.
+              </p>
+
+              <div style={{ display: 'grid', gap: 10, maxWidth: 380, margin: '0 auto' }}>
+                <input
+                  value={nome}
+                  onChange={e => setNome(e.target.value)}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                  className="dg-campo"
+                />
+                <input
+                  value={celular}
+                  onChange={e => setCelular(mascarar(e.target.value))}
+                  placeholder="WhatsApp com DDD"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className="dg-campo"
+                />
+
+                {erro && (
+                  <p style={{ color: '#ffb4b4', fontSize: 13, margin: 0 }}>{erro}</p>
+                )}
+
+                <button
+                  onClick={enviar}
+                  disabled={enviando}
+                  style={{
+                    padding: '15px 24px', borderRadius: 11, border: 'none',
+                    background: CIANO, color: '#04263a', fontWeight: 800, fontSize: 15,
+                    cursor: enviando ? 'default' : 'pointer', opacity: enviando ? .65 : 1,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {enviando ? 'Enviando...' : 'Quero que a NODRI me chame'}
+                </button>
+              </div>
+
+              <p style={{ color: 'rgba(255,255,255,.45)', fontSize: 11.5, lineHeight: 1.6, maxWidth: 420, margin: '14px auto 0' }}>
+                Ao enviar, você autoriza a NODRI a entrar em contato sobre a
+                gestão do seu salão. Não repassamos os seus dados, e você pode
+                pedir a exclusão quando quiser.
+              </p>
+
+              <p style={{ margin: '14px 0 0' }}>
+                <a href="/#contato" style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, textDecoration: 'underline' }}>
+                  Prefiro falar agora
+                </a>
+              </p>
+            </>
+          )}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 18 }}>
