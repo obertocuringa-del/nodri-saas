@@ -128,7 +128,17 @@ export default function AdminAcademiaPage() {
   }
 
   const excluir = async (id: string, titulo: string) => {
-    if (!confirm(`Excluir "${titulo}"? Esta ação não pode ser desfeita.`)) return
+    // "Ocultar" e o caminho certo para tirar um artigo de circulacao. Excluir
+    // apaga a linha, e artigo do catalogo padrao volta na proxima sincronia —
+    // que compara por titulo e nao tem como saber que a saida foi proposital.
+    if (!confirm(
+      `Excluir "${titulo}"?
+
+`
+      + 'Se este for um artigo padrão da NODRI, ele volta na próxima '
+      + 'sincronização. Para tirá-lo da Academia de forma definitiva, use '
+      + 'OCULTAR em vez de excluir.'
+    )) return
     const r = await fetch(`/api/academia/${id}`, { method: 'DELETE' })
     const d = await r.json()
     if (d.error) return toast.error(d.error)
