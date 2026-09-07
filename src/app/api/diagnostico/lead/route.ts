@@ -26,11 +26,18 @@ function soDigitos(v: unknown) {
   return String(v ?? '').replace(/\D/g, '')
 }
 
+// Mesma limpeza da tela, repetida aqui de propósito: a rota é pública e pode
+// receber o número com código do país por outros caminhos. Guardar 13 dígitos
+// quebraria o link do WhatsApp montado na tela de Contatos, que já prefixa 55.
+function semCodigoDoPais(d: string) {
+  return d.length > 11 && d.startsWith('55') ? d.slice(2) : d
+}
+
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null)
 
   const nome = String(b?.nome || '').trim()
-  const celular = soDigitos(b?.celular)
+  const celular = semCodigoDoPais(soDigitos(b?.celular))
 
   if (nome.length < 2) {
     return NextResponse.json({ erro: 'Diga o seu nome.' }, { status: 400 })

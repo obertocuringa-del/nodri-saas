@@ -41,8 +41,15 @@ export default function Quiz() {
 
   // Máscara que só formata, sem bloquear tecla: bloquear atrapalha justamente o
   // preenchimento automático do navegador, que é o motivo de pedir aqui.
+  //
+  // O 55 da frente precisa sair antes de formatar. O autopreenchimento entrega
+  // o número com código do país (+55 61 98520-8123 = 13 dígitos); cortando os
+  // 11 primeiros, o 55 virava DDD e o fim do número se perdia — dava
+  // "(55) 61985-0812", que não é telefone de ninguém.
   const mascarar = (v: string) => {
-    const d = v.replace(/\D/g, '').slice(0, 11)
+    let d = v.replace(/\D/g, '')
+    if (d.length > 11 && d.startsWith('55')) d = d.slice(2)
+    d = d.slice(0, 11)
     if (d.length <= 2) return d
     if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
     if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
