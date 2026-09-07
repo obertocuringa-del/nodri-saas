@@ -70,20 +70,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: 'Não foi possível enviar. Tente novamente.' }, { status: 500 })
   }
 
-  // Extra, tolerante a falha: enquanto o SQL não roda, a tabela recusa por
-  // causa do not null, e está tudo bem — a notificação já garantiu o contato.
-  try {
-    await supabaseAdmin.from('leads').insert({
-      nome,
-      celular,
-      // Redigido para ler bem depois do "Quer:" que a tela de Contatos põe na frente.
-      objetivo: `ajuda com o que apareceu no diagnóstico — ${placar} sob controle.`
-        + `${fracos.length ? ' Pontos cegos: ' + fracos.join(', ') + '.' : ''}`,
-      token: randomBytes(9).toString('base64url'),
-    })
-  } catch {
-    // Sem ação: o registro que importa já está gravado.
-  }
+  // Extra, tolerante a falha: sem o sql/leads_diagnostico.sql a tabela recusa
+  // por causa do not null em email e sistema_atual, e está tudo bem — a
+  // notificação já garantiu o contato.
+  //
+  // O cliente do Supabase NÃO lança exceção quando o banco recusa: ele devolve
+  // { error }. Um try/catch aqui nunca pegaria nada, e a falha passaria
+  // despercebida. Por isso o erro é lido do retorno, e o resultado volta na
+  // resposta — é assim que dá para saber se o contato entrou na lista de
+  // Contatos ou se ficou só na notificação.
+  const { error: erroLead } = await supabaseAdmin.from('leads').insert({
+    nome,
+    celular,
+    // Redigido para ler bem depois do "Quer:" que a tela de Contatos põe na frente.
+    objetivo: `ajuda com o que apareceu no diagnóstico — ${placar} sob controle.`
+      + `${fracos.length ? ' Pontos cegos: ' + fracos.join(', ') + '.' : ''}`,
+    token: randomBytes(9).toString('base64url'),
+  })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, emContatos: !erroLead })
 }
