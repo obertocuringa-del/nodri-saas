@@ -957,22 +957,6 @@ export default function LandingPage({ cfgInicial }: any) {
             ) : null}
           </div>
 
-          <div className="nodri-rodape-contato" style={{
-            display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-            justifyContent: 'center', gap: '10px 24px', marginTop: 16,
-            paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.12)',
-          }}>
-            <a href="/perguntas-frequentes" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>
-              Perguntas frequentes
-            </a>
-            <a href="/diagnostico" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>
-              Diagnóstico do salão
-            </a>
-            <a href="/trabalhe-conosco" style={{ color: 'rgba(255,255,255,.75)', textDecoration: 'none' }}>
-              Seja um afiliado
-            </a>
-          </div>
-
           {(cfg.footer_razao_social || cfg.footer_cnpj || cfg.footer_endereco) ? (
             <div style={{ marginTop: 16, fontSize: 12, color: 'rgba(255,255,255,.5)', lineHeight: 1.7 }}>
               {cfg.footer_razao_social ? <div>{cfg.footer_razao_social}</div> : null}
