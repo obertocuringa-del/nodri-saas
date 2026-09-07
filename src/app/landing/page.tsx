@@ -19,18 +19,30 @@ import { Instagram, Facebook, Youtube } from 'lucide-react'
 // A escolha é por palavra do texto, e não por posição: o dono edita e reordena
 // esses cards pelo painel, e a cor precisa continuar certa depois disso. Quem
 // não casar com nada cai no ciclo, que garante variação sem repetir vizinho.
+// A ORDEM importa, e foi ela que quebrou na primeira tentativa: com
+// "financeiro" na frente, seis dos oito cards saíam verdes, porque palavras
+// como lucro, custo e margem aparecem em quase todo texto sobre salão. As
+// áreas específicas vêm primeiro; dinheiro é a última, e funciona como o
+// caso geral.
 const CORES_AREA: { cor: string; palavras: string[] }[] = [
-  { cor: '#0f766e', palavras: ['custo', 'lucro', 'sobrou', 'dinheiro', 'preço', 'margem', 'caixa', 'faturamento'] },
+  { cor: '#0d6efd', palavras: ['preço', 'tabela', 'reajuste', 'precificação'] },
   { cor: '#5b4fcf', palavras: ['profissional', 'comissão', 'equipe', 'contrato'] },
   { cor: '#be123c', palavras: ['cliente', 'agenda', 'retorno'] },
   { cor: '#b45309', palavras: ['depende', 'rotina', 'presente', 'processo', 'estoque'] },
+  { cor: '#0f766e', palavras: ['custo', 'lucro', 'sobrou', 'dinheiro', 'margem', 'caixa', 'faturamento'] },
 ]
 const CICLO = ['#0f766e', '#5b4fcf', '#be123c', '#b45309', '#0d6efd', '#475569']
 
 function corDaDor(titulo: string, desc: string, i: number) {
-  const t = `${titulo} ${desc}`.toLowerCase()
-  for (const { cor, palavras } of CORES_AREA) {
-    if (palavras.some(w => t.includes(w))) return cor
+  // Título primeiro, descrição só se ele não decidir: o título diz do que o
+  // card trata, enquanto a descrição cita várias áreas de passagem e joga a
+  // cor para o assunto errado.
+  for (const alvo of [titulo, desc]) {
+    const t = (alvo || '').toLowerCase()
+    if (!t) continue
+    for (const { cor, palavras } of CORES_AREA) {
+      if (palavras.some(w => t.includes(w))) return cor
+    }
   }
   return CICLO[i % CICLO.length]
 }
