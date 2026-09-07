@@ -6,6 +6,23 @@ import Carrossel, { type Midia } from '@/components/Carrossel'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { Instagram, Facebook, Youtube } from 'lucide-react'
 
+// O @ do perfil sai da própria URL cadastrada, para não existir um segundo
+// campo dizendo a mesma coisa — e desencontrar dele no dia em que um dos dois
+// for editado e o outro não.
+function arrobaDoInstagram(url?: string) {
+  const m = String(url || '').match(/instagram\.com\/([^/?#]+)/i)
+  return m && m[1] ? '@' + m[1] : ''
+}
+
+// O lucide não tem o WhatsApp. Como é marca reconhecível e o link é justamente
+// "falar no WhatsApp", vale o glifo próprio em vez de um balão genérico.
+const IconeWhats = ({ size = 17 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.53.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/>
+    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.86 9.86 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.14h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.37c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.24 8.22z"/>
+  </svg>
+)
+
 // ── O que a vitrine promete ─────────────────────────────────────────────────
 // O texto anterior vendia automação de WhatsApp: "automatize confirmações,
 // envio de mensagens". Isso é UM módulo do plano mais caro, não o produto. E
@@ -325,6 +342,11 @@ export default function LandingPage({ cfgInicial }: any) {
              Com ela vencendo, o "JA SOU CLIENTE" caia para a segunda linha. */
           header.nodri-topo[style] { flex-wrap: nowrap !important; gap: 4px !important; padding: 4px 8px !important; }
           .nodri-topo img { height: 34px !important; margin: -2px 0 !important; }
+          /* A linha de contato do rodapé quebra sozinha (flex-wrap). Aqui só
+             apertamos o respiro: com o gap de 28px do computador, "Falar no
+             WhatsApp" e o @ do Instagram não cabiam juntos e viravam três
+             linhas soltas em vez de duas. */
+          .nodri-rodape-contato { gap: 11px 18px !important; }
           .nodri-btn-topo { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; border-width: 1.5px !important; letter-spacing: -.2px; }
           .nodri-menu-func > button { padding: 7px 6px !important; font-size: 9px !important; border-radius: 8px !important; white-space: nowrap; gap: 2px !important; border-width: 1.5px !important; letter-spacing: -.2px; }
           .nodri-menu-func > button svg { width: 10px; height: 10px; }
@@ -774,76 +796,85 @@ export default function LandingPage({ cfgInicial }: any) {
             Com grid de colunas iguais, o rodapé fica alinhado tendo ou não
             esses dados: o que existe ocupa a sua coluna, e o que não existe
             não abre buraco. */}
-        <div className="nodri-rodape" style={{
-          maxWidth: 1040, margin: '0 auto', display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '22px 40px', alignItems: 'start',
-        }}>
-          <div>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '.4px', marginBottom: 4 }}>
-              {cfg.footer_logo}
-            </div>
-            {cfg.footer_texto ? <div>{cfg.footer_texto}</div> : null}
+        {/* ── RODAPÉ ─────────────────────────────────────────────────────
+            Antes eram colunas: o nome de um lado, os contatos do outro. Com
+            razão social e endereço vazios sobrava uma coluna no meio, e a
+            leitura ficava torta.
+
+            Agora é um eixo só e centrado — nome, uma linha de contato, e o
+            direito autoral. No celular a linha de contato QUEBRA em vez de
+            espremer: três itens lado a lado em 375px viram três colunas de
+            100px, com o e-mail cortado no meio. */}
+        <div className="nodri-rodape" style={{ maxWidth: 1040, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ color: '#fff', fontWeight: 800, fontSize: 19, letterSpacing: '.4px', marginBottom: 5 }}>
+            {cfg.footer_logo}
+          </div>
+          {cfg.footer_texto ? (
+            <div style={{ marginBottom: 20 }}>{cfg.footer_texto}</div>
+          ) : null}
+
+          <div className="nodri-rodape-contato" style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+            justifyContent: 'center', gap: '12px 28px',
+          }}>
+            {cfg.footer_email ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ color: 'rgba(255,255,255,.55)' }}>E-mail:</span>
+                <a href={`mailto:${cfg.footer_email}`}
+                  style={{ color: CIANO, textDecoration: 'none', overflowWrap: 'anywhere' }}>
+                  {cfg.footer_email}
+                </a>
+              </span>
+            ) : null}
+
+            {cfg.footer_whatsapp ? (
+              <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer"
+                style={{ color: CIANO, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <IconeWhats /> Falar no WhatsApp
+              </a>
+            ) : null}
+
+            {cfg.footer_instagram ? (
+              <a href={cfg.footer_instagram} target="_blank" rel="noopener noreferrer"
+                aria-label="NODRI no Instagram"
+                style={{ color: CIANO, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <Instagram size={17} />
+                {arrobaDoInstagram(cfg.footer_instagram) || 'Instagram'}
+              </a>
+            ) : null}
+
+            {/* Só aparecem se houver link cadastrado em Admin > Editor Landing
+                Page > Rodapé. Perfil que não existe não vira botão para lugar
+                nenhum. */}
+            {cfg.footer_facebook ? (
+              <a href={cfg.footer_facebook} target="_blank" rel="noopener noreferrer"
+                aria-label="NODRI no Facebook"
+                style={{ color: CIANO, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <Facebook size={17} /> Facebook
+              </a>
+            ) : null}
+            {cfg.footer_youtube ? (
+              <a href={cfg.footer_youtube} target="_blank" rel="noopener noreferrer"
+                aria-label="NODRI no YouTube"
+                style={{ color: CIANO, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <Youtube size={17} /> YouTube
+              </a>
+            ) : null}
           </div>
 
           {(cfg.footer_razao_social || cfg.footer_cnpj || cfg.footer_endereco) ? (
-            <div>
+            <div style={{ marginTop: 16, fontSize: 12, color: 'rgba(255,255,255,.5)', lineHeight: 1.7 }}>
               {cfg.footer_razao_social ? <div>{cfg.footer_razao_social}</div> : null}
               {cfg.footer_cnpj ? <div>CNPJ {cfg.footer_cnpj}</div> : null}
               {cfg.footer_endereco ? <div>{cfg.footer_endereco}</div> : null}
             </div>
           ) : null}
-
-          <div>
-            {cfg.footer_email ? (
-              <div>
-                <a href={`mailto:${cfg.footer_email}`} style={{ color: CIANO, textDecoration: 'none', overflowWrap: 'anywhere' }}>
-                  {cfg.footer_email}
-                </a>
-              </div>
-            ) : null}
-            {cfg.footer_whatsapp ? (
-              <div>
-                <a href={`https://wa.me/${cfg.footer_whatsapp}`} target="_blank" rel="noopener noreferrer"
-                  style={{ color: CIANO, textDecoration: 'none', overflowWrap: 'anywhere' }}>
-                  Falar no WhatsApp
-                </a>
-              </div>
-            ) : null}
-
-            {/* ── Redes sociais ────────────────────────────────────────────
-                Cada ícone só aparece se houver link cadastrado em
-                Admin > Editor Landing Page > Rodapé do site. Perfil que ainda
-                não existe não vira botão que leva a lugar nenhum — e rede
-                social com link quebrado passa impressão pior do que rede
-                social nenhuma. */}
-            {(cfg.footer_instagram || cfg.footer_facebook || cfg.footer_youtube) ? (
-              <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                {([
-                  ['Instagram', cfg.footer_instagram, <Instagram key="i" size={17} />],
-                  ['Facebook', cfg.footer_facebook, <Facebook key="f" size={17} />],
-                  ['YouTube', cfg.footer_youtube, <Youtube key="y" size={17} />],
-                ] as [string, string, React.ReactNode][])
-                  .filter(([, url]) => !!url)
-                  .map(([nome, url, icone]) => (
-                    <a key={nome} href={url} target="_blank" rel="noopener noreferrer"
-                      aria-label={`NODRI no ${nome}`} title={nome}
-                      style={{
-                        width: 36, height: 36, borderRadius: 9, display: 'inline-flex',
-                        alignItems: 'center', justifyContent: 'center', color: '#fff',
-                        border: '1px solid rgba(255,255,255,.28)', textDecoration: 'none',
-                      }}>
-                      {icone}
-                    </a>
-                  ))}
-              </div>
-            ) : null}
-          </div>
         </div>
 
         <div style={{
           maxWidth: 1040, margin: '22px auto 0', paddingTop: 14,
           borderTop: '1px solid rgba(255,255,255,.14)', fontSize: 11.5, color: 'rgba(255,255,255,.55)',
+          textAlign: 'center',
         }}>
           {/* suppressHydrationWarning por causa do ano: o servidor da Vercel
               roda em UTC e o navegador no fuso de quem abre. Na virada do ano,
