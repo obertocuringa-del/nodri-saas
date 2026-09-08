@@ -35,7 +35,11 @@ async function getSalaoId() {
 async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise<string> {
   // Passa pelo resolvedor central: chave e modelo do painel, com reserva
   // automatica se o provedor principal cair.
-  return iaGerarConfigurado(prompt, { maxTokens: 16000, geminiThinkingBudget: 0 })
+  // 2200, nao 16000. O teto antigo nao era um limite: era uma permissao para
+  // escrever doze secoes, e o modelo usava. Duas geracoes dessas queimavam a
+  // cota diaria inteira do Gemini — um planejamento por profissional custava
+  // mais do que um dia de conversa de todo o salao.
+  return iaGerarConfigurado(prompt, { maxTokens: 2200, geminiThinkingBudget: 0 })
 }
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês
@@ -274,161 +278,51 @@ DADOS DO SISTEMA (calculados pelo backend — use como verdade absoluta):
 ${contratoJson}
 
 ---
-Gere a resposta na estrutura abaixo. Use **negrito** real (não literal **). Use tabelas markdown onde indicado. Siga a ordem e os títulos exatamente.
+ESTRUTURA DA RESPOSTA — siga exatamente, sem acrescentar secoes.
 
-# PLANEJAMENTO ESTRATÉGICO DE META
-## ${prof.nome_completo.toUpperCase()} | ${prof.cargo} | NODRI IA
+REGRA DE TAMANHO, ACIMA DE TODAS: no maximo 400 palavras no total.
+Quem le isso e uma profissional entre um atendimento e outro. Documento longo
+nao e lido com mais atencao: e lido pela metade, ou nao e lido. Se um trecho
+nao muda o que ela vai fazer amanha, ele nao entra.
+Nunca repita um numero que ja apareceu na tabela. Nada de introducao, nada de
+fechamento, nada de "espero ter ajudado".
 
----
-
-## RESUMO EXECUTIVO
+# PLANO DE META — ${prof.nome_completo.toUpperCase()}
 
 | Item | Valor |
 |---|---|
-| Meta Mensal | R$ {meta} |
-| Faturamento Atual | R$ {faturado} |
-| Valor Restante | R$ {falta} |
-| Dias Restantes | {dias_restantes} dias |
-| Meta Diária Necessária | R$ {necessario_por_dia} |
-| Probabilidade de Atingir | {chance_de_bater_meta_pct}% |
+| Meta | R$ {meta} |
+| Feito ate agora | R$ {faturado} |
+| Falta | R$ {falta} |
+| Dias restantes | {dias_restantes} |
+| Precisa por dia | R$ {necessario_por_dia} |
+| Chance de bater | {chance_de_bater_meta_pct}% |
 
-**Diagnóstico em uma frase:** (escreva 1 frase direta explicando o que precisa acontecer para atingir a meta — sem repetir os números da tabela, interprete a situação)
+**O que precisa acontecer:** uma frase, no maximo 25 palavras, interpretando a
+situacao — sem repetir os numeros da tabela.
 
----
+## O QUE ESTA TRAVANDO
 
-## RAIO-X 360°
+Maximo 3 linhas. Use causa_raiz_do_gargalo e prove com UM numero real (ocupacao,
+ticket, retencao ou comportamento — o que for o gargalo de verdade). Escreva no
+estilo: "O gargalo nao e X. E Y — e por isso Z."
+Se benchmarking existir, encaixe a posicao dela numa dessas linhas
+("Xo lugar de Y em ocupacao"). Se for null, nao mencione.
 
-Para cada eixo abaixo, escreva APENAS o que os dados reais mostram. Não repita entre eixos.
+## AS 3 ACOES QUE MAIS MOVEM
 
-** Financeiro**
-O que está funcionando: use benchmarking para mostrar a posição atual entre os colegas de cargo. O campo benchmarking tem ranking_faturamento, ranking_ticket_medio, ranking_ocupacao e total_profissionais_categoria. Escreva como "Ocupa o Xº lugar de Y profissionais em faturamento este mês". Se benchmarking for null ou "sem colegas", diga "sem colegas suficientes para comparar".
-O que está prejudicando: (1-2 pontos baseados nos dados reais do mês atual)
+Exatamente 3, da maior para a menor em dinheiro. Cada uma em DUAS linhas:
+**1. [Acao em ate 5 palavras]**
+- Fazer: (o que e quanto, concreto, ate 15 palavras)
+- Vale: R$ X a mais (use simulador_meta, oportunidades ou dinheiro_perdido — numeros do sistema, nunca estimados por voce)
 
-** Comercial**
-O que está funcionando: (considere venda_produtos e frequência de serviços)
-O que está prejudicando: (1-2 pontos)
+## TODO DIA
 
-** Comportamental**
-O que está funcionando: use comportamental.principais_elogios — liste os elogios reais dos clientes. Se houver elogios, cite pelo menos 2. Se pendencias_abertas for vazio, mencione isso como positivo. Se não há nenhum dado positivo, diga "sem registros positivos neste período".
-O que está prejudicando: (atrasos, faltas, feedbacks negativos — com números reais)
+3 itens, ate 8 palavras cada, especificos para ESTA profissional a partir dos
+dados dela. Nada de conselho generico que serviria para qualquer pessoa.
 
-** Experiência do Cliente**
-O que está funcionando: use fidelizacao.tendencia.mes_atual.preferencia para mostrar a base fiel atual.
-O que está prejudicando: use fidelizacao.tendencia para comparar dois meses. Escreva: "No mês anterior recebeu {mes_anterior.sem_preferencia} clientes sem preferência. Destes, apenas {novos_fidelizados} viraram preferência neste mês (taxa de conversão: {taxa_conversao_pct}%)." Se sem dado, diga isso claramente.
-
----
-
-## CAUSA RAIZ
-
-Escreva no estilo: "O problema não é [X]. Também não é [Y]. O verdadeiro gargalo é [Z] — e é por isso que [consequência em cadeia]."
-Use causa_raiz_do_gargalo e conecte com os dados abaixo:
-
-**Análise 1 — Tendência de fidelização (12 meses):** use fidelizacao.tendencia.historico_12_meses. Monte uma análise cronológica: quantos clientes sem preferência ela recebeu cada mês e quantos viraram preferência no mês seguinte. Mostre se a base de clientes fiéis está crescendo, estável ou caindo. Lembre: clientes_preferencia é acumulativo (base fiel), clientes_sem_preferencia são novos a cada mês. A taxa de conversão ideal é sem_preferencia_mes_N → aumento_de_preferencia_mes_N+1.
-
-**Análise 2 — Serviços que ela sabe fazer mas vende pouco:** use oportunidades_ocultas.servicos_menos_vendidos. Liste os 3 serviços habilitados com menor frequência mensal própria. Para cada um escreva: "{serviço}: realiza apenas {freq_mensal_propria} atendimentos/mês com comissão de R$ {comissao_por_atendimento} — se realizasse 3× mais, adicionaria R$ X/mês". Não compare com colegas — foco no potencial próprio inexplorado.
-
----
-
-## SIMULADOR DE META
-
-**Faltam R$ {falta} — veja como atingir:**
-
-Para cada cenário em simulador_meta, monte uma tabela:
-
-| Serviço | Comissão por Atend. | Quantidade | Subtotal |
-|---|---|---|---|
-(preencha com os dados exatos de cada cenário)
-**Total do cenário: R$ X** Meta atingida / Parcialmente coberta
-
-Escreva 1 frase de recomendação indicando qual cenário é mais realista dado o histórico do profissional.
-
----
-
-## OPORTUNIDADES OCULTAS + BENCHMARKING
-
-**Posição entre colegas:**
-| Indicador | Posição |
-|---|---|
-(use dados de benchmarking)
-
-**Serviços habilitados com potencial não explorado** (ela já sabe fazer mas vende menos que as colegas):
-(use oportunidades_ocultas.oportunidades_habilitadas — para cada item: nome do serviço, frequência própria vs colegas, potencial perdido em R$/mês. Se sem dado, diga isso.)
-
-**Serviços da categoria que ela ainda não oferece** (as colegas vendem, ela não tem):
-(use oportunidades_ocultas.servicos_para_aprender — para cada item: nome do serviço e frequência média mensal das colegas. Escreva em tom de incentivo: "esse serviço é muito procurado pelas colegas de {cargo} — vale a pena buscar essa habilidade". Se sem dado, diga isso.)
-
-1 frase final: o problema deste profissional é valor por atendimento ou volume de atendimentos?
-
----
-
-## DINHEIRO PERDIDO ESTE MÊS
-
-Use EXATAMENTE os números de dinheiro_perdido. Monte assim:
-
-**Atrasos:** {atrasos} atrasos × comissão do serviço mais vendido ({servico_mais_vendido} = R$ {comissao_servico_mais_vendido}) = **R$ {perda_atrasos} perdidos**
-
-**Faltas:** {faltas} faltas × média diária (R$ {media_faturamento_diario}) = **R$ {perda_faltas} perdidos**
-
-**Produtos não vendidos:** {clientes_sem_produto_estimado} clientes (~10% dos {clientes_atendidos_mes} atendidos) × R$ {comissao_media_produto} comissão média = **R$ {perda_produtos} deixados na mesa**
-
-** Total potencial perdido: R$ {total_perdido}**
-
-(Se algum campo vier nulo, omita aquela linha e explique brevemente por que não foi possível calcular)
-
----
-
-## RETENÇÃO E FIDELIZAÇÃO
-
-Use dados de fidelizacao e comportamental.
-- Clientes com preferência: {clientes_preferencia} | Sem preferência: {clientes_sem_preferencia}
-- (1-2 frases interpretando o que isso significa para a estabilidade do faturamento)
-- Use fidelizacao.tendencia: mostre quantos clientes sem preferência do mês anterior não retornaram (sem_preferencia_anterior - novos_fidelizados = perdidos). Interprete o impacto financeiro: clientes perdidos × ticket_medio_atual = receita recorrente que sumiu.
-- Para cada reclamação negativa com ≥ 2 ocorrências nos FEEDBACKS DE CLIENTES, escreva 1 ação prática de melhoria. Máximo 4 ações.
-
----
-
-## AS 3 AÇÕES QUE MAIS MOVEM O RESULTADO
-
-Exatamente 3, ordenadas por impacto financeiro estimado. Cada uma:
-**1. [Nome da ação]**
-- Meta: (o que fazer, quantidade, prazo)
-- Impacto: (quanto adiciona em comissão ou qual gargalo resolve — use números reais)
-
----
-
-## PLANO DE EXECUÇÃO
-
-** Diário** — Meta: R$ {necessario_por_dia} de comissão
-- (2-3 comportamentos obrigatórios diários)
-
-** Semanal**
-- (3 prioridades da semana — diferentes das diárias)
-
-** Mensal**
-- Meta: R$ {meta} de comissão total
-- (resultado esperado em ocupação e comportamento)
-
----
-
-## CHECKLIST DOS PRÓXIMOS 30 DIAS
-
-□ Não faltar nenhum dia
-□ Não atrasar nenhum atendimento
-□ Não sair antes do horário
-□ Fazer pós-venda para pelo menos 10 clientes
-□ Oferecer serviço adicional em todo atendimento
-□ Vender pelo menos 1 produto por dia
-□ (adicione 1-2 itens específicos para este profissional baseados nos dados reais)
-
----
-
-## PRESENÇA DIGITAL E POSICIONAMENTO
-
-(Escreva 3-4 orientações práticas e diretas para este cargo/perfil — sem inventar dados de redes sociais que não existem no sistema. Foco em: como usar o próprio resultado do trabalho para atrair clientes, como pedir indicações, como fortalecer relacionamento com clientes fiéis.)
-
----
-
-**Insight NODRI:** (1 frase final — o insight mais valioso, do tipo que faz o gestor pensar "essa IA entendeu a situação de verdade")`
+**Insight NODRI:** uma frase final, no maximo 20 palavras, com a observacao mais
+valiosa que os dados permitem — do tipo que so quem olhou os numeros dela diria.`
 
   let plano_texto = ''
   try {
