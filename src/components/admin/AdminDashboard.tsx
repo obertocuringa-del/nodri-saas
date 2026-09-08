@@ -98,7 +98,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
 
   //  IA CONFIG 
-  const [iaConfig, setIaConfig] = useState({ api_key: '', modelo: 'claude-haiku-4-5', instrucoes_base: '', api_key_salva: false })
+  const [iaConfig, setIaConfig] = useState({ api_key: '', api_key_gemini: '', modelo: 'claude-sonnet-5', instrucoes_base: '', api_key_salva: false, api_key_gemini_salva: false })
   const [iaConfigLoading, setIaConfigLoading] = useState(false)
   const [showIaKey, setShowIaKey] = useState(false)
   const [tavilyKeys, setTavilyKeys] = useState<string[]>([])
@@ -130,7 +130,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       fetch('/api/admin/ia-config')
         .then(r => r.json())
         .then(d => {
-          setIaConfig({ api_key: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false })
+          setIaConfig({ api_key: '', api_key_gemini: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false, api_key_gemini_salva: d.api_key_gemini_salva ?? false })
           setTavilyKeys(d.tavily_keys || [])
         })
         .catch(() => {})
@@ -1662,14 +1662,15 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   <div className="space-y-4">
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
-                        API Key Gemini {iaConfig.api_key_salva && <span className="text-green-700 normal-case">(já configurada)</span>}
+                        {iaConfig.modelo?.startsWith('claude') ? 'API Key Anthropic (Claude)' : 'API Key Google Gemini'}
+                        {iaConfig.api_key_salva && <span className="text-green-700 normal-case"> (já configurada)</span>}
                       </label>
                       <div className="relative">
                         <input
                           type={showIaKey ? 'text' : 'password'}
                           value={iaConfig.api_key}
                           onChange={e => setIaConfig(p => ({ ...p, api_key: e.target.value }))}
-                          placeholder={iaConfig.api_key_salva ? 'Deixe em branco para manter a atual' : 'Sua API Key do Google Gemini'}
+                          placeholder={iaConfig.api_key_salva ? 'Deixe em branco para manter a atual' : 'Chave do provedor escolhido abaixo'}
                           className="nodri-input w-full pr-10"
                         />
                         <button type="button" onClick={() => setShowIaKey(v => !v)}
@@ -1677,17 +1678,48 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                           {showIaKey ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
-                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
-                        className="text-[10px] text-nodri-cyan hover:underline mt-1 block">Obter chave Gemini →</a>
+                      <a href={iaConfig.modelo?.startsWith('claude') ? 'https://console.anthropic.com/settings/keys' : 'https://aistudio.google.com/app/apikey'}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-[10px] text-nodri-cyan hover:underline mt-1 block">
+                        {iaConfig.modelo?.startsWith('claude') ? 'Obter chave da Anthropic →' : 'Obter chave Gemini →'}
+                      </a>
                     </div>
+
+                    {/* Segunda chave.
+                        A memória semântica da IA (o que ela lembra de conversas
+                        antigas) é gerada por embedding do Google — sempre, mesmo
+                        quando quem responde é o Claude. Com uma chave só, trocar
+                        o modelo para Claude mandava a chave da Anthropic para o
+                        Google e a memória parava de funcionar sem avisar. */}
+                    <div>
+                      <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
+                        API Key Google Gemini — memória da IA
+                        {iaConfig.api_key_gemini_salva && <span className="text-green-700 normal-case"> (já configurada)</span>}
+                      </label>
+                      <input
+                        type="password"
+                        value={iaConfig.api_key_gemini}
+                        onChange={e => setIaConfig(p => ({ ...p, api_key_gemini: e.target.value }))}
+                        placeholder={iaConfig.api_key_gemini_salva ? 'Deixe em branco para manter a atual' : 'Chave do Google (usada pela memória da IA)'}
+                        className="nodri-input w-full"
+                      />
+                      <p className="text-[10px] text-nodri-t3 mt-1 leading-relaxed">
+                        Preencha mesmo usando o Claude: a memória de conversas antigas é gerada pelo Google. Sem esta chave, a IA responde normalmente mas não lembra do que já foi conversado.
+                      </p>
+                    </div>
+
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Modelo</label>
                       <select className="nodri-input w-full" value={iaConfig.modelo} onChange={e => setIaConfig(p => ({ ...p, modelo: e.target.value }))}>
-                        <option value="claude-haiku-4-5">Claude Haiku — Recomendado (R$0,25/mi tokens)</option>
-                        <option value="claude-sonnet-4-5">Claude Sonnet — Alta qualidade (R$1,50/mi tokens)</option>
-                        <option value="claude-opus-4-5">Claude Opus — Máxima qualidade (R$7,50/mi tokens)</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash — Opção Google</option>
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash — Google pago</option>
+                        <option value="claude-sonnet-5">Claude Sonnet 5 — Recomendado (melhor equilíbrio)</option>
+                        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — Mais barato e mais rápido</option>
+                        <option value="claude-opus-5">Claude Opus 5 — Máxima qualidade</option>
+                        <option value="claude-haiku-4-5">Claude Haiku (id antigo)</option>
+                        <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                        <option value="claude-opus-4-5">Claude Opus 4.5</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash — Google</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash — Google</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash — Google</option>
                       </select>
                     </div>
                     <div>
@@ -1718,12 +1750,12 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         const res = await fetch('/api/admin/ia-config', {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ api_key: iaConfig.api_key, modelo: iaConfig.modelo, instrucoes_base: iaConfig.instrucoes_base, ativo: true }),
+                          body: JSON.stringify({ api_key: iaConfig.api_key, api_key_gemini: iaConfig.api_key_gemini, modelo: iaConfig.modelo, instrucoes_base: iaConfig.instrucoes_base, ativo: true }),
                         })
                         setIaConfigLoading(false)
                         if (res.ok) {
                           toast.success('Configuração da IA salva!')
-                          setIaConfig(p => ({ ...p, api_key: '', api_key_salva: p.api_key_salva || !!p.api_key }))
+                          setIaConfig(p => ({ ...p, api_key: '', api_key_gemini: '', api_key_salva: p.api_key_salva || !!p.api_key, api_key_gemini_salva: p.api_key_gemini_salva || !!p.api_key_gemini }))
                         } else {
                           const d = await res.json()
                           toast.error(d.error || 'Erro ao salvar')

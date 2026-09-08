@@ -697,3 +697,32 @@ export const FERRAMENTAS_GEMINI = [
     ]
   }
 ]
+
+// ── As mesmas ferramentas, no formato da Anthropic ──────────────────────────
+//
+// Sao as MESMAS ferramentas, nao uma segunda lista: derivar da declaracao do
+// Gemini e o que garante que os dois provedores enxerguem exatamente o mesmo
+// conjunto. Manter duas listas paralelas na mao acabaria com uma delas
+// desatualizada, e aí a IA responderia diferente dependendo de quem atendeu.
+//
+// A diferenca entre os formatos e so casca: o Gemini escreve os tipos em
+// maiuscula ('STRING') e chama de `parameters`; a Anthropic usa minuscula e
+// chama de `input_schema`.
+function tiposParaMinusculo(no: any): any {
+  if (!no || typeof no !== 'object') return no
+  if (Array.isArray(no)) return no.map(tiposParaMinusculo)
+  const saida: any = {}
+  for (const [k, v] of Object.entries(no)) {
+    if (k === 'type' && typeof v === 'string') saida[k] = v.toLowerCase()
+    else saida[k] = tiposParaMinusculo(v)
+  }
+  return saida
+}
+
+export const FERRAMENTAS_CLAUDE = FERRAMENTAS_GEMINI.flatMap((g: any) =>
+  (g.functionDeclarations || []).map((f: any) => ({
+    name: f.name,
+    description: f.description,
+    input_schema: tiposParaMinusculo(f.parameters) || { type: 'object', properties: {} },
+  })),
+)

@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
-import { executarFerramenta, FERRAMENTAS_GEMINI } from '../tools/execute'
+import { executarFerramenta, FERRAMENTAS_GEMINI, FERRAMENTAS_CLAUDE } from '../tools/execute'
 
 // Teto de tempo da funcao na Vercel.
 //
@@ -84,7 +84,10 @@ async function executarLoopFerramentas(
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`
   let loop = [...history]
 
-  for (let i = 0; i < 5; i++) {
+  // 2 voltas, nao 5: na pratica a segunda ja tem tudo o que a primeira
+  // pediu. As tres voltas extras quase nunca traziam dado novo e custavam
+  // tres chamadas inteiras (com o prompt inteiro) em cada mensagem.
+  for (let i = 0; i < 2; i++) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -92,7 +95,10 @@ async function executarLoopFerramentas(
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: loop,
         tools: FERRAMENTAS_GEMINI,
-        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+        // Nesta fase o modelo so precisa devolver QUAL ferramenta chamar —
+        // nao um texto. 8192 tokens aqui era espaco reservado para prosa que
+        // nunca chega ao usuario.
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
       }),
     })
     if (!res.ok) break
@@ -596,7 +602,7 @@ export async function POST(req: NextRequest) {
     // 2. Buscar config global da IA
     const { data: configGlobal } = await supabaseAdmin
       .from('ia_config_global')
-      .select('api_key, modelo, instrucoes_base, ativo')
+      .select('api_key, api_key_gemini, modelo, instrucoes_base, ativo')
       .limit(1)
       .maybeSingle()
 
@@ -617,10 +623,19 @@ export async function POST(req: NextRequest) {
 
     const config = {
       api_key: configGlobal.api_key,
+      api_key_gemini: (configGlobal as any).api_key_gemini || '',
       modelo: configGlobal.modelo,
       instrucoes_base: configGlobal.instrucoes_base,
       contexto_adicional: configSalao?.contexto_adicional || '',
     }
+
+    // Duas chaves, nao uma. O embedding da memoria semantica e SEMPRE do
+    // Google, mesmo quando quem responde e o Claude — sem esta separacao,
+    // trocar o modelo para Claude mandaria uma chave da Anthropic para o
+    // Google, e a memoria semantica morreria em silencio (ela vive dentro
+    // de try/catch e devolve null sem reclamar).
+    const modeloEscolhido = configGlobal.modelo || 'gemini-2.5-flash'
+    const chaveGemini: string = config.api_key_gemini || (modeloEscolhido.startsWith('claude') ? '' : config.api_key)
 
     if (!config?.api_key) {
       return NextResponse.json({ error: 'API key nÃ£o configurada pelo administrador.' }, { status: 422 })
@@ -729,8 +744,8 @@ export async function POST(req: NextRequest) {
     const [memoriaSemântica, memoriaEvolutiva, analisePreComputada, memoriaConversa] = await Promise.all([
       // Memória semântica (embedding + busca por similaridade)
       (async (): Promise<string> => {
-        if (!ultimaMensagem || !config.api_key) return ''
-        const embeddingQuery = await gerarEmbedding(ultimaMensagem, config.api_key)
+        if (!ultimaMensagem || !chaveGemini) return ''
+        const embeddingQuery = await gerarEmbedding(ultimaMensagem, chaveGemini)
         if (!embeddingQuery) return ''
         const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId)
         return memorias ? `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n` : ''
@@ -2858,6 +2873,37 @@ barba de presente para um homem). Fora o caso de presente, manter serviços masc
     const diasRestantes = ultimoDiaMes - diaAtual
     const pctMes = Math.round((diaAtual / ultimoDiaMes) * 100)
     const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual]
+    // ── Tamanho da resposta ─────────────────────────────────────────────
+    //
+    // A regra "nao transforme pergunta simples em relatorio" ja existia la em
+    // cima, no comeco do PROMPT_MESTRE. So que ela ficava soterrada por ~118 KB
+    // de texto: quando o modelo chega no fim, ela e lembranca distante. Modelo
+    // pesa muito mais o que esta no FIM do prompt — por isso esta copia vai
+    // depois dos dados, que e o ultimo lugar que ele le antes de responder.
+    //
+    // Resposta gigante nao e so gasto de token: e a razao de o chat travar
+    // (texto longo demais estoura o tempo da funcao) e de o usuario nao achar
+    // a resposta no meio do texto.
+    const REGRA_TAMANHO = `
+=======================================
+TAMANHO DA RESPOSTA — REGRA FINAL, ACIMA DE TODAS AS OUTRAS
+=======================================
+
+O padrao e RESPOSTA CURTA.
+
+- Pergunta objetiva (um numero, um nome, sim ou nao): responda em 1 a 3 linhas.
+  Sem introducao, sem contexto, sem oferecer ajuda extra no fim.
+- Pergunta de analise: no maximo um paragrafo curto e ate 5 topicos.
+- So escreva mais do que isso quando pedirem explicitamente: "detalha",
+  "faz um plano", "analisa a fundo", "monta um relatorio".
+
+Nunca despeje tudo o que voce sabe sobre o assunto. Responda o que foi
+perguntado e PARE. Quando houver mais a dizer, ofereca em UMA linha
+("Quer que eu detalhe X?") e espere a pessoa pedir.
+
+Nao repita a pergunta. Nao abra com saudacao. Nao feche com resumo do que
+acabou de dizer. Nao invente secoes que ninguem pediu.`
+
     const systemPrompt = `${PROMPT_MESTRE}
 
 DATA DE HOJE: ${hoje} (${nomeMes}/${anoAtual})
@@ -2873,10 +2919,18 @@ ${memoriaSemântica}
 ${analisePreComputada}
 ${memoriaConversa}
 DADOS BRUTOS DO SALÃO (referência adicional):
-${dadosFormatados}`
+${dadosFormatados}
+${REGRA_TAMANHO}`
+
+    // A parte do prompt que NAO muda de uma pergunta para outra. Ela sozinha
+    // passa dos 100 KB e ia inteira, do zero, em toda chamada. Separada assim,
+    // o Claude consegue guardar em cache e cobrar 10% por ela.
+    const systemEstatico = PROMPT_MESTRE
+    const systemVariavel = systemPrompt.slice(PROMPT_MESTRE.length)
 
     // 9. Chamar API com streaming
     const modelo = config.modelo || 'gemini-2.5-flash'
+
 
     // Limita histórico a últimas 10 mensagens para evitar timeout em conversas longas
     const mensagensLimitadas = mensagens.length > 10
@@ -2886,15 +2940,86 @@ ${dadosFormatados}`
     let resposta = ''
 
     if (modelo.startsWith('claude')) {
-      // ── Anthropic Claude (streaming) ──
-      const anthropic = new Anthropic({ apiKey: config.api_key })
-      const stream = await anthropic.messages.create({
+      // ── Anthropic Claude (ferramentas + streaming) ──
+      //
+      // Antes este ramo respondia SEM ferramenta nenhuma — só o Gemini as
+      // tinha. Quem trocasse o modelo para Claude ganhava estabilidade e
+      // perdia a consulta ao banco: a IA seguia instruída a "usar a
+      // ferramenta" e não tinha nenhuma na mão. Agora os dois provedores
+      // enxergam exatamente a mesma lista, derivada de uma só declaração.
+      const anthropic = new Anthropic({ apiKey: config.api_key, maxRetries: 2 })
+
+      // O sistema vai em DOIS blocos, e essa divisão é o maior corte de custo
+      // do arquivo inteiro: o pedaço estático passa de 100 KB e ia por inteiro,
+      // do zero, em toda pergunta de todo usuário de todo salão. Marcado para
+      // cache, ele passa a custar 10% e a chegar muito mais rápido. O bloco
+      // variável (dados do salão, memória, data de hoje) fica de fora porque
+      // muda a cada chamada — cachear ele não economizaria nada.
+      const blocosSistema: any = [
+        { type: 'text', text: systemEstatico, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: systemVariavel },
+      ]
+
+      // A Anthropic exige que a conversa comece por 'user'. O corte das
+      // últimas 10 mensagens pode cair no meio e deixar uma resposta da IA
+      // em primeiro lugar — daí a chamada inteira falha por um detalhe de
+      // fatiamento.
+      const msgsClaude = mensagensLimitadas
+        .map((m: any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '') }))
+      while (msgsClaude.length && msgsClaude[0].role !== 'user') msgsClaude.shift()
+      if (!msgsClaude.length) msgsClaude.push({ role: 'user', content: String(ultimaMensagem || 'Olá') })
+
+      // Fase 1 — ferramentas (sem streaming), no mesmo desenho do Gemini.
+      let dadosFerramentas = ''
+      try {
+        const historico: any[] = msgsClaude.map((m: any) => ({ ...m }))
+        for (let volta = 0; volta < 2; volta++) {
+          const r: any = await anthropic.messages.create({
+            model: modelo,
+            max_tokens: 1024,   // aqui ele só escolhe a ferramenta, não escreve texto
+            system: blocosSistema,
+            tools: FERRAMENTAS_CLAUDE as any,
+            messages: historico,
+          } as any)
+          const usos = (r?.content || []).filter((c: any) => c.type === 'tool_use')
+          if (!usos.length) break
+          const resultados = await Promise.all(usos.map(async (u: any) => ({
+            type: 'tool_result',
+            tool_use_id: u.id,
+            content: JSON.stringify(await executarFerramenta(u.name, u.input || {}, salaoId, ehProfissional ? profissional_id : undefined)).slice(0, 20000),
+          })))
+          dadosFerramentas += resultados.map((x: any) => x.content).join('\n')
+          historico.push({ role: 'assistant', content: r.content })
+          historico.push({ role: 'user', content: resultados })
+        }
+      } catch { /* ferramenta é um extra: falhou, responde com o contexto que já tem */ }
+
+      // Fase 2 — resposta final em streaming.
+      //
+      // Os blocos de tool_use viram TEXTO anexado à última pergunta em vez de
+      // irem como blocos. Assim a chamada de streaming não precisa declarar
+      // ferramentas (a API recusa histórico com tool_use sem `tools`) e não há
+      // risco de o modelo sair chamando ferramenta de novo no meio do stream.
+      const msgsFinal: any[] = msgsClaude.map((m: any) => ({ ...m }))
+      if (dadosFerramentas) {
+        const ultimo = msgsFinal[msgsFinal.length - 1]
+        if (ultimo && ultimo.role === 'user') {
+          ultimo.content = ultimo.content +
+            '\n\n[DADOS REAIS JÁ CONSULTADOS NO SISTEMA — use estes números, não estime]\n' +
+            dadosFerramentas.slice(0, 40000)
+        }
+      }
+
+      const stream: any = await anthropic.messages.create({
         model: modelo,
-        max_tokens: 8192,
-        system: systemPrompt,
-        messages: mensagensLimitadas.map((m: any) => ({ role: m.role, content: m.content })),
+        // 3000, não 8192. O teto não é economia de conta: é o que impede a
+        // resposta de crescer até estourar o tempo da função e a tela ficar
+        // carregando para sempre.
+        max_tokens: 3000,
+        system: blocosSistema,
+        messages: msgsFinal as any,
         stream: true,
-      })
+      } as any)
 
       const encoder = new TextEncoder()
       let conversaIdFinal = conversa_id
@@ -2924,7 +3049,7 @@ ${dadosFormatados}`
           // Salva memória semântica em background
           if (resposta.length > 100) {
             const resumo = ultimaMensagem.slice(0, 200)
-            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, config.api_key).catch(() => {})
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini).catch(() => {})
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
@@ -2941,16 +3066,18 @@ ${dadosFormatados}`
         parts: [{ text: m.content }],
       }))
       const historyFinal = await executarLoopFerramentas(
-        systemPrompt, historyBase, modelo, config.api_key, salaoId,
+        systemPrompt, historyBase, modelo, chaveGemini, salaoId,
         ehProfissional ? profissional_id : undefined,
       )
 
       // Fase 2: streaming da resposta final (sem tools para não re-executar)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse&key=${config.api_key}`
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse&key=${chaveGemini}`
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: historyFinal,
-        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+        // 3000, nao 8192 — o teto que impede a resposta de crescer ate
+        // estourar o tempo da funcao e deixar a tela carregando para sempre.
+        generationConfig: { maxOutputTokens: 3000, temperature: 0.7 },
       }
 
       const geminiRes = await fetch(geminiUrl, {
@@ -3017,7 +3144,7 @@ ${dadosFormatados}`
           // Salva memória semântica em background
           if (resposta.length > 100) {
             const resumo = ultimaMensagem.slice(0, 200)
-            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, config.api_key).catch(() => {})
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini).catch(() => {})
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()

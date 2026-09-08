@@ -18,14 +18,20 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  if (!data) return NextResponse.json({ api_key: '', modelo: 'gemini-1.5-flash', instrucoes_base: '', ativo: false, api_key_salva: false })
+  if (!data) return NextResponse.json({ api_key: '', api_key_gemini: '', modelo: 'gemini-1.5-flash', instrucoes_base: '', ativo: false, api_key_salva: false, api_key_gemini_salva: false })
 
   const masked = data.api_key ? `****${data.api_key.slice(-6)}` : ''
+  // A chave do Google fica num campo proprio: o embedding da memoria semantica
+  // e sempre do Google, mesmo quando quem responde e o Claude. Com uma chave
+  // so, trocar de modelo apagava a memoria sem avisar ninguem.
+  const maskedGemini = data.api_key_gemini ? `****${String(data.api_key_gemini).slice(-6)}` : ''
 
   return NextResponse.json({
     ...data,
     api_key: masked,
+    api_key_gemini: maskedGemini,
     api_key_salva: !!data.api_key,
+    api_key_gemini_salva: !!data.api_key_gemini,
     tavily_keys: data.tavily_keys || [],
   })
 }
@@ -38,7 +44,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { api_key, modelo, instrucoes_base, ativo, tavily_keys } = body
+  const { api_key, api_key_gemini, modelo, instrucoes_base, ativo, tavily_keys } = body
 
   // Buscar registro existente
   const { data: existing } = await supabaseAdmin
@@ -59,6 +65,9 @@ export async function PUT(req: NextRequest) {
   // Só sobrescreve api_key se foi enviada e não está vazia
   if (api_key && api_key.trim() !== '') {
     updateData.api_key = api_key.trim()
+  }
+  if (api_key_gemini && String(api_key_gemini).trim() !== '') {
+    updateData.api_key_gemini = String(api_key_gemini).trim()
   }
 
   let result
