@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
-import { iaGerar, extrairJSON } from '@/lib/iaClient'
+import { iaGerarConfigurado, extrairJSON } from '@/lib/iaClient'
 
 export const maxDuration = 60
 
@@ -14,8 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!payload || !['salon','sub'].includes(payload.role) || !payload.salaoId)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
+  // Chave e modelo saem do painel (Admin > IA), com reserva automatica.
 
   const { data: form } = await supabaseAdmin.from('feedback_prof_formularios').select('titulo').eq('id', params.id).eq('salao_id', payload.salaoId).single()
   if (!form) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
@@ -70,7 +69,7 @@ Responda APENAS com JSON válido, sem markdown:
 }`
 
   try {
-    const text = await iaGerar(apiKey, 'claude-haiku-4-5-20251001', prompt, { maxTokens: 2000 })
+    const text = await iaGerarConfigurado(prompt, { maxTokens: 2000 })
     const parsed = extrairJSON(text)
     if (!parsed) return NextResponse.json({ error: 'Formato inesperado da IA', raw: text }, { status: 500 })
     return NextResponse.json(parsed)

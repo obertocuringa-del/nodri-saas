@@ -119,3 +119,77 @@ export function extrairJSON<T = any>(texto: string): T | null {
   }
   return null
 }
+
+// ── A configuracao vale para TODAS as IAs, nao so para o chat ───────────────
+//
+// O sistema tinha varias IAs e cada uma achava a chave do seu jeito: umas liam
+// ia_config_global, outras liam process.env.ANTHROPIC_API_KEY. Resultado: o
+// dono configurava a IA no painel e a analise do Feedback continuava dizendo
+// "Chave da IA nao configurada" — porque ela nunca olhou para o painel.
+//
+// Pior: as que liam do ambiente nao tinham reserva. Uma IA fora do ar por
+// falta de chave enquanto a chave existe, salva, a dois cliques dali.
+//
+// Esta funcao e o unico lugar que responde "com que chave eu falo, e com quem
+// falo se esse cair". Toda rota de IA passa por aqui.
+
+import { supabaseAdmin as _sb } from './supabase'
+
+const MODELO_CLAUDE_RESERVA = 'claude-haiku-4-5-20251001'
+const MODELO_GEMINI_RESERVA = 'gemini-2.5-flash'
+
+export interface ConfigIA {
+  chaveClaude: string
+  chaveGemini: string
+  modelo: string
+}
+
+export async function lerConfigIA(): Promise<ConfigIA> {
+  let api_key = '', api_key_gemini = '', modelo = ''
+  try {
+    const { data } = await _sb.from('ia_config_global')
+      .select('api_key, api_key_gemini, modelo, ativo').limit(1).maybeSingle()
+    if (data) {
+      api_key = (data as any).api_key || ''
+      api_key_gemini = (data as any).api_key_gemini || ''
+      modelo = (data as any).modelo || ''
+    }
+  } catch { /* segue para o ambiente */ }
+
+  const ehClaude = modelo.startsWith('claude')
+  // O ambiente vira PLANO B, nao a fonte principal. Assim quem ja tinha a
+  // chave so no Vercel continua funcionando sem precisar mexer em nada.
+  const chaveClaude = (ehClaude ? api_key : '') || process.env.ANTHROPIC_API_KEY || ''
+  const chaveGemini = api_key_gemini || (!ehClaude ? api_key : '') || process.env.GEMINI_API_KEY || ''
+
+  return { chaveClaude, chaveGemini, modelo: modelo || (chaveClaude ? 'claude-sonnet-5' : 'gemini-2.5-flash') }
+}
+
+/**
+ * Gera texto com a IA configurada no painel, caindo para o outro provedor se
+ * o principal falhar. Use no lugar de iaGerar em qualquer rota nova.
+ *
+ * Lanca com mensagem legivel quando nao ha chave nenhuma — a tela precisa
+ * poder dizer "configure no painel", nao "erro 500".
+ */
+export async function iaGerarConfigurado(prompt: string, opts: IaOpts = {}): Promise<string> {
+  const { chaveClaude, chaveGemini, modelo } = await lerConfigIA()
+  if (!chaveClaude && !chaveGemini) {
+    throw new Error('IA nao configurada. Cadastre a chave em Admin > IA.')
+  }
+
+  const primarioEhClaude = modelo.startsWith('claude') ? !!chaveClaude : !chaveGemini
+  const principal = primarioEhClaude
+    ? { modelo: modelo.startsWith('claude') ? modelo : MODELO_CLAUDE_RESERVA, chave: chaveClaude }
+    : { modelo: modelo.startsWith('claude') ? MODELO_GEMINI_RESERVA : modelo, chave: chaveGemini }
+  const reserva = primarioEhClaude
+    ? (chaveGemini ? { modelo: MODELO_GEMINI_RESERVA, chave: chaveGemini } : null)
+    : (chaveClaude ? { modelo: MODELO_CLAUDE_RESERVA, chave: chaveClaude } : null)
+
+  try {
+    return await iaGerar(principal.chave, principal.modelo, prompt, opts)
+  } catch (e) {
+    if (!reserva) throw e
+    return await iaGerar(reserva.chave, reserva.modelo, prompt, opts)
+  }
+}

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
-import { iaGerar, extrairJSON } from '@/lib/iaClient'
+import { iaGerarConfigurado, extrairJSON } from '@/lib/iaClient'
 
 export const maxDuration = 60
 
@@ -15,10 +15,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: 'Chave da IA não configurada. Adicione ANTHROPIC_API_KEY nas variáveis de ambiente.' }, { status: 500 })
-  }
+  // A chave vem do painel (Admin > IA), nao mais do ambiente. Esta rota dizia
+  // "adicione ANTHROPIC_API_KEY nas variaveis de ambiente" enquanto a chave
+  // existia salva, a dois cliques dali — e mandava o dono mexer no Vercel para
+  // resolver algo que ele ja tinha resolvido no proprio sistema.
 
   // Busca dados do formulário
   const { data: form } = await supabaseAdmin
@@ -208,7 +208,7 @@ Forneça sua análise no seguinte formato JSON (responda APENAS com JSON válido
 
   try {
     // iaGerar cuida do retry/backoff em 429/5xx/529 e resposta vazia.
-    const text = await iaGerar(apiKey, 'claude-sonnet-4-6', prompt, { maxTokens: 4000 })
+    const text = await iaGerarConfigurado(prompt, { maxTokens: 4000 })
     const parsed = extrairJSON(text)
     if (!parsed) return NextResponse.json({ error: 'A IA retornou um formato inesperado.', raw: text }, { status: 500 })
     return NextResponse.json(parsed)

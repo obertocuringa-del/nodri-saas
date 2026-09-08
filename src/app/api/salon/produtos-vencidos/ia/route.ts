@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { iaGerar, extrairJSON } from '@/lib/iaClient'
+import { iaGerar, iaGerarConfigurado, extrairJSON } from '@/lib/iaClient'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -119,7 +119,7 @@ Responda APENAS com JSON válido, sem markdown:
     // tokens da resposta. Com ele ligado o JSON sai cortado no meio e o
     // extrairJSON devolve null — que foi como esta rota falhou no primeiro
     // teste em producao. As outras rotas de IA do sistema ja zeram isso.
-    const text = await iaGerar(cfg.api_key, modelo, prompt, { maxTokens: 6000, geminiThinkingBudget: 0 })
+    const text = await iaGerarConfigurado(prompt, { maxTokens: 6000, geminiThinkingBudget: 0 })
     const parsed = extrairJSON(text)
     if (!parsed) {
       return NextResponse.json(

@@ -9,7 +9,7 @@ import {
   calcularSimuladorMeta, calcularDinheiroPerdido, calcularOportunidadesOcultas, buscarTendenciaFidelizacao,
 } from '@/lib/metasAnalitico'
 import { getSessao } from '@/lib/apiAuth'
-import { iaGerar } from '@/lib/iaClient'
+import { iaGerarConfigurado } from '@/lib/iaClient'
 
 // Prompt longo + retry pode passar de 10s; garante margem de tempo na função.
 export const maxDuration = 60
@@ -33,7 +33,9 @@ async function getSalaoId() {
 // Prompt longo (15 seções): tokens altos e thinkingBudget:0 no Gemini para não
 // gastar o orçamento "pensando" e voltar vazio. Retry/backoff vêm do iaGerar.
 async function chamarIA(apiKey: string, modelo: string, prompt: string): Promise<string> {
-  return iaGerar(apiKey, modelo, prompt, { maxTokens: 16000, geminiThinkingBudget: 0 })
+  // Passa pelo resolvedor central: chave e modelo do painel, com reserva
+  // automatica se o provedor principal cair.
+  return iaGerarConfigurado(prompt, { maxTokens: 16000, geminiThinkingBudget: 0 })
 }
 
 // POST — gera (ou regenera) o planejamento estratégico para bater a meta do mês

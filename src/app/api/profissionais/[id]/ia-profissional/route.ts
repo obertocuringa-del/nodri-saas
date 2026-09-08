@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { iaGerar, extrairJSON } from '@/lib/iaClient'
+import { iaGerar, iaGerarConfigurado, extrairJSON } from '@/lib/iaClient'
 
 // A geração + retry pode passar de 10s; garante margem de tempo na função.
 export const maxDuration = 60
@@ -35,7 +35,7 @@ barba de presente para um homem). Fora o caso de presente, manter serviços masc
 // Chama a IA central (com retry + backoff). Gemini com thinkingBudget:0 para
 // não gastar o orçamento de tokens "pensando" e devolver vazio.
 async function iaCall(apiKey: string, modelo: string, prompt: string): Promise<string> {
-  return iaGerar(apiKey, modelo, prompt, { maxTokens: 4096, geminiThinkingBudget: 0 })
+  return iaGerarConfigurado(prompt, { maxTokens: 4096, geminiThinkingBudget: 0 })
 }
 
 function buildListaServicos(lista: any[]): string {

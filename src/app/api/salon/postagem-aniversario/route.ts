@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { iaGerar } from '@/lib/iaClient'
+import { iaGerarConfigurado } from '@/lib/iaClient'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -138,7 +138,7 @@ REGRAS
     // A mensagem continua curta porque o PROMPT manda ser curta — não porque
     // o teto de tokens a interrompe. Teto não é forma de controlar tamanho:
     // ele corta no meio da palavra em vez de fazer o modelo concluir.
-    const texto = await iaGerar(apiKey, modelo, prompt, { maxTokens: 700, geminiThinkingBudget: 0 })
+    const texto = await iaGerarConfigurado(prompt, { maxTokens: 700, geminiThinkingBudget: 0 })
     const limpo = tirarVocativo(
       String(texto || '').trim().replace(/^["']|["']$/g, ''),
       primeiro,

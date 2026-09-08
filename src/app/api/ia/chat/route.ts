@@ -15,6 +15,10 @@ import { registrarUsoIA } from '@/lib/iaUso'
 // funcao morta no meio do stream = a tela fica carregando para sempre.
 export const maxDuration = 60
 
+// Mesma regra do resto do sistema (nenhum emoji em tela nenhuma), repetida aqui
+// porque o prompt de tarefa nao passa pelo PROMPT_MESTRE.
+const SEM_EMOJI_TAREFA = 'Nunca use emojis nem simbolos decorativos.'
+
 
 // ── Memória Semântica ────────────────────────────────────────────────────────
 
@@ -3047,8 +3051,33 @@ ${REGRA_TAMANHO}`
     // A parte do prompt que NAO muda de uma pergunta para outra. Ela sozinha
     // passa dos 100 KB e ia inteira, do zero, em toda chamada. Separada assim,
     // o Claude consegue guardar em cache e cobrar 10% por ela.
-    const systemEstatico = PROMPT_MESTRE
-    const systemVariavel = systemPrompt.slice(PROMPT_MESTRE.length)
+    // ── Chamada de TAREFA, não de conversa ──────────────────────────────
+    //
+    // Nem tudo que passa por aqui é gente conversando. As sugestões de venda
+    // do agendamento e a análise da calculadora montam o próprio prompt, já
+    // com todos os dados que precisam, e esperam JSON de volta.
+    //
+    // Essas chamadas levavam os 118 KB do prompt mestre junto — mais os dados
+    // do salão, mais as memórias — para responder uma coisa que o prompt delas
+    // já continha por inteiro. Era a maior conta do sistema paga por engano.
+    //
+    // Pior: a regra de "resposta curta" (escrita para conversa) brigava com o
+    // JSON de três sugestões e podia cortar a terceira. Uma regra boa no lugar
+    // errado vira defeito.
+    const MODOS_TAREFA = new Set(['agendamentos', 'calculadora'])
+    const ehTarefa = MODOS_TAREFA.has(String(modo || ''))
+
+    const SISTEMA_TAREFA = `Você é uma especialista sênior em gestão, vendas e experiência do cliente em salões de beleza de alto padrão.
+Responda EXATAMENTE no formato pedido na mensagem. Quando o formato for JSON, devolva SOMENTE o JSON — sem markdown, sem cercas, sem texto antes ou depois.
+Quando a mensagem pedir uma quantidade exata de itens, entregue essa quantidade exata; nunca menos.
+Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_TAREFA}`
+
+    const systemEstatico = ehTarefa ? SISTEMA_TAREFA : PROMPT_MESTRE
+    const systemVariavel = ehTarefa ? '' : systemPrompt.slice(PROMPT_MESTRE.length)
+    // O ramo do Gemini manda o system num bloco so. Sem esta linha ele
+    // continuaria enviando o prompt gigante mesmo em modo tarefa — o corte
+    // valeria so para o Claude, e o Gemini seguiria pagando a conta.
+    const systemFinal = systemEstatico + systemVariavel
 
     // 9. Chamar API com streaming
     const modelo = config.modelo || 'gemini-2.5-flash'
@@ -3105,6 +3134,7 @@ ${REGRA_TAMANHO}`
       // Fase 1 — ferramentas (sem streaming), no mesmo desenho do Gemini.
       let dadosFerramentas = ''
       let qtdFerramentas = 0
+      const usaFerramentas = !ehTarefa
       // Consumo somado de TODAS as chamadas da pergunta (as de ferramenta e a
       // final). Medir só a última esconderia justamente a parte que a gente
       // cortou — a fase de ferramenta era onde o desperdício morava.
@@ -3118,7 +3148,7 @@ ${REGRA_TAMANHO}`
       }
       try {
         const historico: any[] = msgsClaude.map((m: any) => ({ ...m }))
-        for (let volta = 0; volta < 2; volta++) {
+        for (let volta = 0; usaFerramentas && volta < 2; volta++) {
           const r: any = await anthropic.messages.create({
             model: modeloUsado,
             max_tokens: 1024,   // aqui ele só escolhe a ferramenta, não escreve texto
@@ -3159,10 +3189,10 @@ ${REGRA_TAMANHO}`
 
       const stream: any = await anthropic.messages.create({
         model: modeloUsado,
-        // 3000, não 8192. O teto não é economia de conta: é o que impede a
-        // resposta de crescer até estourar o tempo da função e a tela ficar
-        // carregando para sempre.
-        max_tokens: 3000,
+        // 3000 para conversa: o teto que impede a resposta de crescer ate
+        // estourar o tempo da funcao. Tarefa precisa de mais — o JSON de tres
+        // sugestoes nao cabe em 3000 e a terceira sairia cortada.
+        max_tokens: ehTarefa ? 6000 : 3000,
         system: blocosSistema,
         messages: msgsFinal as any,
         stream: true,
@@ -3225,8 +3255,10 @@ ${REGRA_TAMANHO}`
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       }))
-      const historyFinal = await executarLoopFerramentas(
-        systemPrompt, historyBase, modeloUsado, chaveGoogle, salaoId,
+      // Tarefa nao chama ferramenta: o prompt dela ja traz todos os dados, e
+      // cada volta do loop custa uma chamada inteira a mais.
+      const historyFinal = ehTarefa ? historyBase : await executarLoopFerramentas(
+        systemFinal, historyBase, modeloUsado, chaveGoogle, salaoId,
         ehProfissional ? profissional_id : undefined,
       )
 
@@ -3241,11 +3273,11 @@ ${REGRA_TAMANHO}`
       // Fase 2: streaming da resposta final (sem tools para não re-executar)
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modeloUsado}:streamGenerateContent?alt=sse&key=${chaveGoogle}`
       const geminiBody = {
-        system_instruction: { parts: [{ text: systemPrompt }] },
+        system_instruction: { parts: [{ text: systemFinal }] },
         contents: historyFinal,
-        // 3000, nao 8192 — o teto que impede a resposta de crescer ate
-        // estourar o tempo da funcao e deixar a tela carregando para sempre.
-        generationConfig: { maxOutputTokens: 3000, temperature: 0.7 },
+        // Conversa: 3000. Tarefa: mais, porque o JSON de tres sugestoes nao
+        // cabe em 3000 e a terceira sairia cortada no meio.
+        generationConfig: { maxOutputTokens: ehTarefa ? 6000 : 3000, temperature: 0.7 },
       }
 
       const geminiRes = await fetch(geminiUrl, {
