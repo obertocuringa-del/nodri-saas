@@ -5,6 +5,16 @@ import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
 import { executarFerramenta, FERRAMENTAS_GEMINI } from '../tools/execute'
 
+// Teto de tempo da funcao na Vercel.
+//
+// Esta era a UNICA rota de IA sem esta linha — todas as outras ja usavam 60.
+// Sem ela a funcao herda o padrao curto da plataforma, e a rota mais pesada
+// do sistema (prompt gigante + ate 5 chamadas de ferramenta + streaming) era
+// justamente a que tinha menos tempo para responder. Resposta longa =
+// funcao morta no meio do stream = a tela fica carregando para sempre.
+export const maxDuration = 60
+
+
 // ── Memória Semântica ────────────────────────────────────────────────────────
 
 async function gerarEmbedding(texto: string, apiKey: string): Promise<number[] | null> {
