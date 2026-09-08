@@ -775,13 +775,31 @@ export async function POST(req: NextRequest) {
 
     // 5. Dados específicos do profissional
     if (profissional_id) {
+      // O nome usado na busca de ocorrências é o MESMO que a tela usa: apelido,
+      // ou o primeiro nome. Sai da lista de profissionais que já foi carregada
+      // acima — não custa consulta nova.
+      const profNaLista: any = (profissionais || []).find((p: any) => p.id === profissional_id)
+      const nomeParaOcorrencias = String(
+        profNaLista?.apelido || String(profNaLista?.nome_completo || '').split(' ')[0] || ' '
+      ).replace(/[%,]/g, '')
+
       const [{ data: dadosProf }, { data: periodosProf }, { data: ocorrsDoProf }, { data: servicosSalao }] = await Promise.all([
         supabaseAdmin.from('profissionais').select('*').eq('id', profissional_id).maybeSingle(),
         supabaseAdmin.from('prof_pagamentos').select('*').eq('profissional_id', profissional_id).order('ano').order('mes'),
+        // Por ID **ou** por NOME — e o "ou" e o conserto.
+        //
+        // A tela de Ocorrencias sempre buscou por nome
+        // (.ilike('profissional_nome', '%CELIA%')), porque a importacao
+        // preenche o nome e nem sempre o id. A IA buscava so por id: a tela
+        // mostrava as faltas e os atrasos, e a IA respondia "voce nao tem
+        // ocorrencias registradas" — o pior tipo de erro, porque soa como
+        // boa noticia.
+        //
+        // Duas fontes para o mesmo fato tem que casar pelo mesmo criterio.
         supabaseAdmin.from('feedback_prof_respostas')
           .select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
           .eq('salao_id', salaoId)
-          .eq('profissional_id', profissional_id)
+          .or(`profissional_id.eq.${profissional_id},profissional_nome.ilike.%${nomeParaOcorrencias}%`)
           .order('criado_em', { ascending: false }),
         supabaseAdmin.from('salao_servicos')
           .select('nome, categoria, preco_fixo, preco_min, comissao_valor, ativo')
