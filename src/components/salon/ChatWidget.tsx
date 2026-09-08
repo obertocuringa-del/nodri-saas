@@ -193,16 +193,34 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
 
   const usarPrompt = (p: Prompt) => { setInput(p.script); setTimeout(() => inputRef.current?.focus(), 50) }
 
+  // ── Retoma a conversa de onde parou ──────────────────────────────────────
+  //
+  // O servidor SEMPRE gravou tudo em ia_conversas. O que faltava era o outro
+  // lado: ninguém pedia a conversa de volta ao abrir. Então cada visita
+  // começava do zero e a IA parecia não lembrar de nada — sendo que lembrava,
+  // só não era perguntada.
+  //
+  // A saudação vira o plano B: só aparece quando realmente não há histórico.
   useEffect(() => {
-    if (aberto && !iniciado) {
-      setMensagens([{
-        role: 'assistant',
-        content: profissionalId
-          ? 'Olá! Sou a NODRI IA. Tenho acesso aos seus dados aqui no sistema. Como posso te ajudar hoje?'
-          : 'Olá! Sou a NODRI IA, sua diretora executiva virtual. Tenho acesso completo aos dados do seu salão. Como posso te ajudar hoje?'
-      }])
-      setIniciado(true)
-    }
+    if (!aberto || iniciado) return
+    setIniciado(true)
+    const saudacao = () => setMensagens([{
+      role: 'assistant',
+      content: profissionalId
+        ? 'Olá! Sou a NODRI IA. Tenho acesso aos seus dados aqui no sistema. Como posso te ajudar hoje?'
+        : 'Olá! Sou a NODRI IA, sua diretora executiva virtual. Tenho acesso completo aos dados do seu salão. Como posso te ajudar hoje?'
+    }])
+    const url = '/api/ia/conversa' + (profissionalId ? `?profissional_id=${profissionalId}` : '')
+    fetch(url)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const antigas = d?.conversa?.mensagens
+        if (Array.isArray(antigas) && antigas.length) {
+          setMensagens(antigas)
+          setConversaId(d.conversa.id || null)
+        } else saudacao()
+      })
+      .catch(saudacao)   // falhou o histórico: abre normal, não deixa a tela vazia
   }, [aberto, iniciado, profissionalId])
 
   useEffect(() => {
@@ -278,9 +296,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   }, [input, carregando, mensagens, conversaId, profissionalId])
 
   const limpar = () => {
+    // Agora que a conversa volta ao abrir, limpar só na tela não limpa nada:
+    // bastava sair e entrar para tudo reaparecer. Apaga no servidor também.
+    if (!confirm('Apagar esta conversa? O histórico dela some para sempre.')) return
     setMensagens([{ role: 'assistant', content: 'Olá! Sou a NODRI IA. Como posso te ajudar?' }])
     setConversaId(null)
     setCopiados(new Set())
+    const url = '/api/ia/conversa' + (profissionalId ? `?profissional_id=${profissionalId}` : '')
+    fetch(url, { method: 'DELETE' }).catch(() => {})
   }
 
   const copiarMensagem = (texto: string, idx: number) => {

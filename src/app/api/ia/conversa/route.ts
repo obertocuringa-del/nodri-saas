@@ -12,14 +12,18 @@ export async function GET(req: NextRequest) {
     if (!salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
+    // Sem profissional_id = conversa do GESTOR (a do painel do salao). Antes
+    // isso era erro 400, e por isso a conversa do dono nunca voltava ao abrir
+    // o chat: nao havia como pedir por ela.
     const profissionalId = searchParams.get('profissional_id')
-    if (!profissionalId) return NextResponse.json({ error: 'profissional_id obrigatório' }, { status: 400 })
 
-    const { data } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('ia_conversas')
       .select('id, mensagens, atualizado_em')
       .eq('salao_id', salaoId)
-      .eq('profissional_id', profissionalId)
+    q = profissionalId ? q.eq('profissional_id', profissionalId) : q.is('profissional_id', null)
+
+    const { data } = await q
       .order('atualizado_em', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -42,13 +46,13 @@ export async function DELETE(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const profissionalId = searchParams.get('profissional_id')
-    if (!profissionalId) return NextResponse.json({ error: 'profissional_id obrigatório' }, { status: 400 })
 
-    await supabaseAdmin
+    let d = supabaseAdmin
       .from('ia_conversas')
       .delete()
       .eq('salao_id', salaoId)
-      .eq('profissional_id', profissionalId)
+    d = profissionalId ? d.eq('profissional_id', profissionalId) : d.is('profissional_id', null)
+    await d
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {

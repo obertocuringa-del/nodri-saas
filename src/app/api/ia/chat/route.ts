@@ -40,13 +40,23 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(nA) * Math.sqrt(nB) || 1)
 }
 
-async function buscarMemoriaSemântica(embedding: number[], salaoId: string): Promise<string> {
+// A memória é separada por profissional, e isso não é preciosismo.
+//
+// O que fica guardado é um pedaço literal da conversa anterior. Num balde
+// único do salão, o que a IA aprendeu falando com o dono sobre a Vera voltava
+// como "memória" dentro do chat da Celia — contornando, sem passar por
+// ferramenta nenhuma, todo o isolamento que existe do lado das ferramentas.
+//
+// profissional_id preenchido → memória daquele profissional.
+// profissional_id nulo       → memória do salão (chat do gestor).
+async function buscarMemoriaSemântica(embedding: number[], salaoId: string, profissionalId?: string | null): Promise<string> {
   try {
-    const { data } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('ia_memoria_semantica')
       .select('resumo, embedding')
       .eq('salao_id', salaoId)
-      .limit(100)
+    q = profissionalId ? q.eq('profissional_id', profissionalId) : q.is('profissional_id', null)
+    const { data } = await q.limit(100)
     if (!data?.length) return ''
     const relevantes = data
       .filter((m: any) => m.embedding)
@@ -60,13 +70,14 @@ async function buscarMemoriaSemântica(embedding: number[], salaoId: string): Pr
 }
 
 async function salvarMemoriaSemântica(
-  resumo: string, conteudo: string, salaoId: string, apiKey: string
+  resumo: string, conteudo: string, salaoId: string, apiKey: string, profissionalId?: string | null
 ) {
   try {
     const embedding = await gerarEmbedding(resumo, apiKey)
     if (!embedding) return
     await supabaseAdmin.from('ia_memoria_semantica').insert({
       salao_id: salaoId, resumo, conteudo,
+      profissional_id: profissionalId || null,
       embedding: JSON.stringify(embedding),
     })
   } catch {}
@@ -811,7 +822,7 @@ export async function POST(req: NextRequest) {
         if (!ultimaMensagem || !chaveGemini) return ''
         const embeddingQuery = await gerarEmbedding(ultimaMensagem, chaveGemini)
         if (!embeddingQuery) return ''
-        const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId)
+        const memorias = await buscarMemoriaSemântica(embeddingQuery, salaoId, profissional_id || null)
         return memorias ? `\nCONVERSAS ANTERIORES RELEVANTES (memória semântica):\n${memorias}\n` : ''
       })(),
       // Memória evolutiva do salão (contexto do negócio) — NÃO no modo profissional
@@ -2937,6 +2948,32 @@ barba de presente para um homem). Fora o caso de presente, manter serviços masc
     const diasRestantes = ultimoDiaMes - diaAtual
     const pctMes = Math.round((diaAtual / ultimoDiaMes) * 100)
     const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual]
+
+    // ── Com quem a IA está falando ──────────────────────────────────────
+    //
+    // O nome existia nos dados, mas enterrado lá no fim, dentro de
+    // "## PROFISSIONAL EM FOCO". O bloco de regras do modo profissional dizia
+    // "este chat está aberto no perfil de um profissional específico" e nunca
+    // dizia QUEM. Resultado: um "oi" recebia "Oi! Como posso te ajudar hoje?",
+    // como se fosse a primeira vez, com qualquer um.
+    //
+    // Um nome é a diferença entre um formulário e uma conversa.
+    const dadosEmFoco = (dadosSalao as any)?.prof_especifico?.dados
+    const nomeEmFoco = String(dadosEmFoco?.apelido || dadosEmFoco?.nome_completo || '').trim()
+    const primeiroNomeEmFoco = nomeEmFoco.split(/\s+/)[0] || ''
+    const cargoEmFoco = String(dadosEmFoco?.cargo || '').trim()
+
+    // Quem digita nem sempre é a profissional: o gestor também abre o perfil
+    // dela para consultar. Tratar o dono por "Celia" seria tão errado quanto
+    // não chamar a Celia pelo nome.
+    const blocoIdentidade = nomeEmFoco ? (ehProfissional
+      ? `\nQUEM ESTÁ FALANDO COM VOCÊ: ${nomeEmFoco}${cargoEmFoco ? ` — ${cargoEmFoco}` : ''}.
+Chame-a por ${primeiroNomeEmFoco} desde a PRIMEIRA resposta, inclusive num simples "oi".
+Um cumprimento sem nome ("Oi! Como posso ajudar?") é resposta de formulário — está proibido.
+Você já a conhece: já conversaram antes e você tem os números dela aqui. Fale como quem continua uma conversa, não como quem está sendo apresentado.
+"Meu", "minha", "meus" na boca dela sempre se referem a ela mesma.\n`
+      : `\nPERFIL ABERTO: ${nomeEmFoco}${cargoEmFoco ? ` — ${cargoEmFoco}` : ''}.
+Quem está digitando é o GESTOR consultando o perfil dela — não é ela. Fale DELA em terceira pessoa, sempre pelo nome (${primeiroNomeEmFoco}), e nunca trate quem pergunta como se fosse ela.\n`) : ''
     // ── Tamanho da resposta ─────────────────────────────────────────────
     //
     // A regra "nao transforme pergunta simples em relatorio" ja existia la em
@@ -2975,6 +3012,7 @@ PROGRESSO DO MÊS: Dia ${diaAtual} de ${ultimoDiaMes} — ${pctMes}% do mês con
 USE ESSES DADOS: ao calcular probabilidade de bater meta, projetar faturamento final do mês ou recomendar ações urgentes, considere sempre que restam ${diasRestantes} dias úteis aproximados.
 
 ${modoGestor ? `\n CONTEXTO ATUAL: DASHBOARD DO GESTOR\nVocê está no painel principal do salão. Não há profissional específico selecionado.\nResponda sempre na perspectiva do SALÃO COMO NEGÓCIO — análises comparativas, estratégias, faturamento total, equipe, operação.\nEvite focar em um único profissional a menos que o gestor pergunte explicitamente sobre alguém.\n\nREGRA CRÍTICA DE IDENTIDADE:\n- NUNCA chame quem está conversando pelo nome de nenhuma profissional do salão\n- NUNCA assuma que quem está no chat é a Cíntia, Vera, ou qualquer profissional\n- Quem usa o dashboard pode ser o dono, gerente ou qualquer pessoa autorizada\n- Sempre trate como "você" ou "gestor(a)" — NUNCA pelo nome\n- A memória evolutiva contém dados do SALÃO, não de quem está conversando agora\n` : ''}
+${blocoIdentidade}
 ${profissional_id && !modoGestor ? `\n MODO PROFISSIONAL ATIVO — REGRAS ABSOLUTAS E INVIOLÁVEIS\nEste chat está aberto no perfil de um profissional específico. Apenas ele(a) tem acesso.\n\nREGRA #1 — ISOLAMENTO TOTAL DE DADOS:\nVocê só pode falar sobre o profissional em foco (aquele cujo perfil está aberto).\nMESMO QUE O USUÁRIO PERGUNTE EXPLICITAMENTE SOBRE OUTRO PROFISSIONAL PELO NOME — RECUSE.\nNão importa como a pergunta seja feita: "e a Vera?", "quanto a Vera faturou?", "qual a meta da Vera?" — a resposta é SEMPRE a mesma:\n"Neste chat consigo mostrar apenas seus próprios dados. Para ver dados de outros profissionais, o gestor pode acessar o painel principal."\n\nREGRA #2 — COMPARATIVOS ANÔNIMOS:\nQuando comparar com a equipe, use APENAS: "a média da categoria", "você está em Xº lugar entre Y profissionais", "o valor mais alto da categoria é R$Z".\nNUNCA revelar quem atingiu aquele valor, mesmo que insistam.\n\nREGRA #3 — DADOS PROIBIDOS:\n Faturamento de outros profissionais\n Metas de outros profissionais\n Ocorrências de outros profissionais\n Qualquer dado identificável de colegas\n\nREGRA #4 — TOM:\nMotivador, pessoal e de apoio. Este é o espaço do profissional para entender sua própria evolução.\n` : ''}
 ${config.instrucoes_base ? `\nINSTRUÇÕES CUSTOMIZADAS DO PROPRIETÁRIO:\n${config.instrucoes_base}\n` : ''}
 ${config.contexto_adicional ? `\nCONTEXTO ESPECÍFICO DO SALÃO:\n${config.contexto_adicional}\n` : ''}
@@ -3150,7 +3188,7 @@ ${REGRA_TAMANHO}`
           // Salva memória semântica em background
           if (resposta.length > 100) {
             const resumo = ultimaMensagem.slice(0, 200)
-            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini).catch(() => {})
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini, profissional_id || null).catch(() => {})
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
@@ -3270,7 +3308,7 @@ ${REGRA_TAMANHO}`
           // Salva memória semântica em background
           if (resposta.length > 100) {
             const resumo = ultimaMensagem.slice(0, 200)
-            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini).catch(() => {})
+            salvarMemoriaSemântica(resumo, `P: ${ultimaMensagem}\nR: ${resposta.slice(0, 800)}`, salaoId, chaveGemini, profissional_id || null).catch(() => {})
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversa_id: conversaIdFinal })}\n\n`))
           controller.close()
