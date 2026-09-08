@@ -3214,29 +3214,47 @@ Profissional(is): ${h?.profissionais_ultima?.join(', ') || '—'}
 ${diasSemServico || 'Sem dados'}
 
 ═══ SUA MISSÃO ═══
-Gere EXATAMENTE 3 sugestões COMPLETAMENTE DIFERENTES entre si:
+Gere EXATAMENTE 3 sugestões COMPLETAMENTE DIFERENTES entre si, ordenadas da MAIOR para a MENOR chance de venda:
 - Sugestão 1: serviço que o cliente já faz mas não fez há mais tempo
 - Sugestão 2: serviço complementar ao que ele vai fazer HOJE
 - Sugestão 3: serviço que ele NUNCA fez mas que combina com seu perfil
+
+REGRA DE TAMANHO — leia com atenção:
+Isso é lido por uma profissional COM CLIENTE NA CADEIRA, em dez segundos, no
+celular. Texto longo não é lido: é pulado. Respeite os limites de cada campo
+ao pé da letra. Frase curta e afiada vale mais que parágrafo completo.
+
+REGRA DA REVERSÃO — a mais importante:
+"reversao" NÃO é agradecer nem deixar para a próxima. Agradecer é desistir.
+É a frase que responde ao "não" e o transforma em "sim AGORA", atacando o
+motivo real da recusa (tempo, preço ou dúvida). Escolha um destes caminhos:
+- Tira o obstáculo: "São só 10 minutos, encaixo enquanto o esmalte seca."
+- Reduz o compromisso: "Faço só metade hoje, você sente e decide o resto."
+- Cria urgência honesta com o dado real: "Faz 88 dias — se passar de 90 o fio
+  perde o tratamento e a gente recomeça do zero."
+PROIBIDO em "reversao": "sem problema", "tranquilo", "fica para a próxima",
+"quando quiser", "guardo a sugestão". Se a frase serviria para encerrar o
+assunto, ela está errada.
 
 RESPONDA EXATAMENTE neste formato JSON (sem markdown, sem texto fora do JSON):
 {
   "sugestoes": [
     {
-      "titulo": "Nome do serviço ou ação",
+      "titulo": "Nome do serviço (máx. 4 palavras)",
       "percentual": 78,
-      "motivo": "Por que faz sentido AGORA com base nos dados reais",
-      "momento": "Antes / Durante / Após o serviço de hoje — e por quê",
-      "beneficios": "3 benefícios concretos separados por · ",
-      "abordagem": "Frase exata natural e calorosa para o profissional usar",
-      "reversao": "Frase de reversão se o cliente recusar"
+      "motivo": "Por que AGORA. Uma frase, máx. 20 palavras, começando pelo dado real (ex: 88 dias sem fazer, faz 26x no histórico)",
+      "momento": "Antes / Durante / Após — e o encaixe em no máximo 8 palavras",
+      "beneficios": "2 benefícios, máx. 5 palavras cada, separados por · ",
+      "abordagem": "A frase pronta para falar em voz alta. Máx. 25 palavras, natural, com o nome do cliente",
+      "reversao": "A virada do não em sim agora. Máx. 20 palavras. Nunca agradecer nem adiar"
     },
     { ... },
     { ... }
   ]
 }
 
-O campo "percentual" deve ser um número inteiro de 0 a 100 representando a chance real de aceitação baseada nos dados do cliente. Seja específico e use os dados reais. Proibido sugestões genéricas.`
+"percentual" é a chance real de aceitação (0 a 100) com base nos dados deste cliente.
+Use os dados reais e cite números. Proibido sugestão genérica.`
 
       const res = await fetch('/api/ia/chat', {
         method: 'POST',

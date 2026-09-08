@@ -3079,14 +3079,53 @@ Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_T
     // valeria so para o Claude, e o Gemini seguiria pagando a conta.
     const systemFinal = systemEstatico + systemVariavel
 
+    // ── O prompt da ESCOLHA de ferramenta e minusculo ────────────────────
+    //
+    // Aqui estava o maior desperdicio do sistema, e ele nao aparecia porque
+    // ninguem media: cada pergunta fazia ate 3 chamadas (duas para escolher
+    // ferramenta, uma para responder) e TODAS levavam os 118 KB do prompt
+    // mestre mais os dados do salao. Media medida: 180 mil tokens por
+    // pergunta, para respostas de 700 tokens.
+    //
+    // Mas a fase de ferramenta nao precisa de nada disso. Ali o modelo so
+    // decide QUAL funcao chamar — e a descricao de cada funcao ja viaja junto
+    // com as proprias ferramentas. Dar a ele o manual inteiro de gestao de
+    // salao para escolher entre 9 botoes e pagar por uma leitura que nao muda
+    // a escolha.
+    //
+    // O prompt completo continua valendo onde importa: na resposta final.
+    const sistemaEscolhaFerramenta = `Voce e a NODRI IA, assistente de gestao de saloes de beleza.
+Sua unica tarefa AGORA e decidir se alguma ferramenta precisa ser chamada para responder a pergunta, e chamar.
+Hoje e ${hoje}. ${nomeEmFoco ? `A pergunta e sobre ${nomeEmFoco}.` : ''}
+${profissional_id ? 'Contexto de PROFISSIONAL: so existem os dados dele proprio; nao ha acesso a colegas nem ao salao inteiro.' : 'Contexto de GESTOR: acesso aos dados do salao inteiro.'}
+Se nenhuma ferramenta for necessaria, responda apenas: OK.
+Nao escreva analise, nao responda a pergunta ainda.`
+
     // 9. Chamar API com streaming
     const modelo = config.modelo || 'gemini-2.5-flash'
 
 
-    // Limita histórico a últimas 10 mensagens para evitar timeout em conversas longas
-    const mensagensLimitadas = mensagens.length > 10
-      ? mensagens.slice(-10)
-      : mensagens
+    // ── Quanto da conversa volta junto ──────────────────────────────────
+    //
+    // Eram 10 mensagens inteiras, e agora que o chat RESTAURA o historico ao
+    // abrir, essas 10 chegam completas do navegador em toda pergunta — e vao
+    // para o modelo em cada uma das chamadas. Uma conversa de meia hora
+    // passava a ser reenviada por inteiro para responder "e amanha?".
+    //
+    // 6 mensagens cobrem o vai e vem recente, que e do que o modelo precisa
+    // para entender "e amanha?". O que ficou para tras nao se perde: continua
+    // salvo em ia_conversas e resumido na memoria semantica.
+    //
+    // O corte por tamanho e para a resposta antiga e comprida: no meio de uma
+    // conversa ela vira contexto, e contexto nao precisa da tabela inteira.
+    const TETO_MSG = 1500
+    const mensagensLimitadas = (mensagens.length > 6 ? mensagens.slice(-6) : mensagens)
+      .map((m: any, i: number, arr: any[]) => {
+        const texto = String(m.content || '')
+        // A ULTIMA mensagem (a pergunta de agora) nunca e cortada.
+        if (i === arr.length - 1 || texto.length <= TETO_MSG) return m
+        return { ...m, content: texto.slice(0, TETO_MSG) + ' [...resposta abreviada no historico]' }
+      })
 
     let resposta = ''
 
@@ -3147,12 +3186,14 @@ Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_T
         uso.cacheEscrita += Number(u.cache_creation_input_tokens) || 0
       }
       try {
-        const historico: any[] = msgsClaude.map((m: any) => ({ ...m }))
+        // Para ESCOLHER a ferramenta bastam as duas ultimas falas. O resto da
+        // conversa nao muda qual funcao chamar, e ia junto em toda volta.
+        const historico: any[] = msgsClaude.slice(-2).map((m: any) => ({ ...m }))
         for (let volta = 0; usaFerramentas && volta < 2; volta++) {
           const r: any = await anthropic.messages.create({
             model: modeloUsado,
             max_tokens: 1024,   // aqui ele só escolhe a ferramenta, não escreve texto
-            system: blocosSistema,
+            system: sistemaEscolhaFerramenta,
             tools: FERRAMENTAS_CLAUDE as any,
             messages: historico,
           } as any)
@@ -3192,7 +3233,7 @@ Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_T
         // 3000 para conversa: o teto que impede a resposta de crescer ate
         // estourar o tempo da funcao. Tarefa precisa de mais — o JSON de tres
         // sugestoes nao cabe em 3000 e a terceira sairia cortada.
-        max_tokens: ehTarefa ? 6000 : 3000,
+        max_tokens: ehTarefa ? 3500 : 3000,
         system: blocosSistema,
         messages: msgsFinal as any,
         stream: true,
@@ -3255,10 +3296,12 @@ Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_T
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       }))
+      // Mesma logica do Claude: escolher ferramenta nao precisa da conversa toda.
+      const historyFerramenta = historyBase.slice(-2)
       // Tarefa nao chama ferramenta: o prompt dela ja traz todos os dados, e
       // cada volta do loop custa uma chamada inteira a mais.
       const historyFinal = ehTarefa ? historyBase : await executarLoopFerramentas(
-        systemFinal, historyBase, modeloUsado, chaveGoogle, salaoId,
+        sistemaEscolhaFerramenta, historyFerramenta, modeloUsado, chaveGoogle, salaoId,
         ehProfissional ? profissional_id : undefined,
       )
 
@@ -3277,7 +3320,7 @@ Use apenas os dados fornecidos na mensagem. Não invente números. ${SEM_EMOJI_T
         contents: historyFinal,
         // Conversa: 3000. Tarefa: mais, porque o JSON de tres sugestoes nao
         // cabe em 3000 e a terceira sairia cortada no meio.
-        generationConfig: { maxOutputTokens: ehTarefa ? 6000 : 3000, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: ehTarefa ? 3500 : 3000, temperature: 0.7 },
       }
 
       const geminiRes = await fetch(geminiUrl, {
