@@ -2606,11 +2606,34 @@ ${lista.map((c:any,i:number)=>{
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <button onClick={() => setFiltroPendente(v => !v)}
-                              title="Mostrar só clientes que ainda NÃO receberam mensagem"
-                              style={{ background: filtroPendente ? '#5b4fcf' : '#fff', color: filtroPendente ? '#fff' : '#5b4fcf', border: '1.5px solid #5b4fcf', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                              {filtroPendente ? '✓ Só pendentes de envio' : 'Só pendentes de envio'}
-                            </button>
+                            {/* Quantos ainda nao receberam, de quantos.
+                                O cadeado dura 10 dias; a campanha, nao. Quem
+                                nao consegue mandar para os mil clientes dentro
+                                da janela ve as travas caindo e perde a conta de
+                                quem ja recebeu — e o risco vira reenviar para
+                                os mesmos. Este contador e a resposta a "quantos
+                                faltam", que e a unica pergunta que importa no
+                                meio de uma campanha. */}
+                            {(() => {
+                              const total = (analiseDetalhe as any[]).length
+                              const faltam = (analiseDetalhe as any[]).filter(c => !(enviosMap[c.cliente_nome] > 0)).length
+                              const jaForam = total - faltam
+                              return (
+                                <>
+                                  {jaForam > 0 && (
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: '#6b6860' }}>
+                                      <span style={{ color: '#16a34a' }}>{jaForam}</span> já receberam ·{' '}
+                                      <span style={{ color: '#b45309' }}>{faltam}</span> faltam
+                                    </span>
+                                  )}
+                                  <button onClick={() => setFiltroPendente(v => !v)}
+                                    title="Mostrar só clientes que ainda NÃO receberam mensagem nenhuma (o cadeado de 10 dias não conta aqui)"
+                                    style={{ background: filtroPendente ? '#5b4fcf' : '#fff', color: filtroPendente ? '#fff' : '#5b4fcf', border: '1.5px solid #5b4fcf', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                                    {filtroPendente ? `✓ Só quem falta (${faltam})` : `Só quem falta (${faltam})`}
+                                  </button>
+                                </>
+                              )
+                            })()}
                             <button onClick={() => exportarListaExcel(analiseDetalhe, subAnalise)}
                               style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                               Exportar Excel
@@ -2642,7 +2665,7 @@ ${lista.map((c:any,i:number)=>{
                                 <Fragment key={i}>
                                 <tr onClick={() => setClienteAberto(a => a === c.cliente_nome ? '' : c.cliente_nome)}
                                   title="Clique para ver os profissionais e o histórico completo de serviços"
-                                  style={{ borderBottom: '1px solid #e8e6e0', background: clienteAberto === c.cliente_nome ? '#f5f3ff' : (i % 2 === 0 ? 'transparent' : '#f5f4f008'), cursor: 'pointer' }}>
+                                  style={{ borderBottom: '1px solid #e8e6e0', background: clienteAberto === c.cliente_nome ? '#f5f3ff' : (c._envios > 0 ? '#f0fdf4' : (i % 2 === 0 ? 'transparent' : '#f5f4f008')), cursor: 'pointer' }}>
                                   <td style={{ padding: '9px 12px', fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>
                                     <span style={{ color: '#5b4fcf', marginRight: 5, display: 'inline-block', width: 9 }}>{clienteAberto === c.cliente_nome ? '▾' : '▸'}</span>
                                     {c.cliente_nome}
@@ -2655,7 +2678,23 @@ ${lista.map((c:any,i:number)=>{
                                   <td style={{ padding: '9px 12px', fontSize: 11, color: '#767069' }}>{c.intervalo_medio_dias ? `${c.intervalo_medio_dias}d` : '—'}</td>
                                   <td style={{ padding: '9px 12px', fontSize: 10, color: '#6b6860', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(c.servicos_feitos || []).slice(0, 3).join(', ') || '—'}</td>
                                   {/* stopPropagation: clicar no WhatsApp não pode abrir/fechar a linha */}
-                                  <td onClick={e => e.stopPropagation()} style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}><BotaoRecuperacao cliente={c} origem={subAnalise} /></td>
+                                  {/* O contador de envios sai daqui, do enviosMap da propria
+                                      lista, e nao do componente do botao: assim ele aparece
+                                      em TODAS as linhas de uma vez, sem depender de cada
+                                      botao terminar a sua consulta. Passada a janela de 10
+                                      dias o cadeado some, mas o "2x" fica — e e ele que diz
+                                      para quem ja se mandou. */}
+                                  <td onClick={e => e.stopPropagation()} style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                      {c._envios > 0 && (
+                                        <span title={`Já recebeu ${c._envios} mensagem(ns)`}
+                                          style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: 20, background: c._envios >= 2 ? '#fee2e2' : '#dcfce7', color: c._envios >= 2 ? '#b91c1c' : '#15803d', fontSize: 10.5, fontWeight: 800 }}>
+                                          {c._envios}x
+                                        </span>
+                                      )}
+                                      <BotaoRecuperacao cliente={c} origem={subAnalise} />
+                                    </span>
+                                  </td>
                                 </tr>
                                 {clienteAberto === c.cliente_nome && (
                                   <tr>
