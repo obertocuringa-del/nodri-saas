@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { apelidoCasa } from '@/lib/matchProfissional'
+import { calcularIndicadoresMeta } from '@/lib/metasAnalitico'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const fmtR = (v: number) => `R$${(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
@@ -35,6 +36,57 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
       }
     }
     switch (nome) {
+
+      // ── Meta do mês: a IA LÊ, não calcula ─────────────────────────────
+      //
+      // A IA errava a meta porque fazia a conta sozinha, a partir dos dados
+      // crus do prompt. Deu "faltam R$ 4.239,65 / R$ 192,71 por dia" enquanto
+      // a tela da profissional mostrava "faltam R$ 3.634,23 / R$ 165,19".
+      // Dois números para a mesma pergunta, e o errado com toda a cara de
+      // certo — que é o pior tipo de erro que um sistema de gestão pode ter.
+      //
+      // A causa não é o modelo ser ruim de conta: é ele estar fazendo uma
+      // conta que já existe pronta. `calcularIndicadoresMeta` é a MESMA função
+      // que alimenta o card de Metas na tela. Chamando ela, os dois números
+      // passam a nascer do mesmo lugar — e divergir deixa de ser possível.
+      case 'buscar_meta_profissional': {
+        const { data: profs } = await supabaseAdmin.from('profissionais').select('id, nome_completo, apelido, cargo').eq('salao_id', salaoId)
+        // No modo profissional o nome é ignorado: só existe ele mesmo.
+        const prof = profissionalId
+          ? (profs || []).find((p: any) => p.id === profissionalId)
+          : encontrarProfissional(args.nome || '', profs || [])
+        if (!prof) return `Profissional "${args.nome || ''}" não encontrado.`
+
+        const hoje = new Date()
+        let ano = Number(args.ano) || hoje.getFullYear()
+        let mes = Number(args.mes) || (hoje.getMonth() + 1)
+        if (mes < 1 || mes > 12) { mes = hoje.getMonth() + 1 }
+
+        const { data: metaRow } = await supabaseAdmin
+          .from('metas_profissionais').select('*')
+          .eq('profissional_id', prof.id).eq('salao_id', salaoId)
+          .eq('ano', ano).eq('mes', mes).maybeSingle()
+        const metaFinal = (metaRow as any)?.meta_manual ?? (metaRow as any)?.meta_redistribuida ?? 0
+
+        if (!metaFinal) return `Não há meta cadastrada para ${prof.apelido || prof.nome_completo} em ${MESES[mes-1]}/${ano}.`
+
+        const ind: any = await calcularIndicadoresMeta(prof.id, salaoId, ano, mes, metaFinal)
+        const l: string[] = []
+        l.push(`META DE ${(prof.apelido || prof.nome_completo || '').toUpperCase()} — ${MESES[mes-1]}/${ano}`)
+        l.push('Estes numeros sao os MESMOS que aparecem na tela de Metas. Use-os exatamente como estao; NAO recalcule nem arredonde.')
+        l.push(`Meta mensal: ${fmtR(metaFinal)}`)
+        l.push(`Realizado: ${fmtR(ind.realizado)}`)
+        l.push(`Faltam: ${fmtR(ind.faltam)}`)
+        l.push(`Dias restantes: ${ind.dias_restantes}`)
+        l.push(`Necessario por dia: ${fmtR(ind.necessario_por_dia)}`)
+        if (ind.alcancabilidade?.probabilidade != null) {
+          l.push(`Chance de bater: ${ind.alcancabilidade.probabilidade}% (${ind.alcancabilidade.label})`)
+        }
+        if (ind.principal_gargalo) l.push(`Principal gargalo: ${ind.principal_gargalo}`)
+        if (ind.ticket_atual) l.push(`Ticket atual: ${fmtR(ind.ticket_atual)} (media historica ${fmtR(ind.ticket_medio_historico)})`)
+        if (ind.ocupacao_atual) l.push(`Ocupacao atual: ${ind.ocupacao_atual}% (media historica ${ind.ocupacao_media_historico}%)`)
+        return l.join('\n')
+      }
 
       case 'buscar_dados_profissional': {
         const { data: profs } = await supabaseAdmin.from('profissionais').select('*').eq('salao_id', salaoId)
@@ -614,6 +666,18 @@ export async function executarFerramenta(nome: string, args: any, salaoId: strin
 export const FERRAMENTAS_GEMINI = [
   {
     functionDeclarations: [
+      {
+        name: 'buscar_meta_profissional',
+        description: 'Busca a META DO MES ja calculada: meta mensal, realizado, quanto falta, dias restantes, necessario por dia, chance de bater e principal gargalo. USAR SEMPRE E OBRIGATORIAMENTE em qualquer pergunta sobre meta, quanto falta, se vai bater, quanto precisa por dia, corrida ou desafio. NUNCA calcular esses numeros por conta propria a partir de faturamento: os valores desta ferramenta sao os mesmos que aparecem na tela do sistema, e qualquer conta feita a mao vai divergir da tela.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            nome: { type: 'STRING', description: 'Nome do profissional. No chat de um profissional pode deixar vazio: ele so consulta a propria meta.' },
+            ano: { type: 'NUMBER', description: 'Ano da meta. Vazio = ano atual.' },
+            mes: { type: 'NUMBER', description: 'Mes da meta (1 a 12). Vazio = mes atual.' }
+          }
+        }
+      },
       {
         name: 'buscar_dados_profissional',
         description: 'Busca dados REAIS e PRECISOS do banco sobre um profissional específico pelo nome. Retorna: faturamento histórico mês a mês, ticket médio, taxa de ocupação, total de serviços, clientes com preferência (fidelizados), clientes sem preferência (distribuídos pela recepção), dias trabalhados, produtos vendidos, ocorrências e pendências. USAR OBRIGATORIAMENTE quando o usuário perguntar qualquer dado específico de um profissional: sem preferência, com preferência, ocupação, faturamento, serviços, ticket, ocorrências, dias trabalhados — mesmo que o contexto já tenha algum dado. A ferramenta garante precisão total. NÃO usar para perguntas conceituais como "o que é ticket médio".',
