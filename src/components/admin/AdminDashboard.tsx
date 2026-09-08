@@ -10,6 +10,7 @@ import EditorFuncionalidades from './EditorFuncionalidades'
 import { LANDING_PADRAO } from '@/lib/landingDefaults'
 import { MODULOS_NODRI, chaveDoModulo, planoMinimoPara } from '@/lib/planosModulos'
 import { comoBotao } from '@/lib/acessibilidade'
+import PainelConsumoIA from './PainelConsumoIA'
 
 interface Props {
   saloes: Salao[]
@@ -1663,7 +1664,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
                         {iaConfig.modelo?.startsWith('claude') ? 'API Key Anthropic (Claude)' : 'API Key Google Gemini'}
-                        {iaConfig.api_key_salva && <span className="text-green-700 normal-case"> (já configurada)</span>}
+                        {iaConfig.api_key_salva && <span className="text-green-700 normal-case"> (há uma salva)</span>}
                       </label>
                       <div className="relative">
                         <input
@@ -1694,7 +1695,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">
                         API Key Google Gemini — memória da IA
-                        {iaConfig.api_key_gemini_salva && <span className="text-green-700 normal-case"> (já configurada)</span>}
+                        {iaConfig.api_key_gemini_salva && <span className="text-green-700 normal-case"> (há uma salva)</span>}
                       </label>
                       <input
                         type="password"
@@ -1767,6 +1768,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                   </div>
                 )}
               </div>
+
+              <PainelConsumoIA />
 
               {/* Keys Tavily — Busca na Internet */}
               <div className="nodri-card p-5">

@@ -4,6 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
 import { executarFerramenta, FERRAMENTAS_GEMINI, FERRAMENTAS_CLAUDE } from '../tools/execute'
+import { registrarUsoIA } from '@/lib/iaUso'
 
 // Teto de tempo da funcao na Vercel.
 //
@@ -2951,7 +2952,9 @@ ${REGRA_TAMANHO}`
     // Como funcao, o mesmo codigo pode ser chamado de novo com o outro
     // provedor. E isso que transforma "fora do ar ate amanha" em uma
     // troca que ninguem percebe.
-    const responderClaude = async (modeloUsado: string, chaveClaude: string): Promise<Response> => {
+    const inicioIA = Date.now()
+
+    const responderClaude = async (modeloUsado: string, chaveClaude: string, ehReserva = false): Promise<Response> => {
       // ── Anthropic Claude (ferramentas + streaming) ──
       //
       // Antes este ramo respondia SEM ferramenta nenhuma — só o Gemini as
@@ -2983,6 +2986,18 @@ ${REGRA_TAMANHO}`
 
       // Fase 1 — ferramentas (sem streaming), no mesmo desenho do Gemini.
       let dadosFerramentas = ''
+      let qtdFerramentas = 0
+      // Consumo somado de TODAS as chamadas da pergunta (as de ferramenta e a
+      // final). Medir só a última esconderia justamente a parte que a gente
+      // cortou — a fase de ferramenta era onde o desperdício morava.
+      const uso = { entrada: 0, saida: 0, cacheLeitura: 0, cacheEscrita: 0 }
+      const somarUsoClaude = (u: any) => {
+        if (!u) return
+        uso.entrada += Number(u.input_tokens) || 0
+        uso.saida += Number(u.output_tokens) || 0
+        uso.cacheLeitura += Number(u.cache_read_input_tokens) || 0
+        uso.cacheEscrita += Number(u.cache_creation_input_tokens) || 0
+      }
       try {
         const historico: any[] = msgsClaude.map((m: any) => ({ ...m }))
         for (let volta = 0; volta < 2; volta++) {
@@ -2993,8 +3008,10 @@ ${REGRA_TAMANHO}`
             tools: FERRAMENTAS_CLAUDE as any,
             messages: historico,
           } as any)
+          somarUsoClaude(r?.usage)
           const usos = (r?.content || []).filter((c: any) => c.type === 'tool_use')
           if (!usos.length) break
+          qtdFerramentas += usos.length
           const resultados = await Promise.all(usos.map(async (u: any) => ({
             type: 'tool_result',
             tool_use_id: u.id,
@@ -3043,7 +3060,19 @@ ${REGRA_TAMANHO}`
               resposta += chunk.delta.text
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token: chunk.delta.text })}\n\n`))
             }
+            // O consumo não vem no fim: a entrada (e o quanto veio do cache)
+            // chega no message_start, e a saída vai sendo somada no
+            // message_delta. Ler só um dos dois deixaria metade da conta fora.
+            else if (chunk.type === 'message_start') somarUsoClaude(chunk.message?.usage)
+            else if (chunk.type === 'message_delta') somarUsoClaude(chunk.usage)
           }
+          registrarUsoIA({
+            salaoId, profissionalId: profissional_id || null,
+            provedor: 'claude', modelo: modeloUsado,
+            tokensEntrada: uso.entrada, tokensSaida: uso.saida,
+            tokensCacheLeitura: uso.cacheLeitura, tokensCacheEscrita: uso.cacheEscrita,
+            ferramentas: qtdFerramentas, ms: Date.now() - inicioIA, reserva: ehReserva,
+          })
           // Salvar conversa
           const todasMensagens = [...mensagens, { role: 'assistant', content: resposta }]
           if (conversaIdFinal) {
@@ -3070,7 +3099,7 @@ ${REGRA_TAMANHO}`
       return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
     }
 
-    const responderGemini = async (modeloUsado: string, chaveGoogle: string): Promise<Response> => {
+    const responderGemini = async (modeloUsado: string, chaveGoogle: string, ehReserva = false): Promise<Response> => {
       // ── Google Gemini (Tool Use + streaming) ──
 
       // Fase 1: loop de ferramentas (não-streaming) — executa tools se necessário
@@ -3082,6 +3111,14 @@ ${REGRA_TAMANHO}`
         systemPrompt, historyBase, modeloUsado, chaveGoogle, salaoId,
         ehProfissional ? profissional_id : undefined,
       )
+
+      // Quantas ferramentas a pergunta realmente disparou. Sai do próprio
+      // histórico devolvido pelo loop: cada resposta de ferramenta vira uma
+      // parte `functionResponse`. Contar aqui evita mudar a assinatura da
+      // função só para carregar um número de volta.
+      const qtdFerramentas = historyFinal.reduce((soma: number, h: any) =>
+        soma + (h?.parts || []).filter((x: any) => x?.functionResponse).length, 0)
+      const usoGemini = { entrada: 0, saida: 0 }
 
       // Fase 2: streaming da resposta final (sem tools para não re-executar)
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modeloUsado}:streamGenerateContent?alt=sse&key=${chaveGoogle}`
@@ -3138,9 +3175,23 @@ ${REGRA_TAMANHO}`
                   resposta += token
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`))
                 }
+                // O Gemini reenvia o acumulado a cada pedaço, não o incremento.
+                // Somar daria um número inflado — o certo é ficar com o último.
+                const um = parsed.usageMetadata
+                if (um) {
+                  usoGemini.entrada = Number(um.promptTokenCount) || usoGemini.entrada
+                  usoGemini.saida = Number(um.candidatesTokenCount) || usoGemini.saida
+                }
               } catch {}
             }
           }
+
+          registrarUsoIA({
+            salaoId, profissionalId: profissional_id || null,
+            provedor: 'gemini', modelo: modeloUsado,
+            tokensEntrada: usoGemini.entrada, tokensSaida: usoGemini.saida,
+            ferramentas: qtdFerramentas, ms: Date.now() - inicioIA, reserva: ehReserva,
+          })
 
           // Salvar conversa
           const todasMensagens = [...mensagens, { role: 'assistant', content: resposta }]
@@ -3190,14 +3241,30 @@ ${REGRA_TAMANHO}`
       const temReserva = primarioEhClaude ? !!chaveGemini : !!chaveClaude
       if (!temReserva) throw falhaPrimaria
       console.error('IA: provedor principal falhou, indo para a reserva:', falhaPrimaria?.message || falhaPrimaria)
+      // A queda do principal vira linha no monitoramento. Sem isso o failover
+      // seria bom demais para o próprio bem: ele esconde a falha do usuário e
+      // esconderia de você também — e aí ninguém descobre que um provedor
+      // está caindo todo dia.
+      registrarUsoIA({
+        salaoId, profissionalId: profissional_id || null,
+        provedor: primarioEhClaude ? 'claude' : 'gemini', modelo,
+        ms: Date.now() - inicioIA, erro: falhaPrimaria?.message || 'falha no provedor principal',
+      })
       try {
         return primarioEhClaude
-          ? await responderGemini(MODELO_GEMINI_RESERVA, chaveGemini)
-          : await responderClaude(MODELO_CLAUDE_RESERVA, chaveClaude)
+          ? await responderGemini(MODELO_GEMINI_RESERVA, chaveGemini, true)
+          : await responderClaude(MODELO_CLAUDE_RESERVA, chaveClaude, true)
       } catch (falhaReserva: any) {
         // Os dois cairam. Ai e erro de verdade, e o texto tem que dizer isso —
         // "tente de novo" quando nada vai funcionar so faz a pessoa insistir.
         console.error('IA: reserva tambem falhou:', falhaReserva?.message || falhaReserva)
+        registrarUsoIA({
+          salaoId, profissionalId: profissional_id || null,
+          provedor: primarioEhClaude ? 'gemini' : 'claude',
+          modelo: primarioEhClaude ? MODELO_GEMINI_RESERVA : MODELO_CLAUDE_RESERVA,
+          ms: Date.now() - inicioIA, reserva: true,
+          erro: falhaReserva?.message || 'falha na reserva',
+        })
         throw falhaPrimaria
       }
     }
