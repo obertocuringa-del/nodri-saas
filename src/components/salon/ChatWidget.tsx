@@ -223,8 +223,21 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
       .catch(saudacao)   // falhou o histórico: abre normal, não deixa a tela vazia
   }, [aberto, iniciado, profissionalId])
 
+  // Desce sozinho SÓ se a pessoa já estava no fim.
+  //
+  // Antes descia sempre. Quem rolava para reler algo mais acima era puxado de
+  // volta ao rodapé a cada pedaço de texto que chegava — a tela parecia
+  // travada, quando na verdade estava brigando com o dedo. Rolar para cima é
+  // um pedido explícito de ficar ali.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const fim = bottomRef.current
+    if (!fim) return
+    const caixa = fim.parentElement
+    if (caixa) {
+      const distanciaDoFim = caixa.scrollHeight - caixa.scrollTop - caixa.clientHeight
+      if (distanciaDoFim > 120) return   // leu para cima de propósito: respeita
+    }
+    fim.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [mensagens, carregando])
 
   useEffect(() => {
@@ -553,7 +566,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           </div>
 
           {/* Layout: sidebar + chat */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden', overscrollBehavior: 'contain', position: 'relative' }}>
 
           {/* Overlay mobile para fechar sidebar ao clicar fora */}
           {isMobile && sidebarChatAberta && (
@@ -579,7 +592,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 style={{ width: 26, height: 26, borderRadius: 6, background: '#f59e0b', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#000', lineHeight: 1 }}>+</button>
             </div>
             {/* Lista */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '8px 8px' }}>
               {prompts.length === 0 && (
                 <div style={{ padding: '16px 8px', textAlign: 'center' }}>
                   <p style={{ color: '#6b6860', fontSize: 12, lineHeight: 1.6, margin: 0 }}>Nenhuma pergunta salva ainda.<br/>Clique no <strong style={{ color: '#b45309' }}>+</strong> para criar.</p>
@@ -634,7 +647,14 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
           <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Mensagens */}
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {/* overscrollBehavior: contain — no celular, chegar ao topo das
+              mensagens e continuar puxando fazia o gesto ESCAPAR para a
+              pagina, e o navegador entendia como "puxar para atualizar". A
+              conversa recarregava no meio da leitura, e passava a impressao de
+              rolagem travada: ela terminava, o gesto vazava e a tela recarregava.
+              `contain` prende o gesto dentro da lista.
+              touchAction pan-y deixa claro que so a rolagem vertical vale ali. */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
