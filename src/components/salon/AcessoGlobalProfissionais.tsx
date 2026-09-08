@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Save, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { AREAS_PORTAL } from '@/lib/areasPortal'
+import { useGuardaSalvar } from '@/lib/guardaSalvar'
 
 const ROXO = '#5b4fcf'
 
@@ -15,6 +16,13 @@ export default function AcessoGlobalProfissionais() {
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // O que foi mexido e ainda nao foi gravado. Serve para marcar o card: sem
+  // isso, um card clicado e um card salvo sao visualmente identicos.
+  const [mexidas, setMexidas] = useState<Set<string>>(new Set())
+  // Sair daqui com alteracao pendente passa a avisar. Era exatamente o que
+  // faltava: clicar no card pinta de verde na hora, e a pessoa sai com a
+  // impressao de ter ligado a area — sem nunca ter gravado nada.
+  useGuardaSalvar(dirty, 'Acesso dos Profissionais')
 
   useEffect(() => {
     fetch('/api/salon/acesso-global').then(r => r.ok ? r.json() : null).then(d => {
@@ -23,7 +31,9 @@ export default function AcessoGlobalProfissionais() {
   }, [])
 
   function toggle(chave: string) {
-    setOculto(o => ({ ...o, [chave]: !o[chave] })); setDirty(true)
+    setOculto(o => ({ ...o, [chave]: !o[chave] }))
+    setMexidas(m => { const n = new Set(m); n.add(chave); return n })
+    setDirty(true)
   }
 
   async function salvar() {
@@ -33,7 +43,7 @@ export default function AcessoGlobalProfissionais() {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oculto }),
       })
-      if (res.ok) { toast.success('Padrão de acesso salvo para todos os profissionais!'); setDirty(false) }
+      if (res.ok) { toast.success('Padrão de acesso salvo para todos os profissionais!'); setDirty(false); setMexidas(new Set()) }
       else toast.error('Erro ao salvar')
     } catch { toast.error('Erro de conexão') } finally { setSalvando(false) }
   }
@@ -55,9 +65,22 @@ export default function AcessoGlobalProfissionais() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12.5, color: '#6b6860' }}>
-          {qtdOcultas === 0 ? 'Todos veem tudo.' : `${qtdOcultas} área(s) oculta(s) para todos.`}
+      {/* Barra grudada no topo.
+          Antes o botão Salvar ficava aqui em cima e a grade descia por 22
+          cards. Quem rolava até o card lá embaixo, clicava e via ele ficar
+          verde não tinha como saber que aquilo era só a tela — o botão que
+          grava estava fora do campo de visão. Grudando a barra, a pendência
+          acompanha a rolagem e o Salvar está sempre a um toque. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', flexWrap: 'wrap',
+        position: 'sticky', top: 0, zIndex: 5, padding: '10px 12px', borderRadius: 12,
+        background: dirty ? '#fffbeb' : '#faf9f7',
+        border: `1.5px solid ${dirty ? '#fcd34d' : '#e8e6e0'}`,
+      }}>
+        <span style={{ fontSize: 12.5, color: dirty ? '#92400e' : '#6b6860', fontWeight: dirty ? 700 : 400 }}>
+          {dirty
+            ? `${mexidas.size} alteração(ões) ainda NÃO salva(s) — clique em Salvar para valer no portal.`
+            : (qtdOcultas === 0 ? 'Todos veem tudo.' : `${qtdOcultas} área(s) oculta(s) para todos.`)}
         </span>
         <button onClick={salvar} disabled={salvando || !dirty}
           style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: dirty ? 'pointer' : 'default' }}>
@@ -68,12 +91,13 @@ export default function AcessoGlobalProfissionais() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
         {AREAS_PORTAL.map(a => {
           const esconde = !!oculto[a.chave]
+          const naoSalvo = mexidas.has(a.chave)
           return (
             <button key={a.chave} onClick={() => toggle(a.chave)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', cursor: 'pointer',
-                padding: '12px 14px', borderRadius: 12,
-                border: `1.5px solid ${esconde ? '#fecaca' : '#d1fae5'}`,
+                padding: '12px 14px', borderRadius: 12, position: 'relative',
+                border: naoSalvo ? '2px dashed #d97706' : `1.5px solid ${esconde ? '#fecaca' : '#d1fae5'}`,
                 background: esconde ? '#fef2f2' : '#f0fdf4',
               }}>
               {esconde ? <EyeOff size={18} style={{ color: '#dc2626', flexShrink: 0 }} /> : <Eye size={18} style={{ color: '#16a34a', flexShrink: 0 }} />}
@@ -83,6 +107,14 @@ export default function AcessoGlobalProfissionais() {
                   {esconde ? 'Oculto para todos' : 'Todos podem ver'}
                 </div>
               </div>
+              {/* Contorno tracejado + etiqueta: o card mexido tem que parecer
+                  diferente do card gravado. Cor sozinha não bastava — verde é
+                  verde tanto no clique quanto depois de salvo. */}
+              {naoSalvo && (
+                <span style={{ position: 'absolute', top: -8, right: 8, background: '#d97706', color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  não salvo
+                </span>
+              )}
             </button>
           )
         })}
