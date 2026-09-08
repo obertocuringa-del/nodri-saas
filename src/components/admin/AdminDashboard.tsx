@@ -1704,7 +1704,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         className="nodri-input w-full"
                       />
                       <p className="text-[10px] text-nodri-t3 mt-1 leading-relaxed">
-                        Preencha mesmo usando o Claude: a memória de conversas antigas é gerada pelo Google. Sem esta chave, a IA responde normalmente mas não lembra do que já foi conversado.
+                        Preencha mesmo usando o Claude: a memória de conversas antigas é gerada pelo Google, e é esta chave que faz o Gemini cobrir a queda do Claude. Se você já tinha uma chave do Google salva no campo de cima, ela é movida para cá sozinha ao trocar de provedor — não precisa colar de novo.
                       </p>
                     </div>
 

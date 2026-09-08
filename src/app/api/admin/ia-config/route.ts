@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest) {
   // Buscar registro existente
   const { data: existing } = await supabaseAdmin
     .from('ia_config_global')
-    .select('id, api_key')
+    .select('id, api_key, api_key_gemini, modelo')
     .limit(1)
     .maybeSingle()
 
@@ -62,12 +62,27 @@ export async function PUT(req: NextRequest) {
   if (ativo !== undefined) updateData.ativo = ativo
   if (tavily_keys !== undefined) updateData.tavily_keys = tavily_keys
 
-  // Só sobrescreve api_key se foi enviada e não está vazia
-  if (api_key && api_key.trim() !== '') {
-    updateData.api_key = api_key.trim()
-  }
   if (api_key_gemini && String(api_key_gemini).trim() !== '') {
     updateData.api_key_gemini = String(api_key_gemini).trim()
+  }
+
+  // Só sobrescreve api_key se foi enviada e não está vazia
+  if (api_key && api_key.trim() !== '') {
+    // ── Resgate da chave que está saindo ────────────────────────────────
+    //
+    // Este campo guarda a chave do provedor ESCOLHIDO. Quem estava no Gemini
+    // e troca para o Claude cola a chave nova exatamente por cima da antiga —
+    // e a do Google some, levando junto a memória semântica (que é sempre do
+    // Google) e a reserva do failover.
+    //
+    // Ninguém deveria precisar saber disso para não se machucar. Se a chave
+    // que está saindo é a do Google e ainda não há cópia no campo próprio,
+    // ela é copiada para lá antes da troca.
+    const saindoEhGoogle = !String((existing as any)?.modelo || '').startsWith('claude')
+    if (saindoEhGoogle && (existing as any)?.api_key && !(existing as any)?.api_key_gemini && !updateData.api_key_gemini) {
+      updateData.api_key_gemini = (existing as any).api_key
+    }
+    updateData.api_key = api_key.trim()
   }
 
   let result
