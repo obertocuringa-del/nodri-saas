@@ -636,6 +636,9 @@ export async function POST(req: NextRequest) {
     // de try/catch e devolve null sem reclamar).
     const modeloEscolhido = configGlobal.modelo || 'gemini-2.5-flash'
     const chaveGemini: string = config.api_key_gemini || (modeloEscolhido.startsWith('claude') ? '' : config.api_key)
+    // A chave da Anthropic e a chave principal quando o modelo escolhido e um
+    // Claude. Com as duas preenchidas, cada provedor cobre a queda do outro.
+    const chaveClaude: string = modeloEscolhido.startsWith('claude') ? config.api_key : ''
 
     if (!config?.api_key) {
       return NextResponse.json({ error: 'API key nÃ£o configurada pelo administrador.' }, { status: 422 })
@@ -2939,7 +2942,16 @@ ${REGRA_TAMANHO}`
 
     let resposta = ''
 
-    if (modelo.startsWith('claude')) {
+    // ── Os dois provedores viraram funcoes ──────────────────────────────
+    //
+    // Antes era um if/else que respondia direto. Enquanto for if/else nao ha
+    // como um cobrir a queda do outro: quando a chamada falha, ja e tarde —
+    // o unico caminho de volta e o erro na tela do usuario.
+    //
+    // Como funcao, o mesmo codigo pode ser chamado de novo com o outro
+    // provedor. E isso que transforma "fora do ar ate amanha" em uma
+    // troca que ninguem percebe.
+    const responderClaude = async (modeloUsado: string, chaveClaude: string): Promise<Response> => {
       // ── Anthropic Claude (ferramentas + streaming) ──
       //
       // Antes este ramo respondia SEM ferramenta nenhuma — só o Gemini as
@@ -2947,7 +2959,7 @@ ${REGRA_TAMANHO}`
       // perdia a consulta ao banco: a IA seguia instruída a "usar a
       // ferramenta" e não tinha nenhuma na mão. Agora os dois provedores
       // enxergam exatamente a mesma lista, derivada de uma só declaração.
-      const anthropic = new Anthropic({ apiKey: config.api_key, maxRetries: 2 })
+      const anthropic = new Anthropic({ apiKey: chaveClaude, maxRetries: 2 })
 
       // O sistema vai em DOIS blocos, e essa divisão é o maior corte de custo
       // do arquivo inteiro: o pedaço estático passa de 100 KB e ia por inteiro,
@@ -2975,7 +2987,7 @@ ${REGRA_TAMANHO}`
         const historico: any[] = msgsClaude.map((m: any) => ({ ...m }))
         for (let volta = 0; volta < 2; volta++) {
           const r: any = await anthropic.messages.create({
-            model: modelo,
+            model: modeloUsado,
             max_tokens: 1024,   // aqui ele só escolhe a ferramenta, não escreve texto
             system: blocosSistema,
             tools: FERRAMENTAS_CLAUDE as any,
@@ -3011,7 +3023,7 @@ ${REGRA_TAMANHO}`
       }
 
       const stream: any = await anthropic.messages.create({
-        model: modelo,
+        model: modeloUsado,
         // 3000, não 8192. O teto não é economia de conta: é o que impede a
         // resposta de crescer até estourar o tempo da função e a tela ficar
         // carregando para sempre.
@@ -3056,8 +3068,9 @@ ${REGRA_TAMANHO}`
         }
       })
       return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
+    }
 
-    } else {
+    const responderGemini = async (modeloUsado: string, chaveGoogle: string): Promise<Response> => {
       // ── Google Gemini (Tool Use + streaming) ──
 
       // Fase 1: loop de ferramentas (não-streaming) — executa tools se necessário
@@ -3066,12 +3079,12 @@ ${REGRA_TAMANHO}`
         parts: [{ text: m.content }],
       }))
       const historyFinal = await executarLoopFerramentas(
-        systemPrompt, historyBase, modelo, chaveGemini, salaoId,
+        systemPrompt, historyBase, modeloUsado, chaveGoogle, salaoId,
         ehProfissional ? profissional_id : undefined,
       )
 
       // Fase 2: streaming da resposta final (sem tools para não re-executar)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse&key=${chaveGemini}`
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modeloUsado}:streamGenerateContent?alt=sse&key=${chaveGoogle}`
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: historyFinal,
@@ -3086,14 +3099,16 @@ ${REGRA_TAMANHO}`
         body: JSON.stringify(geminiBody)
       })
 
+      // LANCA em vez de devolver o erro pronto.
+      //
+      // Devolver a mensagem "aguarde alguns segundos" aqui encerrava o assunto:
+      // o usuario via o aviso e nao havia mais nada a fazer. Lancando, quem
+      // chamou pode tentar o outro provedor — e o 429 do Gemini (a cota diaria
+      // que so zera no dia seguinte) deixa de ser o fim da conversa.
       if (!geminiRes.ok) {
-        if (geminiRes.status === 503) {
-          return NextResponse.json({ error: 'O servidor está sobrecarregado no momento. Aguarde alguns segundos e tente novamente.' }, { status: 503 })
-        }
-        if (geminiRes.status === 429) {
-          return NextResponse.json({ error: 'Limite de requisições atingido. Aguarde um momento e tente novamente.' }, { status: 429 })
-        }
-        return NextResponse.json({ error: 'Não foi possível processar sua pergunta. Tente novamente.' }, { status: 500 })
+        const e: any = new Error(`Gemini HTTP ${geminiRes.status}`)
+        e.status = geminiRes.status
+        throw e
       }
 
       let conversaIdFinal = conversa_id
@@ -3153,8 +3168,48 @@ ${REGRA_TAMANHO}`
 
       return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
     }
+
+    // ── Quem responde, e quem cobre a queda ─────────────────────────────
+    //
+    // A troca acontece ANTES do primeiro pedaco de texto sair. Depois que o
+    // stream comecou nao da mais para voltar atras sem o usuario ver a
+    // resposta se desfazer na tela — entao o unico momento honesto de trocar
+    // de provedor e enquanto ainda nao ha nada escrito.
+    //
+    // A reserva so existe se a chave dela existir. Sem chave nao ha reserva,
+    // e o erro sobe igual a antes — nao ha meia reserva.
+    const primarioEhClaude = modelo.startsWith('claude')
+    const MODELO_GEMINI_RESERVA = 'gemini-2.5-flash'
+    const MODELO_CLAUDE_RESERVA = 'claude-haiku-4-5-20251001'
+
+    try {
+      return primarioEhClaude
+        ? await responderClaude(modelo, chaveClaude)
+        : await responderGemini(modelo, chaveGemini)
+    } catch (falhaPrimaria: any) {
+      const temReserva = primarioEhClaude ? !!chaveGemini : !!chaveClaude
+      if (!temReserva) throw falhaPrimaria
+      console.error('IA: provedor principal falhou, indo para a reserva:', falhaPrimaria?.message || falhaPrimaria)
+      try {
+        return primarioEhClaude
+          ? await responderGemini(MODELO_GEMINI_RESERVA, chaveGemini)
+          : await responderClaude(MODELO_CLAUDE_RESERVA, chaveClaude)
+      } catch (falhaReserva: any) {
+        // Os dois cairam. Ai e erro de verdade, e o texto tem que dizer isso —
+        // "tente de novo" quando nada vai funcionar so faz a pessoa insistir.
+        console.error('IA: reserva tambem falhou:', falhaReserva?.message || falhaReserva)
+        throw falhaPrimaria
+      }
+    }
   } catch (err: any) {
     console.error('IA chat error:', err)
+    const status = Number(err?.status)
+    if (status === 429) {
+      return NextResponse.json({ error: 'Os dois provedores de IA estão sem cota no momento. Avise o administrador.' }, { status: 429 })
+    }
+    if (status === 503 || status === 529) {
+      return NextResponse.json({ error: 'A IA está sobrecarregada. Tente de novo em alguns segundos.' }, { status: 503 })
+    }
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
