@@ -99,7 +99,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
   const [selectedCompra, setSelectedCompra] = useState<Record<string, any> | null>(null as Record<string, any> | null)
 
   //  IA CONFIG 
-  const [iaConfig, setIaConfig] = useState({ api_key: '', api_key_gemini: '', modelo: 'claude-sonnet-5', instrucoes_base: '', api_key_salva: false, api_key_gemini_salva: false })
+  const [iaConfig, setIaConfig] = useState({ api_key: '', api_key_gemini: '', modelo: 'claude-sonnet-5', instrucoes_base: '', api_key_salva: false, api_key_gemini_salva: false, contexto_enxuto: true })
   const [iaConfigLoading, setIaConfigLoading] = useState(false)
   const [showIaKey, setShowIaKey] = useState(false)
   const [tavilyKeys, setTavilyKeys] = useState<string[]>([])
@@ -131,7 +131,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
       fetch('/api/admin/ia-config')
         .then(r => r.json())
         .then(d => {
-          setIaConfig({ api_key: '', api_key_gemini: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false, api_key_gemini_salva: d.api_key_gemini_salva ?? false })
+          setIaConfig({ api_key: '', api_key_gemini: '', modelo: d.modelo || 'gemini-1.5-flash', instrucoes_base: d.instrucoes_base || '', api_key_salva: d.api_key_salva ?? false, api_key_gemini_salva: d.api_key_gemini_salva ?? false, contexto_enxuto: d.contexto_enxuto !== false })
           setTavilyKeys(d.tavily_keys || [])
         })
         .catch(() => {})
@@ -1709,6 +1709,29 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                       </p>
                     </div>
 
+                    {/* Contexto enxuto.
+                        O sistema mandava os dados brutos do salão dentro do
+                        prompt E dava ferramentas que buscam esses mesmos dados.
+                        Era pagar duas vezes pela mesma informação, inclusive em
+                        perguntas que não tinham nada a ver com eles. A chave
+                        existe para poder voltar atrás sem deploy, caso alguma
+                        resposta piore. */}
+                    <div className="flex items-start gap-3 bg-nodri-bg2 rounded-lg px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        id="ia-contexto-enxuto"
+                        checked={iaConfig.contexto_enxuto}
+                        onChange={e => setIaConfig(p => ({ ...p, contexto_enxuto: e.target.checked }))}
+                        className="mt-0.5 flex-shrink-0"
+                      />
+                      <label htmlFor="ia-contexto-enxuto" className="cursor-pointer">
+                        <span className="text-[11px] font-bold text-nodri-t1 block">Contexto enxuto (economiza tokens)</span>
+                        <span className="text-[10px] text-nodri-t3 leading-relaxed block mt-0.5">
+                          Manda no prompt só o panorama do salão — equipe, faturamento mês a mês, pendências e custos. O detalhe por profissional, feedbacks e histórico a IA busca com as ferramentas quando precisar. Desligue se notar alguma resposta pior.
+                        </span>
+                      </label>
+                    </div>
+
                     <div>
                       <label className="text-[10px] text-nodri-t3 uppercase tracking-wider mb-1 block">Modelo</label>
                       <select className="nodri-input w-full" value={iaConfig.modelo} onChange={e => setIaConfig(p => ({ ...p, modelo: e.target.value }))}>
@@ -1751,7 +1774,7 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
                         const res = await fetch('/api/admin/ia-config', {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ api_key: iaConfig.api_key, api_key_gemini: iaConfig.api_key_gemini, modelo: iaConfig.modelo, instrucoes_base: iaConfig.instrucoes_base, ativo: true }),
+                          body: JSON.stringify({ api_key: iaConfig.api_key, api_key_gemini: iaConfig.api_key_gemini, modelo: iaConfig.modelo, instrucoes_base: iaConfig.instrucoes_base, contexto_enxuto: iaConfig.contexto_enxuto, ativo: true }),
                         })
                         setIaConfigLoading(false)
                         if (res.ok) {

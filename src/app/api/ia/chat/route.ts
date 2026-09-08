@@ -124,6 +124,61 @@ async function executarLoopFerramentas(
   return loop
 }
 
+// ── Contexto enxuto ─────────────────────────────────────────────────────────
+//
+// O sistema manda os dados brutos do salão dentro do prompt E dá ferramentas
+// que buscam esses mesmos dados sob demanda. É pagar duas vezes pela mesma
+// informação: o bloco pesado viaja em toda pergunta, inclusive nas que não
+// têm nada a ver com ele ("como faço um feedback com a equipe?").
+//
+// Em vez de reescrever o formatador — 400 linhas entrelaçadas, onde mexer é
+// convite a quebrar —, o corte acontece no texto pronto, por seção. Nenhuma
+// linha de geração muda; o que muda é o que sobrevive até o prompt.
+//
+// O que FICA é o que a ferramenta não substitui bem: quem trabalha no salão
+// (o modelo precisa saber que a Vera existe para poder buscar a Vera), a
+// linha do tempo do faturamento, o que está pendente e o custo fixo.
+//
+// As seções do modo profissional têm o nome dele no título ("## DADOS
+// FINANCEIROS — VERA") e por isso não casam com nenhum nome desta lista: o
+// dado do próprio profissional nunca é cortado.
+const SECOES_QUE_SAEM = new Set([
+  '## DADOS FINANCEIROS POR PROFISSIONAL',
+  '## FEEDBACKS / OCORRÊNCIAS DE TODOS OS PROFISSIONAIS',
+  '## FEEDBACKS DE CLIENTES (AVALIAÇÕES)',
+  '## PENDÊNCIAS RESOLVIDAS (HISTÓRICO)',
+  '## MÉTRICAS DETALHADAS POR PROFISSIONAL',
+])
+
+// Estas duas moram DENTRO de uma seção que sai, e precisam ficar assim mesmo:
+// a linha do tempo do faturamento é a espinha de quase toda resposta, e o
+// aviso dos serviços é o que ensina o modelo a chamar a ferramenta certa.
+const SUBSECOES_QUE_FICAM = new Set([
+  '### INDICADORES DO SALÃO (mês a mês)',
+  '### SERVIÇOS E PRODUTOS POR MÊS',
+])
+
+function enxugarDadosSalao(texto: string): string {
+  const saida: string[] = []
+  let cortando = false
+  for (const linha of (texto || '').split('\n')) {
+    if (linha.startsWith('## ')) cortando = SECOES_QUE_SAEM.has(linha.trim())
+    else if (linha.startsWith('### ')) {
+      // Um subtítulo decide de novo: se ele está na lista dos que ficam, o
+      // corte para ali; se não, ele herda o estado da seção em que está.
+      if (SUBSECOES_QUE_FICAM.has(linha.trim())) cortando = false
+      else if (SECOES_QUE_SAEM.has(linha.trim())) cortando = true
+    }
+    if (!cortando) saida.push(linha)
+  }
+  saida.push('')
+  saida.push('OBSERVAÇÃO SOBRE OS DADOS ACIMA: aqui está só o panorama. O detalhe')
+  saida.push('por profissional, os feedbacks e o histórico NÃO estão neste texto —')
+  saida.push('eles existem e são buscados pelas ferramentas. Quando a pergunta pedir')
+  saida.push('esse detalhe, CHAME A FERRAMENTA em vez de dizer que não tem o dado.')
+  return saida.join('\n')
+}
+
 function formatarDadosSalao(dados: any, profissionalId?: string): string {
   const linhas: string[] = []
   const fmtR = (v: number) => `R$${(v||0).toFixed(2)}`
@@ -603,7 +658,7 @@ export async function POST(req: NextRequest) {
     // 2. Buscar config global da IA
     const { data: configGlobal } = await supabaseAdmin
       .from('ia_config_global')
-      .select('api_key, api_key_gemini, modelo, instrucoes_base, ativo')
+      .select('api_key, api_key_gemini, modelo, instrucoes_base, ativo, contexto_enxuto')
       .limit(1)
       .maybeSingle()
 
@@ -625,6 +680,10 @@ export async function POST(req: NextRequest) {
     const config = {
       api_key: configGlobal.api_key,
       api_key_gemini: (configGlobal as any).api_key_gemini || '',
+      // Coluna nova: enquanto o SQL nao rodar ela vem undefined, e o padrao
+      // e o comportamento ANTIGO. Um recurso novo nao deve entrar sozinho no
+      // ar por causa de uma coluna que ainda nao existe.
+      contexto_enxuto: (configGlobal as any).contexto_enxuto === true,
       modelo: configGlobal.modelo,
       instrucoes_base: configGlobal.instrucoes_base,
       contexto_adicional: configSalao?.contexto_adicional || '',
@@ -737,7 +796,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const dadosFormatados = formatarDadosSalao(dadosSalao, profissional_id)
+    const dadosBrutosSalao = formatarDadosSalao(dadosSalao, profissional_id)
+    const dadosFormatados = config.contexto_enxuto ? enxugarDadosSalao(dadosBrutosSalao) : dadosBrutosSalao
 
     // Memória e contexto adicional — buscados EM PARALELO.
     // IMPORTANTE: o conteúdo entregue à IA é EXATAMENTE o mesmo de antes; só

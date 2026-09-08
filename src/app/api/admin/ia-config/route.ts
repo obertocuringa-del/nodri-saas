@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { api_key, api_key_gemini, modelo, instrucoes_base, ativo, tavily_keys } = body
+  const { api_key, api_key_gemini, modelo, instrucoes_base, ativo, tavily_keys, contexto_enxuto } = body
 
   // Buscar registro existente
   const { data: existing } = await supabaseAdmin
@@ -61,6 +61,7 @@ export async function PUT(req: NextRequest) {
   if (instrucoes_base !== undefined) updateData.instrucoes_base = instrucoes_base
   if (ativo !== undefined) updateData.ativo = ativo
   if (tavily_keys !== undefined) updateData.tavily_keys = tavily_keys
+  if (contexto_enxuto !== undefined) updateData.contexto_enxuto = !!contexto_enxuto
 
   if (api_key_gemini && String(api_key_gemini).trim() !== '') {
     updateData.api_key_gemini = String(api_key_gemini).trim()
