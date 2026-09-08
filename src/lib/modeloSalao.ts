@@ -55,6 +55,20 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   // de alguem lembrar.
   { chave: 'acesso_oculto_global', como: 'inteiro', rotulo: 'Acesso dos profissionais (o que nasce oculto)' },
 
+  // A regra da recuperacao de clientes: quantos por cento a recepcao ganha e
+  // quantos dias a janela de retorno dura.
+  //
+  // E regra de trabalho, nao dado: nao ha nome de cliente nem valor aqui, so
+  // dois numeros que definem como a campanha funciona. Sem esta linha o salao
+  // novo nasce com o padrao do codigo (5% e 10 dias) e alguem precisa lembrar
+  // de ir ajustar — e a regra que ninguem ajusta e a regra que ninguem segue.
+  //
+  // O que NAO entra aqui, de proposito: 'grid_setor_cores'. Aquele mapa e
+  // { id_do_setor: cor }, e id de setor e do salao que o criou — copiado para
+  // outro salao ele nao casa com nada. A cor padrao por ramo ja cobre o salao
+  // novo sem precisar viajar.
+  { chave: 'recuperacao_config', como: 'inteiro', rotulo: 'Recuperacao de clientes (bonus e janela)' },
+
   // As regras da conferencia de caixa (aba Regras).
   //
   // Sao criterio de trabalho, nao dado: "quando tiver Coloracao, exige Shampoo
