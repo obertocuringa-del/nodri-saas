@@ -171,6 +171,31 @@ export default function RecuperadosReport() {
           {!funil && <span style={{ fontSize: 12, color: '#9ca3af' }}>clique para ver os nomes</span>}
         </div>
 
+        {/* ── O que esse número conta, exatamente ──────────────────────────
+            Ele não bate com a quantidade de cadeados que aparece na lista de
+            Perdidos, e isso já pareceu erro de contagem. Não é: o cadeado só
+            marca quem foi contatada DENTRO da janela; passado o prazo o botão
+            libera de novo — mas o envio antigo continua valendo aqui, porque
+            ele aconteceu. Duas contas diferentes, cada uma certa no seu lugar.
+            Escrever isso na tela custa uma linha e evita a desconfiança. */}
+        {(() => {
+          const lista: any[] = data.contatos || []
+          if (!lista.length) return null
+          const janela = Number(data.janela_dias) || 10
+          const limite = Date.now() - janela * 86400000
+          const dentro = lista.filter(c => new Date(c.contato_em).getTime() >= limite).length
+          const clientes = new Set(lista.map(c => c.cliente_nome)).size
+          return (
+            <p style={{ fontSize: 11.5, color: '#6b6860', margin: '10px 0 0', lineHeight: 1.6 }}>
+              {lista.length > 1 ? 'São' : 'É'} <strong style={{ color: '#1a1a1a' }}>{lista.length} {lista.length > 1 ? 'mensagens registradas' : 'mensagem registrada'}</strong>
+              {clientes !== lista.length && <> para <strong style={{ color: '#1a1a1a' }}>{clientes} cliente{clientes > 1 ? 's' : ''}</strong> (alguém foi contatada mais de uma vez)</>}
+              {' · '}
+              <strong style={{ color: '#1a1a1a' }}>{dentro}</strong> ainda com o botão travado, dentro dos {janela} dias.
+              {' '}Passada a janela o botão libera de novo, mas o envio continua contando aqui — por isso este número é maior que o de cadeados na lista de Perdidos.
+            </p>
+          )
+        })()}
+
         {funil && (() => {
           const bruta: any[] = funil === 'contatos' ? (data.contatos || []) : (data.recuperados || [])
           // O contato tem hora (ISO); o retorno vem em DD/MM/AAAA. Uma função
@@ -214,8 +239,11 @@ export default function RecuperadosReport() {
                     : 'Nenhum registro nesse período.'}
                 </p>
               ) : (
-                <div style={{ maxHeight: 380, overflowY: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <div style={{ maxHeight: 380, overflowY: 'auto', overflowX: 'auto' }}>
+                  {/* overflowX: no celular os quatro títulos se espremiam e
+                      "Contatada em" saía cortado como "am". Rolar de lado é
+                      melhor do que ler pela metade. */}
+                  <table style={{ width: '100%', minWidth: 440, borderCollapse: 'collapse', fontSize: 12.5 }}>
                     <thead><tr style={{ background: '#faf9f7' }}>
                       {(funil === 'contatos'
                         ? ['Cliente', 'Contatada em', 'Recepção', 'Voltou?']
@@ -253,7 +281,8 @@ export default function RecuperadosReport() {
       {data.ranking?.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}><Trophy size={15} color="#d97706" /> Taxa de recuperação por recepcionista</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse', fontSize: 12 }}>
             <thead><tr style={{ background: '#faf9f7' }}>
               {['#', 'Recepcionista', 'Clientes Contatados', 'Clientes Recuperados', 'Taxa', 'Bônus'].map(h => (
                 <th key={h} style={{ padding: '8px 10px', textAlign: h === 'Recepcionista' ? 'left' : 'right', fontSize: 11, color: '#6b6860', fontWeight: 600 }}>{h}</th>
@@ -272,6 +301,7 @@ export default function RecuperadosReport() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

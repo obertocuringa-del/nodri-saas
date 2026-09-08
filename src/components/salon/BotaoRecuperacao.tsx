@@ -25,6 +25,9 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const [enviando, setEnviando] = useState(false)
   const [loadIA, setLoadIA] = useState(false)
   const [envios, setEnvios] = useState(0) // quantas vezes já foi contatada (observação 1x/2x...)
+  const [ultimo, setUltimo] = useState('') // data do último envio, mesmo já destravado
+  // Link de socorro quando o navegador bloqueia a aba nova (ver enviar()).
+  const [linkWhats, setLinkWhats] = useState('')
   const janela = useRef(10)
 
   const lockKey = 'nodri_recup_lock_' + (cliente.cliente_nome || '')
@@ -39,6 +42,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     getStatus().then(s => {
       janela.current = s.janela_dias || 10
       setEnvios(s.contagem?.[cliente.cliente_nome] || 0)
+      setUltimo(s.ultimo_contato?.[cliente.cliente_nome] || '')
       const t = s.travados?.[cliente.cliente_nome]
       if (t) {
         const serverAte = new Date(t.contato_em).getTime() + (s.janela_dias || 10) * 86400000
@@ -63,6 +67,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       ? `Oi *${primeiro}*!\n\nFaz um tempinho que não te vejo aqui no salão \u{1F49B} Tá tudo bem?\nAdoraríamos muito te receber de novo — que tal agendarmos${servTxt}?\n\nSe teve algo que a gente possa melhorar, me conta também!`
       : `Oi *${primeiro}*!\n\nSenti sua falta por aqui \u{1F49B} Vamos agendar${servTxt}?\nConsigo um horário ótimo pra você amanhã — que horas fica melhor?`)
     setRecepSel(recep[0]?.nome || '')
+    setLinkWhats('')
     setOpen(true)
   }
 
@@ -108,7 +113,17 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     // 2) Abre o WhatsApp de qualquer jeito (a mensagem precisa sair)
     const fone = String(cliente.celular || '').replace(/\D/g, '')
     const numero = fone.startsWith('55') ? fone : '55' + fone
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank')
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`
+    // No celular, `window.open` depois de um await costuma ser barrado: o
+    // navegador só confia em aba nova aberta no toque, e o await já quebrou
+    // essa corrente. O contato fica gravado e a mensagem não sai — o pior dos
+    // dois mundos, e sem aviso nenhum na tela.
+    //
+    // Registrar primeiro continua certo (é o que garante a contagem). O que
+    // faltava era o plano B: quando a aba não abre, aparece um link de verdade
+    // para tocar, e aí o toque é do dedo e nenhum navegador bloqueia.
+    const aba = window.open(url, '_blank')
+    if (!aba) setLinkWhats(url)
 
     setEnviando(false)
 
@@ -118,8 +133,11 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       try { localStorage.setItem(lockKey, String(until)) } catch {}
       setTravadoAte(until)
       setEnvios(e => e + 1)
+      setUltimo(new Date().toISOString())
       _statusCache = null
-      setOpen(false)
+      // Só fecha a caixa se a aba abriu. Se não abriu, ela fica no ar com o
+      // link de socorro — fechar aqui esconderia a única saída.
+      if (aba) setOpen(false)
     } else {
       // NÃO trava: deixa tentar de novo e mostra o motivo real
       alert('O WhatsApp foi aberto, mas NÃO consegui registrar o contato no sistema' +
@@ -128,11 +146,17 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     }
   }
 
-  // Observação de quantas vezes já foi enviado (visível mesmo destravada)
+  // Observação de quantas vezes já foi enviado (visível mesmo destravada).
+  //
+  // Depois que a janela passa, o botão volta a ser um WhatsApp verde igual ao
+  // de quem nunca foi contatada — e aí o histórico some da vista. O selo é o
+  // que impede a recepção de reenviar sem saber que já mandou, e traz a data
+  // do último envio junto: "2x" sem data não diz se foi ontem ou em junho.
+  const dataUltimo = ultimo ? new Date(ultimo).toLocaleDateString('pt-BR') : ''
   const selo = envios > 0 ? (
-    <span title={`Já enviado ${envios} vez(es)`}
-      style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 20, background: envios >= 2 ? '#fee2e2' : '#ede9fe', color: envios >= 2 ? '#b91c1c' : '#5b21b6', fontSize: 10, fontWeight: 800 }}>
-      {envios}x
+    <span title={`Já enviado ${envios} vez(es)${dataUltimo ? ' — último em ' + dataUltimo : ''}`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 20, background: envios >= 2 ? '#fee2e2' : '#ede9fe', color: envios >= 2 ? '#b91c1c' : '#5b21b6', fontSize: 10, fontWeight: 800, whiteSpace: 'nowrap' }}>
+      {envios}x{dataUltimo ? ' · ' + dataUltimo.slice(0, 5) : ''}
     </span>
   ) : null
 
@@ -192,6 +216,19 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
             <p style={{ fontSize: 10, color: '#9ca3af', margin: '8px 0 14px' }}>
               Ao enviar, o WhatsApp abre com a mensagem já escrita. O botão trava por {janela.current} dias e o retorno dela é atribuído a quem contatou.
             </p>
+
+            {linkWhats && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
+                <p style={{ fontSize: 12, color: '#166534', fontWeight: 700, margin: '0 0 8px' }}>
+                  Contato registrado. O navegador bloqueou a aba do WhatsApp — toque no botão abaixo para abrir.
+                </p>
+                <a href={linkWhats} target="_blank" rel="noopener noreferrer"
+                  onClick={() => { setLinkWhats(''); setOpen(false) }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                  <MessageCircle size={16} /> Abrir o WhatsApp
+                </a>
+              </div>
+            )}
 
             <button onClick={enviar} disabled={enviando || !recepSel || recep.length === 0}
               style={{ width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: (enviando || !recepSel) ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>

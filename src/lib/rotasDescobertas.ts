@@ -7,6 +7,8 @@ export interface RotaDescoberta { rota: string; label: string }
 export const ROTAS_DESCOBERTAS: RotaDescoberta[] = [
   { rota: '/salon', label: "INÍCIO" },
   { rota: '/salon/academia', label: "ACADEMIA" },
+  { rota: '/salon/academia/materiais', label: "ACADEMIA — MATERIAIS" },
+  { rota: '/salon/academia/trilhas', label: "ACADEMIA — TRILHAS" },
   { rota: '/salon/acoes-comerciais', label: "ACOES COMERCIAIS" },
   { rota: '/salon/administrativo', label: "ADMINISTRATIVO" },
   { rota: '/salon/aniversariantes', label: "ANIVERSARIANTES" },

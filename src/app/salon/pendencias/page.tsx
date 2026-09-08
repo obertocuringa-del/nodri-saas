@@ -7,7 +7,7 @@ import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import { urlPublica } from '@/lib/urlPublica'
 import OrganogramaDepartamentos from '@/components/salon/OrganogramaDepartamentos'
 import { useIsMobile } from '@/lib/useIsMobile'
-import { corDoSetor } from '@/lib/coresDepartamento'
+import { corFinalDoSetor, PALETA_SETOR, type MapaCores } from '@/lib/coresDepartamento'
 
 interface Profissional {
   id: string
@@ -105,6 +105,21 @@ export default function PendenciasPage() {
   // Quantos pedidos vindos do PORTAL estão abertos em cada setor. Serve pra o
   // card do setor piscar: sem isso só dá pra descobrir abrindo um por um.
   const [solicPorSetor, setSolicPorSetor] = useState<Record<string, number>>({})
+  // Cores escolhidas à mão pelo salão (vazio = usa a cor do ramo).
+  const [coresSetor, setCoresSetor] = useState<MapaCores>({})
+  const [pintando, setPintando] = useState(false)     // modo "trocar cores" ligado
+  const [paletaDe, setPaletaDe] = useState<string | null>(null)  // qual card abriu a paleta
+
+  async function salvarCores(novo: MapaCores) {
+    setCoresSetor(novo)   // a tela muda na hora; o banco confirma depois
+    try {
+      const r = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: 'setor_cores', doc: novo }),
+      })
+      if (!r.ok) toast.error('Não consegui salvar a cor')
+    } catch { toast.error('Erro de conexão ao salvar a cor') }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -112,7 +127,9 @@ export default function PendenciasPage() {
       fetch('/api/profissionais').then(r => r.json()),
       fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
       fetch('/api/salon/alertas').then(r => r.json()).catch(() => ({})),
-    ]).then(([pend, profs, me, alertas]) => {
+      fetch('/api/salon/grid?chave=setor_cores').then(r => r.json()).catch(() => null),
+    ]).then(([pend, profs, me, alertas, cores]) => {
+      setCoresSetor(cores && typeof cores === 'object' && !Array.isArray(cores) ? cores : {})
       setSolicPorSetor(alertas?.solicPorSetor && typeof alertas.solicPorSetor === 'object' ? alertas.solicPorSetor : {})
       setPendencias(Array.isArray(pend) ? pend : [])
       setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo && !p.is_departamento) : [])
@@ -396,6 +413,7 @@ export default function PendenciasPage() {
           <OrganogramaDepartamentos
             departamentos={departamentos}
             solicPorSetor={solicPorSetor}
+            coresSetor={coresSetor}
             onAbrir={id => router.push(`/salon/departamentos/${id}`)}
             onExcluir={excluirDepartamento}
           />
@@ -407,32 +425,68 @@ export default function PendenciasPage() {
         {/* ── DEPARTAMENTOS (cards — celular) ── */}
         {isMobile && departamentos.length > 0 && (
           <div>
-            <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold mb-3">Departamentos</p>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-[10px] text-nodri-t3 uppercase tracking-widest font-bold">Departamentos</p>
+              <button onClick={() => { setPintando(p => !p); setPaletaDe(null) }}
+                className="text-[10px] font-bold uppercase tracking-wider rounded-full px-3 py-1"
+                style={{ border: `1px solid ${pintando ? '#5b4fcf' : '#d8d4cd'}`, color: pintando ? '#fff' : '#6b6860', background: pintando ? '#5b4fcf' : '#fff' }}>
+                {pintando ? 'Concluir' : 'Trocar cores'}
+              </button>
+            </div>
+
+            {pintando && (
+              <p className="text-[10px] text-nodri-t3 mb-3 leading-relaxed">
+                Toque num setor para escolher a cor dele. A cor vale também no organograma do computador.
+              </p>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               {departamentos.map(d => {
-                // Mesma cor que o organograma do computador usa: a do RAMO da
-                // estrutura, não uma por setor. Antes cada card saía de um tom
-                // diferente e a tela virava um mosaico sem significado.
-                const cor = corDoSetor(d.nome_completo, d.departamento_cor)
+                // A cor diz de que RAMO da estrutura o setor é — a mesma regra
+                // do organograma do computador. Antes o tom ficava em 6% de
+                // opacidade no fundo e some: dezesseis cards saíam iguais.
+                // Agora a cor vira faixa e nome, que é como o organograma já
+                // mostrava — e o salão pode trocar a dele.
+                const cor = corFinalDoSetor(d.id, d.nome_completo, d.departamento_cor, coresSetor)
                 const temPend = (d.pendencias_abertas || 0) > 0
                 const doPortal = solicPorSetor[d.id] || 0   // pedido feito pela profissional
                 return (
                   <div key={d.id}
-                    onClick={() => router.push(`/salon/departamentos/${d.id}`)}
-                    className={`cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
-                    style={{ background: temPend ? '#fff0f0' : cor + '10', border: `1px solid ${doPortal > 0 ? '#dc2626' : temPend ? '#7f1d1d' : cor + '40'}` }}>
-                    <div>
-                      <p className="font-syne font-bold text-[11px] text-nodri-t1">{d.nome_completo}</p>
+                    onClick={() => {
+                      if (pintando) { setPaletaDe(a => a === d.id ? null : d.id); return }
+                      router.push(`/salon/departamentos/${d.id}`)
+                    }}
+                    className={`cursor-pointer rounded-2xl overflow-hidden flex flex-col transition hover:scale-[1.02] ${doPortal > 0 ? 'nodri-alerta-pisca' : ''}`}
+                    style={{ background: '#fff', border: `1px solid ${doPortal > 0 ? '#dc2626' : '#e8e6e0'}`, borderTop: `4px solid ${cor}` }}>
+                    <div className="px-3 pt-3 pb-3 flex flex-col items-center gap-1 text-center">
+                      <p className="font-syne font-bold text-[11px] leading-tight" style={{ color: cor }}>{d.nome_completo}</p>
                       {doPortal > 0 && (
-                        <p className="text-[10px] font-bold mt-0.5" style={{ color: '#b91c1c' }}>
+                        <span className="text-[9.5px] font-bold rounded-full px-2 py-[2px]" style={{ color: '#b91c1c', background: '#fee2e2' }}>
                           {doPortal} pedido{doPortal > 1 ? 's' : ''} do portal
-                        </p>
+                        </span>
                       )}
                       {temPend
-                        ? <p className="text-[10px] text-red-400 font-semibold mt-0.5">{d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}</p>
-                        : <p className="text-[10px] mt-0.5" style={{ color: cor }}>✓ Em dia</p>
+                        ? <span className="text-[9.5px] font-bold rounded-full px-2 py-[2px]" style={{ color: '#b91c1c', background: '#fef2f2' }}>
+                            {d.pendencias_abertas} pendência{d.pendencias_abertas! > 1 ? 's' : ''}
+                          </span>
+                        : <span className="text-[9.5px] font-semibold" style={{ color: '#8a8377' }}>Em dia</span>
                       }
                     </div>
+
+                    {pintando && paletaDe === d.id && (
+                      <div onClick={e => e.stopPropagation()} className="px-2 pb-2 flex flex-wrap gap-1 justify-center border-t" style={{ borderColor: '#f0ede6', paddingTop: 8 }}>
+                        {PALETA_SETOR.map(p => (
+                          <button key={p.cor} title={p.nome}
+                            onClick={() => { salvarCores({ ...coresSetor, [d.id]: p.cor }); setPaletaDe(null) }}
+                            className="rounded-full"
+                            style={{ width: 18, height: 18, background: p.cor, border: cor.toLowerCase() === p.cor ? '2px solid #1a1a1a' : '1px solid rgba(0,0,0,.15)' }} />
+                        ))}
+                        {coresSetor[d.id] && (
+                          <button onClick={() => { const n = { ...coresSetor }; delete n[d.id]; salvarCores(n); setPaletaDe(null) }}
+                            className="text-[9px] font-bold text-nodri-t3 px-2">padrão</button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}

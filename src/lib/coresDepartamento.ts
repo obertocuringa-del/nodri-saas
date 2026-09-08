@@ -62,3 +62,40 @@ export function corDoSetor(nomeCompleto: string, corPropria?: string): string {
   const chave = chaveDoSetor(nomeCompleto)
   return (chave && CORES_SETOR[chave]) || corPropria || '#5b4fcf'
 }
+
+// ── Cor escolhida à mão pelo salão ──────────────────────────────────────────
+//
+// O mapa acima é o PADRÃO, não uma lei. Ele existe porque cor por setor solto
+// virava mosaico sem significado; mas quem toca o salão pode ter um motivo que
+// o código não conhece (a cor da equipe, a cor do crachá, o setor que precisa
+// saltar aos olhos essa semana).
+//
+// Por que um mapa novo em salao_config e não o `departamento_cor` da tabela:
+// aquele campo já vem preenchido em TODO setor antigo com um tom aleatório do
+// cadastro. Honrar ele de volta ressuscitaria o mosaico. Este mapa só tem o
+// que alguém escolheu de propósito — é a diferença entre "sobrou assim" e
+// "eu quis assim".
+export type MapaCores = Record<string, string>
+
+export function corFinalDoSetor(
+  id: string, nomeCompleto: string, corPropria: string | undefined, escolhidas?: MapaCores,
+): string {
+  const manual = escolhidas?.[id]
+  if (manual && /^#[0-9a-fA-F]{6}$/.test(manual)) return manual
+  return corDoSetor(nomeCompleto, corPropria)
+}
+
+// Paleta oferecida na hora de escolher. Tons cheios o suficiente para ler o
+// nome por cima em texto branco, e distintos entre si num celular.
+export const PALETA_SETOR: { cor: string; nome: string }[] = [
+  { cor: '#0891b2', nome: 'Azul' },
+  { cor: '#5b4fcf', nome: 'Roxo' },
+  { cor: '#7c3aed', nome: 'Violeta' },
+  { cor: '#db2777', nome: 'Rosa' },
+  { cor: '#dc2626', nome: 'Vermelho' },
+  { cor: '#ea580c', nome: 'Laranja' },
+  { cor: '#ca8a04', nome: 'Mostarda' },
+  { cor: '#16a34a', nome: 'Verde' },
+  { cor: '#0d9488', nome: 'Verde-água' },
+  { cor: '#6b7280', nome: 'Cinza' },
+]

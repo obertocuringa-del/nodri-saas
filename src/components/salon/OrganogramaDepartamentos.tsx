@@ -37,6 +37,9 @@ interface Props {
   onAbrir: (id: string) => void
   podeEditar?: boolean
   onExcluir?: (id: string, nome: string) => void   // aparece no modo edição
+  // Cores escolhidas à mão pelo salão (id do setor -> #hex). Vem da mesma
+  // fonte que os cards do celular usam, senão as duas telas discordariam.
+  coresSetor?: Record<string, string>
 }
 
 // Normaliza pra comparar nome de setor sem depender de acento/caixa
@@ -95,7 +98,7 @@ const RAMOS: { chave: string; filhos: string[] }[] = [
 
 const LINHA = '#b8b2a6'   // era #cbd5e1: sumia no branco e a árvore ficava sem linhas
 
-export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true, onExcluir }: Props) {
+export default function OrganogramaDepartamentos({ departamentos, solicPorSetor, onAbrir, podeEditar = true, onExcluir, coresSetor }: Props) {
   const [doc, setDoc] = useState<DocOrg>({})
   const [editando, setEditando] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -208,7 +211,10 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     if (!dep) return null
     const info = doc[dep.id] || {}
     const padrao = PADRAO[chave] || { icone: '', linhas: [] }
-    const cor = CORES[chave] || corLegivel(dep.departamento_cor || '#5b4fcf')
+    const manual = coresSetor?.[dep.id]
+    const cor = (manual && /^#[0-9a-fA-F]{6}$/.test(manual))
+      ? manual
+      : (CORES[chave] || corLegivel(dep.departamento_cor || '#5b4fcf'))
     const linhas = info.linhas && info.linhas.length ? info.linhas : padrao.linhas
     const pend = dep.pendencias_abertas || 0
     const doPortal = solicPorSetor[dep.id] || 0

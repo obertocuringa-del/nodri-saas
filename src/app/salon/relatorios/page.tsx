@@ -976,48 +976,81 @@ export default function RelatoriosPage() {
         <span style={{ color: '#1a1a1a', fontWeight: 700, fontSize: 14 }}>Relatórios Gerenciais</span>
 
         {dados && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          // No computador é uma fileira só, à direita do título.
+          //
+          // No celular a mesma fileira quebrava onde desse: o seletor de mês
+          // caía do lado do "vs Set/2025", o Importar sobrava sozinho e o
+          // conjunto virava um amontoado. Aqui ele passa a ser um bloco de
+          // três linhas com significado: o QUE comparar, QUAL período, e com
+          // o QUE está sendo comparado.
+          <div style={{
+            marginLeft: isMobile ? undefined : 'auto',
+            width: isMobile ? '100%' : undefined,
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? 7 : 8,
+            flexWrap: 'wrap',
+          }}>
 
-            {/* Modo de comparação */}
+            {/* linha 1 — modo de comparação */}
             <div style={{ display: 'flex', background: '#faf9f7', borderRadius: 7, border: '1px solid #e8e6e0', padding: 2, gap: 2 }}>
               {(['auto', 'custom'] as const).map(m => (
-                <button key={m} onClick={() => setModo(m)} style={{ padding: '4px 12px', borderRadius: 5, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: modo === m ? '#5b4fcf' : 'transparent', color: modo === m ? 'white' : '#767069' }}>
+                <button key={m} onClick={() => setModo(m)} style={{ flex: isMobile ? 1 : undefined, padding: isMobile ? '7px 10px' : '4px 12px', borderRadius: 5, border: 'none', fontSize: isMobile ? 12 : 11, fontWeight: 700, cursor: 'pointer', background: modo === m ? '#5b4fcf' : 'transparent', color: modo === m ? 'white' : '#767069' }}>
                   {m === 'auto' ? 'Automático' : 'Personalizado'}
                 </button>
               ))}
             </div>
 
             {modo === 'auto' ? (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <select value={p1Mes} onChange={e => setP1Mes(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
-                  {(mesesDisp.length ? mesesDisp : Array.from({ length: 12 }, (_, i) => i + 1)).map(m => <option key={m} value={m}>{MESES_FULL[m]}</option>)}
-                </select>
-                <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '5px 8px', fontSize: 12, outline: 'none' }}>
-                  {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <span style={{ fontSize: 11, color: '#6b6860' }}>vs {MESES[p1Mes]}/{p1Ano - 1}</span>
-              </div>
+              <>
+                {/* linha 2 — período + importar, lado a lado */}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <select value={p1Mes} onChange={e => setP1Mes(+e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '8px 8px' : '5px 8px', fontSize: 12, fontWeight: isMobile ? 700 : 400, outline: 'none' }}>
+                    {(mesesDisp.length ? mesesDisp : Array.from({ length: 12 }, (_, i) => i + 1)).map(m => <option key={m} value={m}>{MESES_FULL[m]}</option>)}
+                  </select>
+                  <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '8px 8px' : '5px 8px', fontSize: 12, fontWeight: isMobile ? 700 : 400, outline: 'none' }}>
+                    {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  {isMobile && (
+                    <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '8px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
+                      <Upload size={13} /> Importar
+                    </button>
+                  )}
+                </div>
+                {/* linha 3 — contra o que está comparando */}
+                <span style={{ fontSize: 11, color: '#6b6860' }}>
+                  {isMobile ? `Comparando com ${MESES_FULL[p1Mes]}/${p1Ano - 1}` : `vs ${MESES[p1Mes]}/${p1Ano - 1}`}
+                </span>
+              </>
             ) : (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 6, alignItems: isMobile ? 'stretch' : 'center', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, color: '#5b4fcf', fontWeight: 700 }}>P1</span>
-                  <input type="date" value={p1De} onChange={e => setP1De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <span style={{ fontSize: 10, color: '#5b4fcf', fontWeight: 700, width: isMobile ? 18 : undefined }}>P1</span>
+                  <input type="date" value={p1De} onChange={e => setP1De(e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '7px 6px' : '4px 6px', fontSize: 11, outline: 'none' }} />
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
-                  <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p1Ate} onChange={e => setP1Ate(e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '7px 6px' : '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
-                <span style={{ fontSize: 11, color: '#767069' }}>vs</span>
+                <span style={{ fontSize: 11, color: '#767069', textAlign: isMobile ? 'center' : undefined }}>vs</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, color: '#0891b2', fontWeight: 700 }}>P2</span>
-                  <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <span style={{ fontSize: 10, color: '#0891b2', fontWeight: 700, width: isMobile ? 18 : undefined }}>P2</span>
+                  <input type="date" value={p2De} onChange={e => setP2De(e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '7px 6px' : '4px 6px', fontSize: 11, outline: 'none' }} />
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
-                  <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: '4px 6px', fontSize: 11, outline: 'none' }} />
+                  <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '7px 6px' : '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
+                {isMobile && (
+                  <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '8px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
+                    <Upload size={13} /> Importar
+                  </button>
+                )}
               </div>
             )}
 
-            <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '5px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-              <Upload size={13} /> Importar
-            </button>
+            {!isMobile && (
+              <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '5px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                <Upload size={13} /> Importar
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -2444,19 +2477,42 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
 
                 {subAnalise === 'recuperados' ? <RecuperadosReport /> : subAnalise === 'diasemana' ? <DiaSemanaReport /> : <>
                 {/* Filtro de data + Imprimir — Mais Relatórios */}
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '10px 14px', margin: '12px 0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase' }}>De</span>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: isMobile ? '12px 12px' : '10px 14px', margin: '12px 0' }}>
+                  {/* No celular os atalhos vêm PRIMEIRO: é por eles que se
+                      escolhe o período em 99% das vezes. As datas exatas ficam
+                      logo abaixo, para quem precisa de um recorte fora do
+                      comum — que é o caso raro, não o padrão. */}
+                  {isMobile && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+                      {[['Este ano',`${anoAtualRel}-01-01`,`${anoAtualRel}-12-31`],['Ano passado',`${anoAtualRel-1}-01-01`,`${anoAtualRel-1}-12-31`],['2 anos',`${anoAtualRel-1}-01-01`,`${anoAtualRel}-12-31`],['Tudo','2000-01-01',`${anoAtualRel}-12-31`]].map(([lbl,dI,dF])=>{
+                        const ativo = analiseDe===dI && analiseAte===dF
+                        return <button key={lbl} onClick={()=>{setAnaliseDe(dI);setAnaliseAte(dF);carregarAnalise(subAnalise)}}
+                          style={{ borderRadius:7,padding:'7px 2px',fontSize:10.5,fontWeight:700,lineHeight:1.15,cursor:'pointer',background:ativo?'#5b4fcf':'#fff',color:ativo?'#fff':'#767069',border:ativo?'1px solid #5b4fcf':'1px solid #e0ddd8' }}>{lbl}</button>
+                      })}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: isMobile ? undefined : undefined }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase', width: isMobile ? 26 : undefined }}>De</span>
                     <input type="date" value={analiseDe} onChange={e => setAnaliseDe(e.target.value)}
-                      style={{ border: '1.5px solid #e0ddd8', borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
+                      style={{ flex: isMobile ? 1 : undefined, minWidth: 0, border: '1.5px solid #e0ddd8', borderRadius: 6, padding: isMobile ? '7px 8px' : '4px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase', display: isMobile ? undefined : 'none' }}>Até</span>
+                    {isMobile && (
+                      <input type="date" value={analiseAte} onChange={e => setAnaliseAte(e.target.value)}
+                        style={{ flex: 1, minWidth: 0, border: '1.5px solid #e0ddd8', borderRadius: 6, padding: '7px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
+                    )}
                   </div>
+                  {!isMobile && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#767069', textTransform: 'uppercase' }}>Até</span>
                     <input type="date" value={analiseAte} onChange={e => setAnaliseAte(e.target.value)}
                       style={{ border: '1.5px solid #e0ddd8', borderRadius: 6, padding: '4px 8px', fontSize: 12, background: '#fff', color: '#1a1a1a' }} />
                   </div>
+                  )}
+                  {!isMobile && (
                   <button onClick={() => carregarAnalise(subAnalise)}
                     style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Buscar</button>
+                  )}
+                  {!isMobile && (
                   <div style={{ display: 'flex', gap: 4 }}>
                     {[['Este ano',`${anoAtualRel}-01-01`,`${anoAtualRel}-12-31`],['Ano passado',`${anoAtualRel-1}-01-01`,`${anoAtualRel-1}-12-31`],['2 anos',`${anoAtualRel-1}-01-01`,`${anoAtualRel}-12-31`],['Tudo','2000-01-01',`${anoAtualRel}-12-31`]].map(([lbl,dI,dF])=>{
                       const ativo = analiseDe===dI && analiseAte===dF
@@ -2464,7 +2520,12 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                         style={{ borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',background:ativo?'#5b4fcf':'#fff',color:ativo?'#fff':'#767069',border:ativo?'1px solid #5b4fcf':'1px solid #e0ddd8' }}>{lbl}</button>
                     })}
                   </div>
-                  <div style={{ marginLeft: 'auto' }}>
+                  )}
+                  <div style={{ marginLeft: isMobile ? undefined : 'auto', display: isMobile ? 'flex' : undefined, gap: isMobile ? 6 : undefined }}>
+                    {isMobile && (
+                      <button onClick={() => carregarAnalise(subAnalise)}
+                        style={{ flex: 1, background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 7, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Buscar</button>
+                    )}
                     <button onClick={() => {
                       const lista = analiseDetalhe as any[]
                       if (!lista.length) return
