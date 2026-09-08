@@ -427,12 +427,18 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
   }
 
-  const sugestoesProfissional = [
-    { titulo: 'Minhas metas', prompt: 'Quem já bateu a meta esse mês, quem ainda pode bater, quem está longe e quem definitivamente não vai bater? Me dá o ranking completo com o que ainda dá tempo de fazer.' },
-    { titulo: 'Meu faturamento', prompt: 'Me mostre meu histórico de faturamento mês a mês, meu ticket médio, quantidade de serviços realizados e minha tendência atual.' },
-    { titulo: 'Minhas ocorrências', prompt: 'Quais são minhas ocorrências registradas? Mostre tipos, datas e quantidades. O que elas indicam sobre meu perfil?' },
-    { titulo: 'Minha posição na equipe', prompt: 'Como estou posicionado em relação à equipe? Mostre minha posição em faturamento, ticket médio e ocupação sem revelar nomes dos colegas.' },
-  ]
+  // ── Portal do profissional: sem atalhos prontos ────────────────────────
+  //
+  // Ficava aqui uma lista de "Analises rapidas" que o salao pediu para tirar.
+  // E a lista tinha um problema proprio: o atalho "Minhas metas" carregava um
+  // prompt copiado do painel do gestor — pedia o RANKING DA EQUIPE INTEIRA.
+  // O servidor bloqueia esse dado no modo profissional, entao o atalho so
+  // podia terminar em recusa; um botao que existe para nao funcionar ensina a
+  // desconfiar da ferramenta.
+  //
+  // As "Perguntas salvas" (as que cada um cria no +) continuam valendo — o que
+  // sai e o padrao imposto, nao a possibilidade de guardar as proprias.
+  const sugestoesProfissional: { titulo: string; prompt: string }[] = []
 
   const sugestoesGestor = [
     { titulo: 'Melhor profissional', prompt: 'Qual profissional trouxe mais resultado financeiro nos últimos 3 meses e por quê?\n\nAnalise todos os profissionais dos últimos 90 dias.\n\nConsidere: faturamento total, comissão gerada, ticket médio, quantidade de atendimentos, ocupação.\n\nApresente um ranking completo. Identifique o profissional que trouxe o maior resultado financeiro e explique detalhadamente os fatores que contribuíram para seu desempenho.\n\nMostre: valor faturado, percentual de participação no faturamento do salão, principais serviços vendidos, principais diferenciais em relação aos demais.\n\nNão utilize opiniões. Baseie-se exclusivamente nos dados encontrados no sistema.' },
@@ -576,7 +582,10 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                 </div>
               ))}
 
-              {/* Seção de perguntas inteligentes fixas */}
+              {/* Seção de perguntas inteligentes fixas.
+                  Sem sugestão nenhuma o bloco inteiro sai — título órfão sobre
+                  espaço vazio é pior do que não ter a seção. */}
+              {sugestoesAtivas.length > 0 && (
               <div style={{ marginTop: prompts.length > 0 ? 12 : 0, paddingTop: prompts.length > 0 ? 12 : 0, borderTop: prompts.length > 0 ? '1px solid #f0ede8' : 'none' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#6b6860', textTransform: 'uppercase', letterSpacing: 1, margin: '0 2px 8px' }}>
                   {profissionalId ? 'Análises rápidas' : 'Análises inteligentes'}
@@ -594,6 +603,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
                   </div>
                 ))}
               </div>
+              )}
             </div>
           </div>
 
