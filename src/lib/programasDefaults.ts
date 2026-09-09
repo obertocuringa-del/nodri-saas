@@ -20,6 +20,24 @@ export const PROGRAMAS_DEFAULTS = {
     carregar_conversa: 8,
     apos_envio: 2,
   },
+  // Envio no WhatsApp — vale para os QUATRO programas.
+  //
+  // Fica num grupo próprio porque a caixa de mensagem e o botão de enviar são
+  // os mesmos em todos: mudou o WhatsApp, muda aqui uma vez e os quatro pegam.
+  //
+  // Estes XPaths são REFORÇO, não substituição. Os programas tentam primeiro
+  // os seletores por aria-label/data-icon (que sobrevivem às mudanças visuais
+  // do WhatsApp) e só depois caem nestes. Deixar em branco é o normal: só
+  // preencha quando o envio parar de funcionar e o XPath for a saída rápida.
+  whatsapp_envio: {
+    xpath_campo_mensagem: '',
+    xpath_botao_enviar: '',
+    // Teto de espera da prévia do link, em segundos. Enquanto o WhatsApp
+    // busca título e imagem da página, a caixa engole o Enter e a mensagem
+    // fica presa como rascunho. Não é espera fixa: assim que a prévia carrega,
+    // o envio segue. O teto só impede travar num link que nunca resolve.
+    espera_previa_link: 12,
+  },
   confirmacao_feedback: {
     relatorio_url: 'https://admin.avec.beauty/admin/relatorio/0051',
     xpath_login_email: '//*[@id="single-spa-application:@hyperlocal/auth"]/div/div/div/div[2]/div[2]/div[1]/div[2]/div/input',

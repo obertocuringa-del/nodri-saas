@@ -42,6 +42,15 @@ const SECOES: Secao[] = [
     ],
   },
   {
+    chave: 'whatsapp_envio', emoji: '', titulo: 'Envio no WhatsApp (vale para os 4 programas)',
+    descricao: 'A caixa de mensagem e o botão de enviar são os mesmos nos quatro programas: mudou o WhatsApp, muda aqui uma vez. Deixe os XPaths EM BRANCO no dia a dia — os programas já acham a caixa e o botão sozinhos, por atributos que sobrevivem às atualizações do WhatsApp. Só preencha se o envio parar de funcionar; o valor daqui entra como reforço, não substitui o que já existe.',
+    campos: [
+      { chave: 'xpath_campo_mensagem', label: 'XPath da caixa de mensagem (reforço, opcional)' },
+      { chave: 'xpath_botao_enviar', label: 'XPath do botão de enviar (reforço, opcional)' },
+      { chave: 'espera_previa_link', label: 'Espera da prévia do link — teto (segundos)', tipo: 'numero' },
+    ],
+  },
+  {
     chave: 'confirmacao_feedback', emoji: '', titulo: 'Confirmação de Agendamento + Mensagem de Feedback',
     descricao: 'Os dois programas usam o mesmo caminho no painel Avec (relatório 0051).',
     campos: [
