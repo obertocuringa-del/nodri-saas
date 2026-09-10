@@ -650,7 +650,11 @@ function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) =
 }
 interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
-interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string }
+// produtoRefId liga este serviço a uma receita da aba "Custo de Produto".
+// Existindo o vínculo, o campo Produto (R$) acompanha sozinho o custo de lá.
+// Ausente (todo mês salvo antes desta mudança), vale o valor digitado — nada
+// muda para quem já tinha os números preenchidos.
+interface Servico      { id: number; nome: string; preco: string; rateioP: string; produto: string; imposto: string; produtoNome?: string; produtoRefId?: number }
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function CalculadoraCusto() {
@@ -1774,6 +1778,39 @@ Antes de lançar de novo, confira em FINANCEIRO > Contas a Pagar se a conta já 
     const emb = n(i.qtdEmb), usa = n(i.qtdUsa), prec = n(i.preco)
     return emb > 0 ? (prec / emb) * usa : 0
   }
+
+  // ── O campo Produto (R$) segue a receita, em vez de copiá-la uma vez ───────
+  //
+  // Escolher o custo na lista gravava o número e acabava ali. Depois, quem
+  // acrescentasse um insumo em "Custo de Produto" via o custo subir lá e o
+  // Calcular Serviços continuar no valor velho — a HIGIENIZAÇÃO PRÓPOLIS foi
+  // para R$ 7,70 e o serviço seguiu calculando lucro com R$ 6,11. Número
+  // desatualizado numa tela de lucro é pior que número ausente: ninguém
+  // desconfia dele.
+  //
+  // A sincronia mexe SÓ no valor de quem tem vínculo (produtoRefId). Quem
+  // digitou à mão, quem veio de um mês antigo, e quem teve a receita apagada
+  // ficam exatamente como estão.
+  //
+  // O `return prev` quando nada mudou é o que impede laço infinito: sem trocar
+  // a referência do estado, o React não re-renderiza e o efeito não roda de novo.
+  useEffect(() => {
+    setServicos(prev => {
+      let mudou = false
+      const novo = prev.map(s => {
+        if (!s.produtoRefId) return s
+        const receita = servicosProd.find(x => x.id === s.produtoRefId)
+        if (!receita) return s   // receita apagada: congela o último valor conhecido
+        const total = receita.ingredientes.reduce((acc, i) => acc + custoIngred(i), 0).toFixed(2)
+        const nome  = (receita.nomeServico || '').trim() || s.produtoNome
+        if (s.produto === total && s.produtoNome === nome) return s
+        mudou = true
+        return { ...s, produto: total, produtoNome: nome }
+      })
+      return mudou ? novo : prev
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servicosProd])
 
   // ── Aluguel de Cadeira (base de cálculo idêntica à calc dos criadores) ─────
   // Interface enxuta: um único valor de custo operacional total (não itemiza).
@@ -3510,7 +3547,11 @@ Use números reais. Seja direto.`
                                 : <input type="number" value={(s as any)[f.k]}
                                     onFocus={f.k==='produto'?()=>setProdSelKey(s.id):undefined}
                                     onBlur={f.k==='produto'?()=>setTimeout(()=>setProdSelKey(k=>k===s.id?null:k),200):undefined}
-                                    onChange={e=>setServicos(p=>p.map(x=>x.id===s.id?{...x,[f.k]:e.target.value}:x))}
+                                    /* Digitar à mão no campo Produto desfaz o vínculo: o número
+                                       passa a ser do usuário, e a receita para de sobrescrevê-lo. */
+                                    onChange={e=>setServicos(p=>p.map(x=>x.id===s.id
+                                      ?(f.k==='produto'?{...x,produto:e.target.value,produtoRefId:undefined}:{...x,[f.k]:e.target.value})
+                                      :x))}
                                     placeholder={f.ph}
                                     className={`w-full ${f.tipo==='R$'?'pl-9':'pl-3'} ${f.tipo==='%'?'pr-9':'pr-3'} py-2.5 rounded-xl text-sm font-bold text-[#1a1a1a] focus:outline-none`}
                                     style={{background:'#fff',border:`1.5px solid ${n((s as any)[f.k])>0?'#5b4fcf40':'#e8e6e0'}`}}/>}
@@ -3545,7 +3586,7 @@ Use números reais. Seja direto.`
                                         {custeados.map(cp=>(
                                           <button key={cp.id}
                                             onMouseDown={()=>{
-                                              setServicos(prev=>prev.map(x=>x.id===s.id?{...x,produto:String(cp.total.toFixed(2)),produtoNome:cp.nome}:x))
+                                              setServicos(prev=>prev.map(x=>x.id===s.id?{...x,produto:String(cp.total.toFixed(2)),produtoNome:cp.nome,produtoRefId:cp.id}:x))
                                               setProdSelKey(null)
                                             }}
                                             className="w-full text-left px-3 py-2 flex items-center justify-between gap-2"
@@ -3565,13 +3606,21 @@ Use números reais. Seja direto.`
                                 )
                               })()}
                             </div>
-                            {/* Nome do produto escolhido (só exibição — o cálculo usa apenas o valor) */}
+                            {/* Nome do produto escolhido (só exibição — o cálculo usa apenas o valor).
+                                Com vínculo ativo, o selo avisa que o número se atualiza sozinho —
+                                assim dá para saber, de relance, se aquele valor ainda segue a receita
+                                ou se foi digitado à mão. */}
                             {f.k==='produto' && s.produtoNome && (
-                              <div className="flex items-center gap-1.5 mt-1.5 pl-7">
+                              <div className="flex items-center gap-1.5 mt-1.5 pl-7 flex-wrap">
                                 <span className="text-[11px] px-2 py-1 rounded-lg font-bold" style={{background:'#5b4fcf12',color:'#5b4fcf',border:'1px solid #5b4fcf30'}}>
                                   {s.produtoNome} — {fmtR(n(s.produto))}
                                 </span>
-                                <button onClick={()=>setServicos(p=>p.map(x=>x.id===s.id?{...x,produtoNome:''}:x))}
+                                {s.produtoRefId!=null && servicosProd.some(x=>x.id===s.produtoRefId) && (
+                                  <span className="text-[10px] px-2 py-1 rounded-lg font-bold" style={{background:'#10b98112',color:'#047857',border:'1px solid #10b98130'}}>
+                                    acompanha o Custo de Produto
+                                  </span>
+                                )}
+                                <button onClick={()=>setServicos(p=>p.map(x=>x.id===s.id?{...x,produtoNome:'',produtoRefId:undefined}:x))}
                                   title="Remover o nome (mantém o valor)" className="text-xs" style={{color:'#767069'}}>✕</button>
                               </div>
                             )}
