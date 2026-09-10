@@ -175,11 +175,23 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, conversa_id: conversa.id })
 }
 
-// ── A ponte busca o que precisa sair ────────────────────────────────────────
+// ── A ponte pergunta o que fazer, e busca o que precisa sair ────────────────
 export async function GET(req: NextRequest) {
   if (!autorizado(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const salaoId = new URL(req.url).searchParams.get('salao') || ''
+  const params = new URL(req.url).searchParams
+
+  // Quais salões querem estar conectados. A ponte não tem lista fixa: ela
+  // pergunta ao NODRI a cada volta, e por isso um salão novo que clica em
+  // "Gerar o QR code" é atendido sem ninguém reiniciar serviço nenhum.
+  if (params.get('acao') === 'canais') {
+    const { data } = await supabaseAdmin
+      .from('crm_canais').select('salao_id, situacao')
+      .neq('situacao', 'desconectado')
+    return NextResponse.json({ canais: data || [] })
+  }
+
+  const salaoId = params.get('salao') || ''
   if (!salaoId) return NextResponse.json({ error: 'salao é obrigatório' }, { status: 400 })
 
   const { data } = await supabaseAdmin

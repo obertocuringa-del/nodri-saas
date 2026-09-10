@@ -1,0 +1,5 @@
+node_modules/
+sessoes/
+sessoes-teste/
+package-lock.json
+.env

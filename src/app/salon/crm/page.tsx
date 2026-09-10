@@ -20,6 +20,11 @@ type Conversa = any
 type Mensagem = any
 
 export default function CrmPage() {
+  // `canalLido` separa "ainda não sei" de "sei que está desconectado".
+  // Sem essa distinção, a tela abria mostrando o QR por uma fração de segundo
+  // antes de a resposta chegar — e quem já tinha escaneado achava que ia ter
+  // que escanear de novo toda vez.
+  const [canalLido, setCanalLido] = useState(false)
   const [canal, setCanal] = useState<any>({ situacao: 'desconectado' })
   const [modelos, setModelos] = useState<any[]>([])
   const [motivos, setMotivos] = useState<any[]>([])
@@ -43,7 +48,7 @@ export default function CrmPage() {
       setCanal(d.canal || { situacao: 'desconectado' })
       setModelos(d.modelos || [])
       setMotivos(d.motivos || [])
-    } catch {}
+    } catch {} finally { setCanalLido(true) }
   }
 
   async function puxarConversas() {
@@ -73,16 +78,46 @@ export default function CrmPage() {
 
   useEffect(() => { puxarCanal(); puxarConversas() }, [])
 
-  // Enquanto não há conexão, o QR muda a cada minuto: olhar de perto.
-  // Conectado, um ritmo tranquilo basta e não castiga o banco.
+  // ── Sincronia entre os computadores ───────────────────────────────────────
+  //
+  // O CRM e usado em dois ou tres computadores ao mesmo tempo. Se a recepcao
+  // responde no balcao, quem esta na sala precisa ver aquilo logo -- senao as
+  // duas respondem a mesma cliente, que e o defeito que a trava de dono existe
+  // para evitar. Cinco segundos e o intervalo que faz a tela parecer viva sem
+  // castigar o banco: a lista da fila e pequena e tem indice.
   useEffect(() => {
-    const rapido = canal.situacao === 'aguardando_qr' || canal.situacao === 'conectando'
+    const esperandoQr = canal.situacao === 'aguardando_qr' || canal.situacao === 'conectando'
     const t = setInterval(() => {
+      // Aba escondida nao precisa de nada: economiza banco e bateria do
+      // computador que ficou aberto num canto o dia inteiro.
+      if (document.hidden) return
+      if (esperandoQr) { puxarCanal(); return }
+      puxarConversas()
       puxarCanal()
-      if (!rapido) puxarConversas()
-    }, rapido ? 3000 : 15000)
+    }, esperandoQr ? 3000 : 5000)
     return () => clearInterval(t)
   }, [canal.situacao])
+
+  // A conversa ABERTA tambem se atualiza sozinha. Sem isto, a mensagem que a
+  // cliente manda enquanto a tela esta aberta so apareceria ao fechar e abrir
+  // de novo -- e a pessoa ficaria olhando para uma conversa parada achando que
+  // a cliente sumiu.
+  useEffect(() => {
+    if (!aberta?.id) return
+    const t = setInterval(async () => {
+      if (document.hidden) return
+      try {
+        const r = await fetch(`/api/crm/mensagens?conversa=${aberta.id}`)
+        if (!r.ok) return
+        const d = await r.json()
+        const chegaram = d.mensagens || []
+        // So troca o estado quando mudou de verdade: substituir a lista a cada
+        // cinco segundos faria a conversa piscar e perder a rolagem.
+        setMensagens(atual => atual.length === chegaram.length ? atual : chegaram)
+      } catch {}
+    }, 5000)
+    return () => clearInterval(t)
+  }, [aberta?.id])
 
   useEffect(() => {
     fimDaConversa.current?.scrollIntoView({ behavior: 'smooth' })
@@ -195,7 +230,11 @@ export default function CrmPage() {
         </div>
       </div>
 
-      {!conectado ? (
+      {!canalLido ? (
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 53px)' }}>
+          <p className="text-[13px]" style={{ color: '#868c97' }}>Verificando a conexao...</p>
+        </div>
+      ) : !conectado ? (
         <TelaConexao canal={canal} onConectar={() => conectar('conectar')} />
       ) : (
         <div className="flex" style={{ height: 'calc(100vh - 53px)' }}>
