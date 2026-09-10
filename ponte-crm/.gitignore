@@ -4,3 +4,5 @@ sessoes-teste/
 package-lock.json
 .env
 INICIAR-PONTE.bat
+*.log
+vigia.out
