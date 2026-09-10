@@ -85,6 +85,10 @@ CREATE TABLE IF NOT EXISTS crm_conversas (
   criado_em       timestamptz DEFAULT now(),
   atualizado_em   timestamptz DEFAULT now()
 );
+-- Conversa que veio do historico do celular, nao de uma cliente que chegou
+-- agora. Sem essa marca a taxa de conversao contaria como oportunidade
+-- tudo que ja estava no WhatsApp, e o numero nasceria mentindo.
+ALTER TABLE crm_conversas ADD COLUMN IF NOT EXISTS importada boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_crm_conv_fila    ON crm_conversas(salao_id, estado, aguardando_desde);
 CREATE INDEX IF NOT EXISTS idx_crm_conv_contato ON crm_conversas(salao_id, contato_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conv_prazo   ON crm_conversas(salao_id, prazo);

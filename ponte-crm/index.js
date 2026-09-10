@@ -89,6 +89,85 @@ function tipoDaMensagem(m) {
   return 'texto'
 }
 
+// ── O histórico que já existe no celular ────────────────────────────────────
+//
+// Depois do pareamento o WhatsApp despeja o que o aparelho guardou, em lotes.
+// A ponte transforma isso no formato do CRM e manda para o NODRI, que decide
+// o estado de cada conversa. Aqui não há regra de negócio nenhuma — só
+// tradução, como no resto da ponte.
+//
+// Grupo, status e canal ficam de fora, igual à mensagem que chega ao vivo.
+// Só cliente, que é para o que o CRM serve.
+
+const MSGS_POR_CONVERSA = 40   // o suficiente para entender o assunto
+const CONVERSAS_POR_ENVIO = 20 // lote pequeno: um erro não derruba tudo
+
+const ehCliente = jid => String(jid || '').endsWith('@s.whatsapp.net')
+
+const segundos = m => Number(m?.messageTimestamp?.low ?? m?.messageTimestamp ?? 0)
+
+async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = [] }) {
+  if (!chats.length && !messages.length) return
+
+  // Nome de agenda por número, para a conversa não abrir como "556199...".
+  const nomes = new Map()
+  for (const c of contacts) {
+    if (!ehCliente(c?.id)) continue
+    const nome = c.name || c.notify || c.verifiedName || null
+    if (nome) nomes.set(soNumero(c.id), nome)
+  }
+
+  // Agrupa as mensagens por conversa.
+  const porJid = new Map()
+  for (const m of messages) {
+    const jid = m?.key?.remoteJid || ''
+    if (!ehCliente(jid)) continue
+    const texto = textoDaMensagem(m)
+    const tipo = tipoDaMensagem(m)
+    if (!texto && tipo === 'texto') continue
+    if (!porJid.has(jid)) porJid.set(jid, [])
+    porJid.get(jid).push({
+      direcao: m.key?.fromMe ? 'saida' : 'entrada',
+      texto: texto || `[${tipo}]`,
+      tipo,
+      id_whatsapp: m.key?.id || null,
+      em: segundos(m),
+    })
+    if (!nomes.has(soNumero(jid)) && m.pushName) nomes.set(soNumero(jid), m.pushName)
+  }
+
+  // Uma conversa pode aparecer na lista de chats sem nenhuma mensagem no lote:
+  // vale trazer mesmo assim, senão o contato some da tela sem explicação.
+  for (const c of chats) {
+    if (ehCliente(c?.id) && !porJid.has(c.id)) porJid.set(c.id, [])
+    if (ehCliente(c?.id) && c.name && !nomes.has(soNumero(c.id))) nomes.set(soNumero(c.id), c.name)
+  }
+
+  const conversas = []
+  for (const [jid, msgs] of porJid) {
+    msgs.sort((a, b) => a.em - b.em)
+    conversas.push({
+      telefone: soNumero(jid),
+      nome: nomes.get(soNumero(jid)) || null,
+      mensagens: msgs.slice(-MSGS_POR_CONVERSA),
+    })
+  }
+  if (!conversas.length) return
+
+  for (let i = 0; i < conversas.length; i += CONVERSAS_POR_ENVIO) {
+    const fatia = conversas.slice(i, i + CONVERSAS_POR_ENVIO)
+    try {
+      const r = await nodri('?acao=historico', {
+        method: 'POST',
+        body: JSON.stringify({ salao_id: salaoId, conversas: fatia }),
+      })
+      registro(salaoId, `histórico: ${fatia.length} conversas enviadas`, r?.criadas != null ? `(${r.criadas} novas)` : '')
+    } catch (e) {
+      registro(salaoId, 'falha ao enviar histórico:', e.message)
+    }
+  }
+}
+
 // ── Uma sessão ──────────────────────────────────────────────────────────────
 
 async function abrirSessao(salaoId) {
@@ -108,7 +187,11 @@ async function abrirSessao(salaoId) {
     // Aparece assim na lista de "Aparelhos conectados" do celular, para o
     // salão saber o que é aquilo e não desconectar por engano.
     browser: ['NODRI CRM', 'Chrome', '1.0.0'],
-    syncFullHistory: false,
+    // Pedir o histórico é o que faz o CRM abrir já com as conversas que o
+    // salão tem no celular, em vez de uma tela vazia esperando alguém
+    // escrever. O WhatsApp manda o que ele guardou; não é o histórico
+    // inteiro de anos, é o que o aparelho ainda tem.
+    syncFullHistory: true,
     markOnlineOnConnect: false,   // não rouba as notificações do celular
   })
 
@@ -162,8 +245,24 @@ async function abrirSessao(salaoId) {
     }
   })
 
+  // ── O histórico que já existe no celular ──────────────────────────────────
+  // Chega em lotes logo depois do pareamento. É isto que faz o CRM abrir com
+  // as conversas do salão em vez de uma tela em branco.
+  sock.ev.on('messaging-history.set', async (lote) => {
+    try {
+      await mandarHistorico(salaoId, lote)
+    } catch (e) {
+      registro(salaoId, 'falha ao importar histórico:', e.message)
+    }
+  })
+
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return       // 'append' é sincronia de histórico, não mensagem nova
+    // 'notify' é mensagem nova com o aparelho ligado. 'append' é a fila que
+    // estava esperando — mensagem que chegou enquanto a ponte estava fora do
+    // ar, ou logo antes do pareamento terminar. Ignorar 'append' foi o que
+    // fez a primeira mensagem de teste sumir sem deixar rastro.
+    if (type !== 'notify' && type !== 'append') return
+    registro(salaoId, `chegaram ${messages.length} evento(s) de mensagem (${type})`)
     for (const m of messages) {
       try {
         const jid = m.key?.remoteJid || ''
@@ -187,6 +286,7 @@ async function abrirSessao(salaoId) {
             id_whatsapp: m.key?.id || null,
           }),
         })
+        registro(salaoId, 'entrada de', soNumero(jid), '—', texto.slice(0, 40))
       } catch (e) {
         registro(salaoId, 'falha ao entregar mensagem:', e.message)
       }

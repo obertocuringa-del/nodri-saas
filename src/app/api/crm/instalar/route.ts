@@ -50,6 +50,7 @@ const COMANDOS: string[] = [
     nao_lidas int NOT NULL DEFAULT 0,
     motivo_perda text, valor_estimado numeric, fechada_em timestamptz,
     criado_em timestamptz DEFAULT now(), atualizado_em timestamptz DEFAULT now())`,
+  `ALTER TABLE crm_conversas ADD COLUMN IF NOT EXISTS importada boolean NOT NULL DEFAULT false`,
   `CREATE INDEX IF NOT EXISTS idx_crm_conv_fila ON crm_conversas(salao_id, estado, aguardando_desde)`,
   `CREATE INDEX IF NOT EXISTS idx_crm_conv_contato ON crm_conversas(salao_id, contato_id)`,
   `CREATE INDEX IF NOT EXISTS idx_crm_conv_prazo ON crm_conversas(salao_id, prazo)`,

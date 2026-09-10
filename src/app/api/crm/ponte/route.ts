@@ -102,6 +102,119 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── O histórico que já existia no WhatsApp do salão ───────────────────────
+  //
+  // Vem logo depois do pareamento. Duas decisões importantes moram aqui:
+  //
+  // 1. Conversa importada NÃO entra na fila de trabalho por padrão. Despejar
+  //    dois anos de conversa em "Ação necessária" enterraria o que de fato
+  //    precisa de resposta hoje — a fila deixaria de valer no primeiro dia.
+  //    Só o que a cliente escreveu nos últimos dias e ficou sem resposta
+  //    entra na fila; o resto entra como "Aguardando cliente".
+  //
+  // 2. `importada` marca a origem. Sem isso, a taxa de conversão do CRM
+  //    contaria como oportunidade tudo que já estava no celular, e o número
+  //    nasceria mentindo.
+  if (acao === 'historico') {
+    const conversas = Array.isArray(body?.conversas) ? body.conversas : []
+    const RECENTE_MS = 3 * 24 * 60 * 60 * 1000
+    let criadas = 0
+    let novasMensagens = 0
+
+    for (const c of conversas) {
+      const msgs = (Array.isArray(c?.mensagens) ? c.mensagens : [])
+        .filter((m: any) => m && (m.texto || '').trim())
+        .sort((a: any, b: any) => Number(a.em || 0) - Number(b.em || 0))
+
+      const contato = await acharOuCriarContato(salaoId, String(c?.telefone || ''), c?.nome)
+      if (!contato) continue
+
+      // Nome de agenda que chegou depois: preenche o que estava vazio, mas
+      // nunca sobrescreve o nome que alguém do salão digitou à mão.
+      if (c?.nome && !contato.nome) {
+        await supabaseAdmin.from('crm_contatos')
+          .update({ nome: c.nome, nome_agenda: c.nome }).eq('id', contato.id)
+      }
+
+      const ultima = msgs[msgs.length - 1]
+      const quando = ultima?.em ? new Date(Number(ultima.em) * 1000).toISOString() : agora
+      const daCliente = ultima?.direcao === 'entrada'
+      const recente = ultima?.em ? (Date.now() - Number(ultima.em) * 1000) < RECENTE_MS : false
+
+      const { data: jaAberta } = await supabaseAdmin
+        .from('crm_conversas').select('*')
+        .eq('salao_id', salaoId).eq('contato_id', contato.id)
+        .not('estado', 'in', '("agendado","sem_conversao")')
+        .order('ultima_em', { ascending: false }).limit(1)
+
+      let conversa = (jaAberta || [])[0]
+      if (!conversa) {
+        const estado = daCliente && recente ? 'acao_necessaria' : 'aguardando'
+        const { data: nova } = await supabaseAdmin.from('crm_conversas').insert({
+          salao_id: salaoId,
+          contato_id: contato.id,
+          estado,
+          importada: true,
+          proxima_acao: proximaAcaoPadrao(estado as any),
+          aguardando_desde: estado === 'acao_necessaria' ? quando : null,
+          ultima_em: quando,
+          ultima_de: daCliente ? 'cliente' : 'salao',
+          ultima_previa: String(ultima?.texto || '').slice(0, 120),
+          nao_lidas: 0,
+        }).select().maybeSingle()
+        conversa = nova
+        if (conversa) criadas++
+      }
+      if (!conversa) continue
+
+      if (!msgs.length) continue
+
+      // Só grava o que ainda não está lá. Reimportar (nova leitura de QR,
+      // ponte reiniciada) não pode duplicar a conversa da cliente na tela.
+      const ids = msgs.map((m: any) => m.id_whatsapp).filter(Boolean)
+      const conhecidos = new Set<string>()
+      if (ids.length) {
+        const { data: velhas } = await supabaseAdmin
+          .from('crm_mensagens').select('id_whatsapp')
+          .eq('salao_id', salaoId).in('id_whatsapp', ids)
+        for (const v of velhas || []) if (v.id_whatsapp) conhecidos.add(v.id_whatsapp)
+      }
+
+      const inserir = msgs
+        .filter((m: any) => !m.id_whatsapp || !conhecidos.has(m.id_whatsapp))
+        .map((m: any) => ({
+          salao_id: salaoId,
+          conversa_id: conversa.id,
+          direcao: m.direcao === 'saida' ? 'saida' : 'entrada',
+          texto: String(m.texto || ''),
+          tipo: m.tipo || 'texto',
+          situacao: m.direcao === 'saida' ? 'enviada' : 'entregue',
+          id_whatsapp: m.id_whatsapp || null,
+          criado_em: m.em ? new Date(Number(m.em) * 1000).toISOString() : agora,
+          enviado_em: m.direcao === 'saida' && m.em
+            ? new Date(Number(m.em) * 1000).toISOString() : null,
+        }))
+
+      if (inserir.length) {
+        const { error } = await supabaseAdmin.from('crm_mensagens').insert(inserir)
+        if (!error) novasMensagens += inserir.length
+      }
+
+      // A conversa que já existia continua com o estado que o salão deu; só a
+      // prévia acompanha, para a lista não mostrar uma frase velha.
+      if (jaAberta?.length && quando > (conversa.ultima_em || '')) {
+        await supabaseAdmin.from('crm_conversas').update({
+          ultima_em: quando,
+          ultima_de: daCliente ? 'cliente' : 'salao',
+          ultima_previa: String(ultima?.texto || '').slice(0, 120),
+          atualizado_em: agora,
+        }).eq('id', conversa.id)
+      }
+    }
+
+    return NextResponse.json({ ok: true, criadas, mensagens: novasMensagens })
+  }
+
   // ── Mensagem que chegou da cliente ────────────────────────────────────────
   const telefone = String(body?.telefone || '')
   const texto = String(body?.texto || '')
