@@ -43,6 +43,11 @@ async function roteador(request: NextRequest) {
     pathname.startsWith('/api/planos-publicos') ||
     // Funcionalidades: alimentam o menu e as paginas da vitrine
     pathname === '/api/funcionalidades' ||
+    // A ponte do CRM é chamada por SERVIÇO, não por navegador: não tem cookie
+    // para apresentar. Ela se identifica pelo cabeçalho x-crm-chave, conferido
+    // dentro da própria rota contra CRM_PONTE_CHAVE. Passar aqui não a abre —
+    // sem a chave certa, a rota devolve 401 na primeira linha.
+    pathname === '/api/crm/ponte' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em

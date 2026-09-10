@@ -736,6 +736,15 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
                 <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivosExibidos}</span>/{totalModulosExibidos}</span>
               </div>
+              {/* Iniciar CRM — fica ANTES do bloco de "Baixar Programa" de propósito.
+                  Ao lado dele mora o botão de Atualização, que aparece e some conforme
+                  a configuração; um botão fixo grudado num que oscila muda de lugar
+                  sozinho e a pessoa perde a referência de onde clicar. */}
+              <a href="/salon/crm"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 mr-1"
+                style={{ background: 'rgba(91,79,207,0.12)', border: '1px solid rgba(91,79,207,0.35)', color: '#5b4fcf' }}>
+                Iniciar CRM
+              </a>
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
                   <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"

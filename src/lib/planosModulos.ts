@@ -258,6 +258,21 @@ export const ROTAS_POR_MODULO: Array<{ prefixo: string; chave: ChaveModulo }> = 
   { prefixo: '/salon/lojistas', chave: 'suite' },
   { prefixo: '/api/salon/lojistas', chave: 'suite' },
   { prefixo: '/api/salon/acoes-comerciais', chave: 'suite' },
+
+  // ── CRM (set/2026) ────────────────────────────────────────────────────────
+  //
+  // O CRM é do plano Completo, por decisão comercial. Ele usa a chave 'suite'
+  // como PORTÃO — e só isso: não tem relação nenhuma com o programa de desktop
+  // Suite NODRI, que é outro produto e continua separado.
+  //
+  // A chave existente foi reaproveitada de propósito, em vez de criar uma
+  // 'crm': módulo novo exige linha na tabela `modulos` e em `salao_modulos` de
+  // cada salão, e enquanto essas linhas não existem o portão tranca a tela de
+  // quem já pagou. 'suite' já é exclusiva do Completo e já está preenchida —
+  // entrega o mesmo resultado comercial sem migração e sem risco de trancar
+  // ninguém para fora.
+  { prefixo: '/salon/crm', chave: 'suite' },
+  { prefixo: '/api/crm', chave: 'suite' },
 ]
 
 export function moduloExigidoPelaRota(pathname: string): ChaveModulo | null {

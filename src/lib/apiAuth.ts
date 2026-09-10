@@ -2,7 +2,11 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from './auth'
 import { supabaseAdmin } from './supabase'
 
-export interface Sessao { salaoId: string; role: string; permissoes: string[] | null; profissionalId?: string }
+// `usuarioId` e `nome` são ACRÉSCIMOS opcionais (set/2026), para o CRM poder
+// registrar quem respondeu cada conversa — sem isso não há como responder
+// "qual recepcionista converte mais". Nenhum código anterior lê esses campos,
+// então quem já usava Sessao continua funcionando igual.
+export interface Sessao { salaoId: string; role: string; permissoes: string[] | null; profissionalId?: string; usuarioId?: string; nome?: string }
 
 // Sessão atual com permissões AO VIVO (dono → permissoes null = pode tudo)
 export async function getSessao(): Promise<Sessao | null> {
@@ -11,15 +15,15 @@ export async function getSessao(): Promise<Sessao | null> {
   const p = await verifyJWT(token)
   if (!p || !p.salaoId) return null
   if (p.role === 'sub') {
-    const { data } = await supabaseAdmin.from('salao_usuarios').select('permissoes, ativo').eq('id', p.userId).maybeSingle()
+    const { data } = await supabaseAdmin.from('salao_usuarios').select('permissoes, ativo, nome').eq('id', p.userId).maybeSingle()
     if (!data || data.ativo === false) return null
-    return { salaoId: p.salaoId, role: 'sub', permissoes: Array.isArray(data.permissoes) ? data.permissoes : [] }
+    return { salaoId: p.salaoId, role: 'sub', permissoes: Array.isArray(data.permissoes) ? data.permissoes : [], usuarioId: String(p.userId || ''), nome: (data as any).nome || 'Recepcao' }
   }
   if (p.role === 'profissional') {
     // Profissional: somente leitura e escopo do próprio id
     return { salaoId: p.salaoId, role: 'profissional', permissoes: null, profissionalId: (p as any).profissionalId || p.userId }
   }
-  return { salaoId: p.salaoId, role: p.role, permissoes: null }
+  return { salaoId: p.salaoId, role: p.role, permissoes: null, usuarioId: String(p.userId || ''), nome: p.role === 'salon' ? 'Dono' : 'NODRI' }
 }
 
 // Regra de escrita (jul/2026 — mudou): "liberou = pode ver E salvar".

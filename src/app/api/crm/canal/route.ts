@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
+import { MODELOS_PADRAO, MOTIVOS_PERDA_PADRAO } from '@/lib/crm'
+
+export const dynamic = 'force-dynamic'
+
+// ── A conexão com o WhatsApp ────────────────────────────────────────────────
+//
+// Esta rota NÃO fala com o WhatsApp. Ela só lê e escreve o que a ponte grava:
+// a situação da conexão e o QR do momento. Pedir para conectar é deixar o
+// canal em `aguardando_qr` — a ponte vê, abre a sessão e devolve o código.
+//
+// A `sessao` (credenciais) nunca sai daqui para o navegador. É o único campo
+// da tabela que a tela não pode ver, e por um motivo simples: com ele nas mãos
+// alguém entraria no WhatsApp do salão.
+
+async function sessaoDoSalao() {
+  const sess = await getSessao()
+  if (!sess) return { erro: NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
+  if (sess.role === 'profissional') {
+    return { erro: NextResponse.json({ error: 'O CRM é do salão.' }, { status: 403 }) }
+  }
+  return { sess }
+}
+
+/** Semeia mensagens prontas e motivos de perda no primeiro uso do salão. */
+async function semearSeVazio(salaoId: string) {
+  const { count: temModelos } = await supabaseAdmin
+    .from('crm_modelos').select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
+  if (!temModelos) {
+    await supabaseAdmin.from('crm_modelos').insert(
+      MODELOS_PADRAO.map((m, i) => ({ salao_id: salaoId, ...m, ordem: i }))
+    )
+  }
+  const { count: temMotivos } = await supabaseAdmin
+    .from('crm_motivos_perda').select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
+  if (!temMotivos) {
+    await supabaseAdmin.from('crm_motivos_perda').insert(
+      MOTIVOS_PERDA_PADRAO.map((nome, i) => ({ salao_id: salaoId, nome, ordem: i }))
+    )
+  }
+}
+
+export async function GET() {
+  const { sess, erro } = await sessaoDoSalao()
+  if (erro) return erro
+
+  await semearSeVazio(sess!.salaoId)
+
+  const { data } = await supabaseAdmin
+    .from('crm_canais')
+    .select('situacao, qr, qr_expira_em, numero, nome_exibicao, visto_em, erro')
+    .eq('salao_id', sess!.salaoId).maybeSingle()
+
+  const [{ data: modelos }, { data: motivos }] = await Promise.all([
+    supabaseAdmin.from('crm_modelos').select('id, nome, texto, atalho')
+      .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
+    supabaseAdmin.from('crm_motivos_perda').select('id, nome')
+      .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
+  ])
+
+  // QR vencido não é mostrado: melhor pedir para gerar de novo do que exibir
+  // um código morto e a pessoa achar que o celular dela é que está errado.
+  const canal: any = data || { situacao: 'desconectado' }
+  if (canal.qr && canal.qr_expira_em && new Date(canal.qr_expira_em) < new Date()) canal.qr = null
+
+  // A ponte dá sinal de vida a cada poucos segundos. Sem sinal há mais de dois
+  // minutos, ela caiu — e a tela precisa dizer isso, não fingir que está tudo bem.
+  const desdeSinal = canal.visto_em ? (Date.now() - new Date(canal.visto_em).getTime()) / 1000 : null
+  canal.ponte_viva = desdeSinal !== null && desdeSinal < 120
+
+  return NextResponse.json({ canal, modelos: modelos || [], motivos: motivos || [] })
+}
+
+export async function POST(req: NextRequest) {
+  const { sess, erro } = await sessaoDoSalao()
+  if (erro) return erro
+  if (await escritaBloqueadaSub()) {
+    return NextResponse.json({ error: 'Este acesso é somente leitura.' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const acao = String(body?.acao || 'conectar')
+  const agora = new Date().toISOString()
+
+  const patch: any = { atualizado_em: agora, erro: null }
+  if (acao === 'conectar') {
+    patch.situacao = 'aguardando_qr'
+    patch.qr = null
+  } else if (acao === 'desconectar') {
+    patch.situacao = 'desconectado'
+    patch.qr = null
+    patch.sessao = null   // derruba a sessão: da próxima vez precisa escanear de novo
+    patch.numero = null
+  } else {
+    return NextResponse.json({ error: 'Ação desconhecida' }, { status: 400 })
+  }
+
+  const { data: existe } = await supabaseAdmin
+    .from('crm_canais').select('id').eq('salao_id', sess!.salaoId).maybeSingle()
+  if (existe) await supabaseAdmin.from('crm_canais').update(patch).eq('id', existe.id)
+  else await supabaseAdmin.from('crm_canais').insert({ salao_id: sess!.salaoId, ...patch })
+
+  return NextResponse.json({ ok: true })
+}
