@@ -15,6 +15,24 @@ const fmtR = (v: number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFraction
 const n = (s: string) => parseFloat((s||'0').replace(',','.')) || 0
 const pctStr = (v: number, t: number) => t > 0 ? `${((v/t)*100).toFixed(1)}%` : '—'
 
+// Cores dos cards de insumo dentro de um serviço, na aba Custo de Produto.
+//
+// Todos os cards eram do mesmo âmbar. Um serviço com cinco produtos parecia,
+// de relance, um bloco só — e é justamente aí que se erra a leitura do custo,
+// porque a pessoa acha que já viu tudo quando viu o primeiro.
+//
+// A primeira cor é EXATAMENTE o âmbar que já existia: quem tem um insumo só
+// não vê diferença nenhuma. A variação começa a partir do segundo card.
+// A lista dá a volta com o resto da divisão, então nunca falta cor.
+const CORES_INSUMO = [
+  { fundo: '#fffdf5', borda: '#f59e0b30', tinta: '#b45309' }, // âmbar (o original)
+  { fundo: '#f6fdf9', borda: '#10b98130', tinta: '#047857' }, // verde
+  { fundo: '#f5faff', borda: '#3b82f630', tinta: '#1d4ed8' }, // azul
+  { fundo: '#f9f7ff', borda: '#8b5cf630', tinta: '#6d28d9' }, // roxo
+  { fundo: '#fff7fa', borda: '#ec489930', tinta: '#be185d' }, // rosa
+  { fundo: '#f3fdfd', borda: '#06b6d430', tinta: '#0e7490' }, // turquesa
+]
+
 // ─── Dicionário de informações ───────────────────────────────────────────────
 const INFO: Record<string, {titulo: string, oque: string, como: string, exemplo: string, porque: string}> = {
   faturamento: {
@@ -3883,10 +3901,11 @@ Use números reais. Seja direto.`
                       </div>
                   {sp.ingredientes.map((ing,idx)=>{
                     const custo=custoIngred(ing)
+                    const cor=CORES_INSUMO[idx % CORES_INSUMO.length]
                     return(
-                      <div key={idx} className="rounded-xl border p-3" style={{background:'#fffdf5',borderColor:'#f59e0b30'}}>
+                      <div key={idx} className="rounded-xl border p-3" style={{background:cor.fundo,borderColor:cor.borda}}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-[11px] font-bold" style={{color:'#b45309'}}>Produto {idx+1}</p>
+                          <p className="text-[11px] font-bold" style={{color:cor.tinta}}>Produto {idx+1}</p>
                           <div className="flex items-center gap-2">
                             {custo>0&&<span className="text-xs font-bold" style={{color:'#f59e0b'}}>Custo/uso: {fmtR(custo)}</span>}
                             <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
