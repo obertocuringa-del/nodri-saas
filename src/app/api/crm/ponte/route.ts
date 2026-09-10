@@ -116,100 +116,169 @@ export async function POST(req: NextRequest) {
   //    contaria como oportunidade tudo que já estava no celular, e o número
   //    nasceria mentindo.
   if (acao === 'historico') {
-    const conversas = Array.isArray(body?.conversas) ? body.conversas : []
     const RECENTE_MS = 3 * 24 * 60 * 60 * 1000
-    let criadas = 0
-    let novasMensagens = 0
 
-    for (const c of conversas) {
-      const msgs = (Array.isArray(c?.mensagens) ? c.mensagens : [])
-        .filter((m: any) => m && (m.texto || '').trim())
-        .sort((a: any, b: any) => Number(a.em || 0) - Number(b.em || 0))
+    // Normaliza o lote antes de tocar no banco. Conversa sem telefone válido
+    // e mensagem vazia não chegam a virar linha.
+    const lote = (Array.isArray(body?.conversas) ? body.conversas : [])
+      .map((c: any) => ({
+        telefone: normalizarTelefone(String(c?.telefone || '')),
+        nome: c?.nome ? String(c.nome).slice(0, 120) : null,
+        mensagens: (Array.isArray(c?.mensagens) ? c.mensagens : [])
+          .filter((m: any) => m && String(m.texto || '').trim())
+          .sort((a: any, b: any) => Number(a.em || 0) - Number(b.em || 0)),
+      }))
+      .filter((c: any) => c.telefone)
+    if (!lote.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0 })
 
-      const contato = await acharOuCriarContato(salaoId, String(c?.telefone || ''), c?.nome)
-      if (!contato) continue
+    // ── Contatos ────────────────────────────────────────────────────────────
+    // Uma leitura só. A versão anterior relia a tabela inteira de contatos a
+    // cada conversa do lote — com o WhatsApp de um salão de verdade isso é
+    // centenas de idas ao banco numa requisição só, e a função morre no
+    // tempo limite antes de gravar qualquer coisa.
+    const { data: contatosExistentes } = await supabaseAdmin
+      .from('crm_contatos').select('id, telefone, nome').eq('salao_id', salaoId)
 
-      // Nome de agenda que chegou depois: preenche o que estava vazio, mas
-      // nunca sobrescreve o nome que alguém do salão digitou à mão.
-      if (c?.nome && !contato.nome) {
+    const porChave = new Map<string, any>()
+    for (const c of contatosExistentes || []) porChave.set(chaveTelefone(c.telefone), c)
+
+    const criarContatos = lote
+      .filter((c: any) => !porChave.has(chaveTelefone(c.telefone)))
+      // O mesmo número pode vir duas vezes no lote (grafia diferente); o
+      // índice único barraria o insert inteiro, então dedup antes.
+      .filter((c: any, i: number, arr: any[]) =>
+        arr.findIndex((o: any) => chaveTelefone(o.telefone) === chaveTelefone(c.telefone)) === i)
+      .map((c: any) => ({
+        salao_id: salaoId, telefone: c.telefone, telefone_bruto: c.telefone,
+        nome: c.nome, nome_agenda: c.nome,
+      }))
+
+    if (criarContatos.length) {
+      const { data: novos } = await supabaseAdmin
+        .from('crm_contatos').insert(criarContatos).select('id, telefone, nome')
+      for (const n of novos || []) porChave.set(chaveTelefone(n.telefone), n)
+    }
+
+    // Nome de agenda que chegou depois preenche o que estava vazio, mas nunca
+    // sobrescreve o nome que alguém do salão digitou à mão.
+    for (const c of lote) {
+      const ct = porChave.get(chaveTelefone(c.telefone))
+      if (ct && c.nome && !ct.nome) {
         await supabaseAdmin.from('crm_contatos')
-          .update({ nome: c.nome, nome_agenda: c.nome }).eq('id', contato.id)
+          .update({ nome: c.nome, nome_agenda: c.nome }).eq('id', ct.id)
+        ct.nome = c.nome
       }
+    }
 
-      const ultima = msgs[msgs.length - 1]
+    // ── Conversas ───────────────────────────────────────────────────────────
+    const idsContato = lote
+      .map((c: any) => porChave.get(chaveTelefone(c.telefone))?.id)
+      .filter(Boolean)
+    if (!idsContato.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0 })
+
+    const { data: abertasExistentes } = await supabaseAdmin
+      .from('crm_conversas').select('id, contato_id, estado, ultima_em')
+      .eq('salao_id', salaoId).in('contato_id', idsContato)
+      .not('estado', 'in', '("agendado","sem_conversao")')
+
+    const porContato = new Map<string, any>()
+    for (const cv of abertasExistentes || []) {
+      const anterior = porContato.get(cv.contato_id)
+      if (!anterior || (cv.ultima_em || '') > (anterior.ultima_em || '')) {
+        porContato.set(cv.contato_id, cv)
+      }
+    }
+
+    const resumo = lote.map((c: any) => {
+      const contato = porChave.get(chaveTelefone(c.telefone))
+      const ultima = c.mensagens[c.mensagens.length - 1]
       const quando = ultima?.em ? new Date(Number(ultima.em) * 1000).toISOString() : agora
       const daCliente = ultima?.direcao === 'entrada'
       const recente = ultima?.em ? (Date.now() - Number(ultima.em) * 1000) < RECENTE_MS : false
+      return { c, contato, ultima, quando, daCliente, recente }
+    }).filter((r: any) => r.contato)
 
-      const { data: jaAberta } = await supabaseAdmin
-        .from('crm_conversas').select('*')
-        .eq('salao_id', salaoId).eq('contato_id', contato.id)
-        .not('estado', 'in', '("agendado","sem_conversao")')
-        .order('ultima_em', { ascending: false }).limit(1)
-
-      let conversa = (jaAberta || [])[0]
-      if (!conversa) {
-        const estado = daCliente && recente ? 'acao_necessaria' : 'aguardando'
-        const { data: nova } = await supabaseAdmin.from('crm_conversas').insert({
+    const criarConversas = resumo
+      .filter((r: any) => !porContato.has(r.contato.id))
+      .map((r: any) => {
+        const estado = r.daCliente && r.recente ? 'acao_necessaria' : 'aguardando'
+        return {
           salao_id: salaoId,
-          contato_id: contato.id,
+          contato_id: r.contato.id,
           estado,
           importada: true,
           proxima_acao: proximaAcaoPadrao(estado as any),
-          aguardando_desde: estado === 'acao_necessaria' ? quando : null,
-          ultima_em: quando,
-          ultima_de: daCliente ? 'cliente' : 'salao',
-          ultima_previa: String(ultima?.texto || '').slice(0, 120),
+          aguardando_desde: estado === 'acao_necessaria' ? r.quando : null,
+          ultima_em: r.quando,
+          ultima_de: r.daCliente ? 'cliente' : 'salao',
+          ultima_previa: String(r.ultima?.texto || '').slice(0, 120),
           nao_lidas: 0,
-        }).select().maybeSingle()
-        conversa = nova
-        if (conversa) criadas++
-      }
+        }
+      })
+
+    let criadas = 0
+    if (criarConversas.length) {
+      const { data: novas } = await supabaseAdmin
+        .from('crm_conversas').insert(criarConversas).select('id, contato_id, ultima_em')
+      for (const n of novas || []) porContato.set(n.contato_id, n)
+      criadas = (novas || []).length
+    }
+
+    // ── Mensagens ───────────────────────────────────────────────────────────
+    // Reimportar não pode duplicar a conversa da cliente na tela: o que já
+    // está gravado é filtrado pelo id do WhatsApp antes de inserir.
+    const todosIds = lote.flatMap((c: any) => c.mensagens.map((m: any) => m.id_whatsapp)).filter(Boolean)
+    const conhecidos = new Set<string>()
+    for (let i = 0; i < todosIds.length; i += 200) {
+      const { data: velhas } = await supabaseAdmin
+        .from('crm_mensagens').select('id_whatsapp')
+        .eq('salao_id', salaoId).in('id_whatsapp', todosIds.slice(i, i + 200))
+      for (const v of velhas || []) if (v.id_whatsapp) conhecidos.add(v.id_whatsapp)
+    }
+
+    const inserir: any[] = []
+    for (const r of resumo) {
+      const conversa = porContato.get(r.contato.id)
       if (!conversa) continue
-
-      if (!msgs.length) continue
-
-      // Só grava o que ainda não está lá. Reimportar (nova leitura de QR,
-      // ponte reiniciada) não pode duplicar a conversa da cliente na tela.
-      const ids = msgs.map((m: any) => m.id_whatsapp).filter(Boolean)
-      const conhecidos = new Set<string>()
-      if (ids.length) {
-        const { data: velhas } = await supabaseAdmin
-          .from('crm_mensagens').select('id_whatsapp')
-          .eq('salao_id', salaoId).in('id_whatsapp', ids)
-        for (const v of velhas || []) if (v.id_whatsapp) conhecidos.add(v.id_whatsapp)
-      }
-
-      const inserir = msgs
-        .filter((m: any) => !m.id_whatsapp || !conhecidos.has(m.id_whatsapp))
-        .map((m: any) => ({
+      for (const m of r.c.mensagens) {
+        if (m.id_whatsapp && conhecidos.has(m.id_whatsapp)) continue
+        if (m.id_whatsapp) conhecidos.add(m.id_whatsapp)   // repetida dentro do próprio lote
+        const em = m.em ? new Date(Number(m.em) * 1000).toISOString() : agora
+        const saida = m.direcao === 'saida'
+        inserir.push({
           salao_id: salaoId,
           conversa_id: conversa.id,
-          direcao: m.direcao === 'saida' ? 'saida' : 'entrada',
+          direcao: saida ? 'saida' : 'entrada',
           texto: String(m.texto || ''),
           tipo: m.tipo || 'texto',
-          situacao: m.direcao === 'saida' ? 'enviada' : 'entregue',
+          situacao: saida ? 'enviada' : 'entregue',
           id_whatsapp: m.id_whatsapp || null,
-          criado_em: m.em ? new Date(Number(m.em) * 1000).toISOString() : agora,
-          enviado_em: m.direcao === 'saida' && m.em
-            ? new Date(Number(m.em) * 1000).toISOString() : null,
-        }))
-
-      if (inserir.length) {
-        const { error } = await supabaseAdmin.from('crm_mensagens').insert(inserir)
-        if (!error) novasMensagens += inserir.length
+          criado_em: em,
+          enviado_em: saida ? em : null,
+        })
       }
+    }
 
-      // A conversa que já existia continua com o estado que o salão deu; só a
-      // prévia acompanha, para a lista não mostrar uma frase velha.
-      if (jaAberta?.length && quando > (conversa.ultima_em || '')) {
-        await supabaseAdmin.from('crm_conversas').update({
-          ultima_em: quando,
-          ultima_de: daCliente ? 'cliente' : 'salao',
-          ultima_previa: String(ultima?.texto || '').slice(0, 120),
-          atualizado_em: agora,
-        }).eq('id', conversa.id)
-      }
+    let novasMensagens = 0
+    for (let i = 0; i < inserir.length; i += 200) {
+      const fatia = inserir.slice(i, i + 200)
+      const { error } = await supabaseAdmin.from('crm_mensagens').insert(fatia)
+      if (!error) novasMensagens += fatia.length
+    }
+
+    // A conversa que já existia continua com o estado que o salão deu; só a
+    // prévia acompanha, para a lista não mostrar uma frase velha.
+    for (const r of resumo) {
+      const conversa = porContato.get(r.contato.id)
+      if (!conversa || !r.ultima) continue
+      if (r.quando <= (conversa.ultima_em || '')) continue
+      await supabaseAdmin.from('crm_conversas').update({
+        ultima_em: r.quando,
+        ultima_de: r.daCliente ? 'cliente' : 'salao',
+        ultima_previa: String(r.ultima.texto || '').slice(0, 120),
+        atualizado_em: agora,
+      }).eq('id', conversa.id)
+      conversa.ultima_em = r.quando
     }
 
     return NextResponse.json({ ok: true, criadas, mensagens: novasMensagens })
