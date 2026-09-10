@@ -648,7 +648,11 @@ function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) =
     </div>
   )
 }
-interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string }
+// refCatalogoId liga este insumo a um produto do Catálogo. Com o vínculo,
+// nome, unidade, tamanho e preço da embalagem acompanham o catálogo sozinhos.
+// qtdUsa NUNCA é sincronizada: quanto se usa por atendimento é decisão da
+// receita, não do catálogo.
+interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string; refCatalogoId?: string }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 // produtoRefId liga este serviço a uma receita da aba "Custo de Produto".
 // Existindo o vínculo, o campo Produto (R$) acompanha sozinho o custo de lá.
@@ -1778,6 +1782,45 @@ Antes de lançar de novo, confira em FINANCEIRO > Contas a Pagar se a conta já 
     const emb = n(i.qtdEmb), usa = n(i.qtdUsa), prec = n(i.preco)
     return emb > 0 ? (prec / emb) * usa : 0
   }
+
+  // ── O insumo segue o Catálogo, em vez de copiá-lo uma vez ─────────────────
+  //
+  // Escolher no catálogo copiava nome, unidade, tamanho e preço da embalagem
+  // para dentro da receita. Comprou o shampoo mais caro no mês seguinte,
+  // atualizou o catálogo — e todas as receitas continuavam com o preço antigo,
+  // cada uma pedindo correção à mão.
+  //
+  // Com o vínculo, a corrente fecha: Catálogo → Custo de Produto → Calcular
+  // Serviços. Corrige o preço num lugar só e o custo de cada serviço se ajusta
+  // até o lucro na tela.
+  //
+  // qtdUsa fica de fora de propósito: quanto se usa por atendimento é da
+  // receita. Só o que descreve a EMBALAGEM vem do catálogo.
+  useEffect(() => {
+    if (!produtosCatalogo.length) return
+    setServicoProd(prev => {
+      let mudou = false
+      const novo = prev.map(sp => {
+        let mudouAqui = false
+        const ingredientes = sp.ingredientes.map(ing => {
+          if (!ing.refCatalogoId) return ing
+          const p = produtosCatalogo.find(x => x.id === ing.refCatalogoId)
+          if (!p) return ing   // produto saiu do catálogo: congela o que está ali
+          const qtdEmb = String(p.qtd_embalagem)
+          const preco  = String(p.preco)
+          if (ing.nome === p.nome && ing.unidade === p.unidade
+              && ing.qtdEmb === qtdEmb && ing.preco === preco) return ing
+          mudouAqui = true
+          return { ...ing, nome: p.nome, unidade: p.unidade, qtdEmb, preco }
+        })
+        if (!mudouAqui) return sp
+        mudou = true
+        return { ...sp, ingredientes }
+      })
+      return mudou ? novo : prev
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [produtosCatalogo])
 
   // ── O campo Produto (R$) segue a receita, em vez de copiá-la uma vez ───────
   //
@@ -3954,7 +3997,16 @@ Use números reais. Seja direto.`
                     return(
                       <div key={idx} className="rounded-xl border p-3" style={{background:cor.fundo,borderColor:cor.borda}}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-[11px] font-bold" style={{color:cor.tinta}}>Produto {idx+1}</p>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="text-[11px] font-bold" style={{color:cor.tinta}}>Produto {idx+1}</p>
+                            {/* Avisa que este insumo acompanha o Catálogo sozinho. */}
+                            {ing.refCatalogoId && produtosCatalogo.some(x=>x.id===ing.refCatalogoId) && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                style={{background:'#10b98115',color:'#047857',border:'1px solid #10b98130'}}>
+                                segue o catálogo
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2">
                             {custo>0&&<span className="text-xs font-bold" style={{color:'#f59e0b'}}>Custo/uso: {fmtR(custo)}</span>}
                             <button onClick={()=>removerIngrediente(sp.id,idx)} style={{color:'#ef4444'}}><Trash2 size={12}/></button>
@@ -3990,7 +4042,7 @@ Use números reais. Seja direto.`
                                   onMouseDown={()=>{
                                     // Ao selecionar, preenche todos os campos automaticamente
                                     setServicoProd(prev=>prev.map(s=>s.id===sp.id?{...s,ingredientes:s.ingredientes.map((i,iIdx)=>
-                                      iIdx===idx?{...i,nome:p.nome,unidade:p.unidade,qtdEmb:String(p.qtd_embalagem),preco:String(p.preco)}:i
+                                      iIdx===idx?{...i,nome:p.nome,unidade:p.unidade,qtdEmb:String(p.qtd_embalagem),preco:String(p.preco),refCatalogoId:p.id}:i
                                     )}:s))
                                     setAutocompleteKey(null)
                                   }}
@@ -4858,8 +4910,19 @@ Use números reais. Seja direto.`
   function adicionarIngrediente(sId: number) {
     setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:[...s.ingredientes,{id:s.ingredientes.length+1,nome:'',qtdEmb:'',qtdUsa:'',preco:'',unidade:'ml'}]}:s))
   }
+  // Campos que descrevem a EMBALAGEM e portanto pertencem ao Catálogo.
+  // Editar um deles à mão significa "aqui eu quero outro valor", então o
+  // vínculo cai e o catálogo para de sobrescrever. qtdUsa fica de fora: ela é
+  // da receita e pode ser ajustada sem desligar a sincronia.
+  const CAMPOS_DO_CATALOGO = new Set<keyof Ingrediente>(['nome', 'unidade', 'qtdEmb', 'preco'])
+
   function atualizarIngrediente(sId: number, iIdx: number, campo: keyof Ingrediente, val: string) {
-    setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.map((ing,idx)=>idx===iIdx?{...ing,[campo]:val}:ing)}:s))
+    setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.map((ing,idx)=>{
+      if (idx!==iIdx) return ing
+      const atualizado: Ingrediente = {...ing, [campo]: val}
+      if (CAMPOS_DO_CATALOGO.has(campo)) atualizado.refCatalogoId = undefined
+      return atualizado
+    })}:s))
   }
   function removerIngrediente(sId: number, iIdx: number) {
     setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.filter((_,idx)=>idx!==iIdx)}:s))
