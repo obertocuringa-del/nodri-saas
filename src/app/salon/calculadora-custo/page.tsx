@@ -14,6 +14,10 @@ const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','J
 const fmtR = (v: number) => `R$ ${(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const n = (s: string) => parseFloat((s||'0').replace(',','.')) || 0
 const pctStr = (v: number, t: number) => t > 0 ? `${((v/t)*100).toFixed(1)}%` : '—'
+// Compara nome de produto ignorando acento, caixa e espaço sobrando:
+// "SHAMPOO  THOW" e "Shampoo Thow" são o mesmo item do catálogo.
+const normalizarTexto = (s: string | null | undefined) =>
+  String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim()
 
 // Cores dos cards de insumo dentro de um serviço, na aba Custo de Produto.
 //
@@ -652,7 +656,15 @@ function CampoVenc({ valor, onChange }: { valor: string; onChange: (v: string) =
 // nome, unidade, tamanho e preço da embalagem acompanham o catálogo sozinhos.
 // qtdUsa NUNCA é sincronizada: quanto se usa por atendimento é decisão da
 // receita, não do catálogo.
-interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string; refCatalogoId?: string }
+//
+// Os três estados importam, e a diferença entre eles não é detalhe:
+//   undefined → nunca teve vínculo. Pode ser adotado pelo nome (é o caso de
+//               toda receita montada antes desta mudança).
+//   string    → vinculado, acompanha o catálogo.
+//   null      → o usuário editou à mão de propósito. NUNCA readotar, senão o
+//               catálogo voltaria a sobrescrever o número dele na próxima
+//               alteração — e ele nem saberia.
+interface Ingrediente  { id: number; nome: string; qtdEmb: string; qtdUsa: string; preco: string; unidade: string; refCatalogoId?: string | null }
 interface ServicoProd  { id: number; nomeServico: string; ingredientes: Ingrediente[] }
 // produtoRefId liga este serviço a uma receita da aba "Custo de Produto".
 // Existindo o vínculo, o campo Produto (R$) acompanha sozinho o custo de lá.
@@ -1796,6 +1808,25 @@ Antes de lançar de novo, confira em FINANCEIRO > Contas a Pagar se a conta já 
   //
   // qtdUsa fica de fora de propósito: quanto se usa por atendimento é da
   // receita. Só o que descreve a EMBALAGEM vem do catálogo.
+  // ADOÇÃO PELO NOME. Sem isto, a sincronia só valeria para insumo escolhido
+  // depois desta mudança — e toda receita já montada continuaria com o preço
+  // velho, exigindo re-selecionar item por item. Um insumo que nunca teve
+  // vínculo e cujo nome bate com um único produto do catálogo é, na prática,
+  // aquele produto: foi dali que ele veio.
+  //
+  // Só adota quando o nome casa com EXATAMENTE UM produto. Dois com o mesmo
+  // nome viram ambiguidade, e adivinhar qual seria pior que não fazer nada.
+  function acharNoCatalogo(ing: Ingrediente) {
+    if (ing.refCatalogoId === null) return null            // desligado de propósito
+    if (typeof ing.refCatalogoId === 'string') {
+      return produtosCatalogo.find(x => x.id === ing.refCatalogoId) || null
+    }
+    const alvo = normalizarTexto(ing.nome)
+    if (!alvo) return null
+    const iguais = produtosCatalogo.filter(x => normalizarTexto(x.nome) === alvo)
+    return iguais.length === 1 ? iguais[0] : null
+  }
+
   useEffect(() => {
     if (!produtosCatalogo.length) return
     setServicoProd(prev => {
@@ -1803,15 +1834,14 @@ Antes de lançar de novo, confira em FINANCEIRO > Contas a Pagar se a conta já 
       const novo = prev.map(sp => {
         let mudouAqui = false
         const ingredientes = sp.ingredientes.map(ing => {
-          if (!ing.refCatalogoId) return ing
-          const p = produtosCatalogo.find(x => x.id === ing.refCatalogoId)
-          if (!p) return ing   // produto saiu do catálogo: congela o que está ali
+          const p = acharNoCatalogo(ing)
+          if (!p) return ing   // sem vínculo possível, ou produto fora do catálogo: congela
           const qtdEmb = String(p.qtd_embalagem)
           const preco  = String(p.preco)
-          if (ing.nome === p.nome && ing.unidade === p.unidade
+          if (ing.refCatalogoId === p.id && ing.nome === p.nome && ing.unidade === p.unidade
               && ing.qtdEmb === qtdEmb && ing.preco === preco) return ing
           mudouAqui = true
-          return { ...ing, nome: p.nome, unidade: p.unidade, qtdEmb, preco }
+          return { ...ing, nome: p.nome, unidade: p.unidade, qtdEmb, preco, refCatalogoId: p.id }
         })
         if (!mudouAqui) return sp
         mudou = true
@@ -4920,7 +4950,7 @@ Use números reais. Seja direto.`
     setServicoProd(p=>p.map(s=>s.id===sId?{...s,ingredientes:s.ingredientes.map((ing,idx)=>{
       if (idx!==iIdx) return ing
       const atualizado: Ingrediente = {...ing, [campo]: val}
-      if (CAMPOS_DO_CATALOGO.has(campo)) atualizado.refCatalogoId = undefined
+      if (CAMPOS_DO_CATALOGO.has(campo)) atualizado.refCatalogoId = null
       return atualizado
     })}:s))
   }
