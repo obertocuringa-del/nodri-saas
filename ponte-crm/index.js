@@ -289,53 +289,6 @@ async function guardarMidia(salaoId, m, tipo) {
   }
 }
 
-// ── Perguntar o telefone ao WhatsApp ────────────────────────────────────────
-//
-// Conta nova endereça a conversa por um id anônimo e NÃO manda o telefone no
-// histórico. Mas dá para perguntar: o WhatsApp responde consultas sobre um
-// contato, e a resposta traz o endereço canônico dele.
-//
-// Pode não vir -- é o WhatsApp quem decide o que responde, e privacidade é
-// exatamente o motivo do id anônimo existir. Quando não vier, nada se perde:
-// a conversa continua funcionando pelo id, como já funciona hoje.
-//
-// `jaPerguntei` evita repetir a pergunta para o mesmo contato a cada volta:
-// consulta repetida em massa é o tipo de comportamento que o WhatsApp lê como
-// robô, e o risco aqui é a conta do salão.
-const jaPerguntei = new Set()
-
-async function descobrirTelefones(sock, salaoId, lids) {
-  const novos = lids.filter(l => l && !jaPerguntei.has(l)).slice(0, 20)
-  if (!novos.length) return []
-  for (const l of novos) jaPerguntei.add(l)
-
-  try {
-    const q = new USyncQuery().withContactProtocol().withLIDProtocol()
-    for (const l of novos) q.withUser(new USyncUser().withId(l))
-    const r = await sock.executeUSyncQuery(q)
-
-    const achados = []
-    for (const item of r?.list || []) {
-      // `id` e o endereco que o WhatsApp considera canonico. Quando ele vem
-      // como telefone, e o numero que procuravamos; quando vem como lid, o
-      // WhatsApp decidiu nao entregar e nao ha o que fazer.
-      const id = String(item?.id || '')
-      const lid = String(item?.lid || '')
-      if (!ehTelefone(id)) continue
-      achados.push({ telefone: soNumero(id), lid: ehLid(lid) ? lid : null })
-    }
-    if (achados.length) {
-      registro(salaoId, `${achados.length} de ${novos.length} telefone(s) descobertos pelo WhatsApp`)
-    } else {
-      registro(salaoId, `WhatsApp não devolveu telefone para ${novos.length} contato(s) — seguem pelo id`)
-    }
-    return achados
-  } catch (e) {
-    registro(salaoId, 'falha ao perguntar telefone:', e.message)
-    return []
-  }
-}
-
 // ── Uma sessão ──────────────────────────────────────────────────────────────
 
 async function abrirSessao(salaoId) {
@@ -704,27 +657,18 @@ async function volta() {
     if (!querem.has(salaoId)) await fecharSessao(salaoId)
   }
 
-  // Vai atrás do telefone de quem só tem o id anônimo. Uma leva por volta, e
-  // cada contato é perguntado uma vez só na vida do processo.
-  for (const [salaoId, s] of sessoes) {
-    if (!s.conectado || !s.sock) continue
-    try {
-      const { lids } = await nodri(`?acao=sem-telefone`, {
-        method: 'POST', body: JSON.stringify({ salao_id: salaoId }),
-      })
-      const pendentes = (lids || []).filter(l => !jaPerguntei.has(l))
-      if (!pendentes.length) continue
-      const achados = await descobrirTelefones(s.sock, salaoId, pendentes)
-      if (achados.length) {
-        await nodri('?acao=nomes', {
-          method: 'POST',
-          body: JSON.stringify({ salao_id: salaoId, contatos: achados }),
-        })
-      }
-    } catch (e) {
-      registro(salaoId, 'falha ao buscar telefones:', e.message)
-    }
-  }
+  // ── Cruzar por telefone, no sentido que o WhatsApp aceita ─────────────────
+  //
+  // Perguntar "qual o telefone deste id anônimo" o WhatsApp recusa -- medido:
+  // 60 perguntas, 60 recusas. Mas ele responde o contrário. Então a ponte vai
+  // pelo outro lado: pega os telefones que o salão já tem no histórico de
+  // atendimento, pergunta o id de cada um, e quem bater com um contato sem
+  // número ganha o número.
+  //
+  // Devagar de propósito: uma leva de 20 por minuto. Consulta em massa é
+  // exatamente o comportamento que faz o WhatsApp bloquear -- e o que está em
+  // jogo é o número do salão, não um detalhe de produto.
+  await resolverPorTelefone()
 
   // Sinal de vida + fila de saída. O sinal é o que permite a tela dizer
   // "conexão caiu" em vez de fingir que está tudo bem quando a ponte morreu.
@@ -763,6 +707,41 @@ async function baterRelogio() {
     }
   } catch (e) {
     registro('relógio fora de alcance:', e.message)
+  }
+}
+
+// ── Descobrir quem e quem, pelo telefone ────────────────────────────────────
+let resolvendoEm = 0
+async function resolverPorTelefone() {
+  if (Date.now() - resolvendoEm < 60000) return
+  resolvendoEm = Date.now()
+
+  for (const [salaoId, s] of sessoes) {
+    if (!s.conectado || !s.sock) continue
+    try {
+      const { telefones, faltam } = await nodri('?acao=resolver-lids', {
+        method: 'POST', body: JSON.stringify({ salao_id: salaoId }),
+      })
+      if (!telefones?.length) continue
+
+      // onWhatsApp e o sentido que o WhatsApp aceita: telefone -> id.
+      const jids = telefones.map(t => `${t}@s.whatsapp.net`)
+      const res = await s.sock.onWhatsApp(...jids)
+
+      const pares = telefones.map(t => {
+        const achado = (res || []).find(r => soNumero(r?.jid) === soNumero(t))
+        return { telefone: t, lid: achado?.lid || null }
+      })
+
+      const r = await nodri('?acao=guardar-lids', {
+        method: 'POST', body: JSON.stringify({ salao_id: salaoId, pares }),
+      })
+      const comId = pares.filter(p => p.lid).length
+      registro(salaoId, `telefones conferidos: ${telefones.length} (faltam ~${faltam}), ` +
+        `${comId} com id, ${r?.ligados || 0} contato(s) ganharam o número`)
+    } catch (e) {
+      registro(salaoId, 'falha ao cruzar telefones:', e.message)
+    }
   }
 }
 

@@ -110,6 +110,12 @@ const COMANDOS: string[] = [
     ordem int DEFAULT 0, ativo boolean DEFAULT true,
     criado_em timestamptz DEFAULT now())`,
   `CREATE INDEX IF NOT EXISTS idx_crm_origens_salao ON crm_origens(salao_id, ordem)`,
+  `CREATE TABLE IF NOT EXISTS crm_lid_cache (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    salao_id uuid NOT NULL, telefone text NOT NULL, lid text,
+    criado_em timestamptz DEFAULT now())`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_lid_cache_tel ON crm_lid_cache(salao_id, telefone)`,
+  `CREATE INDEX IF NOT EXISTS idx_crm_lid_cache_lid ON crm_lid_cache(salao_id, lid)`,
 ]
 
 export async function POST() {

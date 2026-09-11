@@ -245,13 +245,17 @@ export default function CrmPage() {
     // Passou de tres dias sem resposta, deixou de ser a fila de hoje: vai
     // para "Sem resposta". Continua sendo trabalho, mas nao pode enterrar
     // quem escreveu agora de manha.
-    const antiga = estadoPor(c.estado).naFila && min > 3 * 24 * 60
+    const antiga = c.estado === 'acao_necessaria' && min > 3 * 24 * 60
     return { ...c, _min: min, _urg: urgenciaPorMinutos(min), _antiga: antiga }
   }), [conversas, agora])
 
   const visiveis = useMemo(() => {
     let lista = comTempo
-    if (filtro === 'fila') lista = lista.filter(c => estadoPor(c.estado).naFila && !c._antiga)
+    // "Preciso agir" e SO quem esta esperando resposta. Follow-up tem aba
+    // propria: sao trabalhos diferentes -- um e responder quem falou agora, o
+    // outro e correr atras de quem sumiu -- e misturar os dois faz a fila do
+    // dia parecer maior do que e, ate a pessoa desistir de olhar.
+    if (filtro === 'fila') lista = lista.filter(c => c.estado === 'acao_necessaria' && !c._antiga)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro === 'novas') lista = lista.filter(ehNova)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
@@ -282,7 +286,7 @@ export default function CrmPage() {
   }, [comTempo, filtro, busca, motivoFiltro])
 
   const contagem = useMemo(() => {
-    const naFila = comTempo.filter(c => estadoPor(c.estado).naFila && !c._antiga)
+    const naFila = comTempo.filter(c => c.estado === 'acao_necessaria' && !c._antiga)
     return {
       fila: naFila.length,
       antigas: comTempo.filter(c => c._antiga).length,

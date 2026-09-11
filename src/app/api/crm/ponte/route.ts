@@ -174,6 +174,82 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── Cruzar por TELEFONE, que é único ──────────────────────────────────────
+  //
+  // O WhatsApp não diz o telefone por trás de um id anônimo -- perguntei e ele
+  // recusou 60 vezes seguidas. Mas ele responde o CONTRÁRIO: dado um telefone,
+  // devolve o id. Então o caminho é ir pelo outro lado -- perguntar pelos
+  // números que o salão já tem no histórico de atendimento e guardar o par.
+  //
+  // Cruzar por nome seria mais fácil e é pior: "Marcos Damião | Personal
+  // Trainer" não é "MARCOS DAMIAO", e nome erra de um jeito silencioso --
+  // junta duas clientes diferentes e ninguém percebe. Telefone é único.
+  if (acao === 'resolver-lids') {
+    // Quem já perguntamos alguma vez não volta para a fila, nem quando a
+    // resposta foi "não tem WhatsApp": perguntar de novo em massa é o
+    // comportamento que faz o WhatsApp bloquear o número do salão.
+    const { data: jaVistos } = await supabaseAdmin
+      .from('crm_lid_cache').select('telefone').eq('salao_id', salaoId).limit(20000)
+    const vistos = new Set((jaVistos || []).map((x: any) => x.telefone))
+
+    const { data: atends } = await supabaseAdmin
+      .from('atendimentos_raw').select('celular')
+      .eq('salao_id', salaoId).not('celular', 'is', null).limit(20000)
+
+    const pendentes: string[] = []
+    const dedup = new Set<string>()
+    for (const a of atends || []) {
+      const tel = normalizarTelefone(String(a.celular || ''))
+      if (!tel || tel.length < 12) continue
+      if (vistos.has(tel) || dedup.has(tel)) continue
+      dedup.add(tel)
+      pendentes.push(tel)
+      if (pendentes.length >= 20) break
+    }
+    return NextResponse.json({ telefones: pendentes, faltam: dedup.size })
+  }
+
+  // ── O que o WhatsApp respondeu sobre esses telefones ──────────────────────
+  if (acao === 'guardar-lids') {
+    const pares = Array.isArray(body?.pares) ? body.pares : []
+    if (!pares.length) return NextResponse.json({ ok: true, ligados: 0 })
+
+    const linhas = pares
+      .map((p: any) => ({
+        salao_id: salaoId,
+        telefone: normalizarTelefone(String(p?.telefone || '')),
+        lid: String(p?.lid || '').trim() || null,
+      }))
+      .filter((p: any) => p.telefone)
+    if (linhas.length) {
+      await supabaseAdmin.from('crm_lid_cache')
+        .upsert(linhas, { onConflict: 'salao_id,telefone' })
+    }
+
+    // Agora o pulo do gato: o contato que só tinha id anônimo ganha o número.
+    const comLid = linhas.filter((p: any) => p.lid)
+    let ligados = 0
+    if (comLid.length) {
+      const { data: contatos } = await supabaseAdmin
+        .from('crm_contatos').select('id, lid, telefone')
+        .eq('salao_id', salaoId)
+        .in('lid', comLid.map((p: any) => p.lid))
+      for (const ct of contatos || []) {
+        if (ct.telefone) continue
+        const par = comLid.find((p: any) => p.lid === ct.lid)
+        if (!par) continue
+        await supabaseAdmin.from('crm_contatos').update({
+          telefone: par.telefone,
+          telefone_bruto: par.telefone,
+          // Número novo pede reavaliação do relógio.
+          conferido_em: null,
+        }).eq('id', ct.id)
+        ligados++
+      }
+    }
+    return NextResponse.json({ ok: true, ligados })
+  }
+
   // ── Quais contatos ainda estão sem telefone ───────────────────────────────
   // A ponte pergunta, para ir atrás do número no WhatsApp. Devolve só os ids,
   // nada de conversa nem mensagem.

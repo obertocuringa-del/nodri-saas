@@ -217,3 +217,19 @@ ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_visto_em timestamptz;
 ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS lid text;
 ALTER TABLE crm_contatos ALTER COLUMN telefone DROP NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_lid ON crm_contatos(salao_id, lid) WHERE lid IS NOT NULL;
+
+-- ── De que telefone e cada id anonimo ───────────────────────────────────────
+-- O WhatsApp nao diz o telefone por tras de um id anonimo, mas diz o
+-- CONTRARIO: dado um telefone, ele devolve o id. Entao o caminho e perguntar
+-- pelos telefones que o salao ja tem no historico e guardar o par.
+--
+-- Serve de cache: pergunta-se uma vez por numero, nunca de novo.
+CREATE TABLE IF NOT EXISTS crm_lid_cache (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  salao_id   uuid NOT NULL,
+  telefone   text NOT NULL,
+  lid        text,
+  criado_em  timestamptz DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_lid_cache_tel ON crm_lid_cache(salao_id, telefone);
+CREATE INDEX IF NOT EXISTS idx_crm_lid_cache_lid ON crm_lid_cache(salao_id, lid);
