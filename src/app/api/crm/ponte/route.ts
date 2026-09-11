@@ -163,6 +163,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── Quais contatos ainda estão sem telefone ───────────────────────────────
+  // A ponte pergunta, para ir atrás do número no WhatsApp. Devolve só os ids,
+  // nada de conversa nem mensagem.
+  if (acao === 'sem-telefone') {
+    const { data } = await supabaseAdmin
+      .from('crm_contatos').select('lid')
+      .eq('salao_id', salaoId).is('telefone', null).not('lid', 'is', null)
+      .limit(60)
+    return NextResponse.json({ lids: (data || []).map((c: any) => c.lid) })
+  }
+
   // ── Nomes que o WhatsApp manda por fora das mensagens ─────────────────────
   //
   // Em conversa endereçada por LID a mensagem que o salão envia não carrega
@@ -184,18 +195,25 @@ export async function POST(req: NextRequest) {
       const tel = normalizarTelefone(String(c?.telefone || ''))
       const lid = String(c?.lid || '').trim() || null
       const nome = String(c?.nome || '').trim()
-      if (!nome || (!tel && !lid)) continue
+      // Item só com telefone e lid também vale: é como a ponte devolve o
+      // número que descobriu perguntando ao WhatsApp.
+      if (!tel && !lid) continue
+      if (!nome && !tel) continue
 
       const alvoChave = tel ? chaveTelefone(tel) : ''
       const achado = (todos || []).find((x: any) =>
         (lid && x.lid === lid) || (alvoChave && x.telefone && chaveTelefone(x.telefone) === alvoChave))
       if (!achado) continue
 
-      const patch: any = { nome_agenda: nome }
-      if (!achado.nome) patch.nome = nome
+      const patch: any = {}
+      if (nome) {
+        patch.nome_agenda = nome
+        if (!achado.nome) patch.nome = nome
+      }
       if (tel && !achado.telefone) { patch.telefone = tel; patch.telefone_bruto = tel }
+      if (!Object.keys(patch).length) continue
       await supabaseAdmin.from('crm_contatos').update(patch).eq('id', achado.id)
-      if (!achado.nome) atualizados++
+      atualizados++
     }
     return NextResponse.json({ ok: true, atualizados })
   }

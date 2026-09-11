@@ -26,6 +26,8 @@ import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
   downloadMediaMessage,
+  USyncQuery,
+  USyncUser,
 } from '@whiskeysockets/baileys'
 import QRCode from 'qrcode'
 import pino from 'pino'
@@ -284,6 +286,53 @@ async function guardarMidia(salaoId, m, tipo) {
   } catch (e) {
     registro(salaoId, 'falha ao baixar mídia:', e.message)
     return null
+  }
+}
+
+// ── Perguntar o telefone ao WhatsApp ────────────────────────────────────────
+//
+// Conta nova endereça a conversa por um id anônimo e NÃO manda o telefone no
+// histórico. Mas dá para perguntar: o WhatsApp responde consultas sobre um
+// contato, e a resposta traz o endereço canônico dele.
+//
+// Pode não vir -- é o WhatsApp quem decide o que responde, e privacidade é
+// exatamente o motivo do id anônimo existir. Quando não vier, nada se perde:
+// a conversa continua funcionando pelo id, como já funciona hoje.
+//
+// `jaPerguntei` evita repetir a pergunta para o mesmo contato a cada volta:
+// consulta repetida em massa é o tipo de comportamento que o WhatsApp lê como
+// robô, e o risco aqui é a conta do salão.
+const jaPerguntei = new Set()
+
+async function descobrirTelefones(sock, salaoId, lids) {
+  const novos = lids.filter(l => l && !jaPerguntei.has(l)).slice(0, 20)
+  if (!novos.length) return []
+  for (const l of novos) jaPerguntei.add(l)
+
+  try {
+    const q = new USyncQuery().withContactProtocol().withLIDProtocol()
+    for (const l of novos) q.withUser(new USyncUser().withId(l))
+    const r = await sock.executeUSyncQuery(q)
+
+    const achados = []
+    for (const item of r?.list || []) {
+      // `id` e o endereco que o WhatsApp considera canonico. Quando ele vem
+      // como telefone, e o numero que procuravamos; quando vem como lid, o
+      // WhatsApp decidiu nao entregar e nao ha o que fazer.
+      const id = String(item?.id || '')
+      const lid = String(item?.lid || '')
+      if (!ehTelefone(id)) continue
+      achados.push({ telefone: soNumero(id), lid: ehLid(lid) ? lid : null })
+    }
+    if (achados.length) {
+      registro(salaoId, `${achados.length} de ${novos.length} telefone(s) descobertos pelo WhatsApp`)
+    } else {
+      registro(salaoId, `WhatsApp não devolveu telefone para ${novos.length} contato(s) — seguem pelo id`)
+    }
+    return achados
+  } catch (e) {
+    registro(salaoId, 'falha ao perguntar telefone:', e.message)
+    return []
   }
 }
 
@@ -653,6 +702,28 @@ async function volta() {
   // Fecha o que o salão desligou pelo NODRI
   for (const salaoId of [...sessoes.keys()]) {
     if (!querem.has(salaoId)) await fecharSessao(salaoId)
+  }
+
+  // Vai atrás do telefone de quem só tem o id anônimo. Uma leva por volta, e
+  // cada contato é perguntado uma vez só na vida do processo.
+  for (const [salaoId, s] of sessoes) {
+    if (!s.conectado || !s.sock) continue
+    try {
+      const { lids } = await nodri(`?acao=sem-telefone`, {
+        method: 'POST', body: JSON.stringify({ salao_id: salaoId }),
+      })
+      const pendentes = (lids || []).filter(l => !jaPerguntei.has(l))
+      if (!pendentes.length) continue
+      const achados = await descobrirTelefones(s.sock, salaoId, pendentes)
+      if (achados.length) {
+        await nodri('?acao=nomes', {
+          method: 'POST',
+          body: JSON.stringify({ salao_id: salaoId, contatos: achados }),
+        })
+      }
+    } catch (e) {
+      registro(salaoId, 'falha ao buscar telefones:', e.message)
+    }
   }
 
   // Sinal de vida + fila de saída. O sinal é o que permite a tela dizer
