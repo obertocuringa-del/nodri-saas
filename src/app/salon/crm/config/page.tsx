@@ -59,7 +59,7 @@ export default function ConfigCrmPage() {
   return (
     <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
       <div className="sticky top-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
-        <div className="px-4 py-2.5 flex items-center gap-3">
+        <div className="px-4 py-2.5 flex items-center gap-3" style={{ paddingRight: 340 }}>
           <a href="/salon/crm" className="p-1.5 rounded-lg" style={{ color: '#575d68' }} title="Voltar ao CRM">
             <ArrowLeft size={17} />
           </a>

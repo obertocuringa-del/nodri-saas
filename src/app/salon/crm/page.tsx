@@ -256,7 +256,11 @@ export default function CrmPage() {
     <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
       {/* ── Barra ── */}
       <div className="sticky top-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
-        <div className="px-4 py-2.5 flex items-center gap-3">
+        {/* A barra global de busca flutua no canto direito, por cima de tudo
+            (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
+            atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
+            consegue clicar. */}
+        <div className="px-4 py-2.5 flex items-center gap-3" style={{ paddingRight: 340 }}>
           <a href="/salon" className="p-1.5 rounded-lg" style={{ color: '#575d68' }} title="Voltar"><ArrowLeft size={17} /></a>
           <div className="min-w-0">
             <h1 className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>CRM · WhatsApp</h1>
