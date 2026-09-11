@@ -124,15 +124,39 @@ export default function CrmPage() {
   // castigar o banco: a lista da fila e pequena e tem indice.
   useEffect(() => {
     const esperandoQr = canal.situacao === 'aguardando_qr' || canal.situacao === 'conectando'
-    const t = setInterval(() => {
-      // Aba escondida nao precisa de nada: economiza banco e bateria do
-      // computador que ficou aberto num canto o dia inteiro.
-      if (document.hidden) return
-      if (esperandoQr) { puxarCanal(); return }
-      puxarConversas()
-      puxarCanal()
-    }, esperandoQr ? 3000 : 5000)
-    return () => clearInterval(t)
+    let parado = false
+    async function bater() {
+      if (parado) return
+      // Aba escondida continua buscando, so mais devagar.
+      //
+      // Antes ela nao buscava NADA quando escondida, para poupar banco. O
+      // efeito real: o CRM aberto no segundo monitor da recepcao ficava
+      // congelado e, quando alguem olhava, sete ou oito mensagens apareciam
+      // de uma vez. Um CRM serve exatamente para avisar quando ninguem esta
+      // olhando -- e o contador no titulo e o toque dependem dessa busca.
+      if (esperandoQr) { await puxarCanal() }
+      else { await Promise.all([puxarConversas(), puxarCanal()]) }
+    }
+    // Encadeado, nao setInterval: a volta seguinte so comeca quando a anterior
+    // termina. Com internet ruim, o setInterval empilhava pedidos e a tela
+    // chegava a piscar dados fora de ordem.
+    let timer: any
+    async function laco() {
+      await bater()
+      if (parado) return
+      const escondida = typeof document !== 'undefined' && document.hidden
+      const espera = esperandoQr ? 2500 : escondida ? 10000 : 2500
+      timer = setTimeout(laco, espera)
+    }
+    laco()
+    // Voltar para a aba busca na hora, sem esperar o proximo ciclo.
+    const aoVoltar = () => { if (!document.hidden) bater() }
+    document.addEventListener('visibilitychange', aoVoltar)
+    return () => {
+      parado = true
+      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', aoVoltar)
+    }
   }, [canal.situacao])
 
   // A conversa ABERTA tambem se atualiza sozinha. Sem isto, a mensagem que a
@@ -142,7 +166,8 @@ export default function CrmPage() {
   useEffect(() => {
     if (!aberta?.id) return
     const t = setInterval(async () => {
-      if (document.hidden) return
+      // A conversa aberta acompanha mesmo com a aba no fundo: e comum deixar
+      // a conversa aberta num monitor e trabalhar no outro.
       try {
         const r = await fetch(`/api/crm/mensagens?conversa=${aberta.id}&ler=0`)
         if (!r.ok) return
@@ -158,7 +183,7 @@ export default function CrmPage() {
           return chegaram
         })
       } catch {}
-    }, 5000)
+    }, 2500)
     return () => clearInterval(t)
   }, [aberta?.id])
 
