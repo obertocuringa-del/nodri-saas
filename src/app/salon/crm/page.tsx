@@ -600,7 +600,32 @@ export default function CrmPage() {
 
             <div className="flex-1 overflow-y-auto">
               {carregando && <p className="p-4 text-[12.5px]" style={{ color: '#8f877f' }}>Carregando...</p>}
-              {!carregando && visiveis.length === 0 && (
+              {/* "Fila limpa" com a fila vazia PORQUE o historico nunca chegou e
+                  uma mentira tranquilizadora -- foi o que ele viu depois de
+                  parear o telefone do salao e achar que estava tudo certo.
+                  Enquanto o canal nao carimbar de qual numero vieram os dados,
+                  a tela diz que ainda esta esperando, e diz o que fazer. */}
+              {!carregando && conversas.length === 0 && conectado && !canal.numero_dados ? (
+                <div className="p-4">
+                  <p className="text-[13px] font-bold mb-1.5" style={{ color: '#9a6b12' }}>
+                    Esperando o WhatsApp mandar as conversas
+                  </p>
+                  <p className="text-[12px] mb-2" style={{ color: '#6b6860' }}>
+                    O aparelho foi conectado, mas o histórico ainda não chegou. O WhatsApp
+                    só envia as conversas <strong>logo depois da leitura do QR</strong>, e leva
+                    de alguns segundos a alguns minutos.
+                  </p>
+                  <p className="text-[12px] mb-2" style={{ color: '#6b6860' }}>
+                    Se não chegar: deixe o <strong>celular destravado, com o WhatsApp aberto
+                    e no Wi-Fi</strong>, e leia o QR de novo em Configurar. É com o telefone
+                    acordado que ele manda.
+                  </p>
+                  <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
+                    Mensagem nova que a cliente mandar a partir de agora aparece aqui do mesmo
+                    jeito, mesmo que o histórico antigo não venha.
+                  </p>
+                </div>
+              ) : !carregando && visiveis.length === 0 && (
                 <p className="p-4 text-[12.5px]" style={{ color: '#8f877f' }}>
                   {filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.'
                     : filtro === 'antigas' ? 'Nenhuma conversa parada para tras.'
