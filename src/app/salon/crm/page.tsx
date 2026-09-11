@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag } from 'lucide-react'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, type EstadoConversa,
@@ -229,6 +229,13 @@ export default function CrmPage() {
     } catch { alert('Não consegui enviar.') } finally { setEnviando(false) }
   }
 
+  // Acrescenta uma linha ao que ja esta escrito, em vez de substituir: a
+  // recepcao monta "corte 80, escova 60" clicando, que e como ela responde
+  // de verdade.
+  function inserirNoTexto(linha: string) {
+    setTexto(t => (t.trim() ? t.replace(/\s+$/, '') + '\n' + linha : linha))
+  }
+
   async function mudarEstado(estado: EstadoConversa, extra: any = {}) {
     if (!aberta) return
     const r = await fetch('/api/crm/conversas', {
@@ -260,22 +267,66 @@ export default function CrmPage() {
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
             consegue clicar. */}
-        <div className="px-4 py-2.5 flex items-center gap-3" style={{ paddingRight: 340 }}>
-          <a href="/salon" className="p-1.5 rounded-lg" style={{ color: '#575d68' }} title="Voltar"><ArrowLeft size={17} /></a>
-          <div className="min-w-0">
-            <h1 className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>CRM · WhatsApp</h1>
-            <p className="text-[11px]" style={{ color: '#868c97' }}>
+        <div className="px-4 py-2 flex items-center gap-3" style={{ paddingRight: 340 }}>
+          <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#575d68' }} title="Voltar"><ArrowLeft size={17} /></a>
+          <div className="min-w-0 flex-shrink-0">
+            <h1 className="font-bold text-[13.5px] leading-tight" style={{ color: '#14161b' }}>CRM · WhatsApp</h1>
+            <p className="text-[10.5px]" style={{ color: '#868c97' }}>
               {conectado
                 ? <>Conectado{canal.numero ? ` · ${telefoneBonito(canal.numero)}` : ''}</>
                 : 'WhatsApp não conectado'}
             </p>
           </div>
-          <div className="flex-1" />
-          <SeloConexao canal={canal} />
-          <a href="/salon/crm/config" title="Configurar mensagens prontas e motivos"
-            className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><Settings size={15} /></a>
-          <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
-            className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><RefreshCw size={15} /></button>
+
+          {/* As abas moram aqui em cima, no meio, e nao embaixo da busca: a
+              pergunta "o que eu faco agora?" vem antes de "quem eu procuro".
+              Sao a primeira coisa da tela e ficam no mesmo lugar o tempo todo. */}
+          {conectado && (
+            <div className="flex-1 min-w-0 flex gap-1 flex-wrap justify-center">
+              <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
+                texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
+              {contagem.novas > 0 && (
+                <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
+                  texto={`Clientes novas (${contagem.novas})`} />
+              )}
+              {contagem.antigas > 0 && (
+                <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
+                  texto={`Sem resposta (${contagem.antigas})`} />
+              )}
+              <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
+                texto={`Aguardando (${contagem.aguardando})`} />
+              {contagem.followUp > 0 && (
+                <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
+                  texto={`Follow-up (${contagem.followUp})`} />
+              )}
+              {contagem.pausadas > 0 && (
+                <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
+                  texto={`Pausadas (${contagem.pausadas})`} />
+              )}
+              {contagem.agendadas > 0 && (
+                <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
+                  texto={`Agendadas (${contagem.agendadas})`} />
+              )}
+              {contagem.perdidas > 0 && (
+                <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
+                  texto={`Não fechou (${contagem.perdidas})`} />
+              )}
+              <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <SeloConexao canal={canal} />
+            {/* Com nome, nao so um icone: a engrenagem sozinha ninguem acha --
+                e nao achou mesmo. */}
+            <a href="/salon/crm/config" title="Configurar mensagens prontas, precos e motivos"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
+              style={{ background: '#efedfb', color: '#5b4fcf' }}>
+              <Settings size={13} /> Configurar
+            </a>
+            <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
+              className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><RefreshCw size={15} /></button>
+          </div>
         </div>
       </div>
 
@@ -295,36 +346,6 @@ export default function CrmPage() {
                 <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente..."
                   className="w-full pl-8 pr-3 py-2 rounded-lg text-[12.5px] focus:outline-none"
                   style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
-              </div>
-              <div className="flex gap-1 flex-wrap">
-                <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
-                  texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
-                {contagem.novas > 0 && (
-                  <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
-                    texto={`Clientes novas (${contagem.novas})`} />
-                )}
-                {contagem.antigas > 0 && (
-                  <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
-                    texto={`Sem resposta (${contagem.antigas})`} />
-                )}
-                <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')} texto={`Aguardando (${contagem.aguardando})`} />
-                {contagem.followUp > 0 && (
-                  <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
-                    texto={`Follow-up (${contagem.followUp})`} />
-                )}
-                {contagem.pausadas > 0 && (
-                  <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
-                    texto={`Pausadas (${contagem.pausadas})`} />
-                )}
-                {contagem.agendadas > 0 && (
-                  <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
-                    texto={`Agendadas (${contagem.agendadas})`} />
-                )}
-                {contagem.perdidas > 0 && (
-                  <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
-                    texto={`Não fechou (${contagem.perdidas})`} />
-                )}
-                <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
               </div>
               {/* Perdemos 40 nao e informacao. Perdemos 22 por preco e 11 por
                   falta de horario no sabado sao duas acoes diferentes. */}
@@ -377,6 +398,7 @@ export default function CrmPage() {
                 </div>
 
                 <div className="border-t p-3" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+                  <PainelPrecos onInserir={inserirNoTexto} />
                   {modelos.length > 0 && (
                     <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
                       {modelos.map(m => (
@@ -732,5 +754,144 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: any }) {
       <span className="text-[11.5px]" style={{ color: '#868c97' }}>{rotulo}</span>
       <span className="text-[12px] font-bold text-right" style={{ color: '#14161b' }}>{valor}</span>
     </div>
+  )
+}
+
+// ── Preço na mão, sem decorar e sem sair da tela ────────────────────────────
+//
+// "Quanto custa?" é a pergunta mais feita e a mais cara de responder errado.
+// Quem decora erra, quem vai procurar demora, e preço errado dito por escrito
+// no WhatsApp vira discussão no caixa.
+//
+// Três toques: Serviço ou Produto → a categoria (ou a marca) → o item. Cada
+// item clicado acrescenta uma linha ao que já está escrito, porque a recepção
+// responde "corte 80, escova 60" e não uma coisa de cada vez.
+//
+// Os valores vêm do catálogo do próprio NODRI. Mexeu lá, mudou aqui no mesmo
+// instante — não existe segunda lista para alguém esquecer de atualizar.
+function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
+  const [aberto, setAberto] = useState(false)
+  const [dados, setDados] = useState<any>(null)
+  const [lado, setLado] = useState<'servicos' | 'produtos'>('servicos')
+  const [grupo, setGrupo] = useState<string>('')
+  const [busca, setBusca] = useState('')
+
+  useEffect(() => {
+    if (!aberto || dados) return
+    fetch('/api/crm/precos').then(r => r.ok ? r.json() : null)
+      .then(d => setDados(d || { servicos: [], produtos: [] })).catch(() => {})
+  }, [aberto, dados])
+
+  const grupos: any[] = (dados?.[lado] || [])
+  const atual = grupos.find(g => g.grupo === grupo) || null
+
+  const achados = useMemo(() => {
+    const q = busca.trim().toLowerCase()
+    if (!q) return null
+    const fora: any[] = []
+    for (const g of grupos) {
+      for (const it of g.itens) {
+        if (String(it.nome || '').toLowerCase().includes(q)) fora.push({ ...it, grupo: g.grupo })
+      }
+    }
+    return fora.slice(0, 40)
+  }, [busca, grupos])
+
+  const linha = (it: any) =>
+    `${it.nome} — ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+
+  if (!aberto) {
+    return (
+      <button onClick={() => setAberto(true)}
+        className="mb-2 px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1"
+        style={{ background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
+        <Tag size={12} /> Preços
+      </button>
+    )
+  }
+
+  return (
+    <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fbfbfd', borderColor: '#e5e5ea' }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <button onClick={() => { setLado('servicos'); setGrupo('') }}
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+          style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#575d68', border: '1px solid #e5e5ea' }}>
+          Serviço
+        </button>
+        <button onClick={() => { setLado('produtos'); setGrupo('') }}
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+          style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#575d68', border: '1px solid #e5e5ea' }}>
+          Produto
+        </button>
+        <input value={busca} onChange={e => setBusca(e.target.value)}
+          placeholder={lado === 'servicos' ? 'Buscar serviço...' : 'Buscar produto...'}
+          className="flex-1 min-w-0 px-2.5 py-1 rounded-lg text-[11.5px] focus:outline-none"
+          style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }} />
+        <button onClick={() => { setAberto(false); setBusca(''); setGrupo('') }} title="Fechar"
+          className="p-1 rounded-lg" style={{ color: '#868c97' }}><X size={13} /></button>
+      </div>
+
+      {!dados && <p className="text-[11.5px]" style={{ color: '#868c97' }}>Carregando o catálogo...</p>}
+
+      {dados && grupos.length === 0 && (
+        <p className="text-[11.5px]" style={{ color: '#868c97' }}>
+          {lado === 'servicos'
+            ? 'Nenhum serviço com preço no catálogo. Cadastre em Serviços.'
+            : 'Nenhum produto com preço no catálogo. Cadastre em Produtos.'}
+        </p>
+      )}
+
+      {/* Buscar corta a árvore: quem já sabe o nome não deve navegar. */}
+      {achados && (
+        <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+          {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#868c97' }}>Nada com esse nome.</p>}
+          {achados.map((it, i) => (
+            <BotaoPreco key={i} texto={`${it.nome} · R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`}
+              onClick={() => onInserir(linha(it))} />
+          ))}
+        </div>
+      )}
+
+      {!achados && dados && !atual && grupos.length > 0 && (
+        <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+          {grupos.map(g => (
+            <button key={g.grupo} onClick={() => setGrupo(g.grupo)}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+              style={{ background: '#fff', color: '#14161b', border: '1px solid #e5e5ea' }}>
+              {g.grupo} <span style={{ color: '#868c97' }}>({g.itens.length})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!achados && atual && (
+        <>
+          <button onClick={() => setGrupo('')}
+            className="text-[11px] font-bold mb-1.5" style={{ color: '#5b4fcf' }}>
+            ← {atual.grupo}
+          </button>
+          <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+            {atual.itens.map((it: any, i: number) => (
+              <BotaoPreco key={i} texto={`${it.nome} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`}
+                onClick={() => onInserir(linha(it))} />
+            ))}
+          </div>
+        </>
+      )}
+
+      <p className="text-[10px] mt-2" style={{ color: '#868c97' }}>
+        Clicar acrescenta uma linha na resposta. Nada sai daqui sem você clicar em Enviar.
+      </p>
+    </div>
+  )
+}
+
+function BotaoPreco({ texto, onClick }: { texto: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="px-2.5 py-1 rounded-lg text-[11px] text-left"
+      style={{ background: '#fff', color: '#14161b', border: '1px solid #e5e5ea' }}>
+      {texto}
+    </button>
   )
 }
