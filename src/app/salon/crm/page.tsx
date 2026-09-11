@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
+import { useIsMobile } from '@/lib/useIsMobile'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, type EstadoConversa,
@@ -56,6 +57,11 @@ export default function CrmPage() {
   const [fecharAberto, setFecharAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
   const fimDaConversa = useRef<HTMLDivElement>(null)
+  // No celular nao cabem tres colunas. Vira uma de cada vez: a fila, e quando
+  // a pessoa abre uma conversa, a conversa -- com um botao para voltar. A
+  // ficha da cliente vira um painel que se abre por cima.
+  const noCelular = useIsMobile(860)
+  const [fichaAberta, setFichaAberta] = useState(false)
 
   // ── Carregamento ──────────────────────────────────────────────────────────
   async function puxarCanal() {
@@ -425,7 +431,8 @@ export default function CrmPage() {
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
             consegue clicar. */}
-        <div className="px-4 py-2 flex items-center gap-3" style={{ paddingRight: 340 }}>
+        <div className="px-4 py-2 flex items-center gap-3"
+          style={{ paddingRight: noCelular ? 16 : 340 }}>
           <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#6b6860' }} title="Voltar"><ArrowLeft size={17} /></a>
           <div className="min-w-0 flex-shrink-0">
             <h1 className="font-bold text-[15px] leading-tight" style={{ color: '#1a1a1a' }}>CRM · WhatsApp</h1>
@@ -507,7 +514,8 @@ export default function CrmPage() {
       ) : (
         <div className="flex-1 min-h-0 flex">
           {/* ── Fila ── */}
-          <aside className="w-[344px] flex-shrink-0 border-r flex flex-col" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+          <aside className={`${noCelular ? (aberta ? 'hidden' : 'w-full') : 'w-[344px]'} flex-shrink-0 border-r flex flex-col`}
+            style={{ background: '#fff', borderColor: '#e8e6e0' }}>
             <div className="p-3 border-b" style={{ borderColor: '#e8e6e0' }}>
               <div className="relative mb-2">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#8f877f' }} />
@@ -554,7 +562,7 @@ export default function CrmPage() {
           </aside>
 
           {/* ── Conversa ── */}
-          <main className="flex-1 flex flex-col min-w-0" style={{ background: '#f2efec' }}>
+          <main className={`${noCelular && !aberta ? 'hidden' : 'flex-1'} flex flex-col min-w-0`} style={{ background: '#f2efec' }}>
             {!aberta ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-2">
                 <div className="rounded-full flex items-center justify-center"
@@ -568,6 +576,9 @@ export default function CrmPage() {
               <>
                 <CabecalhoConversa c={aberta} onEstado={mudarEstado} onOrigem={mudarOrigem}
                   onNaoLida={marcarNaoLida}
+                  noCelular={noCelular}
+                  onVoltar={() => setAberta(null)}
+                  onFicha={() => setFichaAberta(true)}
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   motivos={motivos} origens={origens} />
 
@@ -657,7 +668,16 @@ export default function CrmPage() {
           </main>
 
           {/* ── O que o NODRI já sabe ── */}
-          {aberta && <PainelCliente c={aberta} />}
+          {aberta && !noCelular && <PainelCliente c={aberta} />}
+          {aberta && noCelular && fichaAberta && (
+            <div className="fixed inset-0 z-30 flex" onClick={() => setFichaAberta(false)}>
+              <div className="flex-1" style={{ background: 'rgba(26,22,20,.35)' }} />
+              <div onClick={e => e.stopPropagation()} className="h-full overflow-y-auto"
+                style={{ width: 300, maxWidth: '86vw', background: '#fff', boxShadow: '-6px 0 24px rgba(0,0,0,.14)' }}>
+                <PainelCliente c={aberta} />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -865,13 +885,19 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, setFecharAberto, motivos, origens }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, motivos, origens }: any) {
   const ct = c.contato || {}
   const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
   const est = estadoPor(c.estado)
   return (
     <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-3 flex-wrap">
+        {noCelular && (
+          <button onClick={onVoltar} title="Voltar para a fila"
+            className="p-1.5 rounded-lg -ml-1" style={{ color: '#6b6860' }}>
+            <ArrowLeft size={18} />
+          </button>
+        )}
         <Avatar nome={nome} nova={ehNova(c)} tamanho={38} />
         <div className="min-w-0">
           <p className="font-bold text-[15.5px] leading-tight" style={{ color: '#1a1a1a' }}>{nome}</p>
@@ -884,6 +910,13 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, set
           {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
         </span>
         {ehNova(c) && <SeloNova />}
+        {noCelular && (
+          <button onClick={onFicha} title="A cliente"
+            className="ml-auto px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1"
+            style={{ background: '#f1eefc', color: '#5b4fcf' }}>
+            <User size={12} /> Ficha
+          </button>
+        )}
         <div className="flex-1" />
         <div className="flex gap-1.5 flex-wrap">
           <BotaoAcao onClick={() => onEstado('agendado')} cor="#2f6b4f" fundo="#e6f1eb" icone={<Check size={12} />} texto="Agendou" />
