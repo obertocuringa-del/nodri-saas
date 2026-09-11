@@ -284,13 +284,59 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, criadas, mensagens: novasMensagens })
   }
 
-  // ── Mensagem que chegou da cliente ────────────────────────────────────────
+  // ── Mensagem que passou pelo WhatsApp ─────────────────────────────────────
+  //
+  // Pode ser da cliente (`entrada`) ou do próprio salão respondendo pelo
+  // celular (`saida`). As duas entram: mostrar só metade da conversa faz quem
+  // abre a tela não saber se alguém já falou com aquela pessoa.
   const telefone = String(body?.telefone || '')
   const texto = String(body?.texto || '')
+  const daCliente = body?.direcao !== 'saida'
   if (!telefone) return NextResponse.json({ error: 'telefone é obrigatório' }, { status: 400 })
 
   const contato = await acharOuCriarContato(salaoId, telefone, body?.nome)
   if (!contato) return NextResponse.json({ error: 'telefone inválido' }, { status: 400 })
+
+  const idWpp = body?.id_whatsapp || null
+
+  // Mensagem repetida não vira linha nova. Duas fontes de repetição: a ponte
+  // reenviando o mesmo evento, e o eco do que o próprio CRM acabou de mandar
+  // (sai pela ponte, volta como mensagem do salão segundos depois).
+  if (idWpp) {
+    const { data: jaTem } = await supabaseAdmin
+      .from('crm_mensagens').select('id')
+      .eq('salao_id', salaoId).eq('id_whatsapp', idWpp).limit(1)
+    if (jaTem?.length) return NextResponse.json({ ok: true, repetida: true })
+  }
+
+  // ── Disparo em massa ──────────────────────────────────────────────────────
+  //
+  // O caso que fazia o salão perder cliente: a pessoa pergunta um preço, e
+  // pouco depois sai um disparo de lista para todo mundo. A mensagem do
+  // disparo é do salão, então pela regra normal a conversa sairia de "Preciso
+  // agir" — e a pergunta dela ficaria enterrada embaixo de um texto que não
+  // era para ela.
+  //
+  // Um disparo é reconhecido de dois jeitos: pela marca de lista de
+  // transmissão que o WhatsApp manda, e pelo texto idêntico saindo para mais
+  // de uma pessoa em poucos minutos (que é como o salão de fato dispara,
+  // copiando e colando). Quando é disparo, a mensagem é gravada e mostrada,
+  // mas NÃO mexe no estado da conversa: quem estava esperando continua
+  // esperando.
+  const JANELA_DISPARO_MIN = 15
+  let emMassa = !!body?.em_massa
+  let irmas: any[] = []
+
+  if (!daCliente && !emMassa && texto.trim().length > 0) {
+    const desde = new Date(Date.now() - JANELA_DISPARO_MIN * 60000).toISOString()
+    const { data: iguais } = await supabaseAdmin
+      .from('crm_mensagens').select('id, conversa_id, em_massa')
+      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('texto', texto)
+      .gte('criado_em', desde).limit(20)
+    irmas = (iguais || []).filter((m: any) => m.conversa_id)
+    // A partir da segunda pessoa recebendo o mesmo texto, é disparo.
+    if (irmas.length >= 1) emMassa = true
+  }
 
   // Uma conversa ABERTA por contato. Conversa fechada (agendada ou perdida)
   // não é reaberta: a cliente que volta depois inicia uma oportunidade nova,
@@ -302,20 +348,25 @@ export async function POST(req: NextRequest) {
     .order('ultima_em', { ascending: false }).limit(1)
 
   let conversa = (abertas || [])[0]
+
   if (!conversa) {
+    // Disparo para quem nunca falou com o salão não abre oportunidade: seria
+    // inventar uma conversa que ninguém teve.
+    const estado = daCliente ? 'acao_necessaria' : 'aguardando'
     const { data: nova } = await supabaseAdmin.from('crm_conversas').insert({
       salao_id: salaoId,
       contato_id: contato.id,
-      estado: 'acao_necessaria',
-      proxima_acao: proximaAcaoPadrao('acao_necessaria'),
-      aguardando_desde: agora,
+      estado,
+      importada: emMassa,
+      proxima_acao: proximaAcaoPadrao(estado as any),
+      aguardando_desde: daCliente ? agora : null,
       ultima_em: agora,
-      ultima_de: 'cliente',
+      ultima_de: daCliente ? 'cliente' : 'salao',
       ultima_previa: texto.slice(0, 120),
-      nao_lidas: 1,
+      nao_lidas: daCliente ? 1 : 0,
     }).select().maybeSingle()
     conversa = nova
-  } else {
+  } else if (daCliente) {
     // A cliente respondeu: volta para a fila e o relógio recomeça. Só marca o
     // início da espera se ela ainda não estava esperando, senão um cliente que
     // manda cinco mensagens seguidas zeraria o próprio atraso a cada uma.
@@ -329,32 +380,85 @@ export async function POST(req: NextRequest) {
       nao_lidas: (conversa.nao_lidas || 0) + 1,
       atualizado_em: agora,
     }).eq('id', conversa.id)
+  } else if (!emMassa) {
+    // Resposta de verdade, digitada no celular: vale como resposta e a bola
+    // passa para a cliente, exatamente como se tivesse sido escrita aqui.
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'aguardando',
+      proxima_acao: proximaAcaoPadrao('aguardando'),
+      aguardando_desde: null,
+      ultima_em: agora,
+      ultima_de: 'salao',
+      ultima_previa: texto.slice(0, 120),
+      nao_lidas: 0,
+      atualizado_em: agora,
+    }).eq('id', conversa.id)
   }
+  // emMassa em conversa que já existia: nada muda. É o ponto inteiro disto.
 
   if (!conversa) return NextResponse.json({ error: 'falha ao abrir a conversa' }, { status: 500 })
 
-  // A mesma mensagem pode chegar duas vezes se a ponte reenviar. O índice
-  // único em id_whatsapp barra a repetida sem derrubar o resto.
   const { error: erroMsg } = await supabaseAdmin.from('crm_mensagens').insert({
     salao_id: salaoId,
     conversa_id: conversa.id,
-    direcao: 'entrada',
+    direcao: daCliente ? 'entrada' : 'saida',
     texto,
     tipo: body?.tipo || 'texto',
     midia_url: body?.midia_url || null,
-    situacao: 'entregue',
-    id_whatsapp: body?.id_whatsapp || null,
+    situacao: daCliente ? 'entregue' : 'enviada',
+    em_massa: emMassa,
+    autor_nome: daCliente ? null : 'Celular do salão',
+    id_whatsapp: idWpp,
+    enviado_em: daCliente ? null : agora,
   })
   if (erroMsg && !String(erroMsg.message).includes('duplicate')) {
     return NextResponse.json({ error: erroMsg.message }, { status: 500 })
   }
 
-  await supabaseAdmin.from('crm_eventos').insert({
-    salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
-    para_estado: 'acao_necessaria', autor_nome: contato.nome || 'Cliente',
-  })
+  // Descoberto tarde: a primeira pessoa do disparo já tinha sido tratada como
+  // resposta normal. Desfaz — marca a mensagem dela como disparo e devolve a
+  // conversa para a fila, com o relógio contando da última fala da cliente.
+  if (emMassa && irmas.length) {
+    const aCorrigir = irmas.filter((m: any) => !m.em_massa)
+    if (aCorrigir.length) {
+      await supabaseAdmin.from('crm_mensagens')
+        .update({ em_massa: true }).in('id', aCorrigir.map((m: any) => m.id))
 
-  return NextResponse.json({ ok: true, conversa_id: conversa.id })
+      for (const m of aCorrigir) {
+        const { data: ultimaDela } = await supabaseAdmin
+          .from('crm_mensagens').select('criado_em, texto')
+          .eq('conversa_id', m.conversa_id).eq('direcao', 'entrada')
+          .order('criado_em', { ascending: false }).limit(1)
+        const dela = (ultimaDela || [])[0]
+        if (!dela) continue
+
+        const { data: cv } = await supabaseAdmin
+          .from('crm_conversas').select('estado').eq('id', m.conversa_id).maybeSingle()
+        // Só desfaz o que o disparo fez. Se alguém do salão já respondeu de
+        // verdade ou fechou a conversa depois, a decisão da pessoa vale.
+        if (!cv || cv.estado !== 'aguardando') continue
+
+        await supabaseAdmin.from('crm_conversas').update({
+          estado: 'acao_necessaria',
+          proxima_acao: proximaAcaoPadrao('acao_necessaria'),
+          aguardando_desde: dela.criado_em,
+          ultima_em: dela.criado_em,
+          ultima_de: 'cliente',
+          ultima_previa: String(dela.texto || '').slice(0, 120),
+          atualizado_em: agora,
+        }).eq('id', m.conversa_id)
+      }
+    }
+  }
+
+  if (daCliente) {
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
+      para_estado: 'acao_necessaria', autor_nome: contato.nome || 'Cliente',
+    })
+  }
+
+  return NextResponse.json({ ok: true, conversa_id: conversa.id, em_massa: emMassa })
 }
 
 // ── A ponte pergunta o que fazer, e busca o que precisa sair ────────────────

@@ -114,6 +114,10 @@ CREATE TABLE IF NOT EXISTS crm_mensagens (
   criado_em     timestamptz DEFAULT now(),
   enviado_em    timestamptz
 );
+-- Disparo de lista. Mensagem do salao que NAO e resposta para aquela
+-- pessoa: gravada e mostrada, mas nao tira ninguem da fila.
+ALTER TABLE crm_mensagens ADD COLUMN IF NOT EXISTS em_massa boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_crm_msg_disparo ON crm_mensagens(salao_id, direcao, criado_em);
 CREATE INDEX IF NOT EXISTS idx_crm_msg_conversa ON crm_mensagens(conversa_id, criado_em);
 CREATE INDEX IF NOT EXISTS idx_crm_msg_fila     ON crm_mensagens(salao_id, situacao) WHERE situacao = 'na_fila';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_msg_wpp ON crm_mensagens(salao_id, id_whatsapp) WHERE id_whatsapp IS NOT NULL;

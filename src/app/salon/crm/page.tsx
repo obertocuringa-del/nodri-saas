@@ -449,7 +449,9 @@ function ItemFila({ c, ativo, onClick }: any) {
           </span>
         )}
         {!est.naFila && (
-          <span className="text-[10px]" style={{ color: est.cor }}>{est.rotulo}</span>
+          <span className="text-[10px]" style={{ color: est.cor }}>
+            {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
+          </span>
         )}
       </div>
     </button>
@@ -467,11 +469,16 @@ function CabecalhoConversa({ c, onEstado, fecharAberto, setFecharAberto, motivos
           <p className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>{nome}</p>
           <p className="text-[11.5px]" style={{ color: '#868c97' }}>{telefoneBonito(ct.telefone)}</p>
         </div>
+        {/* O motivo faz parte do estado: "Sem conversão" sozinho não diz nada,
+            e era justamente o motivo que a pessoa acabou de escolher. */}
         <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold"
-          style={{ background: est.fundo, color: est.cor }}>{est.rotulo}</span>
+          style={{ background: est.fundo, color: est.cor }}>
+          {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
+        </span>
         <div className="flex-1" />
         <div className="flex gap-1.5 flex-wrap">
           <BotaoAcao onClick={() => onEstado('agendado')} cor="#2f6b4f" fundo="#e6f1eb" icone={<Check size={12} />} texto="Agendou" />
+          <BotaoAcao onClick={() => onEstado('aguardando')} cor="#9a6b12" fundo="#fbf1df" texto="Aguardando cliente" />
           <BotaoAcao onClick={() => onEstado('follow_up', { prazo: new Date(Date.now() + 864e5).toISOString() })}
             cor="#c2603a" fundo="#fbeee8" texto="Follow-up amanhã" />
           <BotaoAcao onClick={() => onEstado('pausada', { prazo: new Date(Date.now() + 7 * 864e5).toISOString() })}
@@ -524,8 +531,15 @@ function Balao({ m }: { m: Mensagem }) {
   return (
     <div className={`flex mb-2 ${meu ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[68%] px-3 py-2 rounded-2xl"
-        style={{ background: meu ? '#5b4fcf' : '#fff', color: meu ? '#fff' : '#14161b',
-                 border: meu ? 'none' : '1px solid #e5e5ea' }}>
+        style={m.em_massa
+          // Disparo de lista não é resposta para aquela pessoa. Fica com a
+          // cara de recado colado, para ninguém ler como se fosse atendimento.
+          ? { background: '#faf7ef', color: '#575d68', border: '1px dashed #d8c9a6' }
+          : { background: meu ? '#5b4fcf' : '#fff', color: meu ? '#fff' : '#14161b',
+              border: meu ? 'none' : '1px solid #e5e5ea' }}>
+        {m.em_massa && (
+          <p className="text-[9.5px] font-bold mb-1" style={{ color: '#9a6b12' }}>ENVIO EM MASSA</p>
+        )}
         <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}

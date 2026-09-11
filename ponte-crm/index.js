@@ -266,7 +266,10 @@ async function abrirSessao(salaoId) {
     for (const m of messages) {
       try {
         const jid = m.key?.remoteJid || ''
-        if (m.key?.fromMe) continue                    // o que o próprio salão mandou
+        // O que o salão mandou pelo celular TAMBÉM entra. Sem isso a conversa
+        // no CRM fica pela metade: aparece a pergunta da cliente e não a
+        // resposta, e quem abre a tela não sabe se alguém já falou com ela.
+        const deMim = !!m.key?.fromMe
         if (jid.endsWith('@g.us')) continue            // grupo
         if (jid === 'status@broadcast') continue       // status
         if (!jid.endsWith('@s.whatsapp.net')) continue // canal, newsletter, o que for
@@ -280,13 +283,18 @@ async function abrirSessao(salaoId) {
           body: JSON.stringify({
             salao_id: salaoId,
             telefone: soNumero(jid),
-            nome: m.pushName || null,
+            nome: deMim ? null : (m.pushName || null),
             texto: texto || `[${tipo}]`,
             tipo,
             id_whatsapp: m.key?.id || null,
+            direcao: deMim ? 'saida' : 'entrada',
+            // Lista de transmissão. O NODRI usa isto para não deixar um
+            // disparo apagar a pergunta da cliente que ainda está sem
+            // resposta — quem decide é lá, a ponte só conta o que viu.
+            em_massa: !!m.broadcast,
           }),
         })
-        registro(salaoId, 'entrada de', soNumero(jid), '—', texto.slice(0, 40))
+        registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(jid), '—', texto.slice(0, 40))
       } catch (e) {
         registro(salaoId, 'falha ao entregar mensagem:', e.message)
       }
