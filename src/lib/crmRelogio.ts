@@ -170,9 +170,46 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       }
     }
 
+    // ── Segunda tentativa: pelo NOME ─────────────────────────────────────────
+    //
+    // O painel da direita acha a cliente pelo nome e mostra visitas e ticket;
+    // o relógio achava só pelo telefone. Dava a tela dizendo "CLIENTE NOVA" ao
+    // lado de "3 visitas, última em 13/01" -- dois critérios diferentes na
+    // mesma tela, e o errado em destaque.
+    //
+    // Agora, quem não casou por telefone é procurado por nome, com o mesmo
+    // critério do painel: igual, ignorando maiúscula, SEM curinga. Com curinga
+    // "Ana" traria "Ana Beatriz" e o CRM juntaria duas clientes diferentes.
+    const semTelefone = contatos.filter(ct => {
+      const k = chaveTelefone(ct.telefone)
+      return !porChave.get(k) && String(ct.nome || '').trim().length >= 3
+    })
+
+    const porNome = new Map<string, { nome: string; ultima: number }>()
+    if (semTelefone.length) {
+      const nomes = [...new Set(semTelefone.map(c => String(c.nome).trim()))]
+      const filtro = nomes
+        .map(n => `cliente.ilike.${n.replace(/[,()]/g, ' ')}`)
+        .join(',')
+      const { data: porNomeRaw } = await supabaseAdmin
+        .from('atendimentos_raw')
+        .select('cliente, data_comanda')
+        .eq('salao_id', salaoId)
+        .or(filtro)
+        .limit(4000)
+      for (const a of porNomeRaw || []) {
+        const k = String(a.cliente || '').trim().toLowerCase()
+        if (!k) continue
+        const quando = tsData(a.data_comanda)
+        const atual = porNome.get(k)
+        if (!atual || quando > atual.ultima) porNome.set(k, { nome: a.cliente, ultima: quando })
+      }
+    }
+
     for (const ct of contatos) {
       const k = chaveTelefone(ct.telefone)
       const achou = porChave.get(k)
+        || porNome.get(String(ct.nome || '').trim().toLowerCase())
       const etiquetas: string[] = Array.isArray(ct.etiquetas) ? [...ct.etiquetas] : []
       const patch: any = { conferido_em: agoraIso }
 
