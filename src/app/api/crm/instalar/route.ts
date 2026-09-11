@@ -30,6 +30,7 @@ const COMANDOS: string[] = [
   `ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS numero_dados text`,
   `ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_dono text`,
   `ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_visto_em timestamptz`,
+  `ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS lid_varredura int DEFAULT 0`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_canal_salao ON crm_canais(salao_id)`,
 
   `CREATE TABLE IF NOT EXISTS crm_contatos (

@@ -233,3 +233,6 @@ CREATE TABLE IF NOT EXISTS crm_lid_cache (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_lid_cache_tel ON crm_lid_cache(salao_id, telefone);
 CREATE INDEX IF NOT EXISTS idx_crm_lid_cache_lid ON crm_lid_cache(salao_id, lid);
+
+-- Ate onde a varredura de telefones ja passou em atendimentos_raw.
+ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS lid_varredura int DEFAULT 0;

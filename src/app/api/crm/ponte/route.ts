@@ -189,24 +189,50 @@ export async function POST(req: NextRequest) {
     // resposta foi "não tem WhatsApp": perguntar de novo em massa é o
     // comportamento que faz o WhatsApp bloquear o número do salão.
     const { data: jaVistos } = await supabaseAdmin
-      .from('crm_lid_cache').select('telefone').eq('salao_id', salaoId).limit(20000)
+      .from('crm_lid_cache').select('telefone').eq('salao_id', salaoId).limit(10000)
     const vistos = new Set((jaVistos || []).map((x: any) => x.telefone))
+
+    // ── Varredura em páginas ────────────────────────────────────────────────
+    //
+    // `atendimentos_raw` tem 129 mil linhas e o banco devolve no máximo MIL
+    // por consulta -- eu tinha pedido 20 mil e recebido mil sem aviso, o que
+    // fez o contador dizer "faltam 0" depois de trinta telefones.
+    //
+    // Então a varredura anda de mil em mil e guarda onde parou. Uma volta
+    // completa leva pouco mais de duas horas, e depois disso só entram
+    // clientes novos.
+    const PAGINA = 1000
+    const { data: canalV } = await supabaseAdmin
+      .from('crm_canais').select('id, lid_varredura').eq('salao_id', salaoId).maybeSingle()
+    const inicio = Number(canalV?.lid_varredura || 0)
 
     const { data: atends } = await supabaseAdmin
       .from('atendimentos_raw').select('celular')
-      .eq('salao_id', salaoId).not('celular', 'is', null).limit(20000)
+      .eq('salao_id', salaoId).not('celular', 'is', null)
+      .range(inicio, inicio + PAGINA - 1)
 
-    // Percorre tudo para saber QUANTOS faltam, e leva só 20 por vez. Parar no
-    // vigésimo fazia o contador dizer "faltam 20" para sempre -- um número que
-    // nunca desce não informa nada a quem está olhando o progresso.
+    const linhas = atends || []
+    // Chegou ao fim da tabela: volta ao começo na próxima vez, para pegar quem
+    // entrou depois. Sem isso a varredura terminaria e cliente nova nunca mais
+    // seria conferida.
+    const proximo = linhas.length < PAGINA ? 0 : inicio + PAGINA
+    if (canalV?.id) {
+      await supabaseAdmin.from('crm_canais')
+        .update({ lid_varredura: proximo }).eq('id', canalV.id)
+    }
+
     const dedup = new Set<string>()
-    for (const a of atends || []) {
+    for (const a of linhas) {
       const tel = normalizarTelefone(String(a.celular || ''))
       if (!tel || tel.length < 12 || vistos.has(tel)) continue
       dedup.add(tel)
     }
-    const pendentes = [...dedup].slice(0, 20)
-    return NextResponse.json({ telefones: pendentes, faltam: dedup.size })
+    return NextResponse.json({
+      telefones: [...dedup].slice(0, 20),
+      nesta_pagina: dedup.size,
+      ja_conferidos: vistos.size,
+      posicao: inicio,
+    })
   }
 
   // ── O que o WhatsApp respondeu sobre esses telefones ──────────────────────

@@ -719,7 +719,7 @@ async function resolverPorTelefone() {
   for (const [salaoId, s] of sessoes) {
     if (!s.conectado || !s.sock) continue
     try {
-      const { telefones, faltam } = await nodri('?acao=resolver-lids', {
+      const { telefones, ja_conferidos, posicao } = await nodri('?acao=resolver-lids', {
         method: 'POST', body: JSON.stringify({ salao_id: salaoId }),
       })
       if (!telefones?.length) continue
@@ -737,8 +737,8 @@ async function resolverPorTelefone() {
         method: 'POST', body: JSON.stringify({ salao_id: salaoId, pares }),
       })
       const comId = pares.filter(p => p.lid).length
-      registro(salaoId, `telefones conferidos: ${telefones.length} (faltam ~${faltam}), ` +
-        `${comId} com id, ${r?.ligados || 0} contato(s) ganharam o número`)
+      registro(salaoId, `telefones: +${telefones.length} conferidos (${ja_conferidos} no total, ` +
+        `varredura em ${posicao}), ${comId} com id, ${r?.ligados || 0} ganharam o número`)
     } catch (e) {
       registro(salaoId, 'falha ao cruzar telefones:', e.message)
     }
