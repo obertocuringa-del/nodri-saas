@@ -105,8 +105,12 @@ export async function GET() {
       const nome = String(l?.produto || '').trim()
       if (!nome) continue
       const qtd = Number(l?.qtd) || 1
-      // valor é o unitário; quando a planilha só trouxe o total, divido.
-      const unitario = dinheiro(l?.valor) ?? dinheiro(Number(l?.total) / (qtd || 1))
+      // ATENÇÃO: no relatório do Avec, `valor` é o valor da LINHA, não o
+      // unitário. Conferido no dia 11/09/2026: bolo, qtd 3, valor 54 — são
+      // três de dezoito. Usar `valor` direto colocaria R$ 54,00 num item de
+      // R$ 18,00 na resposta para a cliente. E `total` não serve de conferência
+      // porque nessa mesma linha veio 162.
+      const unitario = dinheiro(Number(l?.valor) / qtd)
       if (!unitario) continue
       const k = chave(nome)
       const atual = porProduto.get(k)
