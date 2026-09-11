@@ -36,10 +36,12 @@ export default function CrmPage() {
   // 'fila' = precisa de resposta e e de agora. 'antigas' = a cliente falou por
   // ultimo e ficou para tras. As duas sao 'acao_necessaria' no banco: o que
   // separa e a idade, e isso e decisao de tela, nao de estado.
-  const [filtro, setFiltro] = useState<'fila' | 'antigas' | 'todas' | EstadoConversa>('fila')
+  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'todas' | EstadoConversa>('fila')
+  const setFiltro = (f: any) => { setFiltroCru(f); setMotivoFiltro('') }
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [fecharAberto, setFecharAberto] = useState(false)
+  const [motivoFiltro, setMotivoFiltro] = useState('')
   const fimDaConversa = useRef<HTMLDivElement>(null)
 
   // ── Carregamento ──────────────────────────────────────────────────────────
@@ -144,6 +146,9 @@ export default function CrmPage() {
     if (filtro === 'fila') lista = lista.filter(c => estadoPor(c.estado).naFila && !c._antiga)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
+    if (filtro === 'sem_conversao' && motivoFiltro) {
+      lista = lista.filter(c => c.motivo_perda === motivoFiltro)
+    }
     if (busca.trim()) {
       const q = busca.trim().toLowerCase()
       lista = lista.filter(c => {
@@ -161,7 +166,7 @@ export default function CrmPage() {
       if (b._min !== a._min) return b._min - a._min
       return new Date(b.ultima_em || 0).getTime() - new Date(a.ultima_em || 0).getTime()
     })
-  }, [comTempo, filtro, busca])
+  }, [comTempo, filtro, busca, motivoFiltro])
 
   const contagem = useMemo(() => {
     const naFila = comTempo.filter(c => estadoPor(c.estado).naFila && !c._antiga)
@@ -171,7 +176,22 @@ export default function CrmPage() {
       criticas: naFila.filter(c => c._urg === 'critico').length,
       aguardando: comTempo.filter(c => c.estado === 'aguardando').length,
       followUp: comTempo.filter(c => c.estado === 'follow_up').length,
+      pausadas: comTempo.filter(c => c.estado === 'pausada').length,
+      agendadas: comTempo.filter(c => c.estado === 'agendado').length,
+      perdidas: comTempo.filter(c => c.estado === 'sem_conversao').length,
     }
+  }, [comTempo])
+
+  // Por que se perdeu, com quantas. É este quadro que vira ação comercial:
+  // quem caiu por preço recebe promoção, quem caiu por horário recebe encaixe.
+  const porMotivo = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of comTempo) {
+      if (c.estado !== 'sem_conversao') continue
+      const k = c.motivo_perda || 'Sem motivo registrado'
+      m.set(k, (m.get(k) || 0) + 1)
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
   }, [comTempo])
 
   // ── Ações ─────────────────────────────────────────────────────────────────
@@ -264,8 +284,36 @@ export default function CrmPage() {
                     texto={`Sem resposta (${contagem.antigas})`} />
                 )}
                 <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')} texto={`Aguardando (${contagem.aguardando})`} />
+                {contagem.followUp > 0 && (
+                  <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
+                    texto={`Follow-up (${contagem.followUp})`} />
+                )}
+                {contagem.pausadas > 0 && (
+                  <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
+                    texto={`Pausadas (${contagem.pausadas})`} />
+                )}
+                {contagem.agendadas > 0 && (
+                  <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
+                    texto={`Agendadas (${contagem.agendadas})`} />
+                )}
+                {contagem.perdidas > 0 && (
+                  <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
+                    texto={`Não fechou (${contagem.perdidas})`} />
+                )}
                 <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
               </div>
+              {/* Perdemos 40 nao e informacao. Perdemos 22 por preco e 11 por
+                  falta de horario no sabado sao duas acoes diferentes. */}
+              {filtro === 'sem_conversao' && porMotivo.length > 0 && (
+                <div className="mt-2 flex gap-1 flex-wrap">
+                  <Aba ativo={!motivoFiltro} onClick={() => setMotivoFiltro('')}
+                    texto={`Todos (${contagem.perdidas})`} />
+                  {porMotivo.map(([nome, qtd]) => (
+                    <Aba key={nome} ativo={motivoFiltro === nome} onClick={() => setMotivoFiltro(nome)}
+                      texto={`${nome} (${qtd})`} />
+                  ))}
+                </div>
+              )}
               {contagem.criticas > 0 && filtro === 'fila' && (
                 <p className="mt-2 text-[11px] font-bold" style={{ color: '#b4322a' }}>
                   {contagem.criticas} esperando há mais de 1 hora
@@ -463,11 +511,12 @@ function ItemFila({ c, ativo, onClick }: any) {
             <User size={9} />{dono}
           </span>
         )}
-        {!est.naFila && (
-          <span className="text-[10px]" style={{ color: est.cor }}>
-            {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
-          </span>
-        )}
+        {/* A etiqueta aparece SEMPRE, inclusive na fila. E o que permite abrir
+            "Todas" e ver de relance que nao sobrou conversa sem direcao. */}
+        <span className="text-[10px] px-1.5 py-0.5 rounded"
+          style={{ color: est.cor, background: est.fundo }}>
+          {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
+        </span>
       </div>
     </button>
   )

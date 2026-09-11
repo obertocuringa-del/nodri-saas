@@ -36,6 +36,8 @@ const COMANDOS: string[] = [
     nome text, nome_agenda text, cliente_nome text,
     etiquetas text[] DEFAULT '{}', observacao text,
     criado_em timestamptz DEFAULT now(), atualizado_em timestamptz DEFAULT now())`,
+  `ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS conferido_em timestamptz`,
+  `CREATE INDEX IF NOT EXISTS idx_atend_celular ON atendimentos_raw(salao_id, celular)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_tel ON crm_contatos(salao_id, telefone)`,
 
   `CREATE TABLE IF NOT EXISTS crm_conversas (

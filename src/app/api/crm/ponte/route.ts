@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao } from '@/lib/crm'
+import { baterRelogio } from '@/lib/crmRelogio'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +61,23 @@ export async function POST(req: NextRequest) {
 
   const acao = new URL(req.url).searchParams.get('acao') || 'entrada'
   const body = await req.json().catch(() => ({}))
+
+  // ── O relógio ─────────────────────────────────────────────────────────────
+  // Vem sem salão: a ponte bate o relógio de todo mundo de uma vez. Roda aqui
+  // porque a ponte é o único pedaço que fica ligado o tempo todo — a Vercel
+  // acorda, responde e morre, e um relógio que só anda quando alguém abre a
+  // tela não é relógio.
+  if (acao === 'relogio') {
+    const { data: canais } = await supabaseAdmin
+      .from('crm_canais').select('salao_id').neq('situacao', 'desconectado')
+    const feito: Record<string, any> = {}
+    for (const c of canais || []) {
+      try { feito[c.salao_id] = await baterRelogio(c.salao_id) }
+      catch (e: any) { feito[c.salao_id] = { erro: String(e?.message || e).slice(0, 200) } }
+    }
+    return NextResponse.json({ ok: true, saloes: feito })
+  }
+
   const salaoId = String(body?.salao_id || '')
   if (!salaoId) return NextResponse.json({ error: 'salao_id é obrigatório' }, { status: 400 })
 

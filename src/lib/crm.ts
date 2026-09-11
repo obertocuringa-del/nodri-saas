@@ -167,6 +167,18 @@ export function tempoCurto(min: number): string {
   return `${Math.floor(h / 24)}d`
 }
 
+// ── O relógio ───────────────────────────────────────────────────────────────
+//
+// A recepção esquece. Então o sistema não pode depender dela para lembrar: o
+// que dá para decidir sozinho é decidido sozinho. Nada disto manda mensagem —
+// só muda o estado e devolve a conversa para a fila na hora certa.
+
+/** Respondeu e a cliente não voltou neste tanto de expediente: vira follow-up. */
+export const HORAS_UTEIS_FOLLOW_UP = 9      // um dia de salão
+
+/** Conversa parada há mais de isto sai da fila de hoje e vai para "Sem resposta". */
+export const DIAS_SEM_RESPOSTA = 3
+
 // ── Trava de dono ───────────────────────────────────────────────────────────
 //
 // Duas recepcionistas respondendo a mesma cliente, com informação diferente,

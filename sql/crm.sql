@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS crm_contatos (
   criado_em     timestamptz DEFAULT now(),
   atualizado_em timestamptz DEFAULT now()
 );
+-- Quando o relogio conferiu este contato no historico do salao pela ultima
+-- vez. Sem isso ele reconferiria a base inteira a cada minuto.
+ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS conferido_em timestamptz;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_tel ON crm_contatos(salao_id, telefone);
 
 -- ── Conversa: o estado, que é o coração do CRM ──────────────────────────────

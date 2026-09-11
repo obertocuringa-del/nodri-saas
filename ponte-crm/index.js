@@ -394,9 +394,37 @@ async function volta() {
   }
 }
 
+// ── O relógio ───────────────────────────────────────────────────────────────
+//
+// Uma vez por minuto a ponte pede ao NODRI que ande com o relógio do CRM:
+// pausa que venceu, cliente que não respondeu, conversa que virou atendimento.
+// Mora aqui porque a ponte é a única coisa que fica ligada o tempo todo — a
+// Vercel acorda, responde e morre.
+//
+// A ponte não sabe NENHUMA dessas regras, e é de propósito: mudar prazo de
+// follow-up tem que ser um deploy do NODRI, não uma visita ao servidor.
+let relogioEm = 0
+async function baterRelogio() {
+  if (Date.now() - relogioEm < 60000) return
+  relogioEm = Date.now()
+  try {
+    const r = await nodri('?acao=relogio', { method: 'POST', body: JSON.stringify({}) })
+    for (const [salao, f] of Object.entries(r?.saloes || {})) {
+      const mexeu = f && Object.values(f).some(v => typeof v === 'number' && v > 0)
+      if (mexeu) registro(salao, 'relógio:', JSON.stringify(f))
+      if (f?.erro) registro(salao, 'relógio falhou:', f.erro)
+    }
+  } catch (e) {
+    registro('relógio fora de alcance:', e.message)
+  }
+}
+
 registro(`ligando — NODRI em ${NODRI}, sessões em ${path.resolve(PASTA)}`)
 await volta()
-setInterval(() => { volta().catch(e => registro('erro na volta:', e.message)) }, CICLO)
+setInterval(() => {
+  volta().catch(e => registro('erro na volta:', e.message))
+  baterRelogio().catch(() => {})
+}, CICLO)
 
 process.on('SIGINT', async () => {
   registro('encerrando...')
