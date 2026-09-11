@@ -18,33 +18,34 @@ type Item = { id?: string; nome: string; texto?: string; atalho?: string; ativo?
 export default function ConfigCrmPage() {
   const [modelos, setModelos] = useState<Item[]>([])
   const [motivos, setMotivos] = useState<Item[]>([])
+  const [origens, setOrigens] = useState<Item[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [salvando, setSalvando] = useState<'' | 'modelos' | 'motivos'>('')
+  const [salvando, setSalvando] = useState<'' | 'modelos' | 'motivos' | 'origens'>('')
   const [aviso, setAviso] = useState('')
 
   useEffect(() => {
     fetch('/api/crm/config')
-      .then(r => r.ok ? r.json() : { modelos: [], motivos: [] })
-      .then(d => { setModelos(d.modelos || []); setMotivos(d.motivos || []) })
+      .then(r => r.ok ? r.json() : { modelos: [], motivos: [], origens: [] })
+      .then(d => { setModelos(d.modelos || []); setMotivos(d.motivos || []); setOrigens(d.origens || []) })
       .catch(() => {})
       .finally(() => setCarregando(false))
   }, [])
 
-  async function salvar(lista: 'modelos' | 'motivos') {
+  async function salvar(lista: 'modelos' | 'motivos' | 'origens') {
     setSalvando(lista); setAviso('')
     try {
-      const itens = lista === 'modelos' ? modelos : motivos
+      const itens = lista === 'modelos' ? modelos : lista === 'motivos' ? motivos : origens
       const r = await fetch('/api/crm/config', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lista, itens }),
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok) { setAviso(d.error || 'Não consegui salvar.'); return }
-      setAviso(lista === 'modelos' ? 'Mensagens salvas.' : 'Motivos salvos.')
+      setAviso(lista === 'modelos' ? 'Mensagens salvas.' : lista === 'motivos' ? 'Motivos salvos.' : 'Origens salvas.')
       // Relê: o servidor é quem dá o id dos itens novos, e sem ele a próxima
       // gravação criaria tudo de novo em vez de atualizar.
       const novo = await fetch('/api/crm/config').then(x => x.json()).catch(() => null)
-      if (novo) { setModelos(novo.modelos || []); setMotivos(novo.motivos || []) }
+      if (novo) { setModelos(novo.modelos || []); setMotivos(novo.motivos || []); setOrigens(novo.origens || []) }
     } finally { setSalvando('') }
   }
 
@@ -174,6 +175,46 @@ export default function ConfigCrmPage() {
                     className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
                     style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
                   <button onClick={() => setMotivos(motivos.filter((_, k) => k !== i))} title="Apagar"
+                    className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── De onde a cliente veio ── */}
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="font-bold text-[15px]" style={{ color: '#14161b' }}>De onde a cliente veio</h2>
+              <div className="flex-1" />
+              <button onClick={() => setOrigens([...origens, { nome: '' }])}
+                className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
+                style={{ background: '#efedfb', color: '#5b4fcf' }}>
+                <Plus size={13} /> Nova
+              </button>
+              <button onClick={() => salvar('origens')} disabled={salvando === 'origens'}
+                className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1 disabled:opacity-40"
+                style={{ background: '#5b4fcf', color: '#fff' }}>
+                <Save size={13} />{salvando === 'origens' ? 'Salvando' : 'Salvar'}
+              </button>
+            </div>
+            <p className="text-[12px] mb-4" style={{ color: '#868c97' }}>
+              Sem isto o salão sabe quanto gastou em anúncio e não sabe o que voltou — que é a
+              conta que decide o orçamento do mês seguinte. O painel mostra a conversão por origem.
+            </p>
+
+            <div className="space-y-2">
+              {origens.map((m, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="flex flex-col" style={{ color: '#b0b4bd' }}>
+                    <button onClick={() => mover(origens, setOrigens, i, -1)} className="leading-none text-[10px]">▲</button>
+                    <button onClick={() => mover(origens, setOrigens, i, 1)} className="leading-none text-[10px]">▼</button>
+                  </div>
+                  <input value={m.nome} onChange={e => {
+                    const n = [...origens]; n[i] = { ...m, nome: e.target.value }; setOrigens(n)
+                  }} placeholder="Ex.: Tráfego pago"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
+                    style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                  <button onClick={() => setOrigens(origens.filter((_, k) => k !== i))} title="Apagar"
                     className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
                 </div>
               ))}

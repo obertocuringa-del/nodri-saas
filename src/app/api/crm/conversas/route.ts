@@ -110,6 +110,10 @@ export async function PATCH(req: NextRequest) {
     if (novo !== 'acao_necessaria') patch.aguardando_desde = null
   }
 
+  // De onde a pessoa veio. Guardado na conversa, nao no contato: a mesma
+  // cliente pode voltar por um anuncio hoje e por indicacao daqui a um ano, e
+  // sao duas oportunidades com origens diferentes.
+  if (body?.origem !== undefined) patch.origem = String(body.origem || '').trim() || null
   if (body?.prazo !== undefined) patch.prazo = body.prazo || null
   if (body?.assunto !== undefined) patch.assunto = String(body.assunto || '').trim() || null
   if (body?.proxima_acao !== undefined && !patch.proxima_acao) {

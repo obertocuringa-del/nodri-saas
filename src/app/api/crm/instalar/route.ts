@@ -95,6 +95,14 @@ const COMANDOS: string[] = [
     ordem int DEFAULT 0, ativo boolean DEFAULT true,
     criado_em timestamptz DEFAULT now())`,
   `CREATE INDEX IF NOT EXISTS idx_crm_motivos_salao ON crm_motivos_perda(salao_id, ordem)`,
+  `ALTER TABLE crm_conversas ADD COLUMN IF NOT EXISTS origem text`,
+  `CREATE INDEX IF NOT EXISTS idx_crm_conv_origem ON crm_conversas(salao_id, origem)`,
+  `CREATE TABLE IF NOT EXISTS crm_origens (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    salao_id uuid NOT NULL, nome text NOT NULL,
+    ordem int DEFAULT 0, ativo boolean DEFAULT true,
+    criado_em timestamptz DEFAULT now())`,
+  `CREATE INDEX IF NOT EXISTS idx_crm_origens_salao ON crm_origens(salao_id, ordem)`,
 ]
 
 export async function POST() {
@@ -120,7 +128,7 @@ export async function POST() {
   // Confere de verdade: rodar o comando sem erro não prova que a tabela existe
   // — a função pode ter engolido a falha. Uma leitura em cada tabela prova.
   const tabelas = ['crm_canais', 'crm_contatos', 'crm_conversas', 'crm_mensagens',
-                   'crm_eventos', 'crm_modelos', 'crm_motivos_perda']
+                   'crm_eventos', 'crm_modelos', 'crm_motivos_perda', 'crm_origens']
   const conferencia: Record<string, boolean> = {}
   for (const t of tabelas) {
     const { error } = await supabaseAdmin.from(t).select('id', { count: 'exact', head: true }).limit(1)

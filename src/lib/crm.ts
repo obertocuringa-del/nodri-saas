@@ -218,6 +218,20 @@ export const MOTIVOS_PERDA_PADRAO = [
   'Motivo desconhecido',
 ]
 
+/**
+ * De onde a pessoa veio. Sem isto o salão sabe quanto gastou em anúncio e não
+ * sabe o que voltou — que é a conta que decide o orçamento do mês seguinte.
+ */
+export const ORIGENS_PADRAO = [
+  'Tráfego pago',
+  'Instagram',
+  'Google',
+  'Indicação de cliente',
+  'Passou em frente',
+  'Já era cliente',
+  'Não sei',
+]
+
 /** Mensagens prontas de fábrica. Sem dado de salão nenhum — só o esqueleto. */
 export const MODELOS_PADRAO = [
   { nome: 'Boas-vindas', atalho: 'oi', texto: 'Oi! Que bom te ver por aqui. Me conta o que você tem vontade de fazer que eu te ajudo.' },

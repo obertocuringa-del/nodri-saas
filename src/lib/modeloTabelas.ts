@@ -95,6 +95,7 @@ const TABELAS_CATALOGO = [
   'feedback_prof_regras',   // regras de feedback do profissional
   'crm_modelos',            // mensagens prontas do CRM
   'crm_motivos_perda',      // motivos de não conversão do CRM
+  'crm_origens',            // de onde a cliente veio
   // NÃO entra `crm_canais`: ali moram o número de WhatsApp e a sessão do
   // salão. É identidade, como o token da vitrine — se viajasse, salão novo
   // nasceria apontando para o WhatsApp de outro.

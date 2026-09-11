@@ -169,3 +169,20 @@ CREATE TABLE IF NOT EXISTS crm_motivos_perda (
   criado_em     timestamptz DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_crm_motivos_salao ON crm_motivos_perda(salao_id, ordem);
+
+-- ── Origem da conversa ──────────────────────────────────────────────────────
+-- De onde a pessoa veio: trafego pago, indicacao, Google, passou em frente.
+-- Sem isso o salao sabe quanto gastou em anuncio e nao sabe o que voltou.
+ALTER TABLE crm_conversas ADD COLUMN IF NOT EXISTS origem text;
+CREATE INDEX IF NOT EXISTS idx_crm_conv_origem ON crm_conversas(salao_id, origem);
+
+-- CATALOGO: viaja do salao modelo para os saloes novos.
+CREATE TABLE IF NOT EXISTS crm_origens (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  salao_id      uuid NOT NULL,
+  nome          text NOT NULL,
+  ordem         int DEFAULT 0,
+  ativo         boolean DEFAULT true,
+  criado_em     timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_crm_origens_salao ON crm_origens(salao_id, ordem);

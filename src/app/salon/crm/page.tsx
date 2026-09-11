@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3 } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
@@ -37,6 +37,7 @@ export default function CrmPage() {
   const [canal, setCanal] = useState<any>({ situacao: 'desconectado' })
   const [modelos, setModelos] = useState<any[]>([])
   const [motivos, setMotivos] = useState<any[]>([])
+  const [origens, setOrigens] = useState<any[]>([])
   const [conversas, setConversas] = useState<Conversa[]>([])
   const [aberta, setAberta] = useState<Conversa | null>(null)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
@@ -64,6 +65,7 @@ export default function CrmPage() {
       setCanal(d.canal || { situacao: 'desconectado' })
       setModelos(d.modelos || [])
       setMotivos(d.motivos || [])
+      setOrigens(d.origens || [])
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -262,6 +264,16 @@ export default function CrmPage() {
     setTexto(t => (t.trim() ? t.replace(/\s+$/, '') + '\n' + linha : linha))
   }
 
+  async function mudarOrigem(origem: string) {
+    if (!aberta) return
+    setAberta({ ...aberta, origem })
+    setConversas(prev => prev.map(x => x.id === aberta.id ? { ...x, origem } : x))
+    await fetch('/api/crm/conversas', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: aberta.id, origem }),
+    }).catch(() => {})
+  }
+
   async function mudarEstado(estado: EstadoConversa, extra: any = {}) {
     if (!aberta) return
     const r = await fetch('/api/crm/conversas', {
@@ -314,6 +326,11 @@ export default function CrmPage() {
             <SeloConexao canal={canal} />
             {/* Com nome, nao so um icone: a engrenagem sozinha ninguem acha --
                 e nao achou mesmo. */}
+            <a href="/salon/crm/painel" title="Painel: conversao, motivos de perda e tempo de resposta"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
+              style={{ background: '#e6f1eb', color: '#2f6b4f' }}>
+              <BarChart3 size={13} /> Painel
+            </a>
             <a href="/salon/crm/config" title="Configurar mensagens prontas, precos e motivos"
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
               style={{ background: '#efedfb', color: '#5b4fcf' }}>
@@ -428,8 +445,9 @@ export default function CrmPage() {
               </div>
             ) : (
               <>
-                <CabecalhoConversa c={aberta} onEstado={mudarEstado}
-                  fecharAberto={fecharAberto} setFecharAberto={setFecharAberto} motivos={motivos} />
+                <CabecalhoConversa c={aberta} onEstado={mudarEstado} onOrigem={mudarOrigem}
+                  fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
+                  motivos={motivos} origens={origens} />
 
                 <div className="flex-1 overflow-y-auto px-5 py-4">
                   {mensagens.map(m => <Balao key={m.id} m={m} />)}
@@ -628,7 +646,7 @@ function ItemFila({ c, ativo, onClick }: any) {
   )
 }
 
-function CabecalhoConversa({ c, onEstado, fecharAberto, setFecharAberto, motivos }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, fecharAberto, setFecharAberto, motivos, origens }: any) {
   const ct = c.contato || {}
   const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
   const est = estadoPor(c.estado)
@@ -659,11 +677,26 @@ function CabecalhoConversa({ c, onEstado, fecharAberto, setFecharAberto, motivos
         </div>
       </div>
 
-      {c.proxima_acao && (
-        <p className="text-[11.5px] mt-2" style={{ color: '#575d68' }}>
-          <strong>Próxima ação:</strong> {c.proxima_acao}
-        </p>
-      )}
+      <div className="flex items-center gap-3 mt-2 flex-wrap">
+        {c.proxima_acao && (
+          <p className="text-[11.5px]" style={{ color: '#575d68' }}>
+            <strong>Próxima ação:</strong> {c.proxima_acao}
+          </p>
+        )}
+        <div className="flex-1" />
+        {/* Origem na conversa, nao no contato: a mesma cliente pode voltar por
+            um anuncio hoje e por indicacao daqui a um ano, e sao duas
+            oportunidades com origens diferentes. */}
+        <label className="text-[11px] flex items-center gap-1.5" style={{ color: '#868c97' }}>
+          Veio de
+          <select value={c.origem || ''} onChange={e => onOrigem(e.target.value)}
+            className="px-2 py-1 rounded-lg text-[11px] font-bold focus:outline-none"
+            style={{ background: c.origem ? '#efedfb' : '#f5f5f7', color: c.origem ? '#5b4fcf' : '#868c97', border: '1px solid #e5e5ea' }}>
+            <option value="">não informado</option>
+            {(origens || []).map((o: any) => <option key={o.id} value={o.nome}>{o.nome}</option>)}
+          </select>
+        </label>
+      </div>
 
       {/* Fechar sem motivo é o que transforma "perdemos 40" em informação inútil. */}
       {fecharAberto && (

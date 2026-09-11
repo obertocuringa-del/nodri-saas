@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 // As duas listas são CATÁLOGO, não identidade: podem ser copiadas para um
 // salão novo sem levar junto nada que seja de alguém.
 
-const TABELAS = { modelos: 'crm_modelos', motivos: 'crm_motivos_perda' } as const
+const TABELAS = { modelos: 'crm_modelos', motivos: 'crm_motivos_perda', origens: 'crm_origens' } as const
 type Lista = keyof typeof TABELAS
 
 async function sessaoDoSalao() {
@@ -29,14 +29,16 @@ export async function GET() {
   const { sess, erro } = await sessaoDoSalao()
   if (erro) return erro
 
-  const [{ data: modelos }, { data: motivos }] = await Promise.all([
+  const [{ data: modelos }, { data: motivos }, { data: origens }] = await Promise.all([
     supabaseAdmin.from('crm_modelos').select('id, nome, texto, atalho, ordem, ativo')
       .eq('salao_id', sess!.salaoId).order('ordem'),
     supabaseAdmin.from('crm_motivos_perda').select('id, nome, ordem, ativo')
       .eq('salao_id', sess!.salaoId).order('ordem'),
+    supabaseAdmin.from('crm_origens').select('id, nome, ordem, ativo')
+      .eq('salao_id', sess!.salaoId).order('ordem'),
   ])
 
-  return NextResponse.json({ modelos: modelos || [], motivos: motivos || [] })
+  return NextResponse.json({ modelos: modelos || [], motivos: motivos || [], origens: origens || [] })
 }
 
 export async function POST(req: NextRequest) {

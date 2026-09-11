@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
-import { MODELOS_PADRAO, MOTIVOS_PERDA_PADRAO } from '@/lib/crm'
+import { MODELOS_PADRAO, MOTIVOS_PERDA_PADRAO, ORIGENS_PADRAO } from '@/lib/crm'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +40,13 @@ async function semearSeVazio(salaoId: string) {
       MOTIVOS_PERDA_PADRAO.map((nome, i) => ({ salao_id: salaoId, nome, ordem: i }))
     )
   }
+  const { count: temOrigens } = await supabaseAdmin
+    .from('crm_origens').select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
+  if (!temOrigens) {
+    await supabaseAdmin.from('crm_origens').insert(
+      ORIGENS_PADRAO.map((nome, i) => ({ salao_id: salaoId, nome, ordem: i }))
+    )
+  }
 }
 
 export async function GET() {
@@ -53,10 +60,12 @@ export async function GET() {
     .select('situacao, qr, qr_expira_em, numero, nome_exibicao, visto_em, erro')
     .eq('salao_id', sess!.salaoId).maybeSingle()
 
-  const [{ data: modelos }, { data: motivos }] = await Promise.all([
+  const [{ data: modelos }, { data: motivos }, { data: origens }] = await Promise.all([
     supabaseAdmin.from('crm_modelos').select('id, nome, texto, atalho')
       .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
     supabaseAdmin.from('crm_motivos_perda').select('id, nome')
+      .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
+    supabaseAdmin.from('crm_origens').select('id, nome')
       .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
   ])
 
@@ -70,7 +79,7 @@ export async function GET() {
   const desdeSinal = canal.visto_em ? (Date.now() - new Date(canal.visto_em).getTime()) / 1000 : null
   canal.ponte_viva = desdeSinal !== null && desdeSinal < 120
 
-  return NextResponse.json({ canal, modelos: modelos || [], motivos: motivos || [] })
+  return NextResponse.json({ canal, modelos: modelos || [], motivos: motivos || [], origens: origens || [] })
 }
 
 export async function POST(req: NextRequest) {
