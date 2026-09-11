@@ -918,7 +918,8 @@ function PainelCliente({ c }: { c: Conversa }) {
     <aside className="w-[268px] flex-shrink-0 border-l overflow-y-auto"
       style={{ background: '#fff', borderColor: '#e5e5ea' }}>
       <div className="p-4">
-        <h3 className="font-bold text-[12px] mb-3" style={{ color: '#14161b' }}>No sistema</h3>
+        <FichaContato ct={ct} />
+        <h3 className="font-bold text-[12px] mb-3 mt-4" style={{ color: '#14161b' }}>No sistema</h3>
 
         {!nomeBusca && (
           <p className="text-[11.5px]" style={{ color: '#868c97' }}>
@@ -1146,5 +1147,64 @@ function Anexo({ m }: { m: Mensagem }) {
       className="flex items-center gap-1.5 mb-1 text-[12px] font-bold underline">
       <FileText size={13} /> Abrir arquivo
     </a>
+  )
+}
+
+
+// ── A ficha da cliente ──────────────────────────────────────────────────────
+//
+// "Alérgica a amônia." "Não gosta que mexam na franja." "Sempre atrasa 20
+// minutos." Isso hoje mora na cabeça de quem atende e some quando a pessoa
+// sai de férias. Aqui fica no contato, vale para sempre e aparece para quem
+// abrir a conversa daqui a um ano.
+//
+// O nome também é editável: o WhatsApp entrega "Mari 💅" e é a recepção que
+// sabe que ali é a Mariana Prates.
+function FichaContato({ ct }: { ct: any }) {
+  const [nome, setNome] = useState(ct.nome || '')
+  const [obs, setObs] = useState(ct.observacao || '')
+  const [gravando, setGravando] = useState(false)
+  const [salvo, setSalvo] = useState(false)
+
+  // Trocar de conversa tem que trocar a ficha. Sem isto, a observação de uma
+  // cliente apareceria na tela de outra — que é pior do que não ter ficha.
+  useEffect(() => {
+    setNome(ct.nome || ''); setObs(ct.observacao || ''); setSalvo(false)
+  }, [ct.id])
+
+  const mudou = (nome || '') !== (ct.nome || '') || (obs || '') !== (ct.observacao || '')
+
+  async function salvar() {
+    if (!ct.id || gravando) return
+    setGravando(true)
+    try {
+      const r = await fetch('/api/crm/contato', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: ct.id, nome, observacao: obs }),
+      })
+      if (r.ok) { ct.nome = nome; ct.observacao = obs; setSalvo(true) }
+      else alert((await r.json().catch(() => ({}))).error || 'Não consegui salvar.')
+    } finally { setGravando(false) }
+  }
+
+  return (
+    <div>
+      <h3 className="font-bold text-[12px] mb-2" style={{ color: '#14161b' }}>A cliente</h3>
+      <input value={nome} onChange={e => { setNome(e.target.value); setSalvo(false) }}
+        placeholder="Nome da cliente"
+        className="w-full px-2.5 py-1.5 rounded-lg text-[12px] mb-2 focus:outline-none"
+        style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+      <textarea value={obs} onChange={e => { setObs(e.target.value); setSalvo(false) }} rows={4}
+        placeholder="O que lembrar dela: alergia, preferência, o que não pode fazer..."
+        className="w-full px-2.5 py-2 rounded-lg text-[11.5px] resize-none focus:outline-none"
+        style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+      {(mudou || salvo) && (
+        <button onClick={salvar} disabled={gravando || !mudou}
+          className="mt-1.5 w-full py-1.5 rounded-lg text-[11.5px] font-bold disabled:opacity-50"
+          style={{ background: salvo && !mudou ? '#e6f1eb' : '#5b4fcf', color: salvo && !mudou ? '#2f6b4f' : '#fff' }}>
+          {gravando ? 'Salvando...' : salvo && !mudou ? 'Salvo' : 'Salvar'}
+        </button>
+      )}
+    </div>
   )
 }
