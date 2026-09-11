@@ -35,10 +35,13 @@ if not exist node_modules (
 :laco
 echo.
 echo === Ponte ligando em %date% %time% ===
-REM -- Sai na janela E grava em arquivo. Rodando sozinha com o Windows, a
-REM -- janela fica minimizada e ninguem le: sem arquivo, quando algo da
-REM -- errado nao ha o que olhar.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "& node '%~dp0index.js' 2>&1 | Tee-Object -FilePath '%~dp0ponte.log' -Append"
+REM -- Grava em arquivo. Rodando sozinha com o Windows a janela fica
+REM -- minimizada e ninguem le: sem arquivo, quando algo da errado nao ha
+REM -- o que olhar.
+REM --
+REM -- Redirecionamento do proprio cmd, e nao Tee-Object do PowerShell: o
+REM -- Tee grava em UTF-16 e o log sai ilegivel em qualquer outra ferramenta.
+node "%~dp0index.js" >> "%~dp0ponte.log" 2>&1
 echo.
 echo A ponte parou. Reabrindo em 5 segundos... (feche a janela para encerrar)
 timeout /t 5 /nobreak >nul
