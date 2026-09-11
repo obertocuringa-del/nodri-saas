@@ -1415,8 +1415,17 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
     return fora.slice(0, 40)
   }, [busca, grupos])
 
-  const linha = (it: any) =>
-    `${it.nome} — ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+  // A ressalva vai JUNTO com o preço, na mesma inserção. Separar as duas
+  // deixa a recepção decidir se manda -- e, no aperto, ela não manda. É
+  // exatamente a ressalva que evita a discussão no caixa.
+  const rotulo = (it: any) =>
+    `${it.nome}${it.unidade ? ` ${it.unidade}` : ''} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`
+
+  const linha = (it: any) => {
+    const nome = it.unidade ? `${it.nome} (${it.unidade})` : it.nome
+    const base = `${nome} — ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    return it.observacao ? base + '\n' + it.observacao : base
+  }
 
   if (!aberto) {
     return (
@@ -1464,7 +1473,8 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
         <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
           {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Nada com esse nome.</p>}
           {achados.map((it, i) => (
-            <BotaoPreco key={i} texto={`${it.nome} · R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`}
+            <BotaoPreco key={i} obs={it.observacao}
+              texto={rotulo(it)}
               onClick={() => onInserir(linha(it))} />
           ))}
         </div>
@@ -1490,7 +1500,8 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
           </button>
           <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
             {atual.itens.map((it: any, i: number) => (
-              <BotaoPreco key={i} texto={`${it.nome} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`}
+                <BotaoPreco key={i} obs={it.observacao}
+                texto={rotulo(it)}
                 onClick={() => onInserir(linha(it))} />
             ))}
           </div>
@@ -1498,18 +1509,31 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
       )}
 
       <p className="text-[10px] mt-2" style={{ color: '#8f877f' }}>
-        Clicar acrescenta uma linha na resposta. Nada sai daqui sem você clicar em Enviar.
+        {lado === 'servicos'
+          ? 'Serviço vem da mesma tabela de preços do link de promoções — inclusive a observação.'
+          : dados?.fonteProdutos === 'catalogo'
+            ? 'Produto vindo do catálogo da calculadora: importe o relatório de produtos vendidos para usar o preço de venda.'
+            : 'Produto vem do relatório de produtos vendidos, pelo maior valor já cobrado — sem desconto.'}
+        {' '}Clicar acrescenta uma linha na resposta. Nada sai daqui sem você clicar em Enviar.
       </p>
     </div>
   )
 }
 
-function BotaoPreco({ texto, onClick }: { texto: string; onClick: () => void }) {
+// A observação aparece no próprio botão, em cinza. Quem clica precisa ver o
+// que vai junto ANTES de inserir -- descobrir a ressalva depois, já na caixa
+// de texto, é descobrir tarde.
+function BotaoPreco({ texto, obs, onClick }: { texto: string; obs?: string | null; onClick: () => void }) {
   return (
     <button onClick={onClick}
       className="px-2.5 py-1 rounded-lg text-[11px] text-left"
-      style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0' }}>
+      style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0', maxWidth: obs ? 280 : undefined }}>
       {texto}
+      {obs && (
+        <span className="block text-[10px] leading-tight mt-0.5" style={{ color: '#8f877f' }}>
+          {obs}
+        </span>
+      )}
     </button>
   )
 }
