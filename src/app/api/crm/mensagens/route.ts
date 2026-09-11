@@ -55,8 +55,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const conversaId = String(body?.conversa || '')
   const texto = String(body?.texto || '').trim()
-  if (!conversaId || !texto) {
-    return NextResponse.json({ error: 'Conversa e texto são obrigatórios' }, { status: 400 })
+  const midiaUrl = String(body?.midia_url || '').trim() || null
+  const tipo = String(body?.tipo || 'texto')
+  // Anexo sem legenda é mensagem legítima; texto vazio sem anexo não é.
+  if (!conversaId || (!texto && !midiaUrl)) {
+    return NextResponse.json({ error: 'Escreva algo ou anexe um arquivo' }, { status: 400 })
   }
 
   const { data: conversa } = await supabaseAdmin
@@ -71,6 +74,8 @@ export async function POST(req: NextRequest) {
     conversa_id: conversaId,
     direcao: 'saida',
     texto,
+    tipo,
+    midia_url: midiaUrl,
     situacao: 'na_fila',
     autor_id: sess!.usuarioId || null,
     autor_nome: quem,
@@ -84,7 +89,7 @@ export async function POST(req: NextRequest) {
     aguardando_desde: null,
     ultima_em: agora,
     ultima_de: 'salao',
-    ultima_previa: texto.slice(0, 120),
+    ultima_previa: (texto || `[${tipo}]`).slice(0, 120),
     nao_lidas: 0,
     dono_id: sess!.usuarioId || null,
     dono_nome: quem,

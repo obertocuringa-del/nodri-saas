@@ -10,7 +10,8 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText } from 'lucide-react'
+import { enviarArquivo } from '@/lib/enviarArquivo'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, type EstadoConversa,
@@ -48,6 +49,8 @@ export default function CrmPage() {
   const setFiltro = (f: any) => { setFiltroCru(f); setMotivoFiltro('') }
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
+  const [anexando, setAnexando] = useState(false)
+  const escolherArquivo = useRef<HTMLInputElement>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
   const fimDaConversa = useRef<HTMLDivElement>(null)
@@ -209,14 +212,17 @@ export default function CrmPage() {
   }, [comTempo])
 
   // ── Ações ─────────────────────────────────────────────────────────────────
-  async function enviar() {
+  async function enviar(midia?: { url: string; tipo: string }) {
     const t = texto.trim()
-    if (!t || !aberta || enviando) return
+    if ((!t && !midia) || !aberta || enviando) return
     setEnviando(true)
     try {
       const r = await fetch('/api/crm/mensagens', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversa: aberta.id, texto: t }),
+        body: JSON.stringify({
+          conversa: aberta.id, texto: t,
+          midia_url: midia?.url || null, tipo: midia?.tipo || 'texto',
+        }),
       })
       if (r.ok) {
         setTexto('')
@@ -227,6 +233,26 @@ export default function CrmPage() {
         alert((await r.json().catch(() => ({}))).error || 'Não consegui enviar.')
       }
     } catch { alert('Não consegui enviar.') } finally { setEnviando(false) }
+  }
+
+  // ── Anexo ─────────────────────────────────────────────────────────────────
+  // O arquivo sobe primeiro para o NODRI e só depois entra na fila de envio.
+  // Assim a mensagem nasce com um endereço que a ponte consegue buscar mesmo
+  // se o navegador fechar no segundo seguinte.
+  async function anexar(file: File) {
+    if (!aberta || anexando) return
+    setAnexando(true)
+    try {
+      const { url, type } = await enviarArquivo(file)
+      const m = String(type || file.type || '')
+      const tipo = m.startsWith('image/') ? 'imagem'
+        : m.startsWith('video/') ? 'video'
+        : m.startsWith('audio/') ? 'audio'
+        : 'documento'
+      await enviar({ url, tipo })
+    } catch (e: any) {
+      alert(e?.message || 'Não consegui enviar o arquivo.')
+    } finally { setAnexando(false) }
   }
 
   // Acrescenta uma linha ao que ja esta escrito, em vez de substituir: a
@@ -424,15 +450,23 @@ export default function CrmPage() {
                     </div>
                   )}
                   <div className="flex gap-2 items-end">
+                    <input ref={escolherArquivo} type="file" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) anexar(f); e.target.value = '' }} />
+                    <button onClick={() => escolherArquivo.current?.click()} disabled={anexando}
+                      title="Anexar foto, áudio ou documento"
+                      className="px-3 py-2.5 rounded-xl disabled:opacity-40"
+                      style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#575d68' }}>
+                      <Paperclip size={15} />
+                    </button>
                     <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
                       placeholder="Escreva a resposta... (Enter envia, Shift+Enter quebra linha)"
                       className="flex-1 px-3 py-2.5 rounded-xl text-[13px] resize-none focus:outline-none"
                       style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
-                    <button onClick={enviar} disabled={!texto.trim() || enviando}
+                    <button onClick={() => enviar()} disabled={!texto.trim() || enviando}
                       className="px-4 py-2.5 rounded-xl font-bold text-[12.5px] flex items-center gap-1.5 disabled:opacity-40"
                       style={{ background: '#5b4fcf', color: '#fff' }}>
-                      <Send size={14} />{enviando ? 'Enviando' : 'Enviar'}
+                      <Send size={14} />{anexando ? 'Anexando' : enviando ? 'Enviando' : 'Enviar'}
                     </button>
                   </div>
                 </div>
@@ -677,7 +711,10 @@ function Balao({ m }: { m: Mensagem }) {
         {m.em_massa && (
           <p className="text-[9.5px] font-bold mb-1" style={{ color: '#9a6b12' }}>ENVIO EM MASSA</p>
         )}
-        <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
+        <Anexo m={m} />
+        {m.texto && !(m.midia_url && /^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto)) && (
+          <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
+        )}
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}
           {meu && m.situacao === 'na_fila' && ' · na fila'}
@@ -906,5 +943,39 @@ function BotaoPreco({ texto, onClick }: { texto: string; onClick: () => void }) 
       style={{ background: '#fff', color: '#14161b', border: '1px solid #e5e5ea' }}>
       {texto}
     </button>
+  )
+}
+
+
+// ── O anexo dentro do balão ─────────────────────────────────────────────────
+//
+// A foto que a cliente mandou precisa APARECER. Mostrar "[imagem]" obriga
+// quem está no CRM a pegar o celular para ver o cabelo que ela mandou — e aí
+// o CRM virou um passo a mais no atendimento, não um a menos.
+function Anexo({ m }: { m: Mensagem }) {
+  const url = m.midia_url
+  if (!url) return null
+
+  if (m.tipo === 'imagem' || m.tipo === 'figurinha') {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="block mb-1">
+        <img src={url} alt="Anexo da conversa" loading="lazy"
+          className="rounded-lg max-w-full" style={{ maxHeight: 260 }} />
+      </a>
+    )
+  }
+  if (m.tipo === 'video') {
+    return <video src={url} controls className="rounded-lg max-w-full mb-1" style={{ maxHeight: 260 }} />
+  }
+  if (m.tipo === 'audio') {
+    // Áudio de cliente é onde mora metade da informação de um salão. Tocar
+    // aqui dentro evita a viagem até o celular.
+    return <audio src={url} controls className="mb-1" style={{ maxWidth: 240 }} />
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer"
+      className="flex items-center gap-1.5 mb-1 text-[12px] font-bold underline">
+      <FileText size={13} /> Abrir arquivo
+    </a>
   )
 }

@@ -25,6 +25,7 @@ import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
+  downloadMediaMessage,
 } from '@whiskeysockets/baileys'
 import QRCode from 'qrcode'
 import pino from 'pino'
@@ -168,6 +169,56 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
   }
 }
 
+// ── Mídia ───────────────────────────────────────────────────────────────────
+//
+// Foto, áudio e documento sobem DIRETO para o storage, com uma URL que o NODRI
+// assina na hora. A ponte nunca vê a chave do banco: ela roda no computador do
+// salão, e chave de serviço em computador de salão é chave vazada com data
+// marcada.
+//
+// Teto de tamanho porque o CRM é para conversa, não para guardar o vídeo de
+// 80 MB que alguém mandou. O que passar do teto vira um aviso na conversa em
+// vez de sumir sem explicação.
+const TETO_MIDIA = 20 * 1024 * 1024
+
+const EXTENSAO = {
+  imagem: 'jpg', audio: 'ogg', video: 'mp4', figurinha: 'webp', documento: 'bin',
+}
+
+async function guardarMidia(salaoId, m, tipo) {
+  try {
+    const buffer = await downloadMediaMessage(m, 'buffer', {}, { logger: log, reuploadRequest: undefined })
+    if (!buffer?.length) return null
+    if (buffer.length > TETO_MIDIA) {
+      registro(salaoId, `mídia de ${Math.round(buffer.length / 1048576)} MB acima do teto — não guardada`)
+      return null
+    }
+
+    const doc = m.message?.documentMessage
+    const nome = doc?.fileName || `${tipo}_${Date.now()}.${EXTENSAO[tipo] || 'bin'}`
+    const mime = doc?.mimetype
+      || m.message?.imageMessage?.mimetype
+      || m.message?.audioMessage?.mimetype
+      || m.message?.videoMessage?.mimetype
+      || 'application/octet-stream'
+
+    const { signedUrl, publicUrl } = await nodri('?acao=midia-url', {
+      method: 'POST',
+      body: JSON.stringify({ salao_id: salaoId, nome }),
+    })
+    const r = await fetch(signedUrl, {
+      method: 'PUT',
+      headers: { 'content-type': mime, 'x-upsert': 'true' },
+      body: buffer,
+    })
+    if (!r.ok) { registro(salaoId, 'falha ao guardar mídia:', r.status); return null }
+    return publicUrl
+  } catch (e) {
+    registro(salaoId, 'falha ao baixar mídia:', e.message)
+    return null
+  }
+}
+
 // ── Uma sessão ──────────────────────────────────────────────────────────────
 
 async function abrirSessao(salaoId) {
@@ -278,6 +329,11 @@ async function abrirSessao(salaoId) {
         const tipo = tipoDaMensagem(m)
         if (!texto && tipo === 'texto') continue       // evento vazio
 
+        // A foto que a cliente mandou vira foto na tela, não "[imagem]". Sem
+        // isso, quem abre o CRM tem que pegar o celular para ver o cabelo que
+        // ela mandou — e aí o CRM virou um passo a mais, não um a menos.
+        const midia = tipo === 'texto' ? null : await guardarMidia(salaoId, m, tipo)
+
         await nodri('?acao=entrada', {
           method: 'POST',
           body: JSON.stringify({
@@ -286,6 +342,7 @@ async function abrirSessao(salaoId) {
             nome: deMim ? null : (m.pushName || null),
             texto: texto || `[${tipo}]`,
             tipo,
+            midia_url: midia,
             id_whatsapp: m.key?.id || null,
             direcao: deMim ? 'saida' : 'entrada',
             // Lista de transmissão. O NODRI usa isto para não deixar um
@@ -317,6 +374,29 @@ async function fecharSessao(salaoId) {
 
 // ── A fila de saída ─────────────────────────────────────────────────────────
 
+/**
+ * O que sai pelo WhatsApp. Texto puro quando não há anexo; com anexo, o tipo
+ * certo — foto entra como foto, áudio como áudio de verdade (ptt), documento
+ * com o nome preservado. Mandar tudo como documento "funciona" e entrega uma
+ * conversa horrível para a cliente.
+ */
+function corpoDoEnvio(msg) {
+  const url = msg.midia_url
+  if (!url) return { text: msg.texto || '' }
+  const legenda = (msg.texto || '').trim()
+  const tipo = msg.tipo || 'documento'
+
+  if (tipo === 'imagem') return { image: { url }, caption: legenda || undefined }
+  if (tipo === 'video')  return { video: { url }, caption: legenda || undefined }
+  if (tipo === 'audio')  return { audio: { url }, mimetype: 'audio/mp4', ptt: true }
+  return {
+    document: { url },
+    fileName: msg.nome_arquivo || legenda || 'arquivo',
+    mimetype: msg.mime || 'application/octet-stream',
+    caption: legenda || undefined,
+  }
+}
+
 async function despacharFila(salaoId) {
   const s = sessoes.get(salaoId)
   if (!s?.conectado) return
@@ -332,7 +412,7 @@ async function despacharFila(salaoId) {
   for (const msg of fila) {
     try {
       const jid = `${msg.telefone}@s.whatsapp.net`
-      const enviada = await s.sock.sendMessage(jid, { text: msg.texto })
+      const enviada = await s.sock.sendMessage(jid, corpoDoEnvio(msg))
       await nodri('?acao=confirmar', {
         method: 'POST',
         body: JSON.stringify({

@@ -81,6 +81,34 @@ export async function POST(req: NextRequest) {
   const salaoId = String(body?.salao_id || '')
   if (!salaoId) return NextResponse.json({ error: 'salao_id é obrigatório' }, { status: 400 })
 
+  // ── Onde a ponte guarda a foto que a cliente mandou ───────────────────────
+  //
+  // O NODRI devolve uma URL assinada e a ponte sobe o arquivo DIRETO para o
+  // storage. Dois motivos, os dois importantes:
+  //
+  // 1. a Vercel corta requisicao acima de ~4,5 MB antes de o codigo rodar, e
+  //    video de cliente estoura isso sem esforco;
+  // 2. a ponte roda no computador do salao. Ela nunca recebe a chave de
+  //    servico do banco -- so uma autorizacao pontual, para um caminho, que
+  //    vence sozinha.
+  if (acao === 'midia-url') {
+    const bruto = String(body?.nome || 'arquivo')
+    const safe = bruto.replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80)
+    const caminho = `crm/${salaoId}/${Date.now()}_${safe}`
+
+    const assinar = () => supabaseAdmin.storage.from('uploads').createSignedUploadUrl(caminho)
+    let { data, error } = await assinar()
+    if (error && /bucket not found/i.test(error.message || '')) {
+      await supabaseAdmin.storage.createBucket('uploads', { public: true, fileSizeLimit: 52428800 }).catch(() => {})
+      ;({ data, error } = await assinar())
+    }
+    if (error || !data) {
+      return NextResponse.json({ error: error?.message || 'Falhou' }, { status: 500 })
+    }
+    const { data: { publicUrl } } = supabaseAdmin.storage.from('uploads').getPublicUrl(caminho)
+    return NextResponse.json({ signedUrl: data.signedUrl, publicUrl })
+  }
+
   const agora = new Date().toISOString()
 
   // ── A ponte informa como está a conexão ───────────────────────────────────
@@ -502,13 +530,15 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from('crm_mensagens')
-    .select('id, texto, conversa:crm_conversas(contato:crm_contatos(telefone))')
+    .select('id, texto, tipo, midia_url, conversa:crm_conversas(contato:crm_contatos(telefone))')
     .eq('salao_id', salaoId).eq('situacao', 'na_fila')
     .order('criado_em', { ascending: true }).limit(20)
 
   const fila = (data || []).map((m: any) => ({
     id: m.id,
     texto: m.texto,
+    tipo: m.tipo || 'texto',
+    midia_url: m.midia_url || null,
     telefone: m.conversa?.contato?.telefone || null,
   })).filter(m => m.telefone)
 
