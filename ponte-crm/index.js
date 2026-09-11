@@ -64,6 +64,27 @@ const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '
 /** Sessões vivas, uma por salão. */
 const sessoes = new Map()
 
+// Quantas mensagens enviadas ficam guardadas para poder reenviar. O pedido de
+// reenvio chega minutos depois, no máximo horas -- 300 cobre um dia inteiro de
+// recepção com folga, e é memória de sobra (só o conteúdo, não a mídia).
+const ULTIMAS_ENVIADAS = 300
+
+/**
+ * Guarda o conteúdo de uma mensagem que acabou de sair, para conseguir
+ * reenviá-la se o aparelho da cliente pedir (ver getMessage, em
+ * abrirDeVerdade). Para foto e áudio isto NÃO guarda o arquivo: guarda o
+ * ponteiro que o WhatsApp já subiu, então é barato.
+ */
+function guardarEnviada(sessao, id, conteudo) {
+  if (!sessao?.enviadas || !id || !conteudo) return
+  sessao.enviadas.set(id, conteudo)
+  // Map guarda a ordem de inserção, então a primeira chave é sempre a mais
+  // velha -- dá uma fila que se limpa sozinha, sem biblioteca nenhuma.
+  while (sessao.enviadas.size > ULTIMAS_ENVIADAS) {
+    sessao.enviadas.delete(sessao.enviadas.keys().next().value)
+  }
+}
+
 // ── Conversa com o NODRI ────────────────────────────────────────────────────
 
 async function nodri(caminho, opcoes = {}) {
@@ -308,7 +329,11 @@ async function abrirSessao(salaoId) {
   // o numero certo, e nao vem conversa nenhuma -- que foi exatamente o que
   // aconteceu ao ligar o telefone do salao. No log dava para ver: "QR gerado"
   // duas vezes no mesmo segundo.
-  const registroSessao = { sock: null, salaoId, conectado: false, fechando: false }
+  const registroSessao = {
+    sock: null, salaoId, conectado: false, fechando: false,
+    // As últimas mensagens que saíram daqui. Ver guardarEnviada().
+    enviadas: new Map(),
+  }
   sessoes.set(salaoId, registroSessao)
 
   try {
@@ -345,6 +370,34 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     // que foi exatamente o que aconteceu com o numero do salao.
     shouldSyncHistoryMessage: () => true,
     markOnlineOnConnect: false,   // não rouba as notificações do celular
+    // ── A mensagem que a cliente não conseguiu abrir ────────────────────────
+    //
+    // Quando o aparelho da cliente não consegue decifrar uma mensagem -- e
+    // isso acontece sozinho: telefone que ficou horas offline, aparelho novo,
+    // sessão do Signal que saiu de passo -- ele NÃO avisa a dona do telefone.
+    // Ele pede a mensagem de novo para quem enviou, por baixo do pano. Quem
+    // enviou precisa ter o conteúdo guardado para reencriptar e mandar outra
+    // vez.
+    //
+    // Sem isto configurado, o Baileys responde `undefined` e desiste em
+    // silêncio (nem no log aparece, porque ele registra em debug). Na tela da
+    // cliente fica para sempre "Aguardando esta mensagem. Isso pode levar um
+    // tempo. Saiba mais" -- mesmo a mensagem tendo saído daqui.
+    //
+    // É também a explicação de aparecer no computador e não no celular: são
+    // duas sessões de criptografia diferentes do MESMO contato. Uma decifrou,
+    // a outra pediu de novo e não teve resposta.
+    getMessage: async (chave) => {
+      const guardada = registroSessao.enviadas.get(chave?.id)
+      // Fica no log porque é invisível de todo o resto: ninguém no salão vê
+      // que uma cliente não conseguiu abrir a mensagem. Se um dia voltar a
+      // aparecer "Aguardando esta mensagem", é esta linha que diz se a ponte
+      // foi chamada e se tinha o que reenviar.
+      registro(salaoId, guardada
+        ? `aparelho pediu de novo a mensagem ${chave?.id} — reenviando`
+        : `aparelho pediu a mensagem ${chave?.id}, que não está mais guardada`)
+      return guardada || undefined
+    },
   })
 
   registroSessao.sock = sock
@@ -629,6 +682,10 @@ async function despacharFila(salaoId) {
         },
       } : undefined
       const enviada = await s.sock.sendMessage(jid, corpoDoEnvio(msg), opcoes)
+      // Guardada ANTES de confirmar: o pedido de reenvio pode chegar no
+      // segundo seguinte, e chegar antes de a mensagem estar guardada seria
+      // exatamente o caso que este código existe para cobrir.
+      guardarEnviada(s, enviada?.key?.id, enviada?.message)
       await nodri('?acao=confirmar', {
         method: 'POST',
         body: JSON.stringify({

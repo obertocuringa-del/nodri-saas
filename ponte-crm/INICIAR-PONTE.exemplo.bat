@@ -20,7 +20,10 @@ if errorlevel 1 (
   echo  A ponte JA ESTA RODANDO em outra janela.
   echo  Nao abri uma segunda: duas ao mesmo tempo derrubam a conexao.
   echo.
-  timeout /t 10 /nobreak >nul
+  REM -- ping no lugar de timeout: o timeout com a saida redirecionada
+  REM -- trava sem contar, e a janela fica aberta para sempre. Foram achadas
+  REM -- tres presas assim em 11/09/2026.
+  ping -n 11 127.0.0.1 >nul
   exit /b
 )
 
