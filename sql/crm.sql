@@ -200,3 +200,10 @@ ALTER TABLE crm_mensagens ADD COLUMN IF NOT EXISTS responde_a uuid;
 -- embaixo. Guardar de qual numero o historico veio e o que permite a tela
 -- dizer isso em voz alta em vez de deixar a pessoa descobrir sozinha.
 ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS numero_dados text;
+
+-- ── Uma ponte por salao ─────────────────────────────────────────────────────
+-- Duas pontes abrindo a mesma sessao de WhatsApp brigam e derrubam a conexao.
+-- Posse com validade: quem chega primeiro fica dono e so perde depois de dois
+-- minutos sem sinal.
+ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_dono text;
+ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_visto_em timestamptz;

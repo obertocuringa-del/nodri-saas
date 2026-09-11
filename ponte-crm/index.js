@@ -31,6 +31,7 @@ import QRCode from 'qrcode'
 import pino from 'pino'
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
 const NODRI   = (process.env.NODRI_URL || 'https://www.nodri.com.br').replace(/\/+$/, '')
 const CHAVE   = process.env.CRM_PONTE_CHAVE || ''
@@ -41,6 +42,12 @@ if (!CHAVE) {
   console.error('[ponte] CRM_PONTE_CHAVE não definida. Sem ela o NODRI recusa a conexão.')
   process.exit(1)
 }
+
+// Quem sou eu. Vai junto no pedido de canais e e o que permite ao NODRI dar a
+// posse a uma ponte so: duas abrindo a mesma sessao de WhatsApp brigam entre
+// si e derrubam a conexao do salao. O nome da maquina entra para a mensagem
+// de erro dizer ALGUMA coisa util quando isso acontecer.
+const EU = process.env.CRM_PONTE_ID || `${os.hostname()}`
 
 const log = pino({ level: process.env.LOG_LEVEL || 'warn' })
 const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '[ponte]', ...a)
@@ -458,13 +465,22 @@ async function despacharFila(salaoId) {
 async function volta() {
   let canais = []
   try {
-    canais = (await nodri('?acao=canais')).canais || []
+    canais = (await nodri(`?acao=canais&ponte=${encodeURIComponent(EU)}`)).canais || []
   } catch (e) {
     registro('NODRI fora de alcance:', e.message)
     return
   }
 
   const querem = new Set(canais.map(c => c.salao_id))
+
+  // O NODRI parou de entregar um salao que esta aberto aqui: outra ponte pegou
+  // a posse. Fechar e o certo -- duas conexoes no mesmo numero se derrubam --
+  // mas em silencio isso vira "o WhatsApp caiu sozinho", entao fica dito.
+  for (const salaoId of sessoes.keys()) {
+    if (!querem.has(salaoId)) {
+      registro(salaoId, 'outra ponte assumiu este salao — encerrando aqui. Rode a ponte em UM computador só.')
+    }
+  }
 
   // Abre o que falta
   for (const c of canais) {

@@ -533,10 +533,38 @@ export async function GET(req: NextRequest) {
   // pergunta ao NODRI a cada volta, e por isso um salão novo que clica em
   // "Gerar o QR code" é atendido sem ninguém reiniciar serviço nenhum.
   if (params.get('acao') === 'canais') {
+    // ── Uma ponte por salao, mesmo com varios computadores ──────────────────
+    //
+    // A sessao de WhatsApp e de UM aparelho conectado. Duas pontes abrindo a
+    // mesma sessao brigam entre si e derrubam a conexao -- o salao perde o
+    // WhatsApp e ninguem entende por que. O .bat ja impede duas copias no
+    // MESMO computador; isto impede em computadores diferentes, que e o caso
+    // que vai acontecer quando a recepcao instalar em duas maquinas.
+    //
+    // Funciona por posse com validade: a ponte se apresenta com um id, o
+    // primeiro a chegar fica dono, e so perde a posse se passar dois minutos
+    // sem dar sinal -- prazo que cobre reinicio de computador sem deixar um
+    // salao mudo por engano.
+    const dono = String(params.get('ponte') || '').slice(0, 60)
+    const agora = new Date()
+    const limite = new Date(agora.getTime() - 120000).toISOString()
+
     const { data } = await supabaseAdmin
-      .from('crm_canais').select('salao_id, situacao')
+      .from('crm_canais').select('id, salao_id, situacao, ponte_dono, ponte_visto_em')
       .neq('situacao', 'desconectado')
-    return NextResponse.json({ canais: data || [] })
+
+    const meus: any[] = []
+    for (const c of data || []) {
+      const livre = !c.ponte_dono || c.ponte_dono === dono
+        || !c.ponte_visto_em || c.ponte_visto_em < limite
+      if (!dono) { meus.push({ salao_id: c.salao_id, situacao: c.situacao }); continue }
+      if (!livre) continue
+      await supabaseAdmin.from('crm_canais')
+        .update({ ponte_dono: dono, ponte_visto_em: agora.toISOString() })
+        .eq('id', c.id)
+      meus.push({ salao_id: c.salao_id, situacao: c.situacao })
+    }
+    return NextResponse.json({ canais: meus })
   }
 
   const salaoId = params.get('salao') || ''
