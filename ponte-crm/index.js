@@ -711,9 +711,22 @@ async function baterRelogio() {
 }
 
 // ── Descobrir quem e quem, pelo telefone ────────────────────────────────────
+//
+// Ritmo que se ajusta ao que o WhatsApp aceita. As duas primeiras levas
+// voltaram com 19 e 17 ids; depois vieram zeros seguidos -- o WhatsApp comeca
+// a limitar quem consulta muito, e insistir contra o limite e como se ganha um
+// bloqueio. O que esta em jogo e o numero do salao, nao a velocidade da
+// varredura.
+//
+// Entao: leva que volta vazia dobra a espera, ate meia hora. Leva que volta
+// com id volta ao ritmo de cinco minutos. Sem ninguem para vigiar.
+const ESPERA_MIN = 5 * 60000
+const ESPERA_MAX = 30 * 60000
+let esperaAtual = ESPERA_MIN
 let resolvendoEm = 0
+
 async function resolverPorTelefone() {
-  if (Date.now() - resolvendoEm < 60000) return
+  if (Date.now() - resolvendoEm < esperaAtual) return
   resolvendoEm = Date.now()
 
   for (const [salaoId, s] of sessoes) {
@@ -737,8 +750,14 @@ async function resolverPorTelefone() {
         method: 'POST', body: JSON.stringify({ salao_id: salaoId, pares }),
       })
       const comId = pares.filter(p => p.lid).length
+      if (comId === 0) {
+        esperaAtual = Math.min(esperaAtual * 2, ESPERA_MAX)
+      } else {
+        esperaAtual = ESPERA_MIN
+      }
       registro(salaoId, `telefones: +${telefones.length} conferidos (${ja_conferidos} no total, ` +
-        `varredura em ${posicao}), ${comId} com id, ${r?.ligados || 0} ganharam o número`)
+        `varredura em ${posicao}), ${comId} com id, ${r?.ligados || 0} ganharam o número` +
+        (comId === 0 ? ` — WhatsApp não respondeu, próxima leva em ${Math.round(esperaAtual / 60000)} min` : ''))
     } catch (e) {
       registro(salaoId, 'falha ao cruzar telefones:', e.message)
     }
