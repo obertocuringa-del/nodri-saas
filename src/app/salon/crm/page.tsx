@@ -141,6 +141,45 @@ export default function CrmPage() {
     fimDaConversa.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens.length])
 
+  // ── Avisar que chegou mensagem ────────────────────────────────────────────
+  //
+  // A recepcao nao fica olhando a tela: ela atende, cobra, atende de novo. Se
+  // o CRM so mostra a mensagem para quem estiver olhando, ele perde para a
+  // notificacao do celular, que e exatamente o que ele veio substituir.
+  //
+  // Dois avisos que funcionam com a aba no fundo: o TITULO da aba e um toque
+  // curto. Nada de pedir permissao de notificacao do navegador -- e um
+  // dialogo a mais para a recepcao clicar em "bloquear" no primeiro dia.
+  const totalNaoLidas = useMemo(
+    () => conversas.reduce((t, c) => t + (c.nao_lidas || 0), 0), [conversas])
+  const naoLidasAntes = useRef(0)
+
+  useEffect(() => {
+    document.title = totalNaoLidas > 0
+      ? `(${totalNaoLidas}) CRM · WhatsApp`
+      : 'CRM · WhatsApp'
+  }, [totalNaoLidas])
+
+  useEffect(() => {
+    const antes = naoLidasAntes.current
+    naoLidasAntes.current = totalNaoLidas
+    // So toca quando SUBIU, e nunca na primeira carga: abrir o CRM de manha
+    // com trinta pendencias nao pode virar um alarme.
+    if (antes === 0 || totalNaoLidas <= antes) return
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const vol = ctx.createGain()
+      osc.connect(vol); vol.connect(ctx.destination)
+      osc.frequency.value = 880
+      vol.gain.setValueAtTime(0.0001, ctx.currentTime)
+      vol.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01)
+      vol.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28)
+      osc.start(); osc.stop(ctx.currentTime + 0.3)
+      setTimeout(() => ctx.close().catch(() => {}), 600)
+    } catch {}
+  }, [totalNaoLidas])
+
   // ── A fila ────────────────────────────────────────────────────────────────
   const agora = Date.now()
   const comTempo = useMemo(() => conversas.map(c => {
@@ -449,8 +488,17 @@ export default function CrmPage() {
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   motivos={motivos} origens={origens} />
 
-                <div className="flex-1 overflow-y-auto px-5 py-4">
-                  {mensagens.map(m => <Balao key={m.id} m={m} />)}
+                <div className="flex-1 overflow-y-auto px-5 py-4"
+                  style={{ background: '#efeef1' }}>
+                  {mensagens.map((m, i) => (
+                    <div key={m.id}>
+                      {/* Separador de dia. Sem ele, uma conversa de seis meses
+                          vira um bloco unico e ninguem sabe se "amanha as 15h"
+                          foi combinado ontem ou em marco. */}
+                      {diaMudou(mensagens[i - 1], m) && <SeparadorDia em={m.criado_em} />}
+                      <Balao m={m} />
+                    </div>
+                  ))}
                   <div ref={fimDaConversa} />
                 </div>
 
@@ -477,8 +525,20 @@ export default function CrmPage() {
                       <Paperclip size={15} />
                     </button>
                     <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2}
-                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
-                      placeholder="Escreva a resposta... (Enter envia, Shift+Enter quebra linha)"
+                      onKeyDown={e => {
+                        if (e.key !== 'Enter' || e.shiftKey) return
+                        e.preventDefault()
+                        // Atalho: "/oi" vira a mensagem de boas-vindas inteira.
+                        // O campo `atalho` das mensagens prontas existia e nao
+                        // era usado por nada -- quem digita rapido nao quer
+                        // tirar a mao do teclado para clicar num botao.
+                        const m = texto.trim().match(/^\/(\S+)$/)
+                        const pronta = m && modelos.find(x =>
+                          String(x.atalho || '').toLowerCase() === m[1].toLowerCase())
+                        if (pronta) { setTexto(pronta.texto); return }
+                        enviar()
+                      }}
+                      placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
                       className="flex-1 px-3 py-2.5 rounded-xl text-[13px] resize-none focus:outline-none"
                       style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
                     <button onClick={() => enviar()} disabled={!texto.trim() || enviando}
@@ -608,41 +668,90 @@ function ItemFila({ c, ativo, onClick }: any) {
   const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
   const urg = CORES_URGENCIA[c._urg as keyof typeof CORES_URGENCIA]
   const dono = donoAtivo(c.dono_ate) ? c.dono_nome : null
+  const nova = ehNova(c)
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 border-b transition"
-      style={{ borderColor: '#f0f0f3', background: ativo ? '#efedfb' : 'transparent' }}>
-      <div className="flex items-center gap-2 mb-0.5">
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: est.cor }} />
-        <span className="font-bold text-[12.5px] truncate flex-1" style={{ color: '#14161b' }}>{nome}</span>
-        {c.nao_lidas > 0 && (
-          <span className="text-[9.5px] font-bold px-1.5 rounded-full flex-shrink-0"
-            style={{ background: '#b4322a', color: '#fff' }}>{c.nao_lidas}</span>
-        )}
-      </div>
-      <p className="text-[11.5px] truncate pl-3.5" style={{ color: '#868c97' }}>
-        {c.ultima_de === 'salao' ? 'Você: ' : ''}{c.ultima_previa || '—'}
-      </p>
-      <div className="flex items-center gap-2 pl-3.5 mt-1">
-        {est.naFila && c._min > 0 && (
-          <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: urg.cor }}>
-            <Clock size={9} />{tempoCurto(c._min)}
+      className="w-full text-left px-3 py-2.5 flex gap-2.5 transition relative"
+      style={{
+        background: ativo ? '#f3f1fd' : 'transparent',
+        borderBottom: '1px solid #f2f2f5',
+      }}>
+      {/* Faixa de urgencia na borda. A cor mora na lateral e nao no fundo: um
+          fundo vermelho numa lista de cem linhas cansa a vista em dez minutos
+          e para de significar coisa alguma. */}
+      {est.naFila && (
+        <span className="absolute left-0 top-0 bottom-0 w-[3px]"
+          style={{ background: urg.cor, opacity: c._min > 0 ? 1 : 0.25 }} />
+      )}
+
+      <Avatar nome={nome} nova={nova} />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="font-bold text-[12.5px] truncate" style={{ color: '#14161b' }}>{nome}</span>
+          <div className="flex-1" />
+          {est.naFila && c._min > 0 && (
+            <span className="text-[10px] font-bold flex-shrink-0 flex items-center gap-0.5"
+              style={{ color: urg.cor, fontVariantNumeric: 'tabular-nums' }}>
+              <Clock size={9} />{tempoCurto(c._min)}
+            </span>
+          )}
+          {c.nao_lidas > 0 && (
+            <span className="text-[9.5px] font-bold px-1.5 rounded-full flex-shrink-0"
+              style={{ background: '#b4322a', color: '#fff' }}>{c.nao_lidas}</span>
+          )}
+        </div>
+
+        <p className="text-[11.5px] truncate mt-0.5" style={{ color: '#7a808b' }}>
+          {c.ultima_de === 'salao' ? 'Você: ' : ''}{c.ultima_previa || '—'}
+        </p>
+
+        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+          {/* A etiqueta aparece SEMPRE, inclusive na fila. E o que permite abrir
+              "Todas" e ver de relance que nao sobrou conversa sem direcao. */}
+          <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
+            style={{ color: est.cor, background: est.fundo }}>
+            {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
           </span>
-        )}
-        {dono && (
-          <span className="text-[10px] flex items-center gap-1" style={{ color: '#5b4fcf' }}>
-            <User size={9} />{dono}
-          </span>
-        )}
-        {/* A etiqueta aparece SEMPRE, inclusive na fila. E o que permite abrir
-            "Todas" e ver de relance que nao sobrou conversa sem direcao. */}
-        <span className="text-[10px] px-1.5 py-0.5 rounded"
-          style={{ color: est.cor, background: est.fundo }}>
-          {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
-        </span>
-        {ehNova(c) && <SeloNova />}
+          {nova && <SeloNova />}
+          {dono && (
+            <span className="text-[9.5px] flex items-center gap-0.5" style={{ color: '#8b8fa3' }}>
+              <User size={9} />{dono}
+            </span>
+          )}
+        </div>
       </div>
     </button>
+  )
+}
+
+// Iniciais em vez de foto. O WhatsApp nao entrega a foto da cliente pela
+// ponte, e um circulo cinza igual em cem linhas nao ajuda ninguem a achar a
+// conversa. A cor sai do proprio nome, entao a mesma pessoa tem sempre a
+// mesma cor e a lista fica reconhecivel de relance.
+const CORES_AVATAR = ['#5b4fcf', '#0f766e', '#b4322a', '#9a6b12', '#2f6b4f', '#7c3aed', '#0369a1', '#b45309']
+
+function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; tamanho?: number }) {
+  const limpo = String(nome || '').trim()
+  const partes = limpo.split(/\s+/).filter(p => /[a-zA-ZÀ-ú]/.test(p))
+  const iniciais = partes.length
+    ? (partes[0][0] + (partes[1]?.[0] || '')).toUpperCase()
+    : limpo.slice(-2)
+  let soma = 0
+  for (let i = 0; i < limpo.length; i++) soma += limpo.charCodeAt(i)
+  const cor = CORES_AVATAR[soma % CORES_AVATAR.length]
+  return (
+    <div className="rounded-full flex-shrink-0 flex items-center justify-center font-bold relative"
+      style={{
+        width: tamanho, height: tamanho, background: cor, color: '#fff',
+        fontSize: tamanho * 0.36, letterSpacing: '0.02em',
+      }}>
+      {iniciais}
+      {nova && (
+        <span className="absolute -bottom-0.5 -right-0.5 rounded-full"
+          style={{ width: 10, height: 10, background: '#0f766e', border: '2px solid #fff' }} />
+      )}
+    </div>
   )
 }
 
@@ -727,20 +836,47 @@ function BotaoAcao({ onClick, cor, fundo, texto, icone }: any) {
   )
 }
 
+const DIA = (d: any) => d ? new Date(d).toDateString() : ''
+const diaMudou = (antes: any, agora: any) => DIA(antes?.criado_em) !== DIA(agora?.criado_em)
+
+function SeparadorDia({ em }: { em: string }) {
+  const d = new Date(em)
+  const hoje = new Date()
+  const ontem = new Date(Date.now() - 864e5)
+  const rotulo = d.toDateString() === hoje.toDateString() ? 'Hoje'
+    : d.toDateString() === ontem.toDateString() ? 'Ontem'
+    : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: d.getFullYear() === hoje.getFullYear() ? undefined : 'numeric' })
+  return (
+    <div className="flex justify-center my-3">
+      <span className="px-2.5 py-1 rounded-full text-[10.5px] font-bold"
+        style={{ background: '#fff', color: '#7a808b', boxShadow: '0 1px 2px rgba(0,0,0,.06)' }}>
+        {rotulo}
+      </span>
+    </div>
+  )
+}
+
 function Balao({ m }: { m: Mensagem }) {
   const meu = m.direcao === 'saida'
   const hora = m.criado_em
     ? new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : ''
   return (
-    <div className={`flex mb-2 ${meu ? 'justify-end' : 'justify-start'}`}>
-      <div className="max-w-[68%] px-3 py-2 rounded-2xl"
+    <div className={`flex mb-1.5 ${meu ? 'justify-end' : 'justify-start'}`}>
+      <div className="max-w-[68%] px-3 py-2"
         style={m.em_massa
           // Disparo de lista não é resposta para aquela pessoa. Fica com a
           // cara de recado colado, para ninguém ler como se fosse atendimento.
-          ? { background: '#faf7ef', color: '#575d68', border: '1px dashed #d8c9a6' }
-          : { background: meu ? '#5b4fcf' : '#fff', color: meu ? '#fff' : '#14161b',
-              border: meu ? 'none' : '1px solid #e5e5ea' }}>
+          ? { background: '#faf7ef', color: '#575d68', border: '1px dashed #d8c9a6',
+              borderRadius: 14 }
+          : {
+              background: meu ? '#5b4fcf' : '#fff',
+              color: meu ? '#fff' : '#14161b',
+              boxShadow: '0 1px 1.5px rgba(0,0,0,.08)',
+              // Canto "mordido" do lado de quem falou, como todo mensageiro
+              // faz: diz de quem é a fala antes de a pessoa ler a cor.
+              borderRadius: meu ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+            }}>
         {m.em_massa && (
           <p className="text-[9.5px] font-bold mb-1" style={{ color: '#9a6b12' }}>ENVIO EM MASSA</p>
         )}
