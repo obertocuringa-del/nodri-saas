@@ -260,9 +260,13 @@ export default function CrmPage() {
   const conectado = canal.situacao === 'conectado'
 
   return (
-    <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
+    // Coluna de tela inteira: o cabecalho ocupa o que precisar e o resto fica
+    // com o que sobrar. Antes o corpo descontava 53px na mao, e bastou o
+    // cabecalho ganhar uma segunda linha para a conversa vazar para baixo da
+    // dobra.
+    <div className="h-screen flex flex-col" style={{ background: '#f5f5f7' }}>
       {/* ── Barra ── */}
-      <div className="sticky top-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+      <div className="flex-shrink-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
         {/* A barra global de busca flutua no canto direito, por cima de tudo
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
@@ -278,42 +282,7 @@ export default function CrmPage() {
             </p>
           </div>
 
-          {/* As abas moram aqui em cima, no meio, e nao embaixo da busca: a
-              pergunta "o que eu faco agora?" vem antes de "quem eu procuro".
-              Sao a primeira coisa da tela e ficam no mesmo lugar o tempo todo. */}
-          {conectado && (
-            <div className="flex-1 min-w-0 flex gap-1 flex-wrap justify-center">
-              <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
-                texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
-              {contagem.novas > 0 && (
-                <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
-                  texto={`Clientes novas (${contagem.novas})`} />
-              )}
-              {contagem.antigas > 0 && (
-                <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
-                  texto={`Sem resposta (${contagem.antigas})`} />
-              )}
-              <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
-                texto={`Aguardando (${contagem.aguardando})`} />
-              {contagem.followUp > 0 && (
-                <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
-                  texto={`Follow-up (${contagem.followUp})`} />
-              )}
-              {contagem.pausadas > 0 && (
-                <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
-                  texto={`Pausadas (${contagem.pausadas})`} />
-              )}
-              {contagem.agendadas > 0 && (
-                <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
-                  texto={`Agendadas (${contagem.agendadas})`} />
-              )}
-              {contagem.perdidas > 0 && (
-                <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
-                  texto={`Não fechou (${contagem.perdidas})`} />
-              )}
-              <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
-            </div>
-          )}
+          <div className="flex-1" />
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <SeloConexao canal={canal} />
@@ -328,16 +297,56 @@ export default function CrmPage() {
               className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><RefreshCw size={15} /></button>
           </div>
         </div>
+
+        {/* Linha propria para as abas. Tentei encaixa-las na linha do titulo e,
+            numa janela estreita, "Preciso agir (27)" virou tres linhas de uma
+            palavra cada. Linha inteira para elas resolve em qualquer largura, e
+            so a linha de cima precisa desviar da busca global. */}
+        {conectado && (
+          <div className="px-4 pb-2 flex gap-1 flex-wrap">
+            <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
+              texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
+            {contagem.novas > 0 && (
+              <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
+                texto={`Clientes novas (${contagem.novas})`} />
+            )}
+            {contagem.antigas > 0 && (
+              <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
+                texto={`Sem resposta (${contagem.antigas})`} />
+            )}
+            <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
+              texto={`Aguardando (${contagem.aguardando})`} />
+            {contagem.followUp > 0 && (
+              <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
+                texto={`Follow-up (${contagem.followUp})`} />
+            )}
+            {contagem.pausadas > 0 && (
+              <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
+                texto={`Pausadas (${contagem.pausadas})`} />
+            )}
+            {contagem.agendadas > 0 && (
+              <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
+                texto={`Agendadas (${contagem.agendadas})`} />
+            )}
+            {contagem.perdidas > 0 && (
+              <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
+                texto={`Não fechou (${contagem.perdidas})`} />
+            )}
+            <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
+          </div>
+        )}
       </div>
 
       {!canalLido ? (
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 53px)' }}>
+        <div className="flex-1 min-h-0 flex items-center justify-center">
           <p className="text-[13px]" style={{ color: '#868c97' }}>Verificando a conexao...</p>
         </div>
       ) : !conectado ? (
-        <TelaConexao canal={canal} onConectar={() => conectar('conectar')} />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <TelaConexao canal={canal} onConectar={() => conectar('conectar')} />
+        </div>
       ) : (
-        <div className="flex" style={{ height: 'calc(100vh - 53px)' }}>
+        <div className="flex-1 min-h-0 flex">
           {/* ── Fila ── */}
           <aside className="w-[330px] flex-shrink-0 border-r flex flex-col" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
             <div className="p-3 border-b" style={{ borderColor: '#e5e5ea' }}>
