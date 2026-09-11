@@ -33,7 +33,10 @@ export default function CrmPage() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [texto, setTexto] = useState('')
   const [busca, setBusca] = useState('')
-  const [filtro, setFiltro] = useState<'fila' | 'todas' | EstadoConversa>('fila')
+  // 'fila' = precisa de resposta e e de agora. 'antigas' = a cliente falou por
+  // ultimo e ficou para tras. As duas sao 'acao_necessaria' no banco: o que
+  // separa e a idade, e isso e decisao de tela, nao de estado.
+  const [filtro, setFiltro] = useState<'fila' | 'antigas' | 'todas' | EstadoConversa>('fila')
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [fecharAberto, setFecharAberto] = useState(false)
@@ -129,12 +132,17 @@ export default function CrmPage() {
     const min = c.aguardando_desde
       ? minutosUteis(new Date(c.aguardando_desde), new Date(agora))
       : 0
-    return { ...c, _min: min, _urg: urgenciaPorMinutos(min) }
+    // Passou de tres dias sem resposta, deixou de ser a fila de hoje: vai
+    // para "Sem resposta". Continua sendo trabalho, mas nao pode enterrar
+    // quem escreveu agora de manha.
+    const antiga = estadoPor(c.estado).naFila && min > 3 * 24 * 60
+    return { ...c, _min: min, _urg: urgenciaPorMinutos(min), _antiga: antiga }
   }), [conversas, agora])
 
   const visiveis = useMemo(() => {
     let lista = comTempo
-    if (filtro === 'fila') lista = lista.filter(c => estadoPor(c.estado).naFila)
+    if (filtro === 'fila') lista = lista.filter(c => estadoPor(c.estado).naFila && !c._antiga)
+    else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
     if (busca.trim()) {
       const q = busca.trim().toLowerCase()
@@ -156,9 +164,10 @@ export default function CrmPage() {
   }, [comTempo, filtro, busca])
 
   const contagem = useMemo(() => {
-    const naFila = comTempo.filter(c => estadoPor(c.estado).naFila)
+    const naFila = comTempo.filter(c => estadoPor(c.estado).naFila && !c._antiga)
     return {
       fila: naFila.length,
+      antigas: comTempo.filter(c => c._antiga).length,
       criticas: naFila.filter(c => c._urg === 'critico').length,
       aguardando: comTempo.filter(c => c.estado === 'aguardando').length,
       followUp: comTempo.filter(c => c.estado === 'follow_up').length,
@@ -250,6 +259,10 @@ export default function CrmPage() {
               <div className="flex gap-1 flex-wrap">
                 <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
                   texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
+                {contagem.antigas > 0 && (
+                  <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
+                    texto={`Sem resposta (${contagem.antigas})`} />
+                )}
                 <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')} texto={`Aguardando (${contagem.aguardando})`} />
                 <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
               </div>
@@ -264,7 +277,9 @@ export default function CrmPage() {
               {carregando && <p className="p-4 text-[12.5px]" style={{ color: '#868c97' }}>Carregando...</p>}
               {!carregando && visiveis.length === 0 && (
                 <p className="p-4 text-[12.5px]" style={{ color: '#868c97' }}>
-                  {filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.' : 'Nenhuma conversa aqui.'}
+                  {filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.'
+                    : filtro === 'antigas' ? 'Nenhuma conversa parada para tras.'
+                    : 'Nenhuma conversa aqui.'}
                 </p>
               )}
               {visiveis.map(c => (

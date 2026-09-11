@@ -116,8 +116,6 @@ export async function POST(req: NextRequest) {
   //    contaria como oportunidade tudo que já estava no celular, e o número
   //    nasceria mentindo.
   if (acao === 'historico') {
-    const RECENTE_MS = 3 * 24 * 60 * 60 * 1000
-
     // Normaliza o lote antes de tocar no banco. Conversa sem telefone válido
     // e mensagem vazia não chegam a virar linha.
     const lote = (Array.isArray(body?.conversas) ? body.conversas : [])
@@ -194,14 +192,18 @@ export async function POST(req: NextRequest) {
       const ultima = c.mensagens[c.mensagens.length - 1]
       const quando = ultima?.em ? new Date(Number(ultima.em) * 1000).toISOString() : agora
       const daCliente = ultima?.direcao === 'entrada'
-      const recente = ultima?.em ? (Date.now() - Number(ultima.em) * 1000) < RECENTE_MS : false
-      return { c, contato, ultima, quando, daCliente, recente }
+      return { c, contato, ultima, quando, daCliente }
     }).filter((r: any) => r.contato)
 
     const criarConversas = resumo
       .filter((r: any) => !porContato.has(r.contato.id))
       .map((r: any) => {
-        const estado = r.daCliente && r.recente ? 'acao_necessaria' : 'aguardando'
+        // Quem falou por ultimo foi a cliente => alguem precisa responder.
+        // A idade da conversa NAO muda isso: "aguardando cliente" numa
+        // conversa em que a cliente perguntou e ninguem respondeu e mentira,
+        // e e a mentira mais cara que existe aqui. Quem separa o de hoje do
+        // que ficou para tras e a tela, com a aba "Sem resposta".
+        const estado = r.daCliente ? 'acao_necessaria' : 'aguardando'
         return {
           salao_id: salaoId,
           contato_id: r.contato.id,
