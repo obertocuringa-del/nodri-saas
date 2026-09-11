@@ -65,6 +65,8 @@ export interface ResumoRelogio {
   contatos_conferidos: number
   clientes_novas: number
   ligados_ao_sistema: number
+  /** Contatos sem telefone: não dá para afirmar se são novas ou não. */
+  sem_como_conferir: number
 }
 
 export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
@@ -73,6 +75,7 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
   const r: ResumoRelogio = {
     pausas_vencidas: 0, viraram_follow_up: 0, agendaram_sozinho: 0,
     contatos_conferidos: 0, clientes_novas: 0, ligados_ao_sistema: 0,
+    sem_como_conferir: 0,
   }
 
   // ── 1. A pausa venceu ─────────────────────────────────────────────────────
@@ -219,14 +222,29 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         if (!ct.cliente_nome) { patch.cliente_nome = achou.nome; r.ligados_ao_sistema++ }
         const i = etiquetas.indexOf('cliente nova')
         if (i >= 0) { etiquetas.splice(i, 1); patch.etiquetas = etiquetas }
-      } else if (!ct.cliente_nome) {
+      } else if (!ct.cliente_nome && ct.telefone) {
         // Nunca foi atendida. É a pessoa que mais vale responder rápido, e é
         // a que mais se perde quando ninguém percebe que ela é nova.
+        //
+        // SÓ com telefone. Sem ele não houve verificação nenhuma -- e marcar
+        // "cliente nova" nesse caso é transformar "não sei" em "é nova", que
+        // é uma afirmação que o sistema não tem como sustentar.
+        //
+        // Foi o que aconteceu aqui: as mensagens de agradecimento pós-visita
+        // foram para clientes que, por definição, JÁ fizeram procedimento, e o
+        // CRM marcou todas como novas. Uma etiqueta que erra desse jeito não é
+        // só inútil: ela faz a recepção tratar cliente de casa como estranha.
         if (!etiquetas.includes('cliente nova')) {
           etiquetas.push('cliente nova')
           patch.etiquetas = etiquetas
           r.clientes_novas++
         }
+      } else if (!ct.telefone) {
+        // Sem telefone não dá para afirmar nada: tira a etiqueta se ela foi
+        // posta antes, por esta mesma regra errada.
+        const i = etiquetas.indexOf('cliente nova')
+        if (i >= 0) { etiquetas.splice(i, 1); patch.etiquetas = etiquetas }
+        r.sem_como_conferir++
       }
 
       await supabaseAdmin.from('crm_contatos').update(patch).eq('id', ct.id)
