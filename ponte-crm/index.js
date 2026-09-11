@@ -110,7 +110,35 @@ function tipoDaMensagem(m) {
 const MSGS_POR_CONVERSA = 40   // o suficiente para entender o assunto
 const CONVERSAS_POR_ENVIO = 20 // lote pequeno: um erro não derruba tudo
 
-const ehCliente = jid => String(jid || '').endsWith('@s.whatsapp.net')
+// ── Endereco de cliente ─────────────────────────────────────────────────────
+//
+// O WhatsApp passou a enderecar conversa por um id anonimo -- o LID, que
+// termina em "@lid" -- em vez do telefone. Contas novas vem so assim. Filtrar
+// por "@s.whatsapp.net" descartava o historico INTEIRO de um numero moderno:
+// chegavam 115 conversas por lote e nenhuma passava.
+//
+// O telefone continua vindo, num campo a parte da conversa (`pnJid`). Entao
+// aceitar os dois enderecos e traduzir o LID para telefone e o que faz o
+// historico existir.
+const ehTelefone = jid => String(jid || '').endsWith('@s.whatsapp.net')
+const ehLid = jid => String(jid || '').endsWith('@lid')
+const ehCliente = jid => ehTelefone(jid) || ehLid(jid)
+
+/** LID -> telefone, montado com o que o proprio lote entrega. */
+function mapaDeTelefones(chats = [], contacts = []) {
+  const mapa = new Map()
+  const guardar = (de, para) => { if (de && para && ehTelefone(para)) mapa.set(de, para) }
+  for (const c of chats) {
+    const tel = ehTelefone(c?.id) ? c.id : (c?.pnJid || null)
+    guardar(c?.id, tel)
+    guardar(c?.lidJid, tel)
+  }
+  for (const c of contacts) {
+    guardar(c?.id, c?.jid)
+    guardar(c?.lid, c?.jid)
+  }
+  return mapa
+}
 
 const segundos = m => Number(m?.messageTimestamp?.low ?? m?.messageTimestamp ?? 0)
 
@@ -120,19 +148,29 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
     return
   }
 
+  const paraTelefone = mapaDeTelefones(chats, contacts)
+  // Conversa cujo telefone o proprio WhatsApp nao entregou fica de fora: sem
+  // telefone nao da para casar com a cliente do sistema nem para responder, e
+  // uma linha na fila que ninguem consegue atender e pior que nenhuma.
+  const resolver = jid => ehTelefone(jid) ? jid : (paraTelefone.get(jid) || null)
+
   // Nome de agenda por número, para a conversa não abrir como "556199...".
   const nomes = new Map()
   for (const c of contacts) {
-    if (!ehCliente(c?.id)) continue
+    const tel = resolver(c?.id) || resolver(c?.lid) || (ehTelefone(c?.jid) ? c.jid : null)
+    if (!tel) continue
     const nome = c.name || c.notify || c.verifiedName || null
-    if (nome) nomes.set(soNumero(c.id), nome)
+    if (nome) nomes.set(soNumero(tel), nome)
   }
 
   // Agrupa as mensagens por conversa.
   const porJid = new Map()
+  let semTelefone = 0
   for (const m of messages) {
-    const jid = m?.key?.remoteJid || ''
-    if (!ehCliente(jid)) continue
+    const bruto = m?.key?.remoteJid || ''
+    if (!ehCliente(bruto)) continue
+    const jid = resolver(bruto)
+    if (!jid) { semTelefone++; continue }
     const texto = textoDaMensagem(m)
     const tipo = tipoDaMensagem(m)
     if (!texto && tipo === 'texto') continue
@@ -150,9 +188,13 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
   // Uma conversa pode aparecer na lista de chats sem nenhuma mensagem no lote:
   // vale trazer mesmo assim, senão o contato some da tela sem explicação.
   for (const c of chats) {
-    if (ehCliente(c?.id) && !porJid.has(c.id)) porJid.set(c.id, [])
-    if (ehCliente(c?.id) && c.name && !nomes.has(soNumero(c.id))) nomes.set(soNumero(c.id), c.name)
+    if (!ehCliente(c?.id)) continue
+    const jid = resolver(c.id)
+    if (!jid) { semTelefone++; continue }
+    if (!porJid.has(jid)) porJid.set(jid, [])
+    if (c.name && !nomes.has(soNumero(jid))) nomes.set(soNumero(jid), c.name)
   }
+  if (semTelefone) registro(salaoId, `${semTelefone} conversa(s) sem telefone no lote — o WhatsApp não mandou o número`)
 
   const conversas = []
   for (const [jid, msgs] of porJid) {
@@ -365,14 +407,23 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     registro(salaoId, `chegaram ${messages.length} evento(s) de mensagem (${type})`)
     for (const m of messages) {
       try {
-        const jid = m.key?.remoteJid || ''
+        const bruto = m.key?.remoteJid || ''
         // O que o salão mandou pelo celular TAMBÉM entra. Sem isso a conversa
         // no CRM fica pela metade: aparece a pergunta da cliente e não a
         // resposta, e quem abre a tela não sabe se alguém já falou com ela.
         const deMim = !!m.key?.fromMe
-        if (jid.endsWith('@g.us')) continue            // grupo
-        if (jid === 'status@broadcast') continue       // status
-        if (!jid.endsWith('@s.whatsapp.net')) continue // canal, newsletter, o que for
+        if (bruto.endsWith('@g.us')) continue          // grupo
+        if (bruto === 'status@broadcast') continue     // status
+        if (!ehCliente(bruto)) continue                // canal, newsletter, o que for
+
+        // Conversa endereçada por LID: o telefone vem em outro campo da
+        // própria mensagem, posto ali por quem decodificou o pacote.
+        const jid = ehTelefone(bruto) ? bruto
+          : (m.key?.senderPn || m.key?.participantPn || null)
+        if (!jid) {
+          registro(salaoId, 'mensagem sem telefone (LID sem número) — ignorada')
+          continue
+        }
 
         const texto = textoDaMensagem(m)
         const tipo = tipoDaMensagem(m)
