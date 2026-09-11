@@ -866,7 +866,8 @@ function Aba({ ativo, onClick, texto, destaque }: any) {
 function ItemFila({ c, ativo, onClick }: any) {
   const est = estadoPor(c.estado)
   const ct = c.contato || {}
-  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
+  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome
+    || (ct.telefone ? telefoneBonito(ct.telefone) : 'Sem nome')
   const urg = CORES_URGENCIA[c._urg as keyof typeof CORES_URGENCIA]
   const dono = donoAtivo(c.dono_ate) ? c.dono_nome : null
   const nova = ehNova(c)
@@ -964,7 +965,8 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
 
 function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, motivos, origens }: any) {
   const ct = c.contato || {}
-  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
+  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome
+    || (ct.telefone ? telefoneBonito(ct.telefone) : 'Sem nome')
   const est = estadoPor(c.estado)
   return (
     <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
@@ -978,7 +980,10 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
         <Avatar nome={nome} nova={ehNova(c)} tamanho={38} />
         <div className="min-w-0">
           <p className="font-bold text-[15.5px] leading-tight" style={{ color: '#1a1a1a' }}>{nome}</p>
-          <p className="text-[11.5px]" style={{ color: '#8f877f' }}>{telefoneBonito(ct.telefone)}</p>
+          <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
+            {ct.telefone ? telefoneBonito(ct.telefone)
+              : 'número ainda não informado pelo WhatsApp'}
+          </p>
         </div>
         {/* O motivo faz parte do estado: "Sem conversão" sozinho não diz nada,
             e era justamente o motivo que a pessoa acabou de escolher. */}

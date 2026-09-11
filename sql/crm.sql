@@ -207,3 +207,13 @@ ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS numero_dados text;
 -- minutos sem sinal.
 ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_dono text;
 ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS ponte_visto_em timestamptz;
+
+-- ── LID: quando o WhatsApp nao entrega o telefone ───────────────────────────
+-- Contas novas enderecam a conversa por um id anonimo (@lid) e o telefone
+-- simplesmente nao vem no historico. Exigir telefone para importar significa
+-- nao importar nada nessas contas -- que sao a maioria dos saloes novos.
+-- Entao o contato passa a poder existir so com o LID, e o telefone e
+-- preenchido depois, quando alguma mensagem ao vivo revelar o numero.
+ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS lid text;
+ALTER TABLE crm_contatos ALTER COLUMN telefone DROP NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_lid ON crm_contatos(salao_id, lid) WHERE lid IS NOT NULL;

@@ -149,18 +149,18 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
   }
 
   const paraTelefone = mapaDeTelefones(chats, contacts)
-  // Conversa cujo telefone o proprio WhatsApp nao entregou fica de fora: sem
-  // telefone nao da para casar com a cliente do sistema nem para responder, e
-  // uma linha na fila que ninguem consegue atender e pior que nenhuma.
-  const resolver = jid => ehTelefone(jid) ? jid : (paraTelefone.get(jid) || null)
+  // Telefone quando o WhatsApp entrega; senao o proprio LID serve de
+  // identidade. Exigir telefone aqui era jogar fora o historico INTEIRO das
+  // contas novas -- 5.053 conversas descartadas num unico lote.
+  const resolver = jid => ehTelefone(jid) ? jid : (paraTelefone.get(jid) || jid || null)
 
   // Nome de agenda por número, para a conversa não abrir como "556199...".
   const nomes = new Map()
   for (const c of contacts) {
-    const tel = resolver(c?.id) || resolver(c?.lid) || (ehTelefone(c?.jid) ? c.jid : null)
-    if (!tel) continue
+    const chave = (ehTelefone(c?.jid) ? c.jid : null) || resolver(c?.id) || resolver(c?.lid)
+    if (!chave) continue
     const nome = c.name || c.notify || c.verifiedName || null
-    if (nome) nomes.set(soNumero(tel), nome)
+    if (nome) nomes.set(soNumero(chave), nome)
   }
 
   // Agrupa as mensagens por conversa.
@@ -170,7 +170,8 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
     const bruto = m?.key?.remoteJid || ''
     if (!ehCliente(bruto)) continue
     const jid = resolver(bruto)
-    if (!jid) { semTelefone++; continue }
+    if (!jid) continue
+    if (!ehTelefone(jid)) semTelefone++
     const texto = textoDaMensagem(m)
     const tipo = tipoDaMensagem(m)
     if (!texto && tipo === 'texto') continue
@@ -190,17 +191,21 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
   for (const c of chats) {
     if (!ehCliente(c?.id)) continue
     const jid = resolver(c.id)
-    if (!jid) { semTelefone++; continue }
+    if (!jid) continue
     if (!porJid.has(jid)) porJid.set(jid, [])
     if (c.name && !nomes.has(soNumero(jid))) nomes.set(soNumero(jid), c.name)
   }
-  if (semTelefone) registro(salaoId, `${semTelefone} conversa(s) sem telefone no lote — o WhatsApp não mandou o número`)
+  if (semTelefone) {
+    registro(salaoId, `${semTelefone} mensagem(ns) vieram só com o id anônimo (LID) — entram com o nome, e o número aparece quando a cliente escrever ao vivo`)
+  }
 
   const conversas = []
   for (const [jid, msgs] of porJid) {
     msgs.sort((a, b) => a.em - b.em)
+    const temTelefone = ehTelefone(jid)
     conversas.push({
-      telefone: soNumero(jid),
+      telefone: temTelefone ? soNumero(jid) : null,
+      lid: temTelefone ? null : jid,
       nome: nomes.get(soNumero(jid)) || null,
       mensagens: msgs.slice(-MSGS_POR_CONVERSA),
     })
@@ -418,12 +423,12 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
         // Conversa endereçada por LID: o telefone vem em outro campo da
         // própria mensagem, posto ali por quem decodificou o pacote.
-        const jid = ehTelefone(bruto) ? bruto
-          : (m.key?.senderPn || m.key?.participantPn || null)
-        if (!jid) {
-          registro(salaoId, 'mensagem sem telefone (LID sem número) — ignorada')
-          continue
-        }
+        // Telefone quando a mensagem traz (as ao vivo costumam trazer em
+        // `senderPn`); senao o LID vale como identidade e o numero entra
+        // depois, na primeira mensagem que revelar.
+        const tel = ehTelefone(bruto) ? bruto : (m.key?.senderPn || m.key?.participantPn || null)
+        const lid = ehLid(bruto) ? bruto : (m.key?.senderLid || null)
+        if (!tel && !lid) continue
 
         const texto = textoDaMensagem(m)
         const tipo = tipoDaMensagem(m)
@@ -438,7 +443,8 @@ async function abrirDeVerdade(salaoId, registroSessao) {
           method: 'POST',
           body: JSON.stringify({
             salao_id: salaoId,
-            telefone: soNumero(jid),
+            telefone: tel ? soNumero(tel) : null,
+            lid: lid || null,
             nome: deMim ? null : (m.pushName || null),
             texto: texto || `[${tipo}]`,
             tipo,
@@ -451,7 +457,7 @@ async function abrirDeVerdade(salaoId, registroSessao) {
             em_massa: !!m.broadcast,
           }),
         })
-        registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(jid), '—', texto.slice(0, 40))
+        registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(tel || lid), '—', texto.slice(0, 40))
       } catch (e) {
         registro(salaoId, 'falha ao entregar mensagem:', e.message)
       }
@@ -520,7 +526,11 @@ async function despacharFila(salaoId) {
 
   for (const msg of fila) {
     try {
-      const jid = `${msg.telefone}@s.whatsapp.net`
+      // Endereco de envio: telefone quando existe, senao o proprio LID --
+      // que e um endereco valido do WhatsApp e o unico que temos para quem
+      // veio do historico de uma conta nova.
+      const jid = msg.telefone ? `${msg.telefone}@s.whatsapp.net` : msg.lid
+      if (!jid) { registro(salaoId, 'mensagem sem endereço de destino — pulada'); continue }
       // Citacao: o WhatsApp so precisa da chave da mensagem original e de um
       // texto para o balaozinho. A ponte nao guarda historico, entao monta o
       // minimo que o protocolo aceita com o que o NODRI mandou junto.

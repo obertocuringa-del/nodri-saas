@@ -41,6 +41,9 @@ const COMANDOS: string[] = [
     criado_em timestamptz DEFAULT now(), atualizado_em timestamptz DEFAULT now())`,
   `ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS conferido_em timestamptz`,
   `CREATE INDEX IF NOT EXISTS idx_atend_celular ON atendimentos_raw(salao_id, celular)`,
+  `ALTER TABLE crm_contatos ADD COLUMN IF NOT EXISTS lid text`,
+  `ALTER TABLE crm_contatos ALTER COLUMN telefone DROP NOT NULL`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_lid ON crm_contatos(salao_id, lid) WHERE lid IS NOT NULL`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_contato_tel ON crm_contatos(salao_id, telefone)`,
 
   `CREATE TABLE IF NOT EXISTS crm_conversas (

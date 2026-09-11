@@ -33,23 +33,52 @@ function autorizado(req: NextRequest): boolean {
   return req.headers.get('x-crm-chave') === esperada
 }
 
-/** Acha o contato pelo telefone, ou cria. É aqui que a cliente deixa de duplicar. */
-async function acharOuCriarContato(salaoId: string, telefoneBruto: string, nomeAgenda?: string) {
+/**
+ * Acha o contato, ou cria. É aqui que a cliente deixa de duplicar.
+ *
+ * Identidade pode vir de dois jeitos: o TELEFONE, quando o WhatsApp entrega, e
+ * o LID -- o id anônimo que as contas novas usam e que vem SEM telefone no
+ * histórico. Exigir telefone significaria não importar nada nessas contas, que
+ * são a maioria dos salões novos.
+ *
+ * Quando os dois chegam juntos, o telefone preenche o contato que existia só
+ * com o LID -- é assim que a cliente que veio do histórico se liga ao número
+ * assim que manda a primeira mensagem ao vivo.
+ */
+async function acharOuCriarContato(
+  salaoId: string, telefoneBruto: string, nomeAgenda?: string, lid?: string | null,
+) {
   const telefone = normalizarTelefone(telefoneBruto)
-  if (!telefone) return null
+  const lidLimpo = String(lid || '').trim() || null
+  if (!telefone && !lidLimpo) return null
 
   const { data: existentes } = await supabaseAdmin
     .from('crm_contatos').select('*').eq('salao_id', salaoId)
+  const lista = existentes || []
 
   // Compara pela chave sem o nono dígito: 61 9 9999 e 61 9999 são a mesma pessoa.
-  const alvo = chaveTelefone(telefone)
-  const achado = (existentes || []).find((c: any) => chaveTelefone(c.telefone) === alvo)
-  if (achado) return achado
+  const alvo = telefone ? chaveTelefone(telefone) : ''
+  let achado = alvo ? lista.find((c: any) => c.telefone && chaveTelefone(c.telefone) === alvo) : null
+  if (!achado && lidLimpo) achado = lista.find((c: any) => c.lid === lidLimpo)
+
+  if (achado) {
+    // Completa o que faltava, sem sobrescrever o que já estava certo.
+    const patch: any = {}
+    if (telefone && !achado.telefone) { patch.telefone = telefone; patch.telefone_bruto = telefoneBruto }
+    if (lidLimpo && !achado.lid) patch.lid = lidLimpo
+    if (nomeAgenda && !achado.nome) { patch.nome = nomeAgenda; patch.nome_agenda = nomeAgenda }
+    if (Object.keys(patch).length) {
+      await supabaseAdmin.from('crm_contatos').update(patch).eq('id', achado.id)
+      Object.assign(achado, patch)
+    }
+    return achado
+  }
 
   const { data: novo } = await supabaseAdmin.from('crm_contatos').insert({
     salao_id: salaoId,
-    telefone,
-    telefone_bruto: telefoneBruto,
+    telefone: telefone || null,
+    telefone_bruto: telefone ? telefoneBruto : null,
+    lid: lidLimpo,
     nome: nomeAgenda || null,
     nome_agenda: nomeAgenda || null,
   }).select().maybeSingle()
@@ -190,32 +219,41 @@ export async function POST(req: NextRequest) {
     // centenas de idas ao banco numa requisição só, e a função morre no
     // tempo limite antes de gravar qualquer coisa.
     const { data: contatosExistentes } = await supabaseAdmin
-      .from('crm_contatos').select('id, telefone, nome').eq('salao_id', salaoId)
+      .from('crm_contatos').select('id, telefone, lid, nome').eq('salao_id', salaoId)
 
     const porChave = new Map<string, any>()
-    for (const c of contatosExistentes || []) porChave.set(chaveTelefone(c.telefone), c)
+    // Chave: telefone normalizado quando existe, senão o lid. Uma só, para o
+    // lote inteiro, em vez de dois caminhos de código para o mesmo assunto.
+    const chaveDe = (x: any) => x?.telefone ? chaveTelefone(x.telefone) : (x?.lid ? 'lid:' + x.lid : '')
+    for (const c of contatosExistentes || []) {
+      const k = chaveDe(c)
+      if (k) porChave.set(k, c)
+    }
 
     const criarContatos = lote
-      .filter((c: any) => !porChave.has(chaveTelefone(c.telefone)))
-      // O mesmo número pode vir duas vezes no lote (grafia diferente); o
+      .filter((c: any) => !porChave.has(chaveDe(c)))
+      // A mesma pessoa pode vir duas vezes no lote (grafia diferente); o
       // índice único barraria o insert inteiro, então dedup antes.
       .filter((c: any, i: number, arr: any[]) =>
-        arr.findIndex((o: any) => chaveTelefone(o.telefone) === chaveTelefone(c.telefone)) === i)
+        arr.findIndex((o: any) => chaveDe(o) === chaveDe(c)) === i)
       .map((c: any) => ({
-        salao_id: salaoId, telefone: c.telefone, telefone_bruto: c.telefone,
+        salao_id: salaoId,
+        telefone: c.telefone || null,
+        telefone_bruto: c.telefone || null,
+        lid: c.lid,
         nome: c.nome, nome_agenda: c.nome,
       }))
 
     if (criarContatos.length) {
       const { data: novos } = await supabaseAdmin
-        .from('crm_contatos').insert(criarContatos).select('id, telefone, nome')
-      for (const n of novos || []) porChave.set(chaveTelefone(n.telefone), n)
+        .from('crm_contatos').insert(criarContatos).select('id, telefone, lid, nome')
+      for (const n of novos || []) { const k = chaveDe(n); if (k) porChave.set(k, n) }
     }
 
     // Nome de agenda que chegou depois preenche o que estava vazio, mas nunca
     // sobrescreve o nome que alguém do salão digitou à mão.
     for (const c of lote) {
-      const ct = porChave.get(chaveTelefone(c.telefone))
+      const ct = porChave.get(chaveDe(c))
       if (ct && c.nome && !ct.nome) {
         await supabaseAdmin.from('crm_contatos')
           .update({ nome: c.nome, nome_agenda: c.nome }).eq('id', ct.id)
@@ -225,7 +263,7 @@ export async function POST(req: NextRequest) {
 
     // ── Conversas ───────────────────────────────────────────────────────────
     const idsContato = lote
-      .map((c: any) => porChave.get(chaveTelefone(c.telefone))?.id)
+      .map((c: any) => porChave.get(chaveDe(c))?.id)
       .filter(Boolean)
     if (!idsContato.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0 })
 
@@ -243,7 +281,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resumo = lote.map((c: any) => {
-      const contato = porChave.get(chaveTelefone(c.telefone))
+      const contato = porChave.get(chaveDe(c))
       const ultima = c.mensagens[c.mensagens.length - 1]
       const quando = ultima?.em ? new Date(Number(ultima.em) * 1000).toISOString() : agora
       const daCliente = ultima?.direcao === 'entrada'
@@ -354,10 +392,12 @@ export async function POST(req: NextRequest) {
   const telefone = String(body?.telefone || '')
   const texto = String(body?.texto || '')
   const daCliente = body?.direcao !== 'saida'
-  if (!telefone) return NextResponse.json({ error: 'telefone é obrigatório' }, { status: 400 })
+  if (!telefone && !body?.lid) {
+    return NextResponse.json({ error: 'telefone ou lid é obrigatório' }, { status: 400 })
+  }
 
-  const contato = await acharOuCriarContato(salaoId, telefone, body?.nome)
-  if (!contato) return NextResponse.json({ error: 'telefone inválido' }, { status: 400 })
+  const contato = await acharOuCriarContato(salaoId, telefone, body?.nome, body?.lid)
+  if (!contato) return NextResponse.json({ error: 'sem telefone e sem lid' }, { status: 400 })
 
   const idWpp = body?.id_whatsapp || null
 
@@ -572,7 +612,7 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from('crm_mensagens')
-    .select('id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone))')
+    .select('id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone, lid))')
     .eq('salao_id', salaoId).eq('situacao', 'na_fila')
     .order('criado_em', { ascending: true }).limit(20)
 
@@ -595,6 +635,9 @@ export async function GET(req: NextRequest) {
       tipo: m.tipo || 'texto',
       midia_url: m.midia_url || null,
       telefone: m.conversa?.contato?.telefone || null,
+      // Sem telefone, o LID e o endereco: e assim que se responde a cliente
+      // que veio do historico de uma conta nova.
+      lid: m.conversa?.contato?.lid || null,
       citada: cit?.id_whatsapp
         ? { id_whatsapp: cit.id_whatsapp, texto: cit.texto || '', minha: cit.direcao === 'saida' }
         : null,
