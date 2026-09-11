@@ -37,6 +37,12 @@ const NODRI   = (process.env.NODRI_URL || 'https://www.nodri.com.br').replace(/\
 const CHAVE   = process.env.CRM_PONTE_CHAVE || ''
 const PASTA   = process.env.CRM_SESSOES_DIR || './sessoes'
 const CICLO   = Number(process.env.CRM_CICLO_MS || 4000)
+// A fila de saida tem ritmo proprio, bem mais curto. Quem clica em Enviar
+// espera a mensagem sair AGORA: com o laco geral de 4 segundos a resposta
+// chegava na cliente com ate 4 segundos de atraso, e a recepcao ficava olhando
+// para a tela sem saber se tinha funcionado. O laco geral continua largo
+// porque o que ele faz -- conferir canais, bater relogio -- nao tem pressa.
+const CICLO_FILA = Number(process.env.CRM_CICLO_FILA_MS || 1000)
 
 if (!CHAVE) {
   console.error('[ponte] CRM_PONTE_CHAVE não definida. Sem ela o NODRI recusa a conexão.')
@@ -553,9 +559,12 @@ async function despacharFila(salaoId) {
           enviada: true, id_whatsapp: enviada?.key?.id || null,
         }),
       })
-      // Respiro entre mensagens: ritmo de gente digitando é o que mantém o
+      // Respiro ENTRE mensagens: ritmo de gente digitando é o que mantém o
       // uso parecido com o de uma pessoa, e é a melhor defesa que existe aqui.
-      await new Promise(r => setTimeout(r, 1200))
+      // Só entre uma e a próxima -- esperar depois da última seria segurar a
+      // volta seguinte por 1,2 segundo sem motivo, e é o envio seguinte que
+      // pagaria a conta.
+      if (msg !== fila[fila.length - 1]) await new Promise(r => setTimeout(r, 1200))
     } catch (e) {
       registro(salaoId, 'falha ao enviar:', e.message)
       await nodri('?acao=confirmar', {
@@ -621,7 +630,6 @@ async function volta() {
       // ninguem entender. Quem declara conexao e o evento de abrir a sessao,
       // que acontece uma vez; o resto e so dizer "estou viva".
       avisar(salaoId, {}).catch(() => {})
-      await despacharFila(salaoId)
     }
   }
 }
@@ -657,6 +665,22 @@ setInterval(() => {
   volta().catch(e => registro('erro na volta:', e.message))
   baterRelogio().catch(() => {})
 }, CICLO)
+
+// ── A fila de saida, no seu proprio ritmo ───────────────────────────────────
+// `despachando` impede duas voltas ao mesmo tempo: sem isso, um envio lento
+// deixaria a volta seguinte pegar a MESMA mensagem e manda-la duas vezes.
+let despachando = false
+setInterval(async () => {
+  if (despachando) return
+  despachando = true
+  try {
+    for (const [salaoId, s] of sessoes) {
+      if (s.conectado) await despacharFila(salaoId)
+    }
+  } catch (e) {
+    registro('erro ao despachar:', e.message)
+  } finally { despachando = false }
+}, CICLO_FILA)
 
 process.on('SIGINT', async () => {
   registro('encerrando...')
