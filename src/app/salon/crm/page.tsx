@@ -348,16 +348,20 @@ export default function CrmPage() {
                   style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
               </div>
               {/* Perdemos 40 nao e informacao. Perdemos 22 por preco e 11 por
-                  falta de horario no sabado sao duas acoes diferentes. */}
+                  falta de horario no sabado sao duas acoes diferentes.
+                  Uma LISTA, nao uma fileira de botoes: o salao pode ter vinte
+                  motivos, e vinte botoes empurrariam a fila para fora da tela.
+                  Ordenada pela quantidade, porque o motivo que mais aparece e
+                  o que merece a proxima decisao. */}
               {filtro === 'sem_conversao' && porMotivo.length > 0 && (
-                <div className="mt-2 flex gap-1 flex-wrap">
-                  <Aba ativo={!motivoFiltro} onClick={() => setMotivoFiltro('')}
-                    texto={`Todos (${contagem.perdidas})`} />
+                <select value={motivoFiltro} onChange={e => setMotivoFiltro(e.target.value)}
+                  className="mt-2 w-full px-2.5 py-2 rounded-lg text-[12px] font-bold focus:outline-none"
+                  style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }}>
+                  <option value="">Todos os motivos ({contagem.perdidas})</option>
                   {porMotivo.map(([nome, qtd]) => (
-                    <Aba key={nome} ativo={motivoFiltro === nome} onClick={() => setMotivoFiltro(nome)}
-                      texto={`${nome} (${qtd})`} />
+                    <option key={nome} value={nome}>{nome} — {qtd}</option>
                   ))}
-                </div>
+                </select>
               )}
               {contagem.criticas > 0 && filtro === 'fila' && (
                 <p className="mt-2 text-[11px] font-bold" style={{ color: '#b4322a' }}>
