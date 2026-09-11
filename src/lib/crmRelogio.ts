@@ -108,6 +108,10 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
 
   for (const c of aguardando || []) {
     if (c.ultima_de !== 'salao') continue
+    // Conversa sem mensagem nenhuma nao vira follow-up: nao ha o que retomar.
+    const { count } = await supabaseAdmin
+      .from('crm_mensagens').select('id', { count: 'exact', head: true }).eq('conversa_id', c.id)
+    if (!count) continue
     const uteis = minutosUteis(new Date(c.ultima_em), agora)
     if (uteis < HORAS_UTEIS_FOLLOW_UP * 60) continue
     await supabaseAdmin.from('crm_conversas').update({

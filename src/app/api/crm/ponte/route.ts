@@ -241,7 +241,12 @@ export async function POST(req: NextRequest) {
       return { c, contato, ultima, quando, daCliente }
     }).filter((r: any) => r.contato)
 
+    // Conversa sem NENHUMA mensagem nao e oportunidade: e um contato que
+    // existe na agenda do celular. O contato fica gravado (para reconhecer
+    // quem escrever amanha), a conversa nao nasce -- senao a fila de trabalho
+    // enche de linhas em que nao ha nada para ler nem para responder.
     const criarConversas = resumo
+      .filter((r: any) => r.c.mensagens.length > 0)
       .filter((r: any) => !porContato.has(r.contato.id))
       .map((r: any) => {
         // Quem falou por ultimo foi a cliente => alguem precisa responder.
