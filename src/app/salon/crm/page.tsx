@@ -137,8 +137,14 @@ export default function CrmPage() {
         const d = await r.json()
         const chegaram = d.mensagens || []
         // So troca o estado quando mudou de verdade: substituir a lista a cada
-        // cinco segundos faria a conversa piscar e perder a rolagem.
-        setMensagens(atual => atual.length === chegaram.length ? atual : chegaram)
+        // cinco segundos faria a conversa piscar e perder a rolagem. Mas se
+        // ainda ha balao provisorio na tela, troca mesmo com o mesmo tamanho
+        // -- senao o provisorio ficaria para sempre no lugar do gravado.
+        setMensagens(atual => {
+          const temProvisorio = atual.some((m: any) => m._local)
+          if (!temProvisorio && atual.length === chegaram.length) return atual
+          return chegaram
+        })
       } catch {}
     }, 5000)
     return () => clearInterval(t)
@@ -266,28 +272,67 @@ export default function CrmPage() {
   }, [comTempo])
 
   // ── Ações ─────────────────────────────────────────────────────────────────
+  // ── Enviar ────────────────────────────────────────────────────────────────
+  //
+  // A mensagem entra na tela NA HORA, antes de o servidor responder. Antes a
+  // pessoa clicava em Enviar e ficava com o texto na caixa e "Enviando" no
+  // botão por um a dois segundos, esperando duas idas ao servidor -- gravar e
+  // reler. Parece travado, e a recepção manda de novo pelo celular achando
+  // que não foi.
+  //
+  // Se o servidor recusar, o balão vira "falhou" e o texto VOLTA para a caixa:
+  // sumir com o que a pessoa escreveu é pior do que demorar.
   async function enviar(midia?: { url: string; tipo: string }) {
     const t = texto.trim()
     if ((!t && !midia) || !aberta || enviando) return
+
+    const conversaId = aberta.id
+    const provisorio = {
+      id: `local-${Date.now()}`,
+      _local: true,
+      conversa_id: conversaId,
+      direcao: 'saida',
+      texto: t,
+      tipo: midia?.tipo || 'texto',
+      midia_url: midia?.url || null,
+      responde_a: citando?.id || null,
+      situacao: 'na_fila',
+      criado_em: new Date().toISOString(),
+    }
+    const citadaAgora = citando?.id || null
+
+    setTexto(''); setCitando(null)
+    setMensagens(atual => [...atual, provisorio])
     setEnviando(true)
+
     try {
       const r = await fetch('/api/crm/mensagens', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversa: aberta.id, texto: t,
+          conversa: conversaId, texto: t,
           midia_url: midia?.url || null, tipo: midia?.tipo || 'texto',
-          responde_a: citando?.id || null,
+          responde_a: citadaAgora,
         }),
       })
-      if (r.ok) {
-        setTexto(''); setCitando(null)
-        const rm = await fetch(`/api/crm/mensagens?conversa=${aberta.id}`)
-        setMensagens((await rm.json()).mensagens || [])
-        puxarConversas()
-      } else {
-        alert((await r.json().catch(() => ({}))).error || 'Não consegui enviar.')
+      if (!r.ok) {
+        const erro = (await r.json().catch(() => ({}))).error || 'Não consegui enviar.'
+        setMensagens(atual => atual.filter(m => m.id !== provisorio.id))
+        setTexto(anterior => anterior.trim() ? anterior : t)
+        alert(erro)
+        return
       }
-    } catch { alert('Não consegui enviar.') } finally { setEnviando(false) }
+      // Recarrega em segundo plano só para trocar o balão provisório pelo
+      // gravado. A tela já está certa; isto é acerto de contas, não espera.
+      fetch(`/api/crm/mensagens?conversa=${conversaId}`)
+        .then(x => x.json())
+        .then(d => { if (d?.mensagens) setMensagens(d.mensagens) })
+        .catch(() => {})
+      puxarConversas()
+    } catch {
+      setMensagens(atual => atual.filter(m => m.id !== provisorio.id))
+      setTexto(anterior => anterior.trim() ? anterior : t)
+      alert('Não consegui enviar.')
+    } finally { setEnviando(false) }
   }
 
   // ── Gravar áudio ──────────────────────────────────────────────────────────
@@ -733,10 +778,10 @@ export default function CrmPage() {
                       placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
                       className="flex-1 px-3.5 py-3 rounded-xl text-[13.5px] resize-none focus:outline-none"
                       style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
-                    <button onClick={() => enviar()} disabled={!texto.trim() || enviando}
+                    <button onClick={() => enviar()} disabled={!texto.trim() || anexando}
                       className="px-4 py-3 rounded-xl font-bold text-[13px] flex items-center gap-1.5 disabled:opacity-40"
                       style={{ background: '#5b4fcf', color: '#fff' }}>
-                      <Send size={14} />{anexando ? 'Anexando' : enviando ? 'Enviando' : 'Enviar'}
+                      <Send size={14} />{anexando ? 'Anexando' : 'Enviar'}
                     </button>
                   </div>
                 </div>
