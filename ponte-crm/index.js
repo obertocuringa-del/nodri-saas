@@ -115,7 +115,10 @@ const ehCliente = jid => String(jid || '').endsWith('@s.whatsapp.net')
 const segundos = m => Number(m?.messageTimestamp?.low ?? m?.messageTimestamp ?? 0)
 
 async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = [] }) {
-  if (!chats.length && !messages.length) return
+  if (!chats.length && !messages.length) {
+    registro(salaoId, 'lote de histórico veio vazio — nada a importar')
+    return
+  }
 
   // Nome de agenda por número, para a conversa não abrir como "556199...".
   const nomes = new Map()
@@ -160,7 +163,10 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
       mensagens: msgs.slice(-MSGS_POR_CONVERSA),
     })
   }
-  if (!conversas.length) return
+  if (!conversas.length) {
+    registro(salaoId, 'lote sem conversa de cliente (só grupo/status) — nada a importar')
+    return
+  }
 
   for (let i = 0; i < conversas.length; i += CONVERSAS_POR_ENVIO) {
     const fatia = conversas.slice(i, i + CONVERSAS_POR_ENVIO)
@@ -250,6 +256,11 @@ async function abrirSessao(salaoId) {
     // escrever. O WhatsApp manda o que ele guardou; não é o histórico
     // inteiro de anos, é o que o aparelho ainda tem.
     syncFullHistory: true,
+    // O WhatsApp manda o historico em lotes e o Baileys pode descartar alguns
+    // conforme o tipo. Dizer explicitamente que queremos TODOS evita o caso em
+    // que o pareamento ocorre, a conexao abre e nao chega conversa nenhuma --
+    // que foi exatamente o que aconteceu com o numero do salao.
+    shouldSyncHistoryMessage: () => true,
     markOnlineOnConnect: false,   // não rouba as notificações do celular
   })
 
@@ -307,6 +318,13 @@ async function abrirSessao(salaoId) {
   // Chega em lotes logo depois do pareamento. É isto que faz o CRM abrir com
   // as conversas do salão em vez de uma tela em branco.
   sock.ev.on('messaging-history.set', async (lote) => {
+    // Registra SEMPRE, mesmo quando vem vazio. Silencio aqui foi o que me
+    // deixou sem saber se o WhatsApp nao mandou nada ou se a importacao
+    // falhou -- duas causas diferentes com o mesmo sintoma na tela.
+    registro(salaoId, `histórico recebido: ${(lote?.chats || []).length} conversas, ` +
+      `${(lote?.messages || []).length} mensagens, ${(lote?.contacts || []).length} contatos` +
+      (lote?.syncType != null ? ` (tipo ${lote.syncType})` : '') +
+      (lote?.progress != null ? ` ${lote.progress}%` : ''))
     try {
       await mandarHistorico(salaoId, lote)
     } catch (e) {
