@@ -384,6 +384,21 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   sock.ev.on('contacts.upsert', c => { mandarNomes(c).catch(() => {}) })
   sock.ev.on('contacts.update', c => { mandarNomes(c).catch(() => {}) })
 
+  // O WhatsApp revela o telefone por tras de um id anonimo em algumas
+  // situacoes -- e o Baileys avisa aqui. Escutar isto e de graca e nao tem
+  // risco nenhum: nao consultamos nada, so aproveitamos o que ele conta.
+  sock.ev.on('chats.phoneNumberShare', ({ lid, jid }) => {
+    if (!lid || !ehTelefone(jid)) return
+    registro(salaoId, 'WhatsApp revelou o telefone de', String(lid).split('@')[0])
+    nodri('?acao=nomes', {
+      method: 'POST',
+      body: JSON.stringify({
+        salao_id: salaoId,
+        contatos: [{ telefone: soNumero(jid), lid }],
+      }),
+    }).catch(() => {})
+  })
+
   sock.ev.on('connection.update', async (u) => {
     const { connection, lastDisconnect, qr } = u
 
@@ -475,7 +490,13 @@ async function abrirDeVerdade(salaoId, registroSessao) {
         // do PROPRIO SALAO, e usar ele arquivaria a resposta numa conversa do
         // salao consigo mesmo. Era por isso que responder pelo celular nao
         // atualizava a fila: a resposta entrava, mas no lugar errado.
-        const tel = ehTelefone(bruto) ? bruto : (deMim ? null : (m.key?.senderPn || null))
+        // Telefone: o endereco quando ja e telefone; senao o que o WhatsApp
+        // tiver anexado ao pacote. `senderPn` so vale quando a mensagem NAO e
+        // do salao (ali ele e o numero de quem enviou, ou seja, o proprio
+        // salao). `participantPn` as vezes vem nas duas direcoes.
+        const tel = ehTelefone(bruto) ? bruto
+          : (deMim ? (m.key?.participantPn || null)
+                   : (m.key?.senderPn || m.key?.participantPn || null))
         const lid = ehLid(bruto) ? bruto : null
         if (!tel && !lid) continue
 
