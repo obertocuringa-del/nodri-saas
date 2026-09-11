@@ -84,6 +84,9 @@ export default function PainelCrmPage() {
               <Numero rotulo="Oportunidades" valor={d.geral.total} />
               <Numero rotulo="Agendaram" valor={d.geral.agendadas} cor="#2f6b4f" />
               <Numero rotulo="Não fecharam" valor={d.geral.perdidas} cor="#b4322a" />
+              {d.geral.desmarcadas > 0 && (
+                <Numero rotulo="Desmarcaram" valor={d.geral.desmarcadas} cor="#b4322a" />
+              )}
               <Numero rotulo="Ainda abertas" valor={d.geral.abertas} cor="#9a6b12" />
               <Numero rotulo="Conversão" valor={d.geral.conversao === null ? '—' : `${d.geral.conversao}%`} cor="#5b4fcf" grande />
             </div>
@@ -136,6 +139,18 @@ export default function PainelCrmPage() {
               ? <p className="text-[12.5px]" style={{ color: '#8f877f' }}>Nenhuma conversa fechada sem conversão no período.</p>
               : <Barras itens={d.motivos.map((m: any) => ({ nome: m.nome, valor: m.total }))} cor="#b4322a" />}
           </section>
+
+          {/* ── Por que desmarcou ── */}
+          {d.desmarques?.length > 0 && (
+            <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+              <h2 className="font-bold text-[15px] mb-1" style={{ color: '#1a1a1a' }}>Quando desmarca, desmarca por quê</h2>
+              <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
+                Quem desmarca já tinha decidido vir — é um horário que existia e caiu. O motivo
+                aqui é outro problema, com outra solução, que o "não fechou" não enxerga.
+              </p>
+              <Barras itens={d.desmarques.map((m: any) => ({ nome: m.nome, valor: m.total }))} cor="#c2603a" />
+            </section>
+          )}
 
           {/* ── Quem trabalhou ── */}
           {d.pessoas?.length > 0 && (

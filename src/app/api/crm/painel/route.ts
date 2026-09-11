@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 // de EXPEDIENTE, não de relógio — mensagem que chega domingo à noite não conta
 // como doze horas de atraso.
 
-const ABERTOS = ['acao_necessaria', 'aguardando', 'follow_up', 'pausada']
+const ABERTOS = ['acao_necessaria', 'aguardando', 'aguardando_promo', 'follow_up', 'pausada']
 
 export async function GET(req: NextRequest) {
   const sess = await getSessao()
@@ -48,13 +48,17 @@ export async function GET(req: NextRequest) {
     Array.isArray(c.contato?.etiquetas) && c.contato.etiquetas.includes('cliente nova')
 
   function funil(base: any[]) {
-    const agendadas = base.filter(c => c.estado === 'agendado').length
-    const perdidas = base.filter(c => c.estado === 'sem_conversao').length
+    // Confirmado e agendado sao a mesma vitoria vista em dois momentos; o
+    // desmarque e uma perda com nome proprio -- houve horario e ele caiu.
+    const agendadas = base.filter(c => c.estado === 'agendado' || c.estado === 'confirmado').length
+    const desmarcadas = base.filter(c => c.estado === 'desmarcou').length
+    const perdidas = base.filter(c => c.estado === 'sem_conversao').length + desmarcadas
     const abertas = base.filter(c => ABERTOS.includes(c.estado)).length
     const decididas = agendadas + perdidas
     return {
       total: base.length,
       agendadas,
+      desmarcadas,
       perdidas,
       abertas,
       // Conversão sobre o que já foi DECIDIDO. Dividir pelo total faria a
@@ -71,8 +75,8 @@ export async function GET(req: NextRequest) {
       if (!m.has(k)) m.set(k, { total: 0, agendadas: 0, perdidas: 0 })
       const l = m.get(k)!
       l.total++
-      if (c.estado === 'agendado') l.agendadas++
-      if (c.estado === 'sem_conversao') l.perdidas++
+      if (c.estado === 'agendado' || c.estado === 'confirmado') l.agendadas++
+      if (c.estado === 'sem_conversao' || c.estado === 'desmarcou') l.perdidas++
     }
     return [...m.entries()]
       .map(([nome, v]) => ({
@@ -148,6 +152,7 @@ export async function GET(req: NextRequest) {
     novas: funil(geradas.filter(ehNova)),
     conhecidas: funil(geradas.filter(c => !ehNova(c))),
     motivos: contar('motivo_perda', geradas.filter(c => c.estado === 'sem_conversao')),
+    desmarques: contar('motivo_perda', geradas.filter(c => c.estado === 'desmarcou')),
     origens: contar('origem', geradas),
     resposta: {
       amostra: esperas.length,

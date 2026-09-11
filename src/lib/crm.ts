@@ -7,9 +7,12 @@
 export type EstadoConversa =
   | 'acao_necessaria'
   | 'aguardando'
+  | 'aguardando_promo'
   | 'follow_up'
   | 'pausada'
   | 'agendado'
+  | 'confirmado'
+  | 'desmarcou'
   | 'sem_conversao'
 
 export interface DefEstado {
@@ -31,6 +34,12 @@ export const ESTADOS: DefEstado[] = [
   { chave: 'aguardando', rotulo: 'Aguardando cliente', cor: '#9A6B12', fundo: '#FBF2E0',
     naFila: false, contaTempo: false,
     explica: 'O salão respondeu. A bola está com a cliente.' },
+  // Promoção é espera de outra natureza: disparo para cem pessoas, em que o
+  // silêncio é o normal e não um atendimento atrasado. Misturar com a espera
+  // de uma conversa de verdade faz a fila de "Aguardando" perder o sentido.
+  { chave: 'aguardando_promo', rotulo: 'Aguardando promoção', cor: '#7A5AF8', fundo: '#F1EEFC',
+    naFila: false, contaTempo: false,
+    explica: 'Recebeu uma promoção e ainda não respondeu.' },
   { chave: 'follow_up', rotulo: 'Follow-up', cor: '#C2603A', fundo: '#FBEFE7',
     naFila: true,  contaTempo: false,
     explica: 'A cliente não respondeu no prazo. Vale retomar.' },
@@ -199,9 +208,12 @@ export function proximaAcaoPadrao(estado: EstadoConversa): string {
   switch (estado) {
     case 'acao_necessaria': return 'Responder a cliente'
     case 'aguardando':      return 'Aguardar resposta'
+    case 'aguardando_promo': return 'Aguardar resposta da promoção'
     case 'follow_up':       return 'Retomar a conversa'
     case 'pausada':         return 'Voltar a falar na data combinada'
     case 'agendado':        return 'Confirmar o horário na agenda'
+    case 'confirmado':      return 'Nenhuma — já confirmou'
+    case 'desmarcou':       return 'Tentar remarcar'
     case 'sem_conversao':   return 'Nenhuma'
   }
 }
@@ -216,6 +228,22 @@ export const MOTIVOS_PERDA_PADRAO = [
   'Cliente desistiu',
   'Só queria informação',
   'Motivo desconhecido',
+]
+
+/**
+ * Por que a cliente desmarcou. Lista separada da de "não fechou" de propósito:
+ * quem desmarca já tinha decidido vir, e o que faz desistir depois é outra
+ * coisa -- imprevisto, preço não, horário que mudou. Misturar as duas listas
+ * faria as duas perderem utilidade.
+ */
+export const MOTIVOS_DESMARQUE_PADRAO = [
+  'Imprevisto',
+  'Ficou doente',
+  'Problema no trabalho',
+  'Mudou de ideia',
+  'Achou o horário ruim',
+  'Vai remarcar depois',
+  'Não avisou o motivo',
 ]
 
 /**

@@ -51,6 +51,7 @@ export default function CrmPage() {
   const [modelos, setModelos] = useState<any[]>([])
   const [motivos, setMotivos] = useState<any[]>([])
   const [origens, setOrigens] = useState<any[]>([])
+  const [desmarques, setDesmarques] = useState<any[]>([])
   const [conversas, setConversas] = useState<Conversa[]>([])
   const [aberta, setAberta] = useState<Conversa | null>(null)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
@@ -67,6 +68,7 @@ export default function CrmPage() {
   const [citando, setCitando] = useState<Mensagem | null>(null)
   const escolherArquivo = useRef<HTMLInputElement>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
+  const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
   const fimDaConversa = useRef<HTMLDivElement>(null)
   // No celular nao cabem tres colunas. Vira uma de cada vez: a fila, e quando
@@ -85,6 +87,7 @@ export default function CrmPage() {
       setModelos(d.modelos || [])
       setMotivos(d.motivos || [])
       setOrigens(d.origens || [])
+      setDesmarques(d.desmarques || [])
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -98,7 +101,7 @@ export default function CrmPage() {
   }
 
   async function abrirConversa(c: Conversa) {
-    setAberta(c); setMensagens([]); setFecharAberto(false); setCitando(null)
+    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null)
     try {
       // Assumir primeiro: a trava vale desde o instante em que a pessoa abre,
       // não depois que as mensagens carregam.
@@ -259,7 +262,7 @@ export default function CrmPage() {
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro === 'novas') lista = lista.filter(ehNova)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
-    if (filtro === 'sem_conversao' && motivoFiltro) {
+    if ((filtro === 'sem_conversao' || filtro === 'desmarcou') && motivoFiltro) {
       lista = lista.filter(c => c.motivo_perda === motivoFiltro)
     }
     if (busca.trim()) {
@@ -296,6 +299,9 @@ export default function CrmPage() {
       pausadas: comTempo.filter(c => c.estado === 'pausada').length,
       agendadas: comTempo.filter(c => c.estado === 'agendado').length,
       perdidas: comTempo.filter(c => c.estado === 'sem_conversao').length,
+      promo: comTempo.filter(c => c.estado === 'aguardando_promo').length,
+      desmarcadas: comTempo.filter(c => c.estado === 'desmarcou').length,
+      confirmadas: comTempo.filter(c => c.estado === 'confirmado').length,
       novas: comTempo.filter(ehNova).length,
     }
   }, [comTempo])
@@ -303,14 +309,15 @@ export default function CrmPage() {
   // Por que se perdeu, com quantas. É este quadro que vira ação comercial:
   // quem caiu por preço recebe promoção, quem caiu por horário recebe encaixe.
   const porMotivo = useMemo(() => {
+    const alvo = filtro === 'desmarcou' ? 'desmarcou' : 'sem_conversao'
     const m = new Map<string, number>()
     for (const c of comTempo) {
-      if (c.estado !== 'sem_conversao') continue
+      if (c.estado !== alvo) continue
       const k = c.motivo_perda || 'Sem motivo registrado'
       m.set(k, (m.get(k) || 0) + 1)
     }
     return [...m.entries()].sort((a, b) => b[1] - a[1])
-  }, [comTempo])
+  }, [comTempo, filtro])
 
   // ── Ações ─────────────────────────────────────────────────────────────────
   // ── Enviar ────────────────────────────────────────────────────────────────
@@ -490,7 +497,7 @@ export default function CrmPage() {
     })
     if (!r.ok) { alert((await r.json().catch(() => ({}))).error || 'Não consegui mudar.'); return }
     setAberta({ ...aberta, estado, ...extra })
-    setFecharAberto(false)
+    setFecharAberto(false); setDesmarqueAberto(false)
     puxarConversas()
   }
 
@@ -620,6 +627,10 @@ export default function CrmPage() {
             )}
             <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
               texto={`Aguardando (${contagem.aguardando})`} />
+            {contagem.promo > 0 && (
+              <Aba ativo={filtro === 'aguardando_promo'} onClick={() => setFiltro('aguardando_promo')}
+                texto={`Promoção (${contagem.promo})`} />
+            )}
             {contagem.followUp > 0 && (
               <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
                 texto={`Follow-up (${contagem.followUp})`} />
@@ -631,6 +642,14 @@ export default function CrmPage() {
             {contagem.agendadas > 0 && (
               <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
                 texto={`Agendadas (${contagem.agendadas})`} />
+            )}
+            {contagem.confirmadas > 0 && (
+              <Aba ativo={filtro === 'confirmado'} onClick={() => setFiltro('confirmado')}
+                texto={`Confirmadas (${contagem.confirmadas})`} />
+            )}
+            {contagem.desmarcadas > 0 && (
+              <Aba ativo={filtro === 'desmarcou'} onClick={() => setFiltro('desmarcou')}
+                texto={`Desmarcou (${contagem.desmarcadas})`} />
             )}
             {contagem.perdidas > 0 && (
               <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
@@ -667,11 +686,11 @@ export default function CrmPage() {
                   motivos, e vinte botoes empurrariam a fila para fora da tela.
                   Ordenada pela quantidade, porque o motivo que mais aparece e
                   o que merece a proxima decisao. */}
-              {filtro === 'sem_conversao' && porMotivo.length > 0 && (
+              {(filtro === 'sem_conversao' || filtro === 'desmarcou') && porMotivo.length > 0 && (
                 <select value={motivoFiltro} onChange={e => setMotivoFiltro(e.target.value)}
                   className="mt-2 w-full px-2.5 py-2 rounded-lg text-[12px] font-bold focus:outline-none"
                   style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }}>
-                  <option value="">Todos os motivos ({contagem.perdidas})</option>
+                  <option value="">Todos os motivos ({filtro === 'desmarcou' ? contagem.desmarcadas : contagem.perdidas})</option>
                   {porMotivo.map(([nome, qtd]) => (
                     <option key={nome} value={nome}>{nome} — {qtd}</option>
                   ))}
@@ -743,7 +762,8 @@ export default function CrmPage() {
                   onVoltar={() => setAberta(null)}
                   onFicha={() => setFichaAberta(true)}
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
-                  motivos={motivos} origens={origens} />
+                  desmarqueAberto={desmarqueAberto} setDesmarqueAberto={setDesmarqueAberto}
+                  motivos={motivos} origens={origens} desmarques={desmarques} />
 
                 <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f2efec' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
@@ -1048,7 +1068,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, motivos, origens }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques }: any) {
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
   const est = estadoPor(c.estado)
@@ -1119,6 +1139,23 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           </select>
         </label>
       </div>
+
+      {/* Desmarque sem motivo é um horário perdido sem explicação: some do
+          relatório e não vira decisão nenhuma. */}
+      {desmarqueAberto && (
+        <div className="mt-3 p-3 rounded-xl" style={{ background: '#FBEAE6' }}>
+          <p className="text-[11.5px] font-bold mb-2" style={{ color: '#1a1a1a' }}>Por que desmarcou?</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {(desmarques || []).map((m: any) => (
+              <button key={m.id} onClick={() => onEstado('desmarcou', { motivo_perda: m.nome })}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                style={{ background: '#fff', border: '1px solid #e8d5d0', color: '#b4322a' }}>
+                {m.nome}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Fechar sem motivo é o que transforma "perdemos 40" em informação inútil. */}
       {fecharAberto && (

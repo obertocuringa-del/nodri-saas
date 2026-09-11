@@ -19,8 +19,9 @@ export default function ConfigCrmPage() {
   const [modelos, setModelos] = useState<Item[]>([])
   const [motivos, setMotivos] = useState<Item[]>([])
   const [origens, setOrigens] = useState<Item[]>([])
+  const [desmarques, setDesmarques] = useState<Item[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [salvando, setSalvando] = useState<'' | 'modelos' | 'motivos' | 'origens'>('')
+  const [salvando, setSalvando] = useState<'' | 'modelos' | 'motivos' | 'origens' | 'desmarques'>('')
   const [aviso, setAviso] = useState('')
   const [limpando, setLimpando] = useState(false)
 
@@ -44,26 +45,26 @@ export default function ConfigCrmPage() {
   useEffect(() => {
     fetch('/api/crm/config')
       .then(r => r.ok ? r.json() : { modelos: [], motivos: [], origens: [] })
-      .then(d => { setModelos(d.modelos || []); setMotivos(d.motivos || []); setOrigens(d.origens || []) })
+      .then(d => { setModelos(d.modelos || []); setMotivos(d.motivos || []); setOrigens(d.origens || []); setDesmarques(d.desmarques || []) })
       .catch(() => {})
       .finally(() => setCarregando(false))
   }, [])
 
-  async function salvar(lista: 'modelos' | 'motivos' | 'origens') {
+  async function salvar(lista: 'modelos' | 'motivos' | 'origens' | 'desmarques') {
     setSalvando(lista); setAviso('')
     try {
-      const itens = lista === 'modelos' ? modelos : lista === 'motivos' ? motivos : origens
+      const itens = lista === 'modelos' ? modelos : lista === 'motivos' ? motivos : lista === 'origens' ? origens : desmarques
       const r = await fetch('/api/crm/config', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lista, itens }),
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok) { setAviso(d.error || 'Não consegui salvar.'); return }
-      setAviso(lista === 'modelos' ? 'Mensagens salvas.' : lista === 'motivos' ? 'Motivos salvos.' : 'Origens salvas.')
+      setAviso(lista === 'modelos' ? 'Mensagens salvas.' : lista === 'motivos' ? 'Motivos salvos.' : lista === 'origens' ? 'Origens salvas.' : 'Motivos de desmarque salvos.')
       // Relê: o servidor é quem dá o id dos itens novos, e sem ele a próxima
       // gravação criaria tudo de novo em vez de atualizar.
       const novo = await fetch('/api/crm/config').then(x => x.json()).catch(() => null)
-      if (novo) { setModelos(novo.modelos || []); setMotivos(novo.motivos || []); setOrigens(novo.origens || []) }
+      if (novo) { setModelos(novo.modelos || []); setMotivos(novo.motivos || []); setOrigens(novo.origens || []); setDesmarques(novo.desmarques || []) }
     } finally { setSalvando('') }
   }
 
@@ -193,6 +194,45 @@ export default function ConfigCrmPage() {
                     className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
                     style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                   <button onClick={() => setMotivos(motivos.filter((_, k) => k !== i))} title="Apagar"
+                    className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Por que desmarcou ── */}
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Por que desmarcou</h2>
+              <div className="flex-1" />
+              <button onClick={() => setDesmarques([...desmarques, { nome: '' }])}
+                className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
+                style={{ background: '#F1EEFC', color: '#5b4fcf' }}>
+                <Plus size={13} /> Novo
+              </button>
+              <button onClick={() => salvar('desmarques')} disabled={salvando === 'desmarques'}
+                className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1 disabled:opacity-40"
+                style={{ background: '#5b4fcf', color: '#fff' }}>
+                <Save size={13} />{salvando === 'desmarques' ? 'Salvando' : 'Salvar'}
+              </button>
+            </div>
+            <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
+              Lista separada da de "não fechou", de propósito: quem desmarca já tinha decidido vir.
+              O que a faz desistir depois é outra coisa, e exige outra resposta do salão.
+            </p>
+            <div className="space-y-2">
+              {desmarques.map((m, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="flex flex-col" style={{ color: '#b5aca4' }}>
+                    <button onClick={() => mover(desmarques, setDesmarques, i, -1)} className="leading-none text-[10px]">▲</button>
+                    <button onClick={() => mover(desmarques, setDesmarques, i, 1)} className="leading-none text-[10px]">▼</button>
+                  </div>
+                  <input value={m.nome} onChange={e => {
+                    const n = [...desmarques]; n[i] = { ...m, nome: e.target.value }; setDesmarques(n)
+                  }} placeholder="Ex.: Imprevisto no trabalho"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
+                    style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
+                  <button onClick={() => setDesmarques(desmarques.filter((_, k) => k !== i))} title="Apagar"
                     className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
                 </div>
               ))}

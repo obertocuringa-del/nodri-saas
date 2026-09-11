@@ -236,3 +236,13 @@ CREATE INDEX IF NOT EXISTS idx_crm_lid_cache_lid ON crm_lid_cache(salao_id, lid)
 
 -- Ate onde a varredura de telefones ja passou em atendimentos_raw.
 ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS lid_varredura int DEFAULT 0;
+
+-- ── Por que desmarcou ───────────────────────────────────────────────────────
+-- Lista separada da de "nao fechou": quem desmarca ja tinha decidido vir, e o
+-- que faz desistir depois e outra coisa. CATALOGO: viaja do salao modelo.
+CREATE TABLE IF NOT EXISTS crm_motivos_desmarque (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  salao_id uuid NOT NULL, nome text NOT NULL,
+  ordem int DEFAULT 0, ativo boolean DEFAULT true,
+  criado_em timestamptz DEFAULT now());
+CREATE INDEX IF NOT EXISTS idx_crm_desmarque_salao ON crm_motivos_desmarque(salao_id, ordem);

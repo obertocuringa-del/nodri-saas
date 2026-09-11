@@ -109,9 +109,14 @@ export async function PATCH(req: NextRequest) {
     if (novo === 'sem_conversao' && !String(body?.motivo_perda || '').trim()) {
       return NextResponse.json({ error: 'Informe o motivo para fechar sem conversão.' }, { status: 400 })
     }
+    // Desmarque sem motivo e um horario perdido sem explicacao: some do
+    // relatorio e nao vira decisao nenhuma.
+    if (novo === 'desmarcou' && !String(body?.motivo_perda || '').trim()) {
+      return NextResponse.json({ error: 'Informe o motivo do desmarque.' }, { status: 400 })
+    }
     patch.estado = novo
     patch.proxima_acao = String(body?.proxima_acao || '').trim() || proximaAcaoPadrao(novo)
-    if (novo === 'sem_conversao') {
+    if (novo === 'sem_conversao' || novo === 'desmarcou') {
       patch.motivo_perda = String(body.motivo_perda).trim()
       patch.fechada_em = new Date().toISOString()
     }
