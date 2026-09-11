@@ -734,19 +734,25 @@ const CORES_AVATAR = ['#5b4fcf', '#0f766e', '#b4322a', '#9a6b12', '#2f6b4f', '#7
 function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; tamanho?: number }) {
   const limpo = String(nome || '').trim()
   const partes = limpo.split(/\s+/).filter(p => /[a-zA-ZÀ-ú]/.test(p))
+  // Contato sem nome no WhatsApp vem como "(61) 9672-6153". Os dois ultimos
+  // digitos ali nao sao iniciais de ninguem: sao ruido que a lista inteira
+  // repete. Melhor a silhueta, que ao menos diz "essa eu ainda nao sei quem e".
   const iniciais = partes.length
     ? (partes[0][0] + (partes[1]?.[0] || '')).toUpperCase()
-    : limpo.slice(-2)
+    : null
   let soma = 0
   for (let i = 0; i < limpo.length; i++) soma += limpo.charCodeAt(i)
-  const cor = CORES_AVATAR[soma % CORES_AVATAR.length]
+  // Quem ainda nao tem nome fica em cinza: a cor existe para distinguir
+  // pessoas, e sete circulos coloridos com silhueta dentro nao distinguem
+  // ninguem -- so fazem a lista parecer cheia de gente diferente.
+  const cor = iniciais ? CORES_AVATAR[soma % CORES_AVATAR.length] : '#b0b4bd'
   return (
     <div className="rounded-full flex-shrink-0 flex items-center justify-center font-bold relative"
       style={{
         width: tamanho, height: tamanho, background: cor, color: '#fff',
         fontSize: tamanho * 0.36, letterSpacing: '0.02em',
       }}>
-      {iniciais}
+      {iniciais || <User size={tamanho * 0.5} strokeWidth={2.2} />}
       {nova && (
         <span className="absolute -bottom-0.5 -right-0.5 rounded-full"
           style={{ width: 10, height: 10, background: '#0f766e', border: '2px solid #fff' }} />
@@ -762,6 +768,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, fecharAberto, setFecharAbert
   return (
     <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
       <div className="flex items-center gap-3 flex-wrap">
+        <Avatar nome={nome} nova={ehNova(c)} tamanho={38} />
         <div className="min-w-0">
           <p className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>{nome}</p>
           <p className="text-[11.5px]" style={{ color: '#868c97' }}>{telefoneBonito(ct.telefone)}</p>
