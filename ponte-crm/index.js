@@ -520,7 +520,11 @@ async function volta() {
   // mas em silencio isso vira "o WhatsApp caiu sozinho", entao fica dito.
   for (const salaoId of sessoes.keys()) {
     if (!querem.has(salaoId)) {
-      registro(salaoId, 'outra ponte assumiu este salao — encerrando aqui. Rode a ponte em UM computador só.')
+      // Duas causas possiveis e nao da para distinguir daqui: o salao clicou
+      // em Desconectar, ou outra ponte pegou a posse. Dizer as duas e melhor
+      // que chutar uma -- na primeira versao eu afirmava "outra ponte assumiu"
+      // e o log acusava um culpado que nao existia.
+      registro(salaoId, 'saiu da lista do NODRI — desconectado pelo salão, ou outra ponte assumiu. Rode a ponte em UM computador só.')
     }
   }
 
