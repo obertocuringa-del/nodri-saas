@@ -1,71 +1,61 @@
-# CRM NODRI — o que falta, na ordem
+# CRM NODRI — o que está pronto e o que não está
 
-Regra que vale para tudo aqui: **o sistema marca sozinho, quem escreve é
-gente.** Nenhuma mensagem sai sem alguém clicar em Enviar. Foi decidido em
-11/09/2026 e é o que separa "automatizado" de "número bloqueado pelo
-WhatsApp".
+Regra que vale para tudo: **o sistema marca sozinho, quem escreve é gente.**
+Nenhuma mensagem sai sem alguém clicar em Enviar. Decidido em 11/09/2026 e é
+o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 
-## Feito
+## Pronto e no ar
 
-- [x] Conexão por QR, sessão que sobrevive a reinício
-- [x] Histórico do celular entra junto no pareamento
-- [x] Mensagem que o salão manda pelo celular também aparece
-- [x] Disparo de lista não apaga a pergunta da cliente
-- [x] Botão "Aguardando cliente"
-- [x] "Sem conversão" mostra o motivo escolhido
-- [x] Fila separada em "Preciso agir" (até 3 dias) e "Sem resposta"
+**Conexão**
+- QR, sessão que sobrevive a reinício, reconexão sozinha
+- Histórico do celular entra junto no pareamento
+- O que o salão manda pelo celular também aparece no CRM
 
-## 1. O relógio — a automação de verdade
+**A fila**
+- Abas no topo: Preciso agir · Clientes novas · Sem resposta · Aguardando ·
+  Follow-up · Pausadas · Agendadas · Não fechou · Todas
+- "Preciso agir" (até 3 dias) separado de "Sem resposta" (o que ficou para trás)
+- Etiqueta de estado em toda conversa, inclusive na fila
+- Relógio de espera em minutos de expediente, faixa de urgência na borda
+- Trava de dono: duas recepcionistas não respondem a mesma cliente
 
-A recepção esquece. Então o sistema não pode depender dela para lembrar.
-Uma rota `?acao=relogio` chamada pela ponte a cada minuto:
+**Automático (o relógio, a cada minuto)**
+- Pausa que vence volta como follow-up
+- Cliente que não responde por um dia de expediente vira follow-up
+- Cliente nova detectada pelo telefone, cruzando com `atendimentos_raw`
+- **Agendado marcado sozinho** quando a cliente aparece no atendimento
 
-- **Follow-up sozinho**: respondeu e a cliente não voltou em X horas úteis →
-  volta para a fila como Follow-up. X configurável.
-- **Pausa volta sozinha** na data marcada.
-- **Agendado sozinho**: a cliente aparece em `atendimentos_raw` depois da
-  conversa → marca Agendado. É isto que faz a taxa de conversão se medir sem
-  ninguém marcar nada.
-- **Cliente nova sozinha**: contato sem nenhum atendimento no histórico →
-  etiqueta automática.
+**Responder**
+- Anexo: foto, áudio, vídeo e documento, nos dois sentidos
+- Preços em três toques (Serviço/Produto → categoria/marca → item), do catálogo
+- Mensagens prontas com atalho: `/oi` + Enter
+- Aviso de mensagem nova: contador no título da aba + toque curto
 
-Pedra no caminho: `atendimentos_raw` **não tem telefone**, só o nome da
-cliente. O casamento é por nome normalizado, então vai pegar uma parte e
-deixar outra de fora. O que não casar fica para ligação manual na tela — e
-isso precisa estar visível, não escondido.
+**Medir**
+- Painel: conversão, cliente nova x cliente da casa, motivos de perda,
+  conversão por origem, tempo de resposta, quem espera agora
+- Origem da conversa (tráfego pago, indicação, Google…), editável
 
-## 2. Configuração do CRM
+**Configurar** (`/salon/crm/config`)
+- Mensagens prontas, motivos de "Não fechou", origens
 
-Hoje não existe tela: mensagens prontas e motivos de perda são os de fábrica.
-Precisa de uma aba de configuração para:
+**Ficha da cliente**
+- Nome editável e observação que fica para sempre
 
-- editar/criar/apagar mensagens prontas
-- editar/criar/apagar motivos de "Não fechou"
-- o prazo do follow-up automático
-- o corte de "Sem resposta" (hoje 3 dias, fixo)
+## Não está pronto
 
-## 3. Resposta em árvore
+1. **Grupos.** Ficam de fora de propósito. Se um dia for preciso, é decisão
+   nova, não esquecimento.
+2. **Áudio gravado na hora** pelo CRM. Hoje dá para anexar um áudio que já
+   existe, não gravar ali.
+3. **Responder citando uma mensagem** (o *reply* do WhatsApp).
+4. **Marcar conversa como não lida** depois de abrir.
+5. **Vários números** de WhatsApp no mesmo salão. Um canal por salão.
+6. **Relatório por atendente.** Os eventos já gravam quem fez o quê; falta a
+   tela.
 
-Clicar em "Responder preço" abre um caminho em vez de um texto pronto:
+## Armadilha conhecida
 
-```
-Preço → Serviço → [categoria] → [serviço com valor]
-      → Produto → [marca] → [produto com valor]
-      → Escrever à mão
-```
-
-Puxando dos catálogos que o NODRI já tem, para o preço nunca sair
-desatualizado da boca da recepção.
-
-## 4. Abas novas
-
-- **Clientes novos**: primeira vez no salão, detectado sozinho (depende do 1)
-- **Tráfego**: origem comercial da conversa. Marcação de um clique, com
-  padrão sugerido para cliente nova que chegou sem indicação.
-
-## 5. A cara da tela
-
-Ficou funcional e feia. Depois que o comportamento estiver certo, refazer:
-tipografia, respiro, a lista da esquerda, os balões, o painel da direita.
-Deixar por último é de propósito — redesenhar em cima de regra que ainda vai
-mudar é trabalho jogado fora.
+`atendimentos_raw` casa com o CRM pelo **celular**. Se o WhatsApp conectado
+não for o da recepção, quase todo contato vira "cliente nova" e a conversão
+mede a vida pessoal de quem conectou. Foi o que aconteceu no primeiro teste.
