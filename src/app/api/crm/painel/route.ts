@@ -87,12 +87,11 @@ export async function GET(req: NextRequest) {
   // mais próximo de cada conversa dá a espera real.
   const { data: eventos } = await supabaseAdmin
     .from('crm_eventos')
-    .select('conversa_id, tipo, criado_em')
+    .select('conversa_id, tipo, criado_em, autor_nome, para_estado')
     .eq('salao_id', sess.salaoId)
-    .in('tipo', ['entrou', 'respondeu'])
     .gte('criado_em', desde)
     .order('criado_em', { ascending: true })
-    .limit(8000)
+    .limit(12000)
 
   const esperas: number[] = []
   const pendente = new Map<string, string>()
@@ -118,8 +117,33 @@ export async function GET(req: NextRequest) {
     .map((c: any) => minutosUteis(new Date(c.aguardando_desde), agora))
   const piorEspera = esperandoAgora.length ? Math.max(...esperandoAgora) : 0
 
+  // ── Quem trabalhou ────────────────────────────────────────────────────────
+  //
+  // Os eventos ja gravavam quem fez o que e ninguem lia. Nao e para vigiar
+  // atendente: e para saber se o resultado ruim de um mes foi falta de
+  // demanda ou falta de gente respondendo -- que sao dois problemas com
+  // solucoes opostas, e hoje o salao chuta qual dos dois foi.
+  //
+  // O "Relogio" aparece na lista como qualquer outro: e honesto mostrar
+  // quanto do trabalho o proprio sistema fez sozinho.
+  const porPessoa = new Map<string, { respondeu: number; agendou: number; fechou: number; assumiu: number }>()
+  for (const e of eventos || []) {
+    const quem = String(e.autor_nome || '').trim()
+    if (!quem || quem === 'Cliente') continue
+    if (!porPessoa.has(quem)) porPessoa.set(quem, { respondeu: 0, agendou: 0, fechou: 0, assumiu: 0 })
+    const l = porPessoa.get(quem)!
+    if (e.tipo === 'respondeu') l.respondeu++
+    else if (e.tipo === 'assumiu') l.assumiu++
+    else if (e.para_estado === 'agendado') l.agendou++
+    else if (e.para_estado === 'sem_conversao') l.fechou++
+  }
+  const pessoas = [...porPessoa.entries()]
+    .map(([nome, v]) => ({ nome, ...v }))
+    .sort((a, b) => (b.respondeu + b.agendou) - (a.respondeu + a.agendou))
+
   return NextResponse.json({
     dias,
+    pessoas,
     geral: funil(geradas),
     novas: funil(geradas.filter(ehNova)),
     conhecidas: funil(geradas.filter(c => !ehNova(c))),

@@ -535,17 +535,34 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from('crm_mensagens')
-    .select('id, texto, tipo, midia_url, conversa:crm_conversas(contato:crm_contatos(telefone))')
+    .select('id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone))')
     .eq('salao_id', salaoId).eq('situacao', 'na_fila')
     .order('criado_em', { ascending: true }).limit(20)
 
-  const fila = (data || []).map((m: any) => ({
-    id: m.id,
-    texto: m.texto,
-    tipo: m.tipo || 'texto',
-    midia_url: m.midia_url || null,
-    telefone: m.conversa?.contato?.telefone || null,
-  })).filter(m => m.telefone)
+  // A mensagem citada vai junto. A ponte precisa do id do WhatsApp e de quem
+  // falou para montar a citacao; ela nao guarda historico nenhum.
+  const citadas = new Map<string, any>()
+  const idsCitados = (data || []).map((m: any) => m.responde_a).filter(Boolean)
+  if (idsCitados.length) {
+    const { data: orig } = await supabaseAdmin
+      .from('crm_mensagens').select('id, id_whatsapp, texto, direcao')
+      .in('id', idsCitados)
+    for (const o of orig || []) citadas.set(o.id, o)
+  }
+
+  const fila = (data || []).map((m: any) => {
+    const cit = m.responde_a ? citadas.get(m.responde_a) : null
+    return {
+      id: m.id,
+      texto: m.texto,
+      tipo: m.tipo || 'texto',
+      midia_url: m.midia_url || null,
+      telefone: m.conversa?.contato?.telefone || null,
+      citada: cit?.id_whatsapp
+        ? { id_whatsapp: cit.id_whatsapp, texto: cit.texto || '', minha: cit.direcao === 'saida' }
+        : null,
+    }
+  }).filter(m => m.telefone)
 
   // Marca como 'enviando' para a ponte não pegar a mesma mensagem duas vezes
   // se demorar a confirmar.

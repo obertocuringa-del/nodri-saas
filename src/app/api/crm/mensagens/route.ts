@@ -39,8 +39,14 @@ export async function GET(req: NextRequest) {
 
   // Abrir a conversa zera o não lidas — a lista precisa refletir o que a
   // pessoa realmente viu, senão o contador vira enfeite.
-  await supabaseAdmin.from('crm_conversas')
-    .update({ nao_lidas: 0 }).eq('id', conversaId).eq('salao_id', sess!.salaoId)
+  //
+  // `?ler=0` existe para a releitura automática da tela aberta: ela roda a
+  // cada cinco segundos e, sem isso, desfaria em cinco segundos o "marcar
+  // como não lida" que a pessoa acabou de clicar.
+  if (new URL(req.url).searchParams.get('ler') !== '0') {
+    await supabaseAdmin.from('crm_conversas')
+      .update({ nao_lidas: 0 }).eq('id', conversaId).eq('salao_id', sess!.salaoId)
+  }
 
   return NextResponse.json({ mensagens: data || [] })
 }
@@ -57,6 +63,7 @@ export async function POST(req: NextRequest) {
   const texto = String(body?.texto || '').trim()
   const midiaUrl = String(body?.midia_url || '').trim() || null
   const tipo = String(body?.tipo || 'texto')
+  const respondeA = String(body?.responde_a || '').trim() || null
   // Anexo sem legenda é mensagem legítima; texto vazio sem anexo não é.
   if (!conversaId || (!texto && !midiaUrl)) {
     return NextResponse.json({ error: 'Escreva algo ou anexe um arquivo' }, { status: 400 })
@@ -76,6 +83,7 @@ export async function POST(req: NextRequest) {
     texto,
     tipo,
     midia_url: midiaUrl,
+    responde_a: respondeA,
     situacao: 'na_fila',
     autor_id: sess!.usuarioId || null,
     autor_nome: quem,

@@ -186,3 +186,9 @@ CREATE TABLE IF NOT EXISTS crm_origens (
   criado_em     timestamptz DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_crm_origens_salao ON crm_origens(salao_id, ordem);
+
+-- ── Responder citando ───────────────────────────────────────────────────────
+-- Numa conversa de salao a cliente manda cinco perguntas seguidas. Responder
+-- "pode sim" sem dizer a qual delas e o jeito mais rapido de combinar coisa
+-- errada. Aponta para a mensagem citada.
+ALTER TABLE crm_mensagens ADD COLUMN IF NOT EXISTS responde_a uuid;

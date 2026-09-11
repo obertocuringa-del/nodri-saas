@@ -89,6 +89,16 @@ export async function PATCH(req: NextRequest) {
     tipoEvento = 'assumiu'
   }
 
+  // Marcar como nao lida. Parece detalhe e nao e: abrir a conversa para "so
+  // dar uma olhada" zera o contador, e o que estava na fila some da vista de
+  // quem ia responder depois. Devolver ao estado de nao lida tambem solta a
+  // trava de dono -- senao a conversa fica reservada para quem desistiu dela.
+  if (body?.acao === 'nao_lida') {
+    patch.nao_lidas = Math.max(1, Number(atual.nao_lidas || 0))
+    patch.dono_id = null; patch.dono_nome = null; patch.dono_ate = null
+    tipoEvento = 'mudou_estado'
+  }
+
   if (body?.acao === 'soltar') {
     patch.dono_id = null; patch.dono_nome = null; patch.dono_ate = null
   }

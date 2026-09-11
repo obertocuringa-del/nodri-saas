@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3 } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
@@ -51,6 +51,7 @@ export default function CrmPage() {
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [anexando, setAnexando] = useState(false)
+  const [citando, setCitando] = useState<Mensagem | null>(null)
   const escolherArquivo = useRef<HTMLInputElement>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -79,7 +80,7 @@ export default function CrmPage() {
   }
 
   async function abrirConversa(c: Conversa) {
-    setAberta(c); setMensagens([]); setFecharAberto(false)
+    setAberta(c); setMensagens([]); setFecharAberto(false); setCitando(null)
     try {
       // Assumir primeiro: a trava vale desde o instante em que a pessoa abre,
       // não depois que as mensagens carregam.
@@ -125,7 +126,7 @@ export default function CrmPage() {
     const t = setInterval(async () => {
       if (document.hidden) return
       try {
-        const r = await fetch(`/api/crm/mensagens?conversa=${aberta.id}`)
+        const r = await fetch(`/api/crm/mensagens?conversa=${aberta.id}&ler=0`)
         if (!r.ok) return
         const d = await r.json()
         const chegaram = d.mensagens || []
@@ -269,10 +270,11 @@ export default function CrmPage() {
         body: JSON.stringify({
           conversa: aberta.id, texto: t,
           midia_url: midia?.url || null, tipo: midia?.tipo || 'texto',
+          responde_a: citando?.id || null,
         }),
       })
       if (r.ok) {
-        setTexto('')
+        setTexto(''); setCitando(null)
         const rm = await fetch(`/api/crm/mensagens?conversa=${aberta.id}`)
         setMensagens((await rm.json()).mensagens || [])
         puxarConversas()
@@ -280,6 +282,61 @@ export default function CrmPage() {
         alert((await r.json().catch(() => ({}))).error || 'Não consegui enviar.')
       }
     } catch { alert('Não consegui enviar.') } finally { setEnviando(false) }
+  }
+
+  // ── Gravar áudio ──────────────────────────────────────────────────────────
+  //
+  // Metade do que um salão responde é mais rápido de falar do que de escrever:
+  // "o mechas leva quatro horas e depende do estado do fio". Obrigar a
+  // recepção a gravar no celular e anexar aqui seria devolver o problema que
+  // o CRM veio resolver.
+  //
+  // O formato depende do navegador. Onde houver ogg/opus a mensagem vai como
+  // áudio de voz de verdade; onde só houver webm ela vai como arquivo de
+  // áudio, que toca do mesmo jeito no WhatsApp mas sem a onda azul.
+  const gravador = useRef<MediaRecorder | null>(null)
+  const pedacos = useRef<Blob[]>([])
+  const [gravando, setGravando] = useState(false)
+
+  function formatoDeAudio(): string {
+    const tenta = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+    for (const t of tenta) {
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.(t)) return t
+    }
+    return ''
+  }
+
+  async function gravarAudio() {
+    if (gravando) { gravador.current?.stop(); return }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mime = formatoDeAudio()
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+      pedacos.current = []
+      rec.ondataavailable = e => { if (e.data.size) pedacos.current.push(e.data) }
+      rec.onstop = async () => {
+        // Solta o microfone SEMPRE. Sem isto a luzinha da câmera/microfone
+        // fica acesa no computador da recepção o dia inteiro.
+        stream.getTracks().forEach(t => t.stop())
+        setGravando(false)
+        const blob = new Blob(pedacos.current, { type: mime || 'audio/webm' })
+        if (blob.size < 1200) return       // clique sem querer, não vira mensagem
+        const ext = (mime || '').includes('ogg') ? 'ogg' : (mime || '').includes('mp4') ? 'm4a' : 'webm'
+        const arquivo = new File([blob], `audio_${Date.now()}.${ext}`, { type: blob.type })
+        setAnexando(true)
+        try {
+          const { url } = await enviarArquivo(arquivo)
+          await enviar({ url, tipo: 'audio' })
+        } catch (e: any) {
+          alert(e?.message || 'Não consegui enviar o áudio.')
+        } finally { setAnexando(false) }
+      }
+      gravador.current = rec
+      rec.start()
+      setGravando(true)
+    } catch {
+      alert('Não consegui usar o microfone. Verifique a permissão do navegador.')
+    }
   }
 
   // ── Anexo ─────────────────────────────────────────────────────────────────
@@ -307,6 +364,20 @@ export default function CrmPage() {
   // de verdade.
   function inserirNoTexto(linha: string) {
     setTexto(t => (t.trim() ? t.replace(/\s+$/, '') + '\n' + linha : linha))
+  }
+
+  async function marcarNaoLida() {
+    if (!aberta) return
+    const id = aberta.id
+    // Fecha a conversa junto. Marcar como nao lida e deixar ela aberta na
+    // tela e uma contradicao: a releitura automatica continuaria rolando por
+    // cima e a pessoa ficaria olhando para algo que disse nao ter visto.
+    setAberta(null); setMensagens([])
+    await fetch('/api/crm/conversas', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, acao: 'nao_lida' }),
+    }).catch(() => {})
+    puxarConversas()
   }
 
   async function mudarOrigem(origem: string) {
@@ -491,6 +562,7 @@ export default function CrmPage() {
             ) : (
               <>
                 <CabecalhoConversa c={aberta} onEstado={mudarEstado} onOrigem={mudarOrigem}
+                  onNaoLida={marcarNaoLida}
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   motivos={motivos} origens={origens} />
 
@@ -502,13 +574,25 @@ export default function CrmPage() {
                           vira um bloco unico e ninguem sabe se "amanha as 15h"
                           foi combinado ontem ou em marco. */}
                       {diaMudou(mensagens[i - 1], m) && <SeparadorDia em={m.criado_em} />}
-                      <Balao m={m} />
+                      <Balao m={m} onCitar={() => setCitando(m)}
+                        citada={m.responde_a ? mensagens.find(x => x.id === m.responde_a) : null} />
                     </div>
                   ))}
                   <div ref={fimDaConversa} />
                 </div>
 
                 <div className="border-t p-3" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+                  {citando && (
+                    <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
+                      style={{ background: '#f3f1fd', borderLeft: '3px solid #5b4fcf' }}>
+                      <CornerUpLeft size={13} style={{ color: '#5b4fcf' }} />
+                      <span className="text-[11.5px] truncate flex-1" style={{ color: '#575d68' }}>
+                        Respondendo: {citando.texto || `[${citando.tipo}]`}
+                      </span>
+                      <button onClick={() => setCitando(null)} title="Cancelar"
+                        className="p-0.5" style={{ color: '#868c97' }}><X size={13} /></button>
+                    </div>
+                  )}
                   <PainelPrecos onInserir={inserirNoTexto} />
                   {modelos.length > 0 && (
                     <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
@@ -524,11 +608,19 @@ export default function CrmPage() {
                   <div className="flex gap-2 items-end">
                     <input ref={escolherArquivo} type="file" className="hidden"
                       onChange={e => { const f = e.target.files?.[0]; if (f) anexar(f); e.target.value = '' }} />
-                    <button onClick={() => escolherArquivo.current?.click()} disabled={anexando}
+                    <button onClick={() => escolherArquivo.current?.click()} disabled={anexando || gravando}
                       title="Anexar foto, áudio ou documento"
                       className="px-3 py-2.5 rounded-xl disabled:opacity-40"
                       style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#575d68' }}>
                       <Paperclip size={15} />
+                    </button>
+                    <button onClick={gravarAudio} disabled={anexando}
+                      title={gravando ? 'Parar e enviar o áudio' : 'Gravar um áudio'}
+                      className="px-3 py-2.5 rounded-xl disabled:opacity-40"
+                      style={gravando
+                        ? { background: '#b4322a', color: '#fff', border: '1px solid #b4322a' }
+                        : { background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#575d68' }}>
+                      {gravando ? <Square size={15} /> : <Mic size={15} />}
                     </button>
                     <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2}
                       onKeyDown={e => {
@@ -767,7 +859,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, fecharAberto, setFecharAberto, motivos, origens }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, setFecharAberto, motivos, origens }: any) {
   const ct = c.contato || {}
   const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
   const est = estadoPor(c.estado)
@@ -796,6 +888,8 @@ function CabecalhoConversa({ c, onEstado, onOrigem, fecharAberto, setFecharAbert
             cor="#5b4fcf" fundo="#efedfb" texto="Pausar 7 dias" />
           <BotaoAcao onClick={() => setFecharAberto(!fecharAberto)} cor="#575d68" fundo="#efeff2"
             icone={fecharAberto ? <X size={12} /> : undefined} texto="Não fechou" />
+          <BotaoAcao onClick={onNaoLida} cor="#575d68" fundo="#efeff2"
+            icone={<Eye size={12} />} texto="Não li ainda" />
         </div>
       </div>
 
@@ -869,13 +963,20 @@ function SeparadorDia({ em }: { em: string }) {
   )
 }
 
-function Balao({ m }: { m: Mensagem }) {
+function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; citada?: Mensagem | null }) {
   const meu = m.direcao === 'saida'
   const hora = m.criado_em
     ? new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : ''
   return (
-    <div className={`flex mb-1.5 ${meu ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex mb-1.5 group ${meu ? 'justify-end' : 'justify-start'}`}>
+      {/* O botao de citar so aparece no balao sob o cursor. Um icone fixo em
+          cada mensagem polui uma conversa de duzentas linhas. */}
+      {meu && onCitar && (
+        <button onClick={onCitar} title="Responder citando"
+          className="opacity-0 group-hover:opacity-100 transition self-center mr-1 p-1"
+          style={{ color: '#868c97' }}><CornerUpLeft size={13} /></button>
+      )}
       <div className="max-w-[68%] px-3 py-2"
         style={m.em_massa
           // Disparo de lista não é resposta para aquela pessoa. Fica com a
@@ -893,6 +994,18 @@ function Balao({ m }: { m: Mensagem }) {
         {m.em_massa && (
           <p className="text-[9.5px] font-bold mb-1" style={{ color: '#9a6b12' }}>ENVIO EM MASSA</p>
         )}
+        {/* A mensagem citada, dentro do balao. Sem ela, "pode sim" no meio de
+            cinco perguntas nao diz a qual delas o salao respondeu. */}
+        {citada && (
+          <div className="mb-1.5 px-2 py-1 rounded text-[11.5px] truncate"
+            style={{
+              background: meu ? 'rgba(255,255,255,.16)' : '#f3f1fd',
+              borderLeft: `3px solid ${meu ? 'rgba(255,255,255,.55)' : '#5b4fcf'}`,
+              opacity: 0.92,
+            }}>
+            {citada.texto || `[${citada.tipo}]`}
+          </div>
+        )}
         <Anexo m={m} />
         {m.texto && !(m.midia_url && /^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto)) && (
           <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
@@ -904,6 +1017,11 @@ function Balao({ m }: { m: Mensagem }) {
           {meu && m.autor_nome ? ` · ${m.autor_nome}` : ''}
         </p>
       </div>
+      {!meu && onCitar && (
+        <button onClick={onCitar} title="Responder citando"
+          className="opacity-0 group-hover:opacity-100 transition self-center ml-1 p-1"
+          style={{ color: '#868c97' }}><CornerUpLeft size={13} /></button>
+      )}
     </div>
   )
 }

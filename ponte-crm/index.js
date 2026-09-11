@@ -388,7 +388,16 @@ function corpoDoEnvio(msg) {
 
   if (tipo === 'imagem') return { image: { url }, caption: legenda || undefined }
   if (tipo === 'video')  return { video: { url }, caption: legenda || undefined }
-  if (tipo === 'audio')  return { audio: { url }, mimetype: 'audio/mp4', ptt: true }
+  if (tipo === 'audio') {
+    // O WhatsApp só trata como áudio de voz (com a onda e a bolinha) o que
+    // vem em ogg/opus. Mandar webm como ptt entrega um áudio que não toca em
+    // metade dos aparelhos — então webm vai como arquivo de áudio comum, que
+    // toca em todos, só sem a onda.
+    const ext = String(url).split('?')[0].split('.').pop()?.toLowerCase() || ''
+    if (ext === 'ogg') return { audio: { url }, mimetype: 'audio/ogg; codecs=opus', ptt: true }
+    if (ext === 'm4a' || ext === 'mp4') return { audio: { url }, mimetype: 'audio/mp4' }
+    return { audio: { url }, mimetype: 'audio/webm' }
+  }
   return {
     document: { url },
     fileName: msg.nome_arquivo || legenda || 'arquivo',
@@ -412,7 +421,16 @@ async function despacharFila(salaoId) {
   for (const msg of fila) {
     try {
       const jid = `${msg.telefone}@s.whatsapp.net`
-      const enviada = await s.sock.sendMessage(jid, corpoDoEnvio(msg))
+      // Citacao: o WhatsApp so precisa da chave da mensagem original e de um
+      // texto para o balaozinho. A ponte nao guarda historico, entao monta o
+      // minimo que o protocolo aceita com o que o NODRI mandou junto.
+      const opcoes = msg.citada ? {
+        quoted: {
+          key: { remoteJid: jid, id: msg.citada.id_whatsapp, fromMe: !!msg.citada.minha },
+          message: { conversation: String(msg.citada.texto || '').slice(0, 300) || ' ' },
+        },
+      } : undefined
+      const enviada = await s.sock.sendMessage(jid, corpoDoEnvio(msg), opcoes)
       await nodri('?acao=confirmar', {
         method: 'POST',
         body: JSON.stringify({

@@ -137,6 +137,48 @@ export default function PainelCrmPage() {
               : <Barras itens={d.motivos.map((m: any) => ({ nome: m.nome, valor: m.total }))} cor="#b4322a" />}
           </section>
 
+          {/* ── Quem trabalhou ── */}
+          {d.pessoas?.length > 0 && (
+            <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+              <h2 className="font-bold text-[15px] mb-1" style={{ color: '#14161b' }}>Quem trabalhou a fila</h2>
+              <p className="text-[12px] mb-4" style={{ color: '#868c97' }}>
+                Não é para vigiar atendente: é para saber se um mês ruim foi falta de demanda ou
+                falta de gente respondendo — dois problemas com soluções opostas. O Relógio aparece
+                na lista como qualquer outro, porque parte do trabalho o sistema faz sozinho.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ color: '#868c97' }}>
+                      <th className="text-left font-bold py-1.5">Quem</th>
+                      <th className="text-right font-bold py-1.5">Respondeu</th>
+                      <th className="text-right font-bold py-1.5">Assumiu</th>
+                      <th className="text-right font-bold py-1.5">Agendou</th>
+                      <th className="text-right font-bold py-1.5">Fechou sem conversão</th>
+                    </tr>
+                  </thead>
+                  <tbody style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {d.pessoas.map((p: any) => (
+                      <tr key={p.nome} style={{ borderTop: '1px solid #f0f0f3' }}>
+                        <td className="py-1.5" style={{ color: '#14161b' }}>
+                          {p.nome}
+                          {p.nome === 'Relógio' && (
+                            <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded"
+                              style={{ background: '#efedfb', color: '#5b4fcf' }}>automático</span>
+                          )}
+                        </td>
+                        <td className="py-1.5 text-right" style={{ color: '#575d68' }}>{p.respondeu}</td>
+                        <td className="py-1.5 text-right" style={{ color: '#575d68' }}>{p.assumiu}</td>
+                        <td className="py-1.5 text-right font-bold" style={{ color: '#2f6b4f' }}>{p.agendou}</td>
+                        <td className="py-1.5 text-right" style={{ color: '#b4322a' }}>{p.fechou}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
           {/* ── Origem ── */}
           <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
             <h2 className="font-bold text-[15px] mb-1" style={{ color: '#14161b' }}>De onde vem quem fecha</h2>
