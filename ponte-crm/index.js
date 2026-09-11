@@ -237,6 +237,31 @@ async function guardarMidia(salaoId, m, tipo) {
 async function abrirSessao(salaoId) {
   if (sessoes.has(salaoId)) return sessoes.get(salaoId)
 
+  // ── A vaga e reservada ANTES de qualquer await ────────────────────────────
+  //
+  // O laco roda a cada 4 segundos e chamava esta funcao sem esperar. Como as
+  // duas primeiras linhas de trabalho aqui SAO awaits (uma delas busca a
+  // versao do WhatsApp pela rede), duas voltas seguidas passavam pelo
+  // `sessoes.has` antes de qualquer uma gravar, e abriam DOIS sockets para o
+  // mesmo salao, na mesma pasta de credenciais.
+  //
+  // Os dois pareiam ao mesmo tempo, gravam credencial por cima um do outro, e
+  // o WhatsApp aborta a sincronia inicial. Resultado na tela: conecta, aparece
+  // o numero certo, e nao vem conversa nenhuma -- que foi exatamente o que
+  // aconteceu ao ligar o telefone do salao. No log dava para ver: "QR gerado"
+  // duas vezes no mesmo segundo.
+  const registroSessao = { sock: null, salaoId, conectado: false, fechando: false }
+  sessoes.set(salaoId, registroSessao)
+
+  try {
+    return await abrirDeVerdade(salaoId, registroSessao)
+  } catch (e) {
+    sessoes.delete(salaoId)     // deu errado: libera a vaga para a proxima volta
+    throw e
+  }
+}
+
+async function abrirDeVerdade(salaoId, registroSessao) {
   const pasta = path.join(PASTA, salaoId)
   fs.mkdirSync(pasta, { recursive: true })
 
@@ -264,8 +289,7 @@ async function abrirSessao(salaoId) {
     markOnlineOnConnect: false,   // não rouba as notificações do celular
   })
 
-  const registroSessao = { sock, salaoId, conectado: false, fechando: false }
-  sessoes.set(salaoId, registroSessao)
+  registroSessao.sock = sock
 
   sock.ev.on('creds.update', saveCreds)
 
@@ -390,8 +414,8 @@ async function fecharSessao(salaoId) {
   const s = sessoes.get(salaoId)
   if (!s) return
   s.fechando = true
-  try { await s.sock.logout() } catch {}
-  try { s.sock.end() } catch {}
+  try { await s.sock?.logout() } catch {}
+  try { s.sock?.end() } catch {}
   sessoes.delete(salaoId)
   fs.rmSync(path.join(PASTA, salaoId), { recursive: true, force: true })
   registro(salaoId, 'sessão encerrada')
@@ -433,7 +457,7 @@ function corpoDoEnvio(msg) {
 
 async function despacharFila(salaoId) {
   const s = sessoes.get(salaoId)
-  if (!s?.conectado) return
+  if (!s?.conectado || !s.sock) return
 
   let fila = []
   try {
@@ -560,6 +584,6 @@ setInterval(() => {
 
 process.on('SIGINT', async () => {
   registro('encerrando...')
-  for (const [, s] of sessoes) { try { s.sock.end() } catch {} }
+  for (const [, s] of sessoes) { try { s.sock?.end() } catch {} }
   process.exit(0)
 })
