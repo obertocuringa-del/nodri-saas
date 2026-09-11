@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { useIsMobile } from '@/lib/useIsMobile'
 import {
@@ -408,6 +408,36 @@ export default function CrmPage() {
     puxarConversas()
   }
 
+  const [recomecando, setRecomecando] = useState(false)
+
+  async function recomecar() {
+    const quantas = conversas.length
+    if (!confirm(
+      `Isto apaga ${quantas} conversa(s), com as mensagens e os contatos, e pede ` +
+      `para escanear o QR de novo.
+
+` +
+      `Use quando o WhatsApp conectado mudou: o histórico na tela é do aparelho ` +
+      `anterior e não tem como atualizar — o WhatsApp só entrega o histórico no ` +
+      `momento em que você escaneia.
+
+` +
+      `As mensagens prontas, os motivos e as origens NÃO são apagados.
+
+` +
+      `Apagar e recomeçar?`
+    )) return
+    setRecomecando(true)
+    try {
+      await fetch('/api/crm/canal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'recomecar' }),
+      })
+      setAberta(null); setMensagens([]); setConversas([])
+      await puxarCanal(); await puxarConversas()
+    } finally { setRecomecando(false) }
+  }
+
   async function conectar(acao: 'conectar' | 'desconectar') {
     if (acao === 'desconectar' && !confirm('Desconectar o WhatsApp do CRM? Para voltar será preciso escanear o QR de novo.')) return
     await fetch('/api/crm/canal', {
@@ -468,6 +498,28 @@ export default function CrmPage() {
             numa janela estreita, "Preciso agir (27)" virou tres linhas de uma
             palavra cada. Linha inteira para elas resolve em qualquer largura, e
             so a linha de cima precisa desviar da busca global. */}
+        {/* O numero conectado mudou e as conversas continuam sendo do
+            anterior. Nao da para "atualizar": o WhatsApp so entrega historico
+            no pareamento. Entao a tela diz isso e oferece o unico caminho que
+            existe -- limpar e escanear de novo. */}
+        {conectado && canal.numero && canal.numero_dados && canal.numero !== canal.numero_dados && (
+          <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-center gap-3 flex-wrap"
+            style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+            <AlertTriangle size={16} style={{ color: '#9a6b12', flexShrink: 0 }} />
+            <p className="text-[12.5px] flex-1 min-w-[240px]" style={{ color: '#6b6860' }}>
+              <strong style={{ color: '#9a6b12' }}>As conversas abaixo são de outro número.</strong>{' '}
+              Elas vieram do {telefoneBonito(canal.numero_dados)} e o WhatsApp conectado agora é
+              o {telefoneBonito(canal.numero)}. O botão de atualizar não resolve: o WhatsApp só
+              entrega o histórico no momento em que você escaneia o QR.
+            </p>
+            <button onClick={recomecar} disabled={recomecando}
+              className="px-3 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50"
+              style={{ background: '#9a6b12', color: '#fff' }}>
+              {recomecando ? 'Limpando...' : 'Limpar e escanear de novo'}
+            </button>
+          </div>
+        )}
+
         {conectado && (
           <div className="px-4 pb-2 flex gap-1 flex-wrap">
             <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}

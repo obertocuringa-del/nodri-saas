@@ -192,3 +192,11 @@ CREATE INDEX IF NOT EXISTS idx_crm_origens_salao ON crm_origens(salao_id, ordem)
 -- "pode sim" sem dizer a qual delas e o jeito mais rapido de combinar coisa
 -- errada. Aponta para a mensagem citada.
 ALTER TABLE crm_mensagens ADD COLUMN IF NOT EXISTS responde_a uuid;
+
+-- ── De qual numero sao os dados ─────────────────────────────────────────────
+-- O salao pode trocar o WhatsApp (do celular pessoal para o da recepcao, por
+-- exemplo). As conversas do numero anterior continuam nas tabelas e passam a
+-- mentir: a tela mostra o numero novo no topo e as conversas do antigo
+-- embaixo. Guardar de qual numero o historico veio e o que permite a tela
+-- dizer isso em voz alta em vez de deixar a pessoa descobrir sozinha.
+ALTER TABLE crm_canais ADD COLUMN IF NOT EXISTS numero_dados text;

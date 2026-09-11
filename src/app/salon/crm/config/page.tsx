@@ -22,6 +22,28 @@ export default function ConfigCrmPage() {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState<'' | 'modelos' | 'motivos' | 'origens'>('')
   const [aviso, setAviso] = useState('')
+  const [limpando, setLimpando] = useState(false)
+
+  async function recomecar() {
+    if (!confirm(
+      'Isto apaga TODAS as conversas, mensagens e contatos do CRM e pede para escanear ' +
+      'o QR de novo.
+
+As mensagens prontas, os motivos e as origens continuam.
+
+' +
+      'Tem certeza?'
+    )) return
+    setLimpando(true)
+    try {
+      const r = await fetch('/api/crm/canal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'recomecar' }),
+      })
+      if (r.ok) { window.location.href = '/salon/crm' }
+      else setAviso((await r.json().catch(() => ({}))).error || 'Não consegui limpar.')
+    } finally { setLimpando(false) }
+  }
 
   useEffect(() => {
     fetch('/api/crm/config')
@@ -219,6 +241,25 @@ export default function ConfigCrmPage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* ── Recomecar ── */}
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8d9b0' }}>
+            <h2 className="font-bold text-[15px] mb-1" style={{ color: '#9a6b12' }}>Trocou o WhatsApp do salão?</h2>
+            <p className="text-[12px] mb-4" style={{ color: '#6b6860' }}>
+              Quando o número conectado muda, as conversas do aparelho anterior continuam aqui e
+              passam a mentir. Não existe botão de atualizar que resolva: o WhatsApp só entrega o
+              histórico <strong>no momento em que você escaneia o QR</strong>. O caminho é limpar e
+              escanear de novo com o número certo.
+              <br /><br />
+              Isto apaga conversas, mensagens e contatos. <strong>Não apaga</strong> as mensagens
+              prontas, os motivos nem as origens desta página.
+            </p>
+            <button onClick={recomecar} disabled={limpando}
+              className="px-4 py-2.5 rounded-lg text-[12.5px] font-bold disabled:opacity-50"
+              style={{ background: '#9a6b12', color: '#fff' }}>
+              {limpando ? 'Limpando...' : 'Limpar tudo e escanear de novo'}
+            </button>
           </section>
         </div>
       )}

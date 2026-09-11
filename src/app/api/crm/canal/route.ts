@@ -57,7 +57,7 @@ export async function GET() {
 
   const { data } = await supabaseAdmin
     .from('crm_canais')
-    .select('situacao, qr, qr_expira_em, numero, nome_exibicao, visto_em, erro')
+    .select('situacao, qr, qr_expira_em, numero, nome_exibicao, visto_em, erro, numero_dados')
     .eq('salao_id', sess!.salaoId).maybeSingle()
 
   const [{ data: modelos }, { data: motivos }, { data: origens }] = await Promise.all([
@@ -97,6 +97,32 @@ export async function POST(req: NextRequest) {
   if (acao === 'conectar') {
     patch.situacao = 'aguardando_qr'
     patch.qr = null
+  } else if (acao === 'recomecar') {
+    // ── Recomecar do zero com o numero que estiver conectado ────────────────
+    //
+    // Trocar o WhatsApp do salao (do celular pessoal para o da recepcao, por
+    // exemplo) deixa nas tabelas as conversas do aparelho anterior. Elas nao
+    // somem sozinhas e nao tem como "atualizar": o WhatsApp so entrega o
+    // historico no momento do pareamento, entao nao existe botao de recarregar
+    // que resolva -- e preciso limpar e parear de novo.
+    //
+    // Apaga de verdade, e nao esconde: conversa de um numero que nao e mais o
+    // do salao nao serve para relatorio nenhum, e deixar escondida e garantir
+    // que um dia ela volte a aparecer em alguma conta.
+    //
+    // O que NAO se apaga: mensagens prontas, motivos e origens. Sao o ajuste
+    // do salao, nao dados do aparelho.
+    const alvo = { salao_id: sess!.salaoId }
+    await supabaseAdmin.from('crm_eventos').delete().match(alvo)
+    await supabaseAdmin.from('crm_mensagens').delete().match(alvo)
+    await supabaseAdmin.from('crm_conversas').delete().match(alvo)
+    await supabaseAdmin.from('crm_contatos').delete().match(alvo)
+
+    patch.situacao = 'desconectado'
+    patch.qr = null
+    patch.sessao = null
+    patch.numero = null
+    patch.numero_dados = null
   } else if (acao === 'desconectar') {
     patch.situacao = 'desconectado'
     patch.qr = null

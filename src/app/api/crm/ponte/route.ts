@@ -162,6 +162,15 @@ export async function POST(req: NextRequest) {
   //    contaria como oportunidade tudo que já estava no celular, e o número
   //    nasceria mentindo.
   if (acao === 'historico') {
+    // Carimba de qual numero este historico veio. E o que permite a tela
+    // avisar, depois de uma troca de WhatsApp, que as conversas na frente da
+    // pessoa sao de outro aparelho.
+    const { data: canalAtual } = await supabaseAdmin
+      .from('crm_canais').select('id, numero').eq('salao_id', salaoId).maybeSingle()
+    if (canalAtual?.numero) {
+      await supabaseAdmin.from('crm_canais')
+        .update({ numero_dados: canalAtual.numero }).eq('id', canalAtual.id)
+    }
     // Normaliza o lote antes de tocar no banco. Conversa sem telefone válido
     // e mensagem vazia não chegam a virar linha.
     const lote = (Array.isArray(body?.conversas) ? body.conversas : [])
