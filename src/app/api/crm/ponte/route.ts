@@ -196,16 +196,16 @@ export async function POST(req: NextRequest) {
       .from('atendimentos_raw').select('celular')
       .eq('salao_id', salaoId).not('celular', 'is', null).limit(20000)
 
-    const pendentes: string[] = []
+    // Percorre tudo para saber QUANTOS faltam, e leva só 20 por vez. Parar no
+    // vigésimo fazia o contador dizer "faltam 20" para sempre -- um número que
+    // nunca desce não informa nada a quem está olhando o progresso.
     const dedup = new Set<string>()
     for (const a of atends || []) {
       const tel = normalizarTelefone(String(a.celular || ''))
-      if (!tel || tel.length < 12) continue
-      if (vistos.has(tel) || dedup.has(tel)) continue
+      if (!tel || tel.length < 12 || vistos.has(tel)) continue
       dedup.add(tel)
-      pendentes.push(tel)
-      if (pendentes.length >= 20) break
     }
+    const pendentes = [...dedup].slice(0, 20)
     return NextResponse.json({ telefones: pendentes, faltam: dedup.size })
   }
 
