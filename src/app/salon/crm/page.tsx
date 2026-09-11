@@ -154,11 +154,17 @@ export default function CrmPage() {
     () => conversas.reduce((t, c) => t + (c.nao_lidas || 0), 0), [conversas])
   const naoLidasAntes = useRef(0)
 
+  // O titulo original vem do layout do NODRI (o nome do salao) e e escrito
+  // DEPOIS da primeira renderizacao. Guardar e reescrever a cada volta da
+  // lista e o que faz o contador sobreviver a isso -- na primeira versao ele
+  // era escrito uma vez e o Next apagava logo em seguida.
+  const tituloOriginal = useRef('')
   useEffect(() => {
-    document.title = totalNaoLidas > 0
-      ? `(${totalNaoLidas}) CRM · WhatsApp`
-      : 'CRM · WhatsApp'
-  }, [totalNaoLidas])
+    if (!tituloOriginal.current) tituloOriginal.current = document.title
+    const base = tituloOriginal.current || 'CRM · WhatsApp'
+    const quer = totalNaoLidas > 0 ? `(${totalNaoLidas}) ${base}` : base
+    if (document.title !== quer) document.title = quer
+  }, [totalNaoLidas, conversas])
 
   useEffect(() => {
     const antes = naoLidasAntes.current
