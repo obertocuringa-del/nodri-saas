@@ -26,6 +26,7 @@ import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
   downloadMediaMessage,
+  ALL_WA_PATCH_NAMES,
   USyncQuery,
   USyncUser,
 } from '@whiskeysockets/baileys'
@@ -413,6 +414,23 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
     if (connection === 'open') {
       registroSessao.conectado = true
+
+      // ── Pedir a agenda ────────────────────────────────────────────────────
+      //
+      // O nome e o telefone das clientes moram na AGENDA do aparelho, que o
+      // WhatsApp guarda no "app state" -- e nao no historico de conversas. Sem
+      // pedir isso, a lista fica cheia de "Contato 857578" mesmo quando o
+      // salao tem a pessoa salva no celular.
+      //
+      // E uma operacao normal, a mesma que o WhatsApp Web faz ao abrir: nao e
+      // consulta em massa nem enumeracao. Roda uma vez por conexao.
+      setTimeout(() => {
+        registro(salaoId, 'pedindo a agenda de contatos ao WhatsApp...')
+        sock.resyncAppState(ALL_WA_PATCH_NAMES, false)
+          .then(() => registro(salaoId, 'agenda pedida — os nomes chegam pelos eventos de contato'))
+          .catch(e => registro(salaoId, 'falha ao pedir a agenda:', e.message))
+      }, 8000)
+
       const numero = soNumero(sock.user?.id)
       registro(salaoId, 'conectado como', numero)
       await avisar(salaoId, {
