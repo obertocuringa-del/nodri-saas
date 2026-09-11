@@ -58,15 +58,15 @@ export default function ConfigCrmPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
-      <div className="sticky top-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+    <div className="min-h-screen" style={{ background: '#faf9f7' }}>
+      <div className="sticky top-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
         <div className="px-4 py-2.5 flex items-center gap-3" style={{ paddingRight: 340 }}>
-          <a href="/salon/crm" className="p-1.5 rounded-lg" style={{ color: '#575d68' }} title="Voltar ao CRM">
+          <a href="/salon/crm" className="p-1.5 rounded-lg" style={{ color: '#6b6860' }} title="Voltar ao CRM">
             <ArrowLeft size={17} />
           </a>
           <div>
-            <h1 className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>Configuração do CRM</h1>
-            <p className="text-[11px]" style={{ color: '#868c97' }}>Mensagens prontas e motivos de não fechamento</p>
+            <h1 className="font-bold text-[14px] leading-tight" style={{ color: '#1a1a1a' }}>Configuração do CRM</h1>
+            <p className="text-[11px]" style={{ color: '#8f877f' }}>Mensagens prontas e motivos de não fechamento</p>
           </div>
         </div>
       </div>
@@ -79,18 +79,18 @@ export default function ConfigCrmPage() {
       )}
 
       {carregando ? (
-        <p className="p-8 text-[13px]" style={{ color: '#868c97' }}>Carregando...</p>
+        <p className="p-8 text-[13px]" style={{ color: '#8f877f' }}>Carregando...</p>
       ) : (
         <div className="max-w-4xl mx-auto px-5 py-6 space-y-6">
 
           {/* ── Mensagens prontas ── */}
-          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="font-bold text-[15px]" style={{ color: '#14161b' }}>Mensagens prontas</h2>
+              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Mensagens prontas</h2>
               <div className="flex-1" />
               <button onClick={() => setModelos([...modelos, { nome: '', texto: '' }])}
                 className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
-                style={{ background: '#efedfb', color: '#5b4fcf' }}>
+                style={{ background: '#f1eefc', color: '#5b4fcf' }}>
                 <Plus size={13} /> Nova
               </button>
               <button onClick={() => salvar('modelos')} disabled={salvando === 'modelos'}
@@ -99,20 +99,20 @@ export default function ConfigCrmPage() {
                 <Save size={13} />{salvando === 'modelos' ? 'Salvando' : 'Salvar'}
               </button>
             </div>
-            <p className="text-[12px] mb-4" style={{ color: '#868c97' }}>
+            <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
               Aparecem como botões acima do campo de resposta. Use colchetes para o que muda
               a cada cliente — [dia], [hora], [valor] — para quem responde lembrar de trocar.
             </p>
 
             {modelos.length === 0 && (
-              <p className="text-[12.5px]" style={{ color: '#868c97' }}>Nenhuma mensagem. Clique em Nova.</p>
+              <p className="text-[12.5px]" style={{ color: '#8f877f' }}>Nenhuma mensagem. Clique em Nova.</p>
             )}
 
             <div className="space-y-3">
               {modelos.map((m, i) => (
-                <div key={i} className="rounded-xl border p-3" style={{ borderColor: '#e5e5ea', background: '#fbfbfd' }}>
+                <div key={i} className="rounded-xl border p-3" style={{ borderColor: '#e8e6e0', background: '#fdfcfa' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="flex flex-col" style={{ color: '#b0b4bd' }}>
+                    <div className="flex flex-col" style={{ color: '#b5aca4' }}>
                       <button onClick={() => mover(modelos, setModelos, i, -1)} title="Subir"
                         className="leading-none text-[10px]">▲</button>
                       <button onClick={() => mover(modelos, setModelos, i, 1)} title="Descer"
@@ -122,12 +122,12 @@ export default function ConfigCrmPage() {
                       const n = [...modelos]; n[i] = { ...m, nome: e.target.value }; setModelos(n)
                     }} placeholder="Nome do botão (ex.: Responder preço)"
                       className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] font-bold focus:outline-none"
-                      style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                      style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                     <input value={m.atalho || ''} onChange={e => {
                       const n = [...modelos]; n[i] = { ...m, atalho: e.target.value }; setModelos(n)
                     }} placeholder="atalho"
                       className="w-24 px-2.5 py-1.5 rounded-lg text-[12px] focus:outline-none"
-                      style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#575d68' }} />
+                      style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#6b6860' }} />
                     <button onClick={() => setModelos(modelos.filter((_, k) => k !== i))} title="Apagar"
                       className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
                   </div>
@@ -135,20 +135,20 @@ export default function ConfigCrmPage() {
                     const n = [...modelos]; n[i] = { ...m, texto: e.target.value }; setModelos(n)
                   }} placeholder="O texto que vai para a cliente"
                     className="w-full px-2.5 py-2 rounded-lg text-[12.5px] resize-none focus:outline-none"
-                    style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                    style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                 </div>
               ))}
             </div>
           </section>
 
           {/* ── Motivos de não fechamento ── */}
-          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="font-bold text-[15px]" style={{ color: '#14161b' }}>Por que não fechou</h2>
+              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Por que não fechou</h2>
               <div className="flex-1" />
               <button onClick={() => setMotivos([...motivos, { nome: '' }])}
                 className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
-                style={{ background: '#efedfb', color: '#5b4fcf' }}>
+                style={{ background: '#f1eefc', color: '#5b4fcf' }}>
                 <Plus size={13} /> Novo
               </button>
               <button onClick={() => salvar('motivos')} disabled={salvando === 'motivos'}
@@ -157,7 +157,7 @@ export default function ConfigCrmPage() {
                 <Save size={13} />{salvando === 'motivos' ? 'Salvando' : 'Salvar'}
               </button>
             </div>
-            <p className="text-[12px] mb-4" style={{ color: '#868c97' }}>
+            <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
               É o motivo que vira ação: quem caiu por preço recebe promoção, quem caiu por
               horário recebe encaixe. Motivo genérico demais não vira nada.
             </p>
@@ -165,7 +165,7 @@ export default function ConfigCrmPage() {
             <div className="space-y-2">
               {motivos.map((m, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="flex flex-col" style={{ color: '#b0b4bd' }}>
+                  <div className="flex flex-col" style={{ color: '#b5aca4' }}>
                     <button onClick={() => mover(motivos, setMotivos, i, -1)} className="leading-none text-[10px]">▲</button>
                     <button onClick={() => mover(motivos, setMotivos, i, 1)} className="leading-none text-[10px]">▼</button>
                   </div>
@@ -173,7 +173,7 @@ export default function ConfigCrmPage() {
                     const n = [...motivos]; n[i] = { ...m, nome: e.target.value }; setMotivos(n)
                   }} placeholder="Ex.: Achou caro"
                     className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
-                    style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                    style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                   <button onClick={() => setMotivos(motivos.filter((_, k) => k !== i))} title="Apagar"
                     className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
                 </div>
@@ -182,13 +182,13 @@ export default function ConfigCrmPage() {
           </section>
 
           {/* ── De onde a cliente veio ── */}
-          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+          <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="font-bold text-[15px]" style={{ color: '#14161b' }}>De onde a cliente veio</h2>
+              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>De onde a cliente veio</h2>
               <div className="flex-1" />
               <button onClick={() => setOrigens([...origens, { nome: '' }])}
                 className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
-                style={{ background: '#efedfb', color: '#5b4fcf' }}>
+                style={{ background: '#f1eefc', color: '#5b4fcf' }}>
                 <Plus size={13} /> Nova
               </button>
               <button onClick={() => salvar('origens')} disabled={salvando === 'origens'}
@@ -197,7 +197,7 @@ export default function ConfigCrmPage() {
                 <Save size={13} />{salvando === 'origens' ? 'Salvando' : 'Salvar'}
               </button>
             </div>
-            <p className="text-[12px] mb-4" style={{ color: '#868c97' }}>
+            <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
               Sem isto o salão sabe quanto gastou em anúncio e não sabe o que voltou — que é a
               conta que decide o orçamento do mês seguinte. O painel mostra a conversão por origem.
             </p>
@@ -205,7 +205,7 @@ export default function ConfigCrmPage() {
             <div className="space-y-2">
               {origens.map((m, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="flex flex-col" style={{ color: '#b0b4bd' }}>
+                  <div className="flex flex-col" style={{ color: '#b5aca4' }}>
                     <button onClick={() => mover(origens, setOrigens, i, -1)} className="leading-none text-[10px]">▲</button>
                     <button onClick={() => mover(origens, setOrigens, i, 1)} className="leading-none text-[10px]">▼</button>
                   </div>
@@ -213,7 +213,7 @@ export default function ConfigCrmPage() {
                     const n = [...origens]; n[i] = { ...m, nome: e.target.value }; setOrigens(n)
                   }} placeholder="Ex.: Tráfego pago"
                     className="flex-1 px-2.5 py-1.5 rounded-lg text-[12.5px] focus:outline-none"
-                    style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                    style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                   <button onClick={() => setOrigens(origens.filter((_, k) => k !== i))} title="Apagar"
                     className="p-1.5 rounded-lg" style={{ color: '#b4322a' }}><Trash2 size={14} /></button>
                 </div>

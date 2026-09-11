@@ -418,18 +418,18 @@ export default function CrmPage() {
     // com o que sobrar. Antes o corpo descontava 53px na mao, e bastou o
     // cabecalho ganhar uma segunda linha para a conversa vazar para baixo da
     // dobra.
-    <div className="h-screen flex flex-col" style={{ background: '#f5f5f7' }}>
+    <div className="h-screen flex flex-col" style={{ background: '#faf9f7' }}>
       {/* ── Barra ── */}
-      <div className="flex-shrink-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+      <div className="flex-shrink-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
         {/* A barra global de busca flutua no canto direito, por cima de tudo
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
             consegue clicar. */}
         <div className="px-4 py-2 flex items-center gap-3" style={{ paddingRight: 340 }}>
-          <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#575d68' }} title="Voltar"><ArrowLeft size={17} /></a>
+          <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#6b6860' }} title="Voltar"><ArrowLeft size={17} /></a>
           <div className="min-w-0 flex-shrink-0">
-            <h1 className="font-bold text-[13.5px] leading-tight" style={{ color: '#14161b' }}>CRM · WhatsApp</h1>
-            <p className="text-[10.5px]" style={{ color: '#868c97' }}>
+            <h1 className="font-bold text-[15px] leading-tight" style={{ color: '#1a1a1a' }}>CRM · WhatsApp</h1>
+            <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
               {conectado
                 ? <>Conectado{canal.numero ? ` · ${telefoneBonito(canal.numero)}` : ''}</>
                 : 'WhatsApp não conectado'}
@@ -449,11 +449,11 @@ export default function CrmPage() {
             </a>
             <a href="/salon/crm/config" title="Configurar mensagens prontas, precos e motivos"
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
-              style={{ background: '#efedfb', color: '#5b4fcf' }}>
+              style={{ background: '#f1eefc', color: '#5b4fcf' }}>
               <Settings size={13} /> Configurar
             </a>
             <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
-              className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><RefreshCw size={15} /></button>
+              className="p-1.5 rounded-lg" style={{ color: '#6b6860' }}><RefreshCw size={15} /></button>
           </div>
         </div>
 
@@ -498,7 +498,7 @@ export default function CrmPage() {
 
       {!canalLido ? (
         <div className="flex-1 min-h-0 flex items-center justify-center">
-          <p className="text-[13px]" style={{ color: '#868c97' }}>Verificando a conexao...</p>
+          <p className="text-[13px]" style={{ color: '#8f877f' }}>Verificando a conexao...</p>
         </div>
       ) : !conectado ? (
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -507,13 +507,13 @@ export default function CrmPage() {
       ) : (
         <div className="flex-1 min-h-0 flex">
           {/* ── Fila ── */}
-          <aside className="w-[330px] flex-shrink-0 border-r flex flex-col" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
-            <div className="p-3 border-b" style={{ borderColor: '#e5e5ea' }}>
+          <aside className="w-[344px] flex-shrink-0 border-r flex flex-col" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+            <div className="p-3 border-b" style={{ borderColor: '#e8e6e0' }}>
               <div className="relative mb-2">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#868c97' }} />
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#8f877f' }} />
                 <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente..."
-                  className="w-full pl-8 pr-3 py-2 rounded-lg text-[12.5px] focus:outline-none"
-                  style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[13px] focus:outline-none"
+                  style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
               </div>
               {/* Perdemos 40 nao e informacao. Perdemos 22 por preco e 11 por
                   falta de horario no sabado sao duas acoes diferentes.
@@ -524,7 +524,7 @@ export default function CrmPage() {
               {filtro === 'sem_conversao' && porMotivo.length > 0 && (
                 <select value={motivoFiltro} onChange={e => setMotivoFiltro(e.target.value)}
                   className="mt-2 w-full px-2.5 py-2 rounded-lg text-[12px] font-bold focus:outline-none"
-                  style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }}>
+                  style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }}>
                   <option value="">Todos os motivos ({contagem.perdidas})</option>
                   {porMotivo.map(([nome, qtd]) => (
                     <option key={nome} value={nome}>{nome} — {qtd}</option>
@@ -539,9 +539,9 @@ export default function CrmPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {carregando && <p className="p-4 text-[12.5px]" style={{ color: '#868c97' }}>Carregando...</p>}
+              {carregando && <p className="p-4 text-[12.5px]" style={{ color: '#8f877f' }}>Carregando...</p>}
               {!carregando && visiveis.length === 0 && (
-                <p className="p-4 text-[12.5px]" style={{ color: '#868c97' }}>
+                <p className="p-4 text-[12.5px]" style={{ color: '#8f877f' }}>
                   {filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.'
                     : filtro === 'antigas' ? 'Nenhuma conversa parada para tras.'
                     : 'Nenhuma conversa aqui.'}
@@ -554,10 +554,15 @@ export default function CrmPage() {
           </aside>
 
           {/* ── Conversa ── */}
-          <main className="flex-1 flex flex-col min-w-0" style={{ background: '#f5f5f7' }}>
+          <main className="flex-1 flex flex-col min-w-0" style={{ background: '#f2efec' }}>
             {!aberta ? (
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-[13px]" style={{ color: '#868c97' }}>Escolha uma conversa à esquerda.</p>
+              <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                <div className="rounded-full flex items-center justify-center"
+                  style={{ width: 52, height: 52, background: '#e8e6e0' }}>
+                  <Send size={20} style={{ color: '#b5aca4' }} />
+                </div>
+                <p className="text-[13.5px] font-bold" style={{ color: '#6b6860' }}>Escolha uma conversa</p>
+                <p className="text-[12px]" style={{ color: '#8f877f' }}>A fila da esquerda está na ordem do trabalho.</p>
               </div>
             ) : (
               <>
@@ -566,8 +571,8 @@ export default function CrmPage() {
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   motivos={motivos} origens={origens} />
 
-                <div className="flex-1 overflow-y-auto px-5 py-4"
-                  style={{ background: '#efeef1' }}>
+                <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f2efec' }}>
+                  <div className="mx-auto" style={{ maxWidth: 720 }}>
                   {mensagens.map((m, i) => (
                     <div key={m.id}>
                       {/* Separador de dia. Sem ele, uma conversa de seis meses
@@ -579,18 +584,19 @@ export default function CrmPage() {
                     </div>
                   ))}
                   <div ref={fimDaConversa} />
+                  </div>
                 </div>
 
-                <div className="border-t p-3" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+                <div className="border-t px-4 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
                   {citando && (
                     <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
-                      style={{ background: '#f3f1fd', borderLeft: '3px solid #5b4fcf' }}>
+                      style={{ background: '#f1eefc', borderLeft: '3px solid #5b4fcf' }}>
                       <CornerUpLeft size={13} style={{ color: '#5b4fcf' }} />
-                      <span className="text-[11.5px] truncate flex-1" style={{ color: '#575d68' }}>
+                      <span className="text-[11.5px] truncate flex-1" style={{ color: '#6b6860' }}>
                         Respondendo: {citando.texto || `[${citando.tipo}]`}
                       </span>
                       <button onClick={() => setCitando(null)} title="Cancelar"
-                        className="p-0.5" style={{ color: '#868c97' }}><X size={13} /></button>
+                        className="p-0.5" style={{ color: '#8f877f' }}><X size={13} /></button>
                     </div>
                   )}
                   <PainelPrecos onInserir={inserirNoTexto} />
@@ -599,7 +605,7 @@ export default function CrmPage() {
                       {modelos.map(m => (
                         <button key={m.id} onClick={() => setTexto(m.texto)} title={m.texto}
                           className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0"
-                          style={{ background: '#efedfb', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
+                          style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
                           {m.nome}
                         </button>
                       ))}
@@ -611,7 +617,7 @@ export default function CrmPage() {
                     <button onClick={() => escolherArquivo.current?.click()} disabled={anexando || gravando}
                       title="Anexar foto, áudio ou documento"
                       className="px-3 py-2.5 rounded-xl disabled:opacity-40"
-                      style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#575d68' }}>
+                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                       <Paperclip size={15} />
                     </button>
                     <button onClick={gravarAudio} disabled={anexando}
@@ -619,7 +625,7 @@ export default function CrmPage() {
                       className="px-3 py-2.5 rounded-xl disabled:opacity-40"
                       style={gravando
                         ? { background: '#b4322a', color: '#fff', border: '1px solid #b4322a' }
-                        : { background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#575d68' }}>
+                        : { background: '#faf9f7', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                       {gravando ? <Square size={15} /> : <Mic size={15} />}
                     </button>
                     <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2}
@@ -637,10 +643,10 @@ export default function CrmPage() {
                         enviar()
                       }}
                       placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
-                      className="flex-1 px-3 py-2.5 rounded-xl text-[13px] resize-none focus:outline-none"
-                      style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', color: '#14161b' }} />
+                      className="flex-1 px-3.5 py-3 rounded-xl text-[13.5px] resize-none focus:outline-none"
+                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
                     <button onClick={() => enviar()} disabled={!texto.trim() || enviando}
-                      className="px-4 py-2.5 rounded-xl font-bold text-[12.5px] flex items-center gap-1.5 disabled:opacity-40"
+                      className="px-4 py-3 rounded-xl font-bold text-[13px] flex items-center gap-1.5 disabled:opacity-40"
                       style={{ background: '#5b4fcf', color: '#fff' }}>
                       <Send size={14} />{anexando ? 'Anexando' : enviando ? 'Enviando' : 'Enviar'}
                     </button>
@@ -666,7 +672,7 @@ function SeloConexao({ canal }: { canal: any }) {
     aguardando_qr: { t: 'Aguardando QR',cor: '#9a6b12', fundo: '#fbf1df' },
     conectando:    { t: 'Conectando',   cor: '#9a6b12', fundo: '#fbf1df' },
     caiu:          { t: 'Conexão caiu', cor: '#b4322a', fundo: '#fbebe9' },
-    desconectado:  { t: 'Desconectado', cor: '#575d68', fundo: '#efeff2' },
+    desconectado:  { t: 'Desconectado', cor: '#6b6860', fundo: '#f0ece7' },
   }
   let s = mapa[canal.situacao] || mapa.desconectado
   // Conectado no papel mas sem sinal da ponte é conexão caída. Dizer a verdade
@@ -682,30 +688,30 @@ function TelaConexao({ canal, onConectar }: { canal: any; onConectar: () => void
   const esperandoQr = canal.situacao === 'aguardando_qr' || canal.situacao === 'conectando'
   return (
     <div className="max-w-lg mx-auto px-5 py-10">
-      <div className="rounded-2xl border p-7" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
-        <h2 className="font-bold text-[19px] mb-1.5" style={{ color: '#14161b' }}>Conectar o WhatsApp do salão</h2>
-        <p className="text-[13px] mb-5" style={{ color: '#575d68' }}>
+      <div className="rounded-2xl border p-7" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+        <h2 className="font-bold text-[19px] mb-1.5" style={{ color: '#1a1a1a' }}>Conectar o WhatsApp do salão</h2>
+        <p className="text-[13px] mb-5" style={{ color: '#6b6860' }}>
           O número continua funcionando normalmente no celular, com os grupos. O CRM entra
           como mais um aparelho conectado — igual ao WhatsApp Web.
         </p>
 
         {canal.qr ? (
           <div className="text-center">
-            <div className="inline-block p-3 rounded-xl" style={{ background: '#fff', border: '1px solid #e5e5ea' }}>
+            <div className="inline-block p-3 rounded-xl" style={{ background: '#fff', border: '1px solid #e8e6e0' }}>
               {/* A ponte manda o QR já como imagem pronta. */}
               <img src={canal.qr} alt="QR code para conectar o WhatsApp" width={232} height={232} />
             </div>
-            <p className="text-[12.5px] mt-4" style={{ color: '#575d68' }}>
+            <p className="text-[12.5px] mt-4" style={{ color: '#6b6860' }}>
               No celular: <strong>WhatsApp → Aparelhos conectados → Conectar aparelho</strong>
             </p>
-            <p className="text-[11px] mt-1.5" style={{ color: '#868c97' }}>
+            <p className="text-[11px] mt-1.5" style={{ color: '#8f877f' }}>
               O código vira a cada minuto. Se sumir, ele aparece de novo sozinho.
             </p>
           </div>
         ) : esperandoQr ? (
           <div className="text-center py-8">
             <p className="text-[13px] font-bold" style={{ color: '#9a6b12' }}>Preparando o código...</p>
-            <p className="text-[12px] mt-1.5" style={{ color: '#868c97' }}>
+            <p className="text-[12px] mt-1.5" style={{ color: '#8f877f' }}>
               Se demorar mais de um minuto, o serviço de conexão pode estar fora do ar.
             </p>
           </div>
@@ -723,9 +729,9 @@ function TelaConexao({ canal, onConectar }: { canal: any; onConectar: () => void
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
-        <h3 className="font-bold text-[13px] mb-2" style={{ color: '#14161b' }}>Como funciona</h3>
-        <ol className="text-[12.5px] space-y-1.5 pl-4 list-decimal" style={{ color: '#575d68' }}>
+      <div className="mt-4 rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+        <h3 className="font-bold text-[13px] mb-2" style={{ color: '#1a1a1a' }}>Como funciona</h3>
+        <ol className="text-[12.5px] space-y-1.5 pl-4 list-decimal" style={{ color: '#6b6860' }}>
           <li>Você escaneia uma vez. A conexão fica de pé sozinha.</li>
           <li>As conversas passam a aparecer aqui, organizadas por quem precisa de resposta.</li>
           <li>Quem escreve é sempre a recepção — o sistema não manda nada sozinho.</li>
@@ -742,7 +748,7 @@ function TelaConexao({ canal, onConectar }: { canal: any; onConectar: () => void
 function SeloNova() {
   return (
     <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
-      style={{ background: '#0f766e', color: '#fff', letterSpacing: '0.02em' }}>
+      style={{ background: '#c94d8a', color: '#fff', letterSpacing: '0.03em' }}>
       CLIENTE NOVA
     </span>
   )
@@ -751,10 +757,10 @@ function SeloNova() {
 function Aba({ ativo, onClick, texto, destaque }: any) {
   return (
     <button onClick={onClick}
-      className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition"
+      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition"
       style={ativo
         ? { background: '#5b4fcf', color: '#fff' }
-        : { background: destaque ? '#fbebe9' : '#f5f5f7', color: destaque ? '#b4322a' : '#575d68' }}>
+        : { background: destaque ? '#fbebe9' : '#faf9f7', color: destaque ? '#b4322a' : '#6b6860' }}>
       {texto}
     </button>
   )
@@ -769,9 +775,9 @@ function ItemFila({ c, ativo, onClick }: any) {
   const nova = ehNova(c)
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 flex gap-2.5 transition relative"
+      className="w-full text-left px-4 py-3 flex gap-3 transition relative"
       style={{
-        background: ativo ? '#f3f1fd' : 'transparent',
+        background: ativo ? '#f1eefc' : 'transparent',
         borderBottom: '1px solid #f2f2f5',
       }}>
       {/* Faixa de urgencia na borda. A cor mora na lateral e nao no fundo: um
@@ -786,7 +792,7 @@ function ItemFila({ c, ativo, onClick }: any) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="font-bold text-[12.5px] truncate" style={{ color: '#14161b' }}>{nome}</span>
+          <span className="font-bold text-[13.5px] truncate" style={{ color: '#1a1a1a' }}>{nome}</span>
           <div className="flex-1" />
           {est.naFila && c._min > 0 && (
             <span className="text-[10px] font-bold flex-shrink-0 flex items-center gap-0.5"
@@ -800,7 +806,7 @@ function ItemFila({ c, ativo, onClick }: any) {
           )}
         </div>
 
-        <p className="text-[11.5px] truncate mt-0.5" style={{ color: '#7a808b' }}>
+        <p className="text-[12px] truncate mt-1" style={{ color: '#7d756d' }}>
           {c.ultima_de === 'salao' ? 'Você: ' : ''}{c.ultima_previa || '—'}
         </p>
 
@@ -813,7 +819,7 @@ function ItemFila({ c, ativo, onClick }: any) {
           </span>
           {nova && <SeloNova />}
           {dono && (
-            <span className="text-[9.5px] flex items-center gap-0.5" style={{ color: '#8b8fa3' }}>
+            <span className="text-[9.5px] flex items-center gap-0.5" style={{ color: '#8f877f' }}>
               <User size={9} />{dono}
             </span>
           )}
@@ -843,7 +849,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   // Quem ainda nao tem nome fica em cinza: a cor existe para distinguir
   // pessoas, e sete circulos coloridos com silhueta dentro nao distinguem
   // ninguem -- so fazem a lista parecer cheia de gente diferente.
-  const cor = iniciais ? CORES_AVATAR[soma % CORES_AVATAR.length] : '#b0b4bd'
+  const cor = iniciais ? CORES_AVATAR[soma % CORES_AVATAR.length] : '#b5aca4'
   return (
     <div className="rounded-full flex-shrink-0 flex items-center justify-center font-bold relative"
       style={{
@@ -853,7 +859,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
       {iniciais || <User size={tamanho * 0.5} strokeWidth={2.2} />}
       {nova && (
         <span className="absolute -bottom-0.5 -right-0.5 rounded-full"
-          style={{ width: 10, height: 10, background: '#0f766e', border: '2px solid #fff' }} />
+          style={{ width: 10, height: 10, background: '#c94d8a', border: '2px solid #fff' }} />
       )}
     </div>
   )
@@ -864,12 +870,12 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, set
   const nome = ct.nome || ct.nome_agenda || ct.cliente_nome || telefoneBonito(ct.telefone)
   const est = estadoPor(c.estado)
   return (
-    <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+    <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-3 flex-wrap">
         <Avatar nome={nome} nova={ehNova(c)} tamanho={38} />
         <div className="min-w-0">
-          <p className="font-bold text-[14px] leading-tight" style={{ color: '#14161b' }}>{nome}</p>
-          <p className="text-[11.5px]" style={{ color: '#868c97' }}>{telefoneBonito(ct.telefone)}</p>
+          <p className="font-bold text-[15.5px] leading-tight" style={{ color: '#1a1a1a' }}>{nome}</p>
+          <p className="text-[11.5px]" style={{ color: '#8f877f' }}>{telefoneBonito(ct.telefone)}</p>
         </div>
         {/* O motivo faz parte do estado: "Sem conversão" sozinho não diz nada,
             e era justamente o motivo que a pessoa acabou de escolher. */}
@@ -885,17 +891,17 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, set
           <BotaoAcao onClick={() => onEstado('follow_up', { prazo: new Date(Date.now() + 864e5).toISOString() })}
             cor="#c2603a" fundo="#fbeee8" texto="Follow-up amanhã" />
           <BotaoAcao onClick={() => onEstado('pausada', { prazo: new Date(Date.now() + 7 * 864e5).toISOString() })}
-            cor="#5b4fcf" fundo="#efedfb" texto="Pausar 7 dias" />
-          <BotaoAcao onClick={() => setFecharAberto(!fecharAberto)} cor="#575d68" fundo="#efeff2"
+            cor="#5b4fcf" fundo="#f1eefc" texto="Pausar 7 dias" />
+          <BotaoAcao onClick={() => setFecharAberto(!fecharAberto)} cor="#6b6860" fundo="#f0ece7"
             icone={fecharAberto ? <X size={12} /> : undefined} texto="Não fechou" />
-          <BotaoAcao onClick={onNaoLida} cor="#575d68" fundo="#efeff2"
+          <BotaoAcao onClick={onNaoLida} cor="#6b6860" fundo="#f0ece7"
             icone={<Eye size={12} />} texto="Não li ainda" />
         </div>
       </div>
 
       <div className="flex items-center gap-3 mt-2 flex-wrap">
         {c.proxima_acao && (
-          <p className="text-[11.5px]" style={{ color: '#575d68' }}>
+          <p className="text-[11.5px]" style={{ color: '#6b6860' }}>
             <strong>Próxima ação:</strong> {c.proxima_acao}
           </p>
         )}
@@ -903,11 +909,11 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, set
         {/* Origem na conversa, nao no contato: a mesma cliente pode voltar por
             um anuncio hoje e por indicacao daqui a um ano, e sao duas
             oportunidades com origens diferentes. */}
-        <label className="text-[11px] flex items-center gap-1.5" style={{ color: '#868c97' }}>
+        <label className="text-[11px] flex items-center gap-1.5" style={{ color: '#8f877f' }}>
           Veio de
           <select value={c.origem || ''} onChange={e => onOrigem(e.target.value)}
             className="px-2 py-1 rounded-lg text-[11px] font-bold focus:outline-none"
-            style={{ background: c.origem ? '#efedfb' : '#f5f5f7', color: c.origem ? '#5b4fcf' : '#868c97', border: '1px solid #e5e5ea' }}>
+            style={{ background: c.origem ? '#f1eefc' : '#faf9f7', color: c.origem ? '#5b4fcf' : '#8f877f', border: '1px solid #e8e6e0' }}>
             <option value="">não informado</option>
             {(origens || []).map((o: any) => <option key={o.id} value={o.nome}>{o.nome}</option>)}
           </select>
@@ -916,13 +922,13 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, fecharAberto, set
 
       {/* Fechar sem motivo é o que transforma "perdemos 40" em informação inútil. */}
       {fecharAberto && (
-        <div className="mt-3 p-3 rounded-xl" style={{ background: '#f5f5f7' }}>
-          <p className="text-[11.5px] font-bold mb-2" style={{ color: '#14161b' }}>Por que não fechou?</p>
+        <div className="mt-3 p-3 rounded-xl" style={{ background: '#faf9f7' }}>
+          <p className="text-[11.5px] font-bold mb-2" style={{ color: '#1a1a1a' }}>Por que não fechou?</p>
           <div className="flex gap-1.5 flex-wrap">
             {motivos.map((m: any) => (
               <button key={m.id} onClick={() => onEstado('sem_conversao', { motivo_perda: m.nome })}
                 className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
-                style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#575d68' }}>
+                style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                 {m.nome}
               </button>
             ))}
@@ -956,7 +962,7 @@ function SeparadorDia({ em }: { em: string }) {
   return (
     <div className="flex justify-center my-3">
       <span className="px-2.5 py-1 rounded-full text-[10.5px] font-bold"
-        style={{ background: '#fff', color: '#7a808b', boxShadow: '0 1px 2px rgba(0,0,0,.06)' }}>
+        style={{ background: '#fff', color: '#7d756d', boxShadow: '0 1px 2px rgba(0,0,0,.06)' }}>
         {rotulo}
       </span>
     </div>
@@ -975,18 +981,18 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
       {meu && onCitar && (
         <button onClick={onCitar} title="Responder citando"
           className="opacity-0 group-hover:opacity-100 transition self-center mr-1 p-1"
-          style={{ color: '#868c97' }}><CornerUpLeft size={13} /></button>
+          style={{ color: '#8f877f' }}><CornerUpLeft size={13} /></button>
       )}
       <div className="max-w-[68%] px-3 py-2"
         style={m.em_massa
           // Disparo de lista não é resposta para aquela pessoa. Fica com a
           // cara de recado colado, para ninguém ler como se fosse atendimento.
-          ? { background: '#faf7ef', color: '#575d68', border: '1px dashed #d8c9a6',
+          ? { background: '#faf7ef', color: '#6b6860', border: '1px dashed #d8c9a6',
               borderRadius: 14 }
           : {
               background: meu ? '#5b4fcf' : '#fff',
-              color: meu ? '#fff' : '#14161b',
-              boxShadow: '0 1px 1.5px rgba(0,0,0,.08)',
+              color: meu ? '#fff' : '#1a1a1a',
+              boxShadow: meu ? '0 1px 2px rgba(91,79,207,.25)' : '0 1px 2px rgba(26,22,20,.09)',
               // Canto "mordido" do lado de quem falou, como todo mensageiro
               // faz: diz de quem é a fala antes de a pessoa ler a cor.
               borderRadius: meu ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
@@ -999,7 +1005,7 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
         {citada && (
           <div className="mb-1.5 px-2 py-1 rounded text-[11.5px] truncate"
             style={{
-              background: meu ? 'rgba(255,255,255,.16)' : '#f3f1fd',
+              background: meu ? 'rgba(255,255,255,.16)' : '#f1eefc',
               borderLeft: `3px solid ${meu ? 'rgba(255,255,255,.55)' : '#5b4fcf'}`,
               opacity: 0.92,
             }}>
@@ -1008,7 +1014,7 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
         )}
         <Anexo m={m} />
         {m.texto && !(m.midia_url && /^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto)) && (
-          <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
+          <p className="text-[14px] leading-[1.45] whitespace-pre-wrap break-words">{m.texto}</p>
         )}
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}
@@ -1020,7 +1026,7 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
       {!meu && onCitar && (
         <button onClick={onCitar} title="Responder citando"
           className="opacity-0 group-hover:opacity-100 transition self-center ml-1 p-1"
-          style={{ color: '#868c97' }}><CornerUpLeft size={13} /></button>
+          style={{ color: '#8f877f' }}><CornerUpLeft size={13} /></button>
       )}
     </div>
   )
@@ -1046,20 +1052,20 @@ function PainelCliente({ c }: { c: Conversa }) {
   }, [nomeBusca])
 
   return (
-    <aside className="w-[268px] flex-shrink-0 border-l overflow-y-auto"
-      style={{ background: '#fff', borderColor: '#e5e5ea' }}>
+    <aside className="w-[288px] flex-shrink-0 border-l overflow-y-auto"
+      style={{ background: '#fff', borderColor: '#e8e6e0' }}>
       <div className="p-4">
         <FichaContato ct={ct} />
-        <h3 className="font-bold text-[12px] mb-3 mt-4" style={{ color: '#14161b' }}>No sistema</h3>
+        <h3 className="font-bold text-[12px] mb-3 mt-4" style={{ color: '#1a1a1a' }}>No sistema</h3>
 
         {!nomeBusca && (
-          <p className="text-[11.5px]" style={{ color: '#868c97' }}>
+          <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
             Contato ainda não ligado a uma cliente do relatório.
           </p>
         )}
 
         {nomeBusca && !dados && (
-          <p className="text-[11.5px]" style={{ color: '#868c97' }}>Procurando o histórico...</p>
+          <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Procurando o histórico...</p>
         )}
 
         {dados && (
@@ -1072,9 +1078,9 @@ function PainelCliente({ c }: { c: Conversa }) {
               ? `a cada ${Math.round(dados.freq_media_dias)} dias` : '—'} />
             {Array.isArray(dados.servicos) && dados.servicos.length > 0 && (
               <div className="pt-2">
-                <p className="text-[10.5px] font-bold mb-1" style={{ color: '#868c97' }}>COSTUMA FAZER</p>
+                <p className="text-[10.5px] font-bold mb-1" style={{ color: '#8f877f' }}>COSTUMA FAZER</p>
                 {dados.servicos.slice(0, 5).map((s: any, i: number) => (
-                  <p key={i} className="text-[11.5px]" style={{ color: '#575d68' }}>
+                  <p key={i} className="text-[11.5px]" style={{ color: '#6b6860' }}>
                     {s.nome} · {s.vezes}x
                   </p>
                 ))}
@@ -1084,12 +1090,12 @@ function PainelCliente({ c }: { c: Conversa }) {
         )}
 
         {Array.isArray(ct.etiquetas) && ct.etiquetas.length > 0 && (
-          <div className="mt-4 pt-3 border-t" style={{ borderColor: '#e5e5ea' }}>
-            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: '#868c97' }}>ETIQUETAS</p>
+          <div className="mt-4 pt-3 border-t" style={{ borderColor: '#e8e6e0' }}>
+            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: '#8f877f' }}>ETIQUETAS</p>
             <div className="flex gap-1 flex-wrap">
               {ct.etiquetas.map((e: string, i: number) => (
                 <span key={i} className="px-2 py-0.5 rounded-full text-[10.5px] font-bold"
-                  style={{ background: '#efedfb', color: '#5b4fcf' }}>{e}</span>
+                  style={{ background: '#f1eefc', color: '#5b4fcf' }}>{e}</span>
               ))}
             </div>
           </div>
@@ -1102,8 +1108,8 @@ function PainelCliente({ c }: { c: Conversa }) {
 function Linha({ rotulo, valor }: { rotulo: string; valor: any }) {
   return (
     <div className="flex justify-between items-baseline gap-2">
-      <span className="text-[11.5px]" style={{ color: '#868c97' }}>{rotulo}</span>
-      <span className="text-[12px] font-bold text-right" style={{ color: '#14161b' }}>{valor}</span>
+      <span className="text-[11.5px]" style={{ color: '#8f877f' }}>{rotulo}</span>
+      <span className="text-[12px] font-bold text-right" style={{ color: '#1a1a1a' }}>{valor}</span>
     </div>
   )
 }
@@ -1162,30 +1168,30 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
   }
 
   return (
-    <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fbfbfd', borderColor: '#e5e5ea' }}>
+    <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fdfcfa', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-1.5 mb-2">
         <button onClick={() => { setLado('servicos'); setGrupo('') }}
           className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
-          style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#575d68', border: '1px solid #e5e5ea' }}>
+          style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
           Serviço
         </button>
         <button onClick={() => { setLado('produtos'); setGrupo('') }}
           className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
-          style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#575d68', border: '1px solid #e5e5ea' }}>
+          style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
           Produto
         </button>
         <input value={busca} onChange={e => setBusca(e.target.value)}
           placeholder={lado === 'servicos' ? 'Buscar serviço...' : 'Buscar produto...'}
           className="flex-1 min-w-0 px-2.5 py-1 rounded-lg text-[11.5px] focus:outline-none"
-          style={{ background: '#fff', border: '1px solid #e5e5ea', color: '#14161b' }} />
+          style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
         <button onClick={() => { setAberto(false); setBusca(''); setGrupo('') }} title="Fechar"
-          className="p-1 rounded-lg" style={{ color: '#868c97' }}><X size={13} /></button>
+          className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
       </div>
 
-      {!dados && <p className="text-[11.5px]" style={{ color: '#868c97' }}>Carregando o catálogo...</p>}
+      {!dados && <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Carregando o catálogo...</p>}
 
       {dados && grupos.length === 0 && (
-        <p className="text-[11.5px]" style={{ color: '#868c97' }}>
+        <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
           {lado === 'servicos'
             ? 'Nenhum serviço com preço no catálogo. Cadastre em Serviços.'
             : 'Nenhum produto com preço no catálogo. Cadastre em Produtos.'}
@@ -1195,7 +1201,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
       {/* Buscar corta a árvore: quem já sabe o nome não deve navegar. */}
       {achados && (
         <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
-          {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#868c97' }}>Nada com esse nome.</p>}
+          {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Nada com esse nome.</p>}
           {achados.map((it, i) => (
             <BotaoPreco key={i} texto={`${it.nome} · R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`}
               onClick={() => onInserir(linha(it))} />
@@ -1208,8 +1214,8 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
           {grupos.map(g => (
             <button key={g.grupo} onClick={() => setGrupo(g.grupo)}
               className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
-              style={{ background: '#fff', color: '#14161b', border: '1px solid #e5e5ea' }}>
-              {g.grupo} <span style={{ color: '#868c97' }}>({g.itens.length})</span>
+              style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0' }}>
+              {g.grupo} <span style={{ color: '#8f877f' }}>({g.itens.length})</span>
             </button>
           ))}
         </div>
@@ -1230,7 +1236,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
         </>
       )}
 
-      <p className="text-[10px] mt-2" style={{ color: '#868c97' }}>
+      <p className="text-[10px] mt-2" style={{ color: '#8f877f' }}>
         Clicar acrescenta uma linha na resposta. Nada sai daqui sem você clicar em Enviar.
       </p>
     </div>
@@ -1241,7 +1247,7 @@ function BotaoPreco({ texto, onClick }: { texto: string; onClick: () => void }) 
   return (
     <button onClick={onClick}
       className="px-2.5 py-1 rounded-lg text-[11px] text-left"
-      style={{ background: '#fff', color: '#14161b', border: '1px solid #e5e5ea' }}>
+      style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0' }}>
       {texto}
     </button>
   )
@@ -1320,15 +1326,15 @@ function FichaContato({ ct }: { ct: any }) {
 
   return (
     <div>
-      <h3 className="font-bold text-[12px] mb-2" style={{ color: '#14161b' }}>A cliente</h3>
+      <h3 className="font-bold text-[12px] mb-2" style={{ color: '#1a1a1a' }}>A cliente</h3>
       <input value={nome} onChange={e => { setNome(e.target.value); setSalvo(false) }}
         placeholder="Nome da cliente"
         className="w-full px-2.5 py-1.5 rounded-lg text-[12px] mb-2 focus:outline-none"
-        style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+        style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
       <textarea value={obs} onChange={e => { setObs(e.target.value); setSalvo(false) }} rows={4}
         placeholder="O que lembrar dela: alergia, preferência, o que não pode fazer..."
         className="w-full px-2.5 py-2 rounded-lg text-[11.5px] resize-none focus:outline-none"
-        style={{ background: '#fbfbfd', border: '1px solid #e5e5ea', color: '#14161b' }} />
+        style={{ background: '#fdfcfa', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
       {(mudou || salvo) && (
         <button onClick={salvar} disabled={gravando || !mudou}
           className="mt-1.5 w-full py-1.5 rounded-lg text-[11.5px] font-bold disabled:opacity-50"

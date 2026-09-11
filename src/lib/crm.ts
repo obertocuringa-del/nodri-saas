@@ -25,22 +25,22 @@ export interface DefEstado {
 }
 
 export const ESTADOS: DefEstado[] = [
-  { chave: 'acao_necessaria', rotulo: 'Ação necessária', cor: '#B4322A', fundo: '#FBEBE9',
+  { chave: 'acao_necessaria', rotulo: 'Ação necessária', cor: '#B4322A', fundo: '#FBEAE6',
     naFila: true,  contaTempo: true,
     explica: 'A cliente falou por último. Alguém precisa responder.' },
-  { chave: 'aguardando', rotulo: 'Aguardando cliente', cor: '#9A6B12', fundo: '#FBF1DF',
+  { chave: 'aguardando', rotulo: 'Aguardando cliente', cor: '#9A6B12', fundo: '#FBF2E0',
     naFila: false, contaTempo: false,
     explica: 'O salão respondeu. A bola está com a cliente.' },
-  { chave: 'follow_up', rotulo: 'Follow-up', cor: '#C2603A', fundo: '#FBEEE8',
+  { chave: 'follow_up', rotulo: 'Follow-up', cor: '#C2603A', fundo: '#FBEFE7',
     naFila: true,  contaTempo: false,
     explica: 'A cliente não respondeu no prazo. Vale retomar.' },
-  { chave: 'pausada', rotulo: 'Em pausa', cor: '#5B4FCF', fundo: '#EFEDFB',
+  { chave: 'pausada', rotulo: 'Em pausa', cor: '#5B4FCF', fundo: '#F1EEFC',
     naFila: false, contaTempo: false,
     explica: 'A cliente pediu para falar depois. Volta sozinha na data.' },
-  { chave: 'agendado', rotulo: 'Agendado', cor: '#2F6B4F', fundo: '#E6F1EB',
+  { chave: 'agendado', rotulo: 'Agendado', cor: '#2F6B4F', fundo: '#E7F1E9',
     naFila: false, contaTempo: false,
     explica: 'Virou horário marcado. Oportunidade ganha.' },
-  { chave: 'sem_conversao', rotulo: 'Sem conversão', cor: '#575D68', fundo: '#EFEFF2',
+  { chave: 'sem_conversao', rotulo: 'Sem conversão', cor: '#6B6860', fundo: '#F0ECE7',
     naFila: false, contaTempo: false,
     explica: 'Fechada sem agendamento, com o motivo registrado.' },
 ]
