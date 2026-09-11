@@ -64,7 +64,18 @@ async function acharOuCriarContato(
   if (achado) {
     // Completa o que faltava, sem sobrescrever o que já estava certo.
     const patch: any = {}
-    if (telefone && !achado.telefone) { patch.telefone = telefone; patch.telefone_bruto = telefoneBruto }
+    if (telefone && !achado.telefone) {
+      patch.telefone = telefone
+      patch.telefone_bruto = telefoneBruto
+      // O telefone chegou DEPOIS. O relógio já tinha conferido este contato
+      // sem número nenhum, não achou nada e marcou "cliente nova" -- e não
+      // voltaria a olhar por doze horas. Zerar a conferência manda ele
+      // reavaliar na próxima volta, agora com o número na mão.
+      //
+      // Era o caso do Marcos: o número dele está no histórico do salão desde
+      // sempre, mas quando o relógio passou o contato ainda era só um id.
+      patch.conferido_em = null
+    }
     if (lidLimpo && !achado.lid) patch.lid = lidLimpo
     if (nomeAgenda && !achado.nome) { patch.nome = nomeAgenda; patch.nome_agenda = nomeAgenda }
     if (Object.keys(patch).length) {
@@ -210,7 +221,12 @@ export async function POST(req: NextRequest) {
         patch.nome_agenda = nome
         if (!achado.nome) patch.nome = nome
       }
-      if (tel && !achado.telefone) { patch.telefone = tel; patch.telefone_bruto = tel }
+      // Mesmo motivo: número novo pede reavaliação do relógio.
+      if (tel && !achado.telefone) {
+        patch.telefone = tel
+        patch.telefone_bruto = tel
+        patch.conferido_em = null
+      }
       if (!Object.keys(patch).length) continue
       await supabaseAdmin.from('crm_contatos').update(patch).eq('id', achado.id)
       atualizados++
