@@ -1186,11 +1186,35 @@ function PainelCliente({ c }: { c: Conversa }) {
         {dados && (
           <div className="space-y-2.5">
             <Linha rotulo="Visitas" valor={dados.total_visitas ?? '—'} />
-            <Linha rotulo="Última visita" valor={dados.ultima_visita || '—'} />
-            <Linha rotulo="Já gastou" valor={dados.faturamento != null
-              ? `R$ ${Number(dados.faturamento).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'} />
+            {/* Ticket médio no lugar do total gasto: quem responde no balcão
+                decide com o valor de UMA visita, não com o acumulado de anos.
+                (O total gasto ainda por cima vinha vazio — o código lia um
+                campo com o nome errado e mostrava um traço.) */}
+            <Linha rotulo="Ticket médio" valor={dados.ticket_medio
+              ? `R$ ${Number(dados.ticket_medio).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : '—'} />
             <Linha rotulo="Frequência" valor={dados.freq_media_dias
               ? `a cada ${Math.round(dados.freq_media_dias)} dias` : '—'} />
+
+            {/* A última visita com o que foi feito e por quem. A data sozinha
+                não serve para puxar assunto; "mechas com a Suelem em 10/06"
+                serve, e é a diferença entre atender e reconhecer a cliente. */}
+            <div className="pt-2">
+              <p className="text-[10.5px] font-bold mb-1" style={{ color: '#8f877f' }}>ÚLTIMA VISITA</p>
+              <p className="text-[12px] font-bold" style={{ color: '#1a1a1a' }}>
+                {dados.ultima_visita || '—'}
+              </p>
+              {Array.isArray(dados.servicos_ultima) && dados.servicos_ultima.length > 0 && (
+                <p className="text-[11.5px] mt-0.5" style={{ color: '#6b6860' }}>
+                  {dados.servicos_ultima.join(' · ')}
+                </p>
+              )}
+              {Array.isArray(dados.profissionais_ultima) && dados.profissionais_ultima.length > 0 && (
+                <p className="text-[11.5px] mt-0.5" style={{ color: '#6b6860' }}>
+                  com {dados.profissionais_ultima.join(', ')}
+                </p>
+              )}
+            </div>
             {Array.isArray(dados.servicos) && dados.servicos.length > 0 && (
               <div className="pt-2">
                 <p className="text-[10.5px] font-bold mb-1" style={{ color: '#8f877f' }}>COSTUMA FAZER</p>
