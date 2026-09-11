@@ -228,7 +228,9 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
         method: 'POST',
         body: JSON.stringify({ salao_id: salaoId, conversas: fatia }),
       })
-      registro(salaoId, `histórico: ${fatia.length} conversas enviadas`, r?.criadas != null ? `(${r.criadas} novas)` : '')
+      registro(salaoId, `histórico: ${fatia.length} conversas enviadas`,
+        r?.criadas != null ? `(${r.criadas} novas, ${r.mensagens ?? 0} mensagens)` : '',
+        r?.erro ? `ERRO DO BANCO: ${r.erro}` : '')
     } catch (e) {
       registro(salaoId, 'falha ao enviar histórico:', e.message)
     }

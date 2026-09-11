@@ -244,9 +244,15 @@ export async function POST(req: NextRequest) {
         nome: c.nome, nome_agenda: c.nome,
       }))
 
+    // O erro do insert era ENGOLIDO aqui. O lote chegava com 44 conversas, saia
+    // com 0 gravadas, e nao havia nada em lugar nenhum dizendo por que. Erro
+    // silencioso em caminho de importacao e a pior combinacao que existe: tudo
+    // parece funcionar e nada acontece.
+    let erroContatos: string | null = null
     if (criarContatos.length) {
-      const { data: novos } = await supabaseAdmin
+      const { data: novos, error } = await supabaseAdmin
         .from('crm_contatos').insert(criarContatos).select('id, telefone, lid, nome')
+      if (error) erroContatos = String(error.message || error).slice(0, 300)
       for (const n of novos || []) { const k = chaveDe(n); if (k) porChave.set(k, n) }
     }
 
@@ -265,7 +271,9 @@ export async function POST(req: NextRequest) {
     const idsContato = lote
       .map((c: any) => porChave.get(chaveDe(c))?.id)
       .filter(Boolean)
-    if (!idsContato.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0 })
+    if (!idsContato.length) {
+      return NextResponse.json({ ok: true, criadas: 0, mensagens: 0, erro: erroContatos })
+    }
 
     const { data: abertasExistentes } = await supabaseAdmin
       .from('crm_conversas').select('id, contato_id, estado, ultima_em')
@@ -381,7 +389,7 @@ export async function POST(req: NextRequest) {
       conversa.ultima_em = r.quando
     }
 
-    return NextResponse.json({ ok: true, criadas, mensagens: novasMensagens })
+    return NextResponse.json({ ok: true, criadas, mensagens: novasMensagens, erro: erroContatos })
   }
 
   // ── Mensagem que passou pelo WhatsApp ─────────────────────────────────────
