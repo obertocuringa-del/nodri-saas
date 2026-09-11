@@ -29,11 +29,15 @@ o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 - Anexo: foto, áudio, vídeo e documento, nos dois sentidos
 - Preços em três toques (Serviço/Produto → categoria/marca → item), do catálogo
 - Mensagens prontas com atalho: `/oi` + Enter
+- Gravar áudio direto na tela, sem passar pelo celular
+- Responder citando uma mensagem
+- Marcar conversa como não lida
 - Aviso de mensagem nova: contador no título da aba + toque curto
 
 **Medir**
 - Painel: conversão, cliente nova x cliente da casa, motivos de perda,
   conversão por origem, tempo de resposta, quem espera agora
+- Quem trabalhou a fila: respondeu, assumiu, agendou, fechou — por pessoa
 - Origem da conversa (tráfego pago, indicação, Google…), editável
 
 **Configurar** (`/salon/crm/config`)
@@ -42,17 +46,19 @@ o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 **Ficha da cliente**
 - Nome editável e observação que fica para sempre
 
-## Não está pronto
+## Não está pronto — e por quê
 
-1. **Grupos.** Ficam de fora de propósito. Se um dia for preciso, é decisão
-   nova, não esquecimento.
-2. **Áudio gravado na hora** pelo CRM. Hoje dá para anexar um áudio que já
-   existe, não gravar ali.
-3. **Responder citando uma mensagem** (o *reply* do WhatsApp).
-4. **Marcar conversa como não lida** depois de abrir.
-5. **Vários números** de WhatsApp no mesmo salão. Um canal por salão.
-6. **Relatório por atendente.** Os eventos já gravam quem fez o quê; falta a
-   tela.
+**Vários números de WhatsApp no mesmo salão.** Um canal por salão, e é a
+única coisa da lista que eu não fiz de propósito. Não é código difícil: é
+tirar o índice único de `crm_canais(salao_id)`, pendurar `canal_id` em
+contato, conversa e mensagem, trocar a chave do mapa de sessões da ponte e
+pôr um seletor na tela. O problema é que isso mexe na tabela que segura a
+conexão que está **funcionando agora**, e mexer nela sem alguém por perto
+para testar troca um ganho que ninguém pediu ainda por um risco de derrubar
+o que já roda. Fica para quando o segundo número existir de verdade.
+
+**Grupos.** Ficam de fora por decisão: o CRM é para conversa com cliente.
+Trazer grupo de equipe e de fornecedor enterraria a fila.
 
 ## Armadilha conhecida
 
