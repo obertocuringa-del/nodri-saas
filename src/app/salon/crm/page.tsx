@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { useIsMobile } from '@/lib/useIsMobile'
 import {
@@ -1107,7 +1107,19 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
         <div className="flex-1" />
         <div className="flex gap-1.5 flex-wrap">
           <BotaoAcao onClick={() => onEstado('agendado')} cor="#2f6b4f" fundo="#e6f1eb" icone={<Check size={12} />} texto="Agendou" />
+          {/* "Ok, confirmado" chegava como mensagem nova e caía em Ação
+              necessária, como se ninguém tivesse respondido. Agora tem botão:
+              a resposta da cliente encerra o assunto em vez de abrir um. */}
+          <BotaoAcao onClick={() => onEstado('confirmado')} cor="#1b5e3f" fundo="#d9ede1"
+            icone={<CheckCheck size={12} />} texto="Confirmou" />
+          <BotaoAcao onClick={() => setDesmarqueAberto(!desmarqueAberto)} cor="#a33c5b" fundo="#fae8ee"
+            icone={desmarqueAberto ? <X size={12} /> : undefined} texto="Desmarcou" />
           <BotaoAcao onClick={() => onEstado('aguardando')} cor="#9a6b12" fundo="#fbf1df" texto="Aguardando cliente" />
+          {/* Promoção disparada para cem pessoas: o silêncio é o normal. Fora
+              daqui, cada disparo entupiria a fila de "Aguardando" com espera
+              que não é atendimento atrasado de ninguém. */}
+          <BotaoAcao onClick={() => onEstado('aguardando_promo')} cor="#7a5af8" fundo="#f1eefc"
+            texto="Aguardando promoção" />
           <BotaoAcao onClick={() => onEstado('follow_up', { prazo: new Date(Date.now() + 864e5).toISOString() })}
             cor="#c2603a" fundo="#fbeee8" texto="Follow-up amanhã" />
           <BotaoAcao onClick={() => onEstado('pausada', { prazo: new Date(Date.now() + 7 * 864e5).toISOString() })}
@@ -1143,13 +1155,13 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
       {/* Desmarque sem motivo é um horário perdido sem explicação: some do
           relatório e não vira decisão nenhuma. */}
       {desmarqueAberto && (
-        <div className="mt-3 p-3 rounded-xl" style={{ background: '#FBEAE6' }}>
+        <div className="mt-3 p-3 rounded-xl" style={{ background: '#FAE8EE' }}>
           <p className="text-[11.5px] font-bold mb-2" style={{ color: '#1a1a1a' }}>Por que desmarcou?</p>
           <div className="flex gap-1.5 flex-wrap">
             {(desmarques || []).map((m: any) => (
               <button key={m.id} onClick={() => onEstado('desmarcou', { motivo_perda: m.nome })}
                 className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
-                style={{ background: '#fff', border: '1px solid #e8d5d0', color: '#b4322a' }}>
+                style={{ background: '#fff', border: '1px solid #efd4dd', color: '#a33c5b' }}>
                 {m.nome}
               </button>
             ))}

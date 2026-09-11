@@ -49,6 +49,17 @@ export const ESTADOS: DefEstado[] = [
   { chave: 'agendado', rotulo: 'Agendado', cor: '#2F6B4F', fundo: '#E7F1E9',
     naFila: false, contaTempo: false,
     explica: 'Virou horário marcado. Oportunidade ganha.' },
+  // Agendado e confirmado são a mesma vitória em dois momentos. Separar os
+  // dois é o que deixa a recepção saber de quem ainda falta ouvir "ok,
+  // confirmado" — e é a diferença entre lembrar a cliente e ligar sem motivo.
+  { chave: 'confirmado', rotulo: 'Confirmou', cor: '#1B5E3F', fundo: '#D9EDE1',
+    naFila: false, contaTempo: false,
+    explica: 'A cliente respondeu confirmando o horário.' },
+  // Desmarque não é "não fechou": aqui houve horário e ele caiu. O motivo de
+  // desistir depois de marcar é outro, e por isso a lista de motivos é outra.
+  { chave: 'desmarcou', rotulo: 'Desmarcou', cor: '#A33C5B', fundo: '#FAE8EE',
+    naFila: false, contaTempo: false,
+    explica: 'Tinha horário marcado e desmarcou, com o motivo registrado.' },
   { chave: 'sem_conversao', rotulo: 'Sem conversão', cor: '#6B6860', fundo: '#F0ECE7',
     naFila: false, contaTempo: false,
     explica: 'Fechada sem agendamento, com o motivo registrado.' },

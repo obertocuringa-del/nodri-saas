@@ -258,7 +258,13 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       const { data: abertas } = await supabaseAdmin
         .from('crm_conversas').select('id, criado_em, estado')
         .eq('salao_id', salaoId).eq('contato_id', ct.id)
-        .not('estado', 'in', '("agendado","sem_conversao")')
+        // 'confirmado' fica de fora: já é a mesma vitória, só que mais adiante.
+        // Reescrever para 'agendado' seria o relógio DESFAZENDO o que a
+        // recepção acabou de registrar.
+        // 'desmarcou' continua elegível de propósito: se apareceu no
+        // atendimento DEPOIS, a cliente remarcou e veio -- deixar como perda
+        // faria o painel mentir.
+        .not('estado', 'in', '("agendado","confirmado","sem_conversao")')
         .limit(5)
 
       for (const cv of abertas || []) {
