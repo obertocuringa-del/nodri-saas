@@ -423,11 +423,16 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
         // Conversa endereçada por LID: o telefone vem em outro campo da
         // própria mensagem, posto ali por quem decodificou o pacote.
-        // Telefone quando a mensagem traz (as ao vivo costumam trazer em
-        // `senderPn`); senao o LID vale como identidade e o numero entra
-        // depois, na primeira mensagem que revelar.
-        const tel = ehTelefone(bruto) ? bruto : (m.key?.senderPn || m.key?.participantPn || null)
-        const lid = ehLid(bruto) ? bruto : (m.key?.senderLid || null)
+        // A conversa e identificada por quem esta DO OUTRO LADO -- o
+        // remoteJid -- nunca por quem enviou.
+        //
+        // `senderPn` so serve quando a mensagem e DA CLIENTE: ai ele e o
+        // numero dela. Numa mensagem que o salao mandou, senderPn e o numero
+        // do PROPRIO SALAO, e usar ele arquivaria a resposta numa conversa do
+        // salao consigo mesmo. Era por isso que responder pelo celular nao
+        // atualizava a fila: a resposta entrava, mas no lugar errado.
+        const tel = ehTelefone(bruto) ? bruto : (deMim ? null : (m.key?.senderPn || null))
+        const lid = ehLid(bruto) ? bruto : null
         if (!tel && !lid) continue
 
         const texto = textoDaMensagem(m)
