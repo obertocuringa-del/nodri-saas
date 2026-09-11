@@ -15,6 +15,9 @@ o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 - Abas no topo: Preciso agir · Clientes novas · Sem resposta · Aguardando ·
   Follow-up · Pausadas · Agendadas · Não fechou · Todas
 - "Preciso agir" (até 3 dias) separado de "Sem resposta" (o que ficou para trás)
+- Nove botões de estado: Agendou · Confirmou · Desmarcou (com motivo) ·
+  Aguardando cliente · Aguardando promoção · Follow-up amanhã · Pausar 7 dias ·
+  Não fechou (com motivo) · Não li ainda
 - Etiqueta de estado em toda conversa, inclusive na fila
 - Relógio de espera em minutos de expediente, faixa de urgência na borda
 - Trava de dono: duas recepcionistas não respondem a mesma cliente
@@ -27,7 +30,12 @@ o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 
 **Responder**
 - Anexo: foto, áudio, vídeo e documento, nos dois sentidos
-- Preços em três toques (Serviço/Produto → categoria/marca → item), do catálogo
+- Preços em três toques (Serviço/Produto → categoria/marca → item)
+  - SERVIÇO sai de salao_servicos, a MESMA tabela da "Tabela de preços" do
+    link de promoções — e a observação vai junto com o preço, numa inserção só
+  - PRODUTO sai do relatório de produtos vendidos (0041), não do catálogo da
+    calculadora (aquele guarda o que o salão PAGA). Valor = maior unitário já
+    cobrado, porque desconto só desce
 - Mensagens prontas com atalho: `/oi` + Enter
 - Gravar áudio direto na tela, sem passar pelo celular
 - Responder citando uma mensagem
