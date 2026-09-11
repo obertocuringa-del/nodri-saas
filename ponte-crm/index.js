@@ -544,7 +544,13 @@ async function volta() {
   // "conexão caiu" em vez de fingir que está tudo bem quando a ponte morreu.
   for (const [salaoId, s] of sessoes) {
     if (s.conectado) {
-      avisar(salaoId, { situacao: 'conectado' }).catch(() => {})
+      // Sinal de vida SEM mandar situacao. Mandando 'conectado' a cada quatro
+      // segundos, a ponte desfazia o "Desconectar" que o salao acabara de
+      // clicar: o NODRI gravava 'desconectado', a volta seguinte gravava
+      // 'conectado' por cima, e a tela voltava sozinha para conectado sem
+      // ninguem entender. Quem declara conexao e o evento de abrir a sessao,
+      // que acontece uma vez; o resto e so dizer "estou viva".
+      avisar(salaoId, {}).catch(() => {})
       await despacharFila(salaoId)
     }
   }
