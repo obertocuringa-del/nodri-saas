@@ -19,6 +19,14 @@ import {
 type Conversa = any
 type Mensagem = any
 
+// Cliente nova e a pessoa que nunca foi atendida no salao. O relogio descobre
+// isso sozinho cruzando o telefone com os atendimentos, e marca a etiqueta.
+// Ela NUNCA some atras do estado: "cliente nova e esta sem resposta" e uma
+// informacao diferente de "cliente antiga e esta sem resposta", e a primeira
+// e a que se perde para sempre se ninguem responder.
+const ETIQUETA_NOVA = 'cliente nova'
+const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
+
 export default function CrmPage() {
   // `canalLido` separa "ainda não sei" de "sei que está desconectado".
   // Sem essa distinção, a tela abria mostrando o QR por uma fração de segundo
@@ -36,7 +44,7 @@ export default function CrmPage() {
   // 'fila' = precisa de resposta e e de agora. 'antigas' = a cliente falou por
   // ultimo e ficou para tras. As duas sao 'acao_necessaria' no banco: o que
   // separa e a idade, e isso e decisao de tela, nao de estado.
-  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'todas' | EstadoConversa>('fila')
+  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'novas' | 'todas' | EstadoConversa>('fila')
   const setFiltro = (f: any) => { setFiltroCru(f); setMotivoFiltro('') }
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
@@ -145,6 +153,7 @@ export default function CrmPage() {
     let lista = comTempo
     if (filtro === 'fila') lista = lista.filter(c => estadoPor(c.estado).naFila && !c._antiga)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
+    else if (filtro === 'novas') lista = lista.filter(ehNova)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
     if (filtro === 'sem_conversao' && motivoFiltro) {
       lista = lista.filter(c => c.motivo_perda === motivoFiltro)
@@ -163,6 +172,10 @@ export default function CrmPage() {
       const fa = estadoPor(a.estado).naFila ? 0 : 1
       const fb = estadoPor(b.estado).naFila ? 0 : 1
       if (fa !== fb) return fa - fb
+      // Cliente nova na frente: e a que nao volta se ficar sem resposta.
+      const na = ehNova(a) ? 0 : 1
+      const nb = ehNova(b) ? 0 : 1
+      if (na !== nb) return na - nb
       if (b._min !== a._min) return b._min - a._min
       return new Date(b.ultima_em || 0).getTime() - new Date(a.ultima_em || 0).getTime()
     })
@@ -179,6 +192,7 @@ export default function CrmPage() {
       pausadas: comTempo.filter(c => c.estado === 'pausada').length,
       agendadas: comTempo.filter(c => c.estado === 'agendado').length,
       perdidas: comTempo.filter(c => c.estado === 'sem_conversao').length,
+      novas: comTempo.filter(ehNova).length,
     }
   }, [comTempo])
 
@@ -279,6 +293,10 @@ export default function CrmPage() {
               <div className="flex gap-1 flex-wrap">
                 <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
                   texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
+                {contagem.novas > 0 && (
+                  <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
+                    texto={`Clientes novas (${contagem.novas})`} />
+                )}
                 {contagem.antigas > 0 && (
                   <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
                     texto={`Sem resposta (${contagem.antigas})`} />
@@ -467,6 +485,18 @@ function TelaConexao({ canal, onConectar }: { canal: any; onConectar: () => void
   )
 }
 
+// Cor propria, que nao e a de nenhum estado: e uma informacao de outro eixo.
+// Cliente nova que fica sem resposta nao volta -- nao existe segunda chance
+// com quem nunca foi atendido.
+function SeloNova() {
+  return (
+    <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
+      style={{ background: '#0f766e', color: '#fff', letterSpacing: '0.02em' }}>
+      CLIENTE NOVA
+    </span>
+  )
+}
+
 function Aba({ ativo, onClick, texto, destaque }: any) {
   return (
     <button onClick={onClick}
@@ -517,6 +547,7 @@ function ItemFila({ c, ativo, onClick }: any) {
           style={{ color: est.cor, background: est.fundo }}>
           {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
         </span>
+        {ehNova(c) && <SeloNova />}
       </div>
     </button>
   )
@@ -539,6 +570,7 @@ function CabecalhoConversa({ c, onEstado, fecharAberto, setFecharAberto, motivos
           style={{ background: est.fundo, color: est.cor }}>
           {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
         </span>
+        {ehNova(c) && <SeloNova />}
         <div className="flex-1" />
         <div className="flex gap-1.5 flex-wrap">
           <BotaoAcao onClick={() => onEstado('agendado')} cor="#2f6b4f" fundo="#e6f1eb" icone={<Check size={12} />} texto="Agendou" />
