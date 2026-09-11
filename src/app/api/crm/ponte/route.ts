@@ -212,23 +212,34 @@ export async function POST(req: NextRequest) {
       .range(inicio, inicio + PAGINA - 1)
 
     const linhas = atends || []
-    // Chegou ao fim da tabela: volta ao começo na próxima vez, para pegar quem
-    // entrou depois. Sem isso a varredura terminaria e cliente nova nunca mais
-    // seria conferida.
-    const proximo = linhas.length < PAGINA ? 0 : inicio + PAGINA
-    if (canalV?.id) {
-      await supabaseAdmin.from('crm_canais')
-        .update({ lid_varredura: proximo }).eq('id', canalV.id)
-    }
-
     const dedup = new Set<string>()
     for (const a of linhas) {
       const tel = normalizarTelefone(String(a.celular || ''))
       if (!tel || tel.length < 12 || vistos.has(tel)) continue
       dedup.add(tel)
     }
+
+    const POR_VEZ = 40
+    const leva = [...dedup].slice(0, POR_VEZ)
+
+    // A página só avança quando foi esvaziada. Antes eu avançava sempre, e
+    // como cada página de mil linhas traz umas oitenta clientes distintas e eu
+    // levava vinte, sessenta ficavam para trás a cada volta -- a maioria nunca
+    // seria conferida.
+    //
+    // E ao chegar ao fim da tabela volta ao começo, senão a varredura
+    // terminaria e cliente que entrar amanhã nunca mais seria conferida.
+    const acabouAPagina = dedup.size <= POR_VEZ
+    const proximo = !acabouAPagina ? inicio
+      : linhas.length < PAGINA ? 0
+      : inicio + PAGINA
+    if (canalV?.id && proximo !== inicio) {
+      await supabaseAdmin.from('crm_canais')
+        .update({ lid_varredura: proximo }).eq('id', canalV.id)
+    }
+
     return NextResponse.json({
-      telefones: [...dedup].slice(0, 20),
+      telefones: leva,
       nesta_pagina: dedup.size,
       ja_conferidos: vistos.size,
       posicao: inicio,
