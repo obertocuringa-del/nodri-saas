@@ -27,11 +27,7 @@ export default function ConfigCrmPage() {
   async function recomecar() {
     if (!confirm(
       'Isto apaga TODAS as conversas, mensagens e contatos do CRM e pede para escanear ' +
-      'o QR de novo.
-
-As mensagens prontas, os motivos e as origens continuam.
-
-' +
+      'o QR de novo.\n\nAs mensagens prontas, os motivos e as origens continuam.\n\n' +
       'Tem certeza?'
     )) return
     setLimpando(true)
