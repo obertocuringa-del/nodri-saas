@@ -163,6 +163,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── Nomes que o WhatsApp manda por fora das mensagens ─────────────────────
+  //
+  // Em conversa endereçada por LID a mensagem que o salão envia não carrega
+  // nome nenhum do destinatário, e a lista fica com "Sem nome" repetido -- o
+  // que impede a recepção de escolher uma conversa. Estes nomes vêm dos
+  // eventos de contato do WhatsApp e são a única fonte deles nesses casos.
+  //
+  // Nunca sobrescreve nome que alguém do salão digitou à mão: `nome_agenda`
+  // guarda o que o WhatsApp diz, `nome` só é preenchido se estiver vazio.
+  if (acao === 'nomes') {
+    const lista = Array.isArray(body?.contatos) ? body.contatos : []
+    if (!lista.length) return NextResponse.json({ ok: true, atualizados: 0 })
+
+    const { data: todos } = await supabaseAdmin
+      .from('crm_contatos').select('id, telefone, lid, nome').eq('salao_id', salaoId)
+
+    let atualizados = 0
+    for (const c of lista) {
+      const tel = normalizarTelefone(String(c?.telefone || ''))
+      const lid = String(c?.lid || '').trim() || null
+      const nome = String(c?.nome || '').trim()
+      if (!nome || (!tel && !lid)) continue
+
+      const alvoChave = tel ? chaveTelefone(tel) : ''
+      const achado = (todos || []).find((x: any) =>
+        (lid && x.lid === lid) || (alvoChave && x.telefone && chaveTelefone(x.telefone) === alvoChave))
+      if (!achado) continue
+
+      const patch: any = { nome_agenda: nome }
+      if (!achado.nome) patch.nome = nome
+      if (tel && !achado.telefone) { patch.telefone = tel; patch.telefone_bruto = tel }
+      await supabaseAdmin.from('crm_contatos').update(patch).eq('id', achado.id)
+      if (!achado.nome) atualizados++
+    }
+    return NextResponse.json({ ok: true, atualizados })
+  }
+
   // ── A ponte confirma o envio (ou avisa que falhou) ────────────────────────
   if (acao === 'confirmar') {
     const id = String(body?.mensagem_id || '')

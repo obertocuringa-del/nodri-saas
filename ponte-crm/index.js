@@ -348,6 +348,40 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
   sock.ev.on('creds.update', saveCreds)
 
+  // ── Nomes ─────────────────────────────────────────────────────────────────
+  //
+  // "Sem nome" repetido na lista nao deixa ninguem escolher uma conversa. O
+  // WhatsApp manda os nomes por fora das mensagens, nestes dois eventos -- e
+  // e a unica fonte deles quando a conversa e endereçada por LID: ali a
+  // mensagem que o salao envia nao carrega nome nenhum do destinatario.
+  const mandarNomes = async (lista) => {
+    const nomes = []
+    for (const c of lista || []) {
+      const nome = c?.name || c?.notify || c?.verifiedName
+      if (!nome) continue
+      const id = c?.id || ''
+      if (!ehCliente(id)) continue
+      nomes.push({
+        telefone: ehTelefone(id) ? soNumero(id) : (ehTelefone(c?.jid) ? soNumero(c.jid) : null),
+        lid: ehLid(id) ? id : (c?.lid || null),
+        nome: String(nome).slice(0, 120),
+      })
+    }
+    if (!nomes.length) return
+    try {
+      const r = await nodri('?acao=nomes', {
+        method: 'POST',
+        body: JSON.stringify({ salao_id: salaoId, contatos: nomes }),
+      })
+      if (r?.atualizados) registro(salaoId, `${r.atualizados} contato(s) ganharam nome`)
+    } catch (e) {
+      registro(salaoId, 'falha ao mandar nomes:', e.message)
+    }
+  }
+
+  sock.ev.on('contacts.upsert', c => { mandarNomes(c).catch(() => {}) })
+  sock.ev.on('contacts.update', c => { mandarNomes(c).catch(() => {}) })
+
   sock.ev.on('connection.update', async (u) => {
     const { connection, lastDisconnect, qr } = u
 

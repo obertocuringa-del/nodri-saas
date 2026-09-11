@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   let q = supabaseAdmin
     .from('crm_conversas')
-    .select('*, contato:crm_contatos(id, nome, nome_agenda, telefone, telefone_bruto, cliente_nome, etiquetas)')
+    .select('*, contato:crm_contatos(id, nome, nome_agenda, telefone, telefone_bruto, cliente_nome, etiquetas, lid, observacao)')
     .eq('salao_id', sess!.salaoId)
     .order('ultima_em', { ascending: false, nullsFirst: false })
     .limit(300)

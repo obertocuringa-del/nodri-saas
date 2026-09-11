@@ -29,6 +29,18 @@ type Mensagem = any
 const ETIQUETA_NOVA = 'cliente nova'
 const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
 
+// Como chamar a pessoa na tela. Ordem: o nome que o WhatsApp deu, o nome do
+// sistema, o telefone. Em ultimo caso o id anonimo -- feio, mas "Sem nome"
+// repetido oito vezes na lista nao deixa ninguem escolher uma conversa, e o
+// id ao menos diferencia uma da outra e da para procurar na busca.
+function nomeDoContato(ct: any): string {
+  const proprio = ct?.nome || ct?.nome_agenda || ct?.cliente_nome
+  if (proprio) return proprio
+  if (ct?.telefone) return telefoneBonito(ct.telefone)
+  const lid = String(ct?.lid || '').split('@')[0]
+  return lid ? `Contato ${lid.slice(-6)}` : 'Sem nome'
+}
+
 export default function CrmPage() {
   // `canalLido` separa "ainda não sei" de "sei que está desconectado".
   // Sem essa distinção, a tela abria mostrando o QR por uma fração de segundo
@@ -911,8 +923,7 @@ function Aba({ ativo, onClick, texto, destaque }: any) {
 function ItemFila({ c, ativo, onClick }: any) {
   const est = estadoPor(c.estado)
   const ct = c.contato || {}
-  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome
-    || (ct.telefone ? telefoneBonito(ct.telefone) : 'Sem nome')
+  const nome = nomeDoContato(ct)
   const urg = CORES_URGENCIA[c._urg as keyof typeof CORES_URGENCIA]
   const dono = donoAtivo(c.dono_ate) ? c.dono_nome : null
   const nova = ehNova(c)
@@ -1010,8 +1021,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
 
 function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, motivos, origens }: any) {
   const ct = c.contato || {}
-  const nome = ct.nome || ct.nome_agenda || ct.cliente_nome
-    || (ct.telefone ? telefoneBonito(ct.telefone) : 'Sem nome')
+  const nome = nomeDoContato(ct)
   const est = estadoPor(c.estado)
   return (
     <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
@@ -1027,7 +1037,8 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           <p className="font-bold text-[15.5px] leading-tight" style={{ color: '#1a1a1a' }}>{nome}</p>
           <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
             {ct.telefone ? telefoneBonito(ct.telefone)
-              : 'número ainda não informado pelo WhatsApp'}
+              : ct.lid ? `id ${String(ct.lid).split('@')[0]} · número aparece quando ela escrever`
+              : 'sem número'}
           </p>
         </div>
         {/* O motivo faz parte do estado: "Sem conversão" sozinho não diz nada,
