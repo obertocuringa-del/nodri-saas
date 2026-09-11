@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Upload, TrendingUp, TrendingDown, Minus, Calendar, FileSpreadsheet, ChevronUp, ChevronDown, ChevronsUpDown, Target, BarChart2, Settings, ChevronRight, Users, AlertTriangle, Star, RefreshCw, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { apelidoCasa } from '@/lib/matchProfissional'
 import RankingUnificado from '@/components/salon/RankingUnificado'
@@ -1053,6 +1053,26 @@ export default function RelatoriosPage() {
             )}
           </div>
         )}
+
+        {/* Porta de entrada do CRM. Ela nao existia: o modulo estava no ar e
+            so se chegava nele digitando o endereco -- o que equivale a nao
+            existir para quem trabalha no balcao. Fica depois do Importar, que
+            e o botao que some quando nao ha dado importado; por isso este
+            mora FORA daquele bloco, senao sumiria junto sem motivo. */}
+        <button onClick={() => router.push('/salon/crm')}
+          title="Abrir o CRM de WhatsApp"
+          style={{
+            marginLeft: dados && !isMobile ? undefined : 'auto',
+            width: isMobile ? '100%' : undefined,
+            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#5b4fcf', border: '1px solid #5b4fcf', borderRadius: 6,
+            padding: isMobile ? '9px 12px' : '6px 14px',
+            color: '#fff', fontSize: isMobile ? 12.5 : 12.5, cursor: 'pointer', fontWeight: 700,
+            whiteSpace: 'nowrap',
+          }}>
+          <MessageCircle size={14} /> Iniciar CRM
+        </button>
       </div>
 
       {/* SEM DADOS */}
