@@ -237,18 +237,22 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin.from('crm_canais')
         .update({ numero_dados: canalAtual.numero }).eq('id', canalAtual.id)
     }
-    // Normaliza o lote antes de tocar no banco. Conversa sem telefone válido
-    // e mensagem vazia não chegam a virar linha.
+    // Normaliza o lote antes de tocar no banco. Mensagem vazia não vira linha.
+    //
+    // Telefone OU lid: contas novas do WhatsApp só mandam o lid, e exigir
+    // telefone aqui -- na PRIMEIRA linha do processamento -- descartava o
+    // histórico inteiro delas antes de qualquer outra coisa acontecer.
     const lote = (Array.isArray(body?.conversas) ? body.conversas : [])
       .map((c: any) => ({
         telefone: normalizarTelefone(String(c?.telefone || '')),
+        lid: String(c?.lid || '').trim() || null,
         nome: c?.nome ? String(c.nome).slice(0, 120) : null,
         mensagens: (Array.isArray(c?.mensagens) ? c.mensagens : [])
           .filter((m: any) => m && String(m.texto || '').trim())
           .sort((a: any, b: any) => Number(a.em || 0) - Number(b.em || 0)),
       }))
-      .filter((c: any) => c.telefone)
-    if (!lote.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0 })
+      .filter((c: any) => c.telefone || c.lid)
+    if (!lote.length) return NextResponse.json({ ok: true, criadas: 0, mensagens: 0, motivo: 'lote vazio' })
 
     // ── Contatos ────────────────────────────────────────────────────────────
     // Uma leitura só. A versão anterior relia a tabela inteira de contatos a
