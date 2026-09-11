@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, Settings } from 'lucide-react'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, type EstadoConversa,
@@ -268,6 +268,8 @@ export default function CrmPage() {
           </div>
           <div className="flex-1" />
           <SeloConexao canal={canal} />
+          <a href="/salon/crm/config" title="Configurar mensagens prontas e motivos"
+            className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><Settings size={15} /></a>
           <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
             className="p-1.5 rounded-lg" style={{ color: '#575d68' }}><RefreshCw size={15} /></button>
         </div>
