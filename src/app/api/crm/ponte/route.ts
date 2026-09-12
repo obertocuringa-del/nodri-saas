@@ -27,6 +27,29 @@ export const dynamic = 'force-dynamic'
 //   GET  ?salao=<id>       a ponte busca o que está na fila para enviar
 // ════════════════════════════════════════════════════════════════════════════
 
+/**
+ * O molde da mensagem: o que sobra depois de tirar o que muda de pessoa para
+ * pessoa.
+ *
+ * O salão não dispara texto igual -- ele dispara o MESMO texto com o nome
+ * trocado: "Olá *LUCIANA*, tudo bem?", "Olá *Thatiana*, tudo bem?". Comparar
+ * letra por letra deixava a campanha inteira passar como conversa de verdade,
+ * e foi o que encheu "Aguardando cliente" de disparo.
+ *
+ * Some daqui: o que está entre asteriscos (é assim que o salão marca o nome),
+ * qualquer palavra TODA EM MAIÚSCULAS, e número. Sobra o esqueleto da frase.
+ */
+function moldeDaMensagem(t: string): string {
+  return String(t || '')
+    .replace(/\*[^*]{1,40}\*/g, ' ')
+    .replace(/\b[A-ZÀ-ÜÇ]{3,}\b/g, ' ')
+    .replace(/\d+/g, ' ')
+    .replace(/[^\p{L}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
 function autorizado(req: NextRequest): boolean {
   const esperada = process.env.CRM_PONTE_CHAVE || ''
   if (!esperada) return false          // sem chave configurada, a porta fica fechada
@@ -607,6 +630,17 @@ export async function POST(req: NextRequest) {
     if (jaTem?.length) return NextResponse.json({ ok: true, repetida: true })
   }
 
+  // Uma conversa ABERTA por contato. Conversa fechada (agendada ou perdida)
+  // não é reaberta: a cliente que volta depois inicia uma oportunidade nova,
+  // e é isso que faz a conta de conversão parar de pé.
+  const { data: abertas } = await supabaseAdmin
+    .from('crm_conversas').select('*')
+    .eq('salao_id', salaoId).eq('contato_id', contato.id)
+    .not('estado', 'in', '("agendado","sem_conversao")')
+    .order('ultima_em', { ascending: false }).limit(1)
+
+  let conversa = (abertas || [])[0]
+
   // ── Disparo em massa ──────────────────────────────────────────────────────
   //
   // O caso que fazia o salão perder cliente: a pessoa pergunta um preço, e
@@ -627,25 +661,42 @@ export async function POST(req: NextRequest) {
 
   if (!daCliente && !emMassa && texto.trim().length > 0) {
     const desde = new Date(Date.now() - JANELA_DISPARO_MIN * 60000).toISOString()
-    const { data: iguais } = await supabaseAdmin
-      .from('crm_mensagens').select('id, conversa_id, em_massa')
-      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('texto', texto)
-      .gte('criado_em', desde).limit(20)
-    irmas = (iguais || []).filter((m: any) => m.conversa_id)
-    // A partir da segunda pessoa recebendo o mesmo texto, é disparo.
+    // Traz TUDO que saiu na janela, não só o texto igual: o disparo do salão é
+    // personalizado ("Olá *LUCIANA*, tudo bem?" / "Olá *Thatiana*, tudo bem?")
+    // e nenhuma das duas frases é igual à outra. Procurar igualdade exata
+    // deixava a campanha inteira passar como se fosse conversa de verdade --
+    // foi o que encheu "Aguardando cliente" com 204 conversas.
+    const { data: recentes } = await supabaseAdmin
+      .from('crm_mensagens').select('id, conversa_id, texto')
+      .eq('salao_id', salaoId).eq('direcao', 'saida')
+      .gte('criado_em', desde).limit(200)
+
+    const outras = (recentes || []).filter((m: any) => m.conversa_id && m.conversa_id !== conversa?.id)
+    irmas = outras.filter((m: any) => m.texto === texto)
+
+    // Mesmo texto para outra pessoa: é disparo já na segunda.
     if (irmas.length >= 1) emMassa = true
+
+    // Personalizado: tira o nome e compara o molde. O nome da cliente é o que
+    // o salão troca a cada envio -- vem entre asteriscos, ou é a primeira
+    // palavra em maiúsculas da frase.
+    if (!emMassa) {
+      const molde = moldeDaMensagem(texto)
+      if (molde.length >= 8) {
+        const mesmoMolde = outras.filter((m: any) => moldeDaMensagem(m.texto || '') === molde)
+        if (mesmoMolde.length >= 1) { emMassa = true; irmas = mesmoMolde }
+      }
+    }
+
+    // Último recurso: volume. Ninguém responde seis pessoas diferentes em
+    // quinze minutos digitando uma a uma no celular -- isso é lista. Fica
+    // alto de propósito, para nunca pegar a recepção numa manhã movimentada.
+    if (!emMassa) {
+      const pessoas = new Set(outras.map((m: any) => m.conversa_id))
+      if (pessoas.size >= 6) emMassa = true
+    }
   }
 
-  // Uma conversa ABERTA por contato. Conversa fechada (agendada ou perdida)
-  // não é reaberta: a cliente que volta depois inicia uma oportunidade nova,
-  // e é isso que faz a conta de conversão parar de pé.
-  const { data: abertas } = await supabaseAdmin
-    .from('crm_conversas').select('*')
-    .eq('salao_id', salaoId).eq('contato_id', contato.id)
-    .not('estado', 'in', '("agendado","sem_conversao")')
-    .order('ultima_em', { ascending: false }).limit(1)
-
-  let conversa = (abertas || [])[0]
 
   if (!conversa) {
     // Disparo para quem nunca falou com o salão não abre oportunidade: seria
