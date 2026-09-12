@@ -28,6 +28,27 @@ export const dynamic = 'force-dynamic'
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
+ * As formas em que o mesmo celular pode estar gravado: com 55 e sem, com o
+ * nono dígito e sem. Procurar uma só é procurar errado -- e o banco não sabe
+ * comparar "ignorando o nono dígito" sozinho.
+ */
+function grafiasDoTelefone(telefone: string): string[] {
+  const d = String(telefone || '').replace(/\D+/g, '')
+  if (d.length < 10) return [telefone]
+  const sem55 = d.startsWith('55') ? d.slice(2) : d
+  const fora = new Set<string>([sem55, '55' + sem55, telefone])
+  if (sem55.length === 11 && sem55[2] === '9') {
+    const curto = sem55.slice(0, 2) + sem55.slice(3)
+    fora.add(curto); fora.add('55' + curto)
+  }
+  if (sem55.length === 10) {
+    const longo = sem55.slice(0, 2) + '9' + sem55.slice(2)
+    fora.add(longo); fora.add('55' + longo)
+  }
+  return [...fora]
+}
+
+/**
  * O molde da mensagem: o que sobra depois de tirar o que muda de pessoa para
  * pessoa.
  *
@@ -75,14 +96,35 @@ async function acharOuCriarContato(
   const lidLimpo = String(lid || '').trim() || null
   if (!telefone && !lidLimpo) return null
 
-  const { data: existentes } = await supabaseAdmin
-    .from('crm_contatos').select('*').eq('salao_id', salaoId)
-  const lista = existentes || []
+  // ── Procurar no BANCO, não na memória ─────────────────────────────────────
+  //
+  // Aqui havia um `.select('*')` sem limite, trazendo a agenda inteira para
+  // comparar em JavaScript. O PostgREST corta em 1000 linhas e não avisa: do
+  // contato 1001 em diante, ninguém era encontrado. A ponte então tentava
+  // CRIAR quem já existia e o banco respondia
+  // `duplicate key ... idx_crm_contato_lid` -- e a leva inteira de 20 conversas
+  // do histórico morria junto. Medido em 12/09/2026, na reconexão: lote após
+  // lote com "0 novas".
+  //
+  // Agora a busca é direta, por índice, e não tem teto.
+  let achado: any = null
 
-  // Compara pela chave sem o nono dígito: 61 9 9999 e 61 9999 são a mesma pessoa.
-  const alvo = telefone ? chaveTelefone(telefone) : ''
-  let achado = alvo ? lista.find((c: any) => c.telefone && chaveTelefone(c.telefone) === alvo) : null
-  if (!achado && lidLimpo) achado = lista.find((c: any) => c.lid === lidLimpo)
+  if (telefone) {
+    // O mesmo celular está gravado de várias formas -- com 55, sem 55, com e
+    // sem o nono dígito. Procurar uma só é procurar errado.
+    const { data } = await supabaseAdmin
+      .from('crm_contatos').select('*')
+      .eq('salao_id', salaoId).in('telefone', grafiasDoTelefone(telefone)).limit(10)
+    const alvo = chaveTelefone(telefone)
+    achado = (data || []).find((c: any) => c.telefone && chaveTelefone(c.telefone) === alvo) || null
+  }
+
+  if (!achado && lidLimpo) {
+    const { data } = await supabaseAdmin
+      .from('crm_contatos').select('*')
+      .eq('salao_id', salaoId).eq('lid', lidLimpo).limit(1)
+    achado = (data || [])[0] || null
+  }
 
   if (achado) {
     // Completa o que faltava, sem sobrescrever o que já estava certo.
@@ -688,12 +730,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Último recurso: volume. Ninguém responde seis pessoas diferentes em
-    // quinze minutos digitando uma a uma no celular -- isso é lista. Fica
-    // alto de propósito, para nunca pegar a recepção numa manhã movimentada.
+    // ── Volume: a peneira que de fato pega ────────────────────────────────
+    //
+    // Medido no disparo real de 12/09/2026: "Olá Adriane," e "Olá DANIELA,".
+    // Mesmo molde para um humano, moldes diferentes para o código -- um nome
+    // está em maiúsculas e o outro não, e o que sobra é curto demais para
+    // comparar. Texto não resolve este caso. Ritmo resolve: saíram a cada
+    // quinze segundos, para pessoas diferentes.
+    //
+    // Quatro conversas diferentes em quinze minutos. Parece pouco, mas quem
+    // de fato estava esperando resposta está em "Preciso agir", e de lá o
+    // disparo não tira ninguém. O pior caso que sobra é uma conversa de
+    // verdade ir para "Aguardando promoção" em vez de "Aguardando cliente" --
+    // duas pastas sem urgência, e um clique desfaz.
     if (!emMassa) {
       const pessoas = new Set(outras.map((m: any) => m.conversa_id))
-      if (pessoas.size >= 6) emMassa = true
+      if (pessoas.size >= 4) emMassa = true
     }
   }
 
