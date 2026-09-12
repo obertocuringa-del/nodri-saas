@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
 import { MODELOS_PADRAO, MOTIVOS_PERDA_PADRAO, ORIGENS_PADRAO, MOTIVOS_DESMARQUE_PADRAO } from '@/lib/crm'
+import { CHAVE_ESTADOS, lerConfigEstados, ESTADOS_VAZIO } from '@/lib/crmEstados'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,7 +97,13 @@ export async function GET() {
   const desdeSinal = canal.visto_em ? (Date.now() - new Date(canal.visto_em).getTime()) / 1000 : null
   canal.ponte_viva = desdeSinal !== null && desdeSinal < 120
 
-  return NextResponse.json({ canal, foraDoAr, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  // Os botoes da faixa, como o salao deixou. Ver src/lib/crmEstados.ts.
+  const { data: estRow } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
+  const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
+
+  return NextResponse.json({ canal, foraDoAr, estados, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
 }
 
 /** "Já conferi": apaga o aviso de que a ponte ficou fora do ar. */

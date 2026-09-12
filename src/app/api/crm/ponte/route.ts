@@ -799,7 +799,20 @@ export async function POST(req: NextRequest) {
     // disparo não tira ninguém. O pior caso que sobra é uma conversa de
     // verdade ir para "Aguardando promoção" em vez de "Aguardando cliente" --
     // duas pastas sem urgência, e um clique desfaz.
-    if (!emMassa) {
+    //
+    // MAS não contra quem está esperando resposta. Caso real de 12/09/2026, a
+    // MARCIA: ela escreveu "Confirmado" às 15:13, às 15:14 recebeu o disparo de
+    // lembrete (esse é disparo mesmo) e às 15:15 recebeu uma resposta de
+    // verdade, escrita para ela -- "Sou Raissa responsável por finalizar seu
+    // atendimento... 1.Duas manicures". A campanha estava correndo, então o
+    // ritmo marcou as DUAS como disparo, e a conversa ficou parada em "Preciso
+    // agir" mesmo depois de alguém ter respondido.
+    //
+    // Ritmo é indício fraco demais para contrariar "tem gente esperando". Para
+    // quem está em Preciso agir, só o TEXTO decide: mesma frase ou mesmo molde
+    // saindo para outras pessoas é disparo; qualquer outra coisa é resposta, e
+    // resposta tira a conversa da fila.
+    if (!emMassa && conversa?.estado !== 'acao_necessaria') {
       const pessoas = new Set(outras.map((m: any) => m.conversa_id))
       if (pessoas.size >= 4) emMassa = true
     }

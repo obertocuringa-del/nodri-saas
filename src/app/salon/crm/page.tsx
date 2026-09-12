@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
+import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
 // Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
 // em lugar nenhum (ícone aqui é lucide); isto aqui é conteúdo de mensagem,
@@ -90,6 +91,8 @@ export default function CrmPage() {
   const [abasAbertas, setAbasAbertas] = useState(false)
   // O periodo em que a ponte ficou fora do ar e ninguem foi avisado.
   const [foraDoAr, setForaDoAr] = useState<any>(null)
+  // Como o salao deixou a faixa de botoes. Ver src/lib/crmEstados.ts.
+  const [estadosCfg, setEstadosCfg] = useState<ConfigEstados>(ESTADOS_VAZIO)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -123,6 +126,7 @@ export default function CrmPage() {
       setOrigens(d.origens || [])
       setDesmarques(d.desmarques || [])
       setForaDoAr(d.foraDoAr || null)
+      setEstadosCfg(d.estados || ESTADOS_VAZIO)
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -342,6 +346,8 @@ export default function CrmPage() {
   }, [comTempo])
 
   // O nome da aba em que a pessoa está, para caber no botão que abre a faixa.
+  const botoesDeEstado = useMemo(() => estadosVisiveis(estadosCfg), [estadosCfg])
+
   const rotuloDoFiltro = useMemo(() => {
     const n = (x: number) => (x ? ` (${x})` : '')
     switch (filtro) {
@@ -943,7 +949,8 @@ export default function CrmPage() {
                   onFicha={() => setFichaAberta(true)}
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   desmarqueAberto={desmarqueAberto} setDesmarqueAberto={setDesmarqueAberto}
-                  motivos={motivos} origens={origens} desmarques={desmarques} />
+                  motivos={motivos} origens={origens} desmarques={desmarques}
+                  botoesDeEstado={botoesDeEstado} />
 
                 <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f2efec' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
@@ -1294,7 +1301,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques, botoesDeEstado }: any) {
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
   const est = estadoPor(c.estado)
@@ -1331,31 +1338,46 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           </button>
         )}
         <div className="flex-1" />
+        {/* ── A faixa sai da configuração, não do código ────────────────────
+            O salão esconde, renomeia e cria os seus botões em Configurar. Os
+            de fábrica continuam com o comportamento que o relógio conhece; os
+            criados aqui são pastas que só se mexem na mão.
+
+            'acao_necessaria' fica de fora: ninguém marca "preciso agir" à mão
+            -- é a cliente falando que põe a conversa lá. */}
         <div className="flex gap-1.5 flex-wrap">
-          <BotaoAcao onClick={() => onEstado('agendado')} cor="#2f6b4f" fundo="#e6f1eb" icone={<Check size={12} />} texto="Agendou" />
-          {/* "Ok, confirmado" chegava como mensagem nova e caía em Ação
-              necessária, como se ninguém tivesse respondido. Agora tem botão:
-              a resposta da cliente encerra o assunto em vez de abrir um. */}
-          <BotaoAcao onClick={() => onEstado('confirmado')} cor="#1b5e3f" fundo="#d9ede1"
-            icone={<CheckCheck size={12} />} texto="Confirmou" />
-          <BotaoAcao onClick={() => setDesmarqueAberto(!desmarqueAberto)} cor="#a33c5b" fundo="#fae8ee"
-            icone={desmarqueAberto ? <X size={12} /> : undefined} texto="Desmarcou" />
-          <BotaoAcao onClick={() => onEstado('aguardando')} cor="#9a6b12" fundo="#fbf1df" texto="Aguardando cliente" />
-          {/* Promoção disparada para cem pessoas: o silêncio é o normal. Fora
-              daqui, cada disparo entupiria a fila de "Aguardando" com espera
-              que não é atendimento atrasado de ninguém. */}
-          <BotaoAcao onClick={() => onEstado('aguardando_promo')} cor="#7a5af8" fundo="#f1eefc"
-            texto="Aguardando promoção" />
-          <BotaoAcao onClick={() => onEstado('follow_up', { prazo: new Date(Date.now() + 864e5).toISOString() })}
-            cor="#c2603a" fundo="#fbeee8" texto="Follow-up amanhã" />
-          <BotaoAcao onClick={() => onEstado('pausada', { prazo: new Date(Date.now() + 7 * 864e5).toISOString() })}
-            cor="#5b4fcf" fundo="#f1eefc" texto="Pausar 7 dias" />
-          <BotaoAcao onClick={() => setFecharAberto(!fecharAberto)} cor="#6b6860" fundo="#f0ece7"
-            icone={fecharAberto ? <X size={12} /> : undefined} texto="Não fechou" />
-          {/* "Não li ainda" saiu a pedido do salão. A função continua inteira
-              (onNaoLida, e a rota que devolve a conversa para a fila): quem
-              tirou o botão pode querer de volta, e apagar o caminho junto com
-              o atalho custaria muito mais do que deixá-lo quieto aqui. */}
+          {(botoesDeEstado as any[]).filter((e: any) => e.chave !== 'acao_necessaria').map((e: any) => {
+            // Os dois que pedem motivo abrem o painel em vez de mudar direto:
+            // fechar sem motivo é o que transforma "perdemos 40" em nada.
+            if (e.chave === 'desmarcou') {
+              return (
+                <BotaoAcao key={e.chave} onClick={() => setDesmarqueAberto(!desmarqueAberto)}
+                  cor={e.cor} fundo={e.fundo}
+                  icone={desmarqueAberto ? <X size={12} /> : undefined} texto={e.rotulo} />
+              )
+            }
+            if (e.chave === 'sem_conversao') {
+              return (
+                <BotaoAcao key={e.chave} onClick={() => setFecharAberto(!fecharAberto)}
+                  cor={e.cor} fundo={e.fundo}
+                  icone={fecharAberto ? <X size={12} /> : undefined} texto={e.rotulo} />
+              )
+            }
+            // Follow-up e Pausa nascem com prazo: sem data, "volto depois"
+            // vira nunca.
+            const extra = e.chave === 'follow_up'
+              ? { prazo: new Date(Date.now() + 864e5).toISOString() }
+              : e.chave === 'pausada'
+                ? { prazo: new Date(Date.now() + 7 * 864e5).toISOString() }
+                : undefined
+            const icone = e.chave === 'agendado' ? <Check size={12} />
+              : e.chave === 'confirmado' ? <CheckCheck size={12} />
+                : undefined
+            return (
+              <BotaoAcao key={e.chave} onClick={() => onEstado(e.chave, extra)}
+                cor={e.cor} fundo={e.fundo} icone={icone} texto={e.rotulo} />
+            )
+          })}
         </div>
       </div>
 

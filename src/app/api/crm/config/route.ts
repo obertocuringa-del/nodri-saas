@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
+import { CHAVE_ESTADOS, lerConfigEstados, ESTADOS_VAZIO } from '@/lib/crmEstados'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,16 @@ export async function GET() {
       .eq('salao_id', sess!.salaoId).order('ordem'),
   ])
 
-  return NextResponse.json({ modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  // Os botões da faixa: quais o salão escondeu, renomeou, e quais criou.
+  const { data: estRow } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
+  const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
+
+  return NextResponse.json({
+    modelos: modelos || [], motivos: motivos || [],
+    origens: origens || [], desmarques: desmarques || [], estados,
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -56,6 +66,23 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}))
+
+  // ── Os botões da faixa ───────────────────────────────────────────────────
+  //
+  // Vai para salao_config, e não para uma tabela: mudança de esquema neste
+  // banco exige SQL colado à mão no Supabase, e isto não podia esperar por
+  // isso. A tela manda a configuração inteira, como nas outras listas.
+  if (body?.lista === 'estados') {
+    const cfg = lerConfigEstados(body?.estados)
+    await supabaseAdmin.from('salao_config').upsert({
+      salao_id: sess!.salaoId,
+      chave: CHAVE_ESTADOS,
+      valor: cfg,
+      atualizado_em: new Date().toISOString(),
+    }, { onConflict: 'salao_id,chave' })
+    return NextResponse.json({ ok: true, estados: cfg })
+  }
+
   const lista = String(body?.lista || '') as Lista
   const tabela = TABELAS[lista]
   if (!tabela) return NextResponse.json({ error: 'Lista desconhecida' }, { status: 400 })
