@@ -67,8 +67,36 @@ const sessoes = new Map()
 // Salão que pediu o CRM e não escaneou: até quando não insistir.
 // salaoId -> instante (ms) em que pode tentar de novo.
 const semNinguem = new Map()
-const QR_ANTES_DE_DESISTIR = Number(process.env.CRM_QR_MAX || 6)
-const ESPERA_SEM_QR = Number(process.env.CRM_QR_ESPERA_MS || 15 * 60000)
+// Códigos gerados por salão. Fica FORA do registro da sessão de propósito: o
+// WhatsApp derruba a conexão a cada ~2 minutos (motivo 408) e a ponte reabre
+// com um registro novo. Contando lá dentro, o número voltava a zero a cada
+// queda e o limite nunca era alcançado -- medido em 12/09/2026: 254 códigos em
+// três minutos, sem a pausa nunca disparar.
+const qrsPorSalao = new Map()
+// Quem já conectou alguma vez desde que a ponte subiu. Um salão que estava no
+// ar e caiu é um salão de verdade, com gente querendo escanear de volta: esse
+// ganha muito mais tempo antes de a ponte descansar. Quem nunca conectou é o
+// que clicou em "Iniciar CRM" e sumiu.
+//
+// Gravado em disco porque a lista em memória nasce vazia a cada reinício — e
+// reiniciar a ponte logo depois de um logout é exatamente o momento em que o
+// salão está na frente da tela esperando o código. Tratá-lo como "novo" ali
+// daria três minutos de código e vinte de silêncio.
+const ARQ_CONHECIDOS = path.join(PASTA, 'conhecidos.json')
+const jaConectou = new Set((() => {
+  try { return JSON.parse(fs.readFileSync(ARQ_CONHECIDOS, 'utf8')) } catch { return [] }
+})())
+function lembrarConhecido(salaoId) {
+  if (jaConectou.has(salaoId)) return
+  jaConectou.add(salaoId)
+  try {
+    fs.mkdirSync(PASTA, { recursive: true })
+    fs.writeFileSync(ARQ_CONHECIDOS, JSON.stringify([...jaConectou]), 'utf8')
+  } catch {}
+}
+const QR_SALAO_VIVO = Number(process.env.CRM_QR_MAX_VIVO || 60)   // ~20 min
+const QR_SALAO_NOVO = Number(process.env.CRM_QR_MAX || 10)        // ~3 min
+const ESPERA_SEM_QR = Number(process.env.CRM_QR_ESPERA_MS || 20 * 60000)
 
 // Quantas mensagens enviadas ficam guardadas para poder reenviar. O pedido de
 // reenvio chega minutos depois, no máximo horas -- 300 cobre um dia inteiro de
@@ -475,9 +503,12 @@ async function abrirDeVerdade(salaoId, registroSessao) {
       // Depois de QR_ANTES_DE_DESISTIR o socket fecha e o salão volta para a
       // fila normal: a próxima volta reabre e ele ganha códigos novos. Quem
       // está de fato na frente da tela escaneia muito antes disso.
-      registroSessao.qrs = (registroSessao.qrs || 0) + 1
-      if (registroSessao.qrs > QR_ANTES_DE_DESISTIR) {
-        registro(salaoId, `${QR_ANTES_DE_DESISTIR} códigos sem ninguém escanear — parando por ${Math.round(ESPERA_SEM_QR / 60000)} min`)
+      const teto = jaConectou.has(salaoId) ? QR_SALAO_VIVO : QR_SALAO_NOVO
+      const quantos = (qrsPorSalao.get(salaoId) || 0) + 1
+      qrsPorSalao.set(salaoId, quantos)
+      if (quantos > teto) {
+        registro(salaoId, `${teto} códigos sem ninguém escanear — parando por ${Math.round(ESPERA_SEM_QR / 60000)} min`)
+        qrsPorSalao.delete(salaoId)
         // Encerra o socket SEM apagar nada. fecharSessao() serve para quando o
         // salão desconecta de verdade: ela faz logout e apaga a pasta de
         // credenciais. Aqui é só uma pausa.
@@ -497,6 +528,10 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
     if (connection === 'open') {
       registroSessao.conectado = true
+      // Escanearam: a contagem zera e este salão passa a ser "de verdade".
+      qrsPorSalao.delete(salaoId)
+      semNinguem.delete(salaoId)
+      lembrarConhecido(salaoId)
 
       // ── Pedir a agenda ────────────────────────────────────────────────────
       //
