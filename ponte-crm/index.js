@@ -906,7 +906,32 @@ const ESPERA_MAX = 30 * 60000
 let esperaAtual = ESPERA_MIN
 let resolvendoEm = 0
 
+// ── DESLIGADA por padrão ────────────────────────────────────────────────────
+//
+// Medido em 12/09/2026, cinco levas seguidas depois da reconexão:
+//
+//   13:20  +40 conferidos   0 com id
+//   13:30  +21              0 com id
+//   13:50  +40              0 com id
+//   14:20   +2              0 com id
+//   14:50  +23              0 com id
+//
+// 897 telefones perguntados, ZERO respostas. O WhatsApp simplesmente não
+// responde mais essa consulta nesta conta. O recuo automático está fazendo o
+// trabalho dele (já chegou aos trinta minutos), mas o saldo é claro: a única
+// coisa que a varredura ainda produz é pedido não solicitado ao WhatsApp, e é
+// exatamente isso que faz um número ser limitado ou bloqueado.
+//
+// E o telefone passou a vir por um caminho melhor: o relógio casa o contato
+// com o histórico do salão pelo nome e traz o celular de lá -- sem perguntar
+// nada a ninguém.
+//
+// Fica ligável por variável de ambiente para o dia em que o WhatsApp voltar a
+// responder. Enquanto responder zero, não vale o risco do número do salão.
+const VARREDURA_LIGADA = process.env.CRM_VARREDURA === '1'
+
 async function resolverPorTelefone() {
+  if (!VARREDURA_LIGADA) return
   if (Date.now() - resolvendoEm < esperaAtual) return
   resolvendoEm = Date.now()
 
