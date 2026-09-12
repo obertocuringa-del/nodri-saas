@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const cliente = (url.searchParams.get('cliente') || '').trim()
   const celular = (url.searchParams.get('celular') || '').replace(/\D/g, '')
-  if (!cliente) return NextResponse.json({ error: 'cliente obrigatório' }, { status: 400 })
+  // O NOME so serve de rotulo agora; quem identifica e o telefone.
+  if (!cliente && !celular) return NextResponse.json({ error: 'informe cliente ou celular' }, { status: 400 })
 
   // ── O TELEFONE MANDA. Sempre ─────────────────────────────────────────────
   //
@@ -65,48 +66,23 @@ export async function GET(req: NextRequest) {
     if (r.data?.length) { atend = r.data; casouPor = 'telefone' }
   }
 
-  // Sem telefone (ou sem nada encontrado por ele), procura pelo nome EXATO --
-  // ilike sem curinga é exato sem diferenciar maiúscula. Com curinga, "ANA"
-  // traria "ANA BEATRIZ" e misturaria duas clientes.
-  let homonimos = 0
-  let celularNaBase: string | null = null
-  if (!atend) {
-    const { data: porNome } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('servico, data_comanda, profissional, qtd, valor, total, celular')
-      .eq('salao_id', p.salaoId)
-      .ilike('cliente', cliente)
-      .limit(4000)
-
-    // Quantas PESSOAS diferentes atendem por esse nome? Se for mais de uma, o
-    // que sairia daqui seria a soma de estranhas. Melhor não mostrar nada do
-    // que mostrar o histórico da cliente errada -- a tela avisa e a recepção
-    // pergunta o telefone.
-    const numeros = new Set(
-      (porNome || []).map((a: any) => String(a.celular || '').replace(/\D/g, ''))
-        .filter((n: string) => n.length >= 8)
-    )
-    homonimos = numeros.size
-    if (homonimos <= 1) {
-      atend = porNome || null
-      casouPor = 'nome'
-      // O celular que está na BASE vai junto na resposta. Casou pelo nome quer
-      // dizer que ninguém conferiu nada -- e a pergunta seguinte de quem olha a
-      // tela é sempre a mesma: "como eu sei que é ela?". Com o número à vista,
-      // dá para comparar com o WhatsApp ou procurar no Avec. Sem ele, a única
-      // saída era acreditar.
-      celularNaBase = [...numeros][0] || null
-    }
-  }
-
+  // ── E SÓ. Sem telefone, não se mostra histórico ──────────────────────────
+  //
+  // Havia aqui uma busca por nome, como reserva. Ela saiu por decisão do dono
+  // em 12/09/2026, e a razão dele é melhor que a minha:
+  //
+  //   "se eu tiver conversando com a cliente vou pegar aquelas informações
+  //    para vender mais para ela. E aí falo: você fez o corte aqui um tempo
+  //    atrás — e a cliente não fez corte. Eu estou mentindo."
+  //
+  // Nome não identifica ninguém: o salão tem duas Márcias, e a NOEMIA que
+  // apareceu com 164 visitas e ticket de R$ 346,80 podia ser a soma de outra
+  // pessoa. Um aviso em amarelo não conserta isso -- quem está atendendo lê o
+  // número, não o aviso.
+  //
+  // Sem telefone a tela não mostra nada e diz por quê. É menos informação e
+  // nenhuma mentira.
   const linhas = atend || []
-  if (homonimos > 1) {
-    return NextResponse.json({
-      encontrado: false, ambiguo: true, homonimos,
-      total_visitas: 0, servicos: [], profissionais_atendidos: [],
-      servicos_ultima: [], profissionais_ultima: [],
-    })
-  }
   if (linhas.length === 0) {
     return NextResponse.json({
       encontrado: false, total_visitas: 0, servicos: [], profissionais_atendidos: [],
@@ -148,8 +124,6 @@ export async function GET(req: NextRequest) {
     // um palpite, e um palpite não pode ser mostrado com a mesma cara de um
     // dado conferido pelo telefone.
     casou_por: casouPor,
-    // Para conferir no Avec quando o casamento foi pelo nome.
-    celular_na_base: celularNaBase,
     total_visitas,
     primeira_visita: datas[0] || null,
     ultima_visita,

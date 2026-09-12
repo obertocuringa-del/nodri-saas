@@ -1615,7 +1615,7 @@ function PainelCliente({ c }: { c: Conversa }) {
   useEffect(() => {
     let vivo = true
     setDados(null)
-    if (!nomeBusca && !telBusca) return
+    if (!telBusca) return
     const q = new URLSearchParams()
     q.set('cliente', nomeBusca || '-')
     if (telBusca) q.set('celular', telBusca)
@@ -1633,47 +1633,22 @@ function PainelCliente({ c }: { c: Conversa }) {
         <FichaContato ct={ct} />
         <h3 className="font-bold text-[12px] mb-3 mt-4" style={{ color: '#1a1a1a' }}>No sistema</h3>
 
-        {!nomeBusca && (
+        {/* Sem telefone não existe histórico para mostrar, e dizer o porquê
+            vale mais do que uma frase vaga: quem lê sabe o que fazer (pedir o
+            número) em vez de achar que o sistema está quebrado. */}
+        {!telBusca && (
           <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
-            Contato ainda não ligado a uma cliente do relatório.
+            Sem o telefone dela não dá para saber quem é no sistema. Nome não serve:
+            o salão tem clientes diferentes com o mesmo nome, e mostrar o histórico de
+            outra pessoa seria pior do que não mostrar nada.
           </p>
         )}
 
-        {nomeBusca && !dados && (
+        {telBusca && !dados && (
           <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Procurando o histórico...</p>
         )}
 
-        {/* Mais de uma pessoa atende por esse nome e não temos o telefone.
-            Mostrar a soma delas seria entregar à recepção o histórico de uma
-            estranha com cara de certo. */}
-        {dados?.ambiguo && (
-          <div className="px-2.5 py-2 rounded-lg mb-2" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
-            <p className="text-[11.5px]" style={{ color: '#6b6860' }}>
-              <strong style={{ color: '#9a6b12' }}>{dados.homonimos} clientes com esse nome.</strong>{' '}
-              Sem o telefone não dá para saber qual é — e mostrar a soma das {dados.homonimos} seria
-              pior do que não mostrar nada. Pergunte o telefone e anote na ficha.
-            </p>
-          </div>
-        )}
-
-        {/* Casou pelo NOME, não pelo telefone: é palpite, e tem que estar dito. */}
-        {dados?.encontrado && dados.casou_por === 'nome' && (
-          <div className="px-2.5 py-2 rounded-lg mb-2" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
-            <p className="text-[11px]" style={{ color: '#6b6860' }}>
-              <strong style={{ color: '#9a6b12' }}>Ligado pelo NOME, não pelo telefone.</strong>{' '}
-              O histórico abaixo pode ser de outra pessoa com o mesmo nome.
-            </p>
-            {dados.celular_na_base && (
-              <p className="text-[11px] mt-1" style={{ color: '#6b6860' }}>
-                No sistema esse nome está com o celular{' '}
-                <strong style={{ color: '#1a1a1a' }}>{telefoneBonito(dados.celular_na_base)}</strong>.
-                Se for o mesmo do WhatsApp dela, o histórico é dela.
-              </p>
-            )}
-          </div>
-        )}
-
-        {dados && !dados.ambiguo && (
+        {dados && (
           <div className="space-y-2.5">
             <Linha rotulo="Visitas" valor={dados.total_visitas ?? '—'} />
             {/* Ticket médio no lugar do total gasto: quem responde no balcão

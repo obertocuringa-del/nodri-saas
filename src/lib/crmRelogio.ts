@@ -67,8 +67,6 @@ export interface ResumoRelogio {
   ligados_ao_sistema: number
   /** Contatos sem telefone: não dá para afirmar se são novas ou não. */
   sem_como_conferir: number
-  /** Ganharam o celular vindo do histórico de atendimento, pelo nome. */
-  ganharam_telefone: number
 }
 
 export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
@@ -77,7 +75,7 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
   const r: ResumoRelogio = {
     pausas_vencidas: 0, viraram_follow_up: 0, agendaram_sozinho: 0,
     contatos_conferidos: 0, clientes_novas: 0, ligados_ao_sistema: 0,
-    sem_como_conferir: 0, ganharam_telefone: 0,
+    sem_como_conferir: 0,
   }
 
   // ── 1. A pausa venceu ─────────────────────────────────────────────────────
@@ -185,51 +183,25 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       }
     }
 
-    // ── Segunda tentativa: pelo NOME ─────────────────────────────────────────
+    // ── Casar por NOME saiu, por decisão do dono (12/09/2026) ────────────
     //
-    // O painel da direita acha a cliente pelo nome e mostra visitas e ticket;
-    // o relógio achava só pelo telefone. Dava a tela dizendo "CLIENTE NOVA" ao
-    // lado de "3 visitas, última em 13/01" -- dois critérios diferentes na
-    // mesma tela, e o errado em destaque.
+    // Havia aqui uma segunda tentativa: quem não casou pelo telefone era
+    // procurado pelo nome, e o resultado virava vínculo GRAVADO no contato.
+    // Só que nome não identifica ninguém -- o salão tem duas Márcias, e uma
+    // NOEMIA apareceu com 164 visitas que podiam ser de outra pessoa.
     //
-    // Agora, quem não casou por telefone é procurado por nome, com o mesmo
-    // critério do painel: igual, ignorando maiúscula, SEM curinga. Com curinga
-    // "Ana" traria "Ana Beatriz" e o CRM juntaria duas clientes diferentes.
-    const semTelefone = contatos.filter(ct => {
-      const k = chaveTelefone(ct.telefone)
-      return !porChave.get(k) && String(ct.nome || '').trim().length >= 3
-    })
-
-    const porNome = new Map<string, { nome: string; ultima: number; celular?: string }>()
-    if (semTelefone.length) {
-      const nomes = [...new Set(semTelefone.map(c => String(c.nome).trim()))]
-      const filtro = nomes
-        .map(n => `cliente.ilike.${n.replace(/[,()]/g, ' ')}`)
-        .join(',')
-      const { data: porNomeRaw } = await supabaseAdmin
-        .from('atendimentos_raw')
-        // O CELULAR vem junto. Achar a cliente pelo nome e não aproveitar o
-        // número que está na mesma linha é deixar a recepção sem como ligar
-        // para alguém que o salão atende há anos.
-        .select('cliente, celular, data_comanda')
-        .eq('salao_id', salaoId)
-        .or(filtro)
-        .limit(4000)
-      for (const a of porNomeRaw || []) {
-        const k = String(a.cliente || '').trim().toLowerCase()
-        if (!k) continue
-        const quando = tsData(a.data_comanda)
-        const atual = porNome.get(k)
-        if (!atual || quando > atual.ultima) {
-          porNome.set(k, { nome: a.cliente, ultima: quando, celular: a.celular || atual?.celular })
-        }
-      }
-    }
+    // A razão dele, que vale mais que o meu argumento: conversando com a
+    // cliente, a recepção usa esse histórico para vender. Dizer "você fez um
+    // corte aqui outro dia" para quem nunca fez é mentir para a cliente na
+    // cara dela -- e o estrago não se desfaz com um aviso em amarelo.
+    //
+    // Contato sem telefone fica sem vínculo, e a tela diz isso. Menos
+    // informação, nenhuma invenção.
 
     for (const ct of contatos) {
       const k = chaveTelefone(ct.telefone)
+      // SÓ pelo telefone. Ver o bloco acima.
       const achou = porChave.get(k)
-        || porNome.get(String(ct.nome || '').trim().toLowerCase())
       const etiquetas: string[] = Array.isArray(ct.etiquetas) ? [...ct.etiquetas] : []
       const patch: any = { conferido_em: agoraIso }
 
@@ -237,23 +209,6 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         // Já é cliente da casa. O nome do sistema é o que abre o painel da
         // direita com visitas, ticket e o que ela costuma fazer.
         if (!ct.cliente_nome) { patch.cliente_nome = achou.nome; r.ligados_ao_sistema++ }
-        // ── E o TELEFONE vem junto ────────────────────────────────────────
-        //
-        // Quem casou pelo NOME estava sem número -- é por isso que caiu nesse
-        // caminho. Mas o número dela está na mesma linha do atendimento, e o
-        // salão a atende há anos. Deixá-lo lá seria manter na tela uma cliente
-        // conhecida que ninguém consegue chamar.
-        //
-        // Só preenche o que está vazio: nada aqui sobrescreve número que já
-        // veio do WhatsApp, que é sempre a fonte mais confiável.
-        if (!ct.telefone && (achou as any).celular) {
-          const limpo = String((achou as any).celular).replace(/\D+/g, '')
-          if (limpo.length >= 10) {
-            patch.telefone = limpo.startsWith('55') ? limpo : '55' + limpo
-            patch.telefone_bruto = String((achou as any).celular)
-            r.ganharam_telefone = (r.ganharam_telefone || 0) + 1
-          }
-        }
         const i = etiquetas.indexOf('cliente nova')
         if (i >= 0) { etiquetas.splice(i, 1); patch.etiquetas = etiquetas }
       } else if (!ct.cliente_nome && ct.telefone) {
