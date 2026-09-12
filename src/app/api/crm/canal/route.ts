@@ -67,6 +67,14 @@ export async function GET() {
     .select('situacao, qr, qr_expira_em, numero, nome_exibicao, visto_em, erro, numero_dados')
     .eq('salao_id', sess!.salaoId).maybeSingle()
 
+  // O último período em que a ponte ficou fora do ar, se ainda não foi visto.
+  // Ver o bloco "O buraco que ninguém via", em /api/crm/ponte.
+  const { data: foraRow } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess!.salaoId).eq('chave', 'crm_fora_do_ar').maybeSingle()
+  const fora = (foraRow as any)?.valor
+  const foraDoAr = (fora && fora.visto === false) ? fora : null
+
   const [{ data: modelos }, { data: motivos }, { data: origens }, { data: desmarques }] = await Promise.all([
     supabaseAdmin.from('crm_modelos').select('id, nome, texto, atalho')
       .eq('salao_id', sess!.salaoId).eq('ativo', true).order('ordem'),
@@ -88,7 +96,28 @@ export async function GET() {
   const desdeSinal = canal.visto_em ? (Date.now() - new Date(canal.visto_em).getTime()) / 1000 : null
   canal.ponte_viva = desdeSinal !== null && desdeSinal < 120
 
-  return NextResponse.json({ canal, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  return NextResponse.json({ canal, foraDoAr, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+}
+
+/** "Já conferi": apaga o aviso de que a ponte ficou fora do ar. */
+export async function PATCH() {
+  const { sess, erro } = await sessaoDoSalao()
+  if (erro) return erro
+
+  const { data } = await supabaseAdmin
+    .from('salao_config').select('valor')
+    .eq('salao_id', sess!.salaoId).eq('chave', 'crm_fora_do_ar').maybeSingle()
+  const v = (data as any)?.valor
+  if (!v) return NextResponse.json({ ok: true })
+
+  await supabaseAdmin.from('salao_config').upsert({
+    salao_id: sess!.salaoId,
+    chave: 'crm_fora_do_ar',
+    valor: { ...v, visto: true },
+    atualizado_em: new Date().toISOString(),
+  }, { onConflict: 'salao_id,chave' })
+
+  return NextResponse.json({ ok: true })
 }
 
 export async function POST(req: NextRequest) {

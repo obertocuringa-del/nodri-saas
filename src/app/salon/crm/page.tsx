@@ -88,6 +88,8 @@ export default function CrmPage() {
   // A faixa de abas nasce fechada: a tela tem informacao demais, e a conversa
   // e a caixa de escrever valem mais altura que uma linha de botoes.
   const [abasAbertas, setAbasAbertas] = useState(false)
+  // O periodo em que a ponte ficou fora do ar e ninguem foi avisado.
+  const [foraDoAr, setForaDoAr] = useState<any>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -99,6 +101,17 @@ export default function CrmPage() {
   const [fichaAberta, setFichaAberta] = useState(false)
 
   // ── Carregamento ──────────────────────────────────────────────────────────
+  const horaCurta = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    } catch { return '--:--' }
+  }
+
+  async function jaConferi() {
+    setForaDoAr(null)   // some da tela na hora; o resto é papel do servidor
+    try { await fetch('/api/crm/canal', { method: 'PATCH' }) } catch {}
+  }
+
   async function puxarCanal() {
     try {
       const r = await fetch('/api/crm/canal')
@@ -109,6 +122,7 @@ export default function CrmPage() {
       setMotivos(d.motivos || [])
       setOrigens(d.origens || [])
       setDesmarques(d.desmarques || [])
+      setForaDoAr(d.foraDoAr || null)
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -706,6 +720,32 @@ export default function CrmPage() {
               className="p-1.5 rounded-lg" style={{ color: '#6b6860' }}><RefreshCw size={15} /></button>
           </div>
         </div>
+
+        {/* ── O CRM ficou fora do ar e ninguém soube ─────────────────────────
+            Mensagem que chegou nesse período está SÓ no celular: para o
+            WhatsApp, aparelho desconectado deixou de existir, e não há como
+            buscar depois. O aviso não devolve nada -- ele acaba com o silêncio,
+            que é o que faz perder cliente sem ninguém perceber. */}
+        {foraDoAr && (
+          <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-center gap-3 flex-wrap"
+            style={{ background: '#FBEAE6', border: '1px solid #e8c5be' }}>
+            <AlertTriangle size={16} style={{ color: '#b4322a', flexShrink: 0 }} />
+            <p className="text-[12.5px] flex-1 min-w-[240px]" style={{ color: '#6b6860' }}>
+              <strong style={{ color: '#b4322a' }}>
+                O CRM ficou fora do ar das {horaCurta(foraDoAr.de)} às {horaCurta(foraDoAr.ate)}
+                {foraDoAr.minutos >= 60 ? ` (${Math.floor(foraDoAr.minutos / 60)}h${String(foraDoAr.minutos % 60).padStart(2, '0')})` : ` (${foraDoAr.minutos} min)`}.
+              </strong>{' '}
+              Mensagem que chegou nesse período está só no celular — o WhatsApp não
+              entrega depois o que passou enquanto o aparelho estava desconectado.
+              Vale conferir a conversa por lá.
+            </p>
+            <button onClick={jaConferi}
+              className="px-3 py-2 rounded-lg text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.96]"
+              style={{ background: '#b4322a', color: '#fff' }}>
+              Já conferi
+            </button>
+          </div>
+        )}
 
         {/* O numero conectado mudou e as conversas continuam sendo do
             anterior. Nao da para "atualizar": o WhatsApp so entrega historico

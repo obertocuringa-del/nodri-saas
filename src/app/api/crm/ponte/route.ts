@@ -233,7 +233,36 @@ export async function POST(req: NextRequest) {
     if (body?.sessao !== undefined) patch.sessao = body.sessao || null
 
     const { data: existe } = await supabaseAdmin
-      .from('crm_canais').select('id').eq('salao_id', salaoId).maybeSingle()
+      .from('crm_canais').select('id, situacao, visto_em').eq('salao_id', salaoId).maybeSingle()
+
+    // ── O buraco que ninguém via ─────────────────────────────────────────────
+    //
+    // Em 12/09/2026 o WhatsApp derrubou a sessão às 09:17 e só voltou às
+    // 13:15. Quatro horas em que toda mensagem de cliente foi só para o
+    // celular -- e a tela não disse nada. O salão olhava a fila, via tudo
+    // normal, e não tinha como saber que existia um buraco.
+    //
+    // O CRM não consegue buscar essas mensagens depois: para o WhatsApp, um
+    // aparelho desconectado deixou de existir, e ao escanear de novo ele é um
+    // aparelho novo. O que dá para fazer é PARAR DE FICAR CALADO.
+    //
+    // Vai para salao_config e não para uma coluna nova de propósito: mudança
+    // de esquema neste banco exige SQL colado na mão no Supabase, e um aviso
+    // útil não pode ficar esperando por isso.
+    const JANELA_MINIMA_MIN = 10
+    if (existe && patch.situacao === 'conectado' && existe.situacao !== 'conectado' && existe.visto_em) {
+      const de = new Date(existe.visto_em)
+      const minutos = Math.round((Date.now() - de.getTime()) / 60000)
+      if (minutos >= JANELA_MINIMA_MIN) {
+        await supabaseAdmin.from('salao_config').upsert({
+          salao_id: salaoId,
+          chave: 'crm_fora_do_ar',
+          valor: { de: existe.visto_em, ate: agora, minutos, visto: false },
+          atualizado_em: agora,
+        }, { onConflict: 'salao_id,chave' }).then(() => {}, () => {})
+      }
+    }
+
     if (existe) await supabaseAdmin.from('crm_canais').update(patch).eq('id', existe.id)
     else await supabaseAdmin.from('crm_canais').insert({ salao_id: salaoId, ...patch })
 
