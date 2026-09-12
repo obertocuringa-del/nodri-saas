@@ -87,7 +87,33 @@ export async function POST(req: NextRequest) {
     .limit(3000)
   const paraAguardando = (fuImportadas || []).map(c => c.id)
 
-  // ── 3. Contato sem nome ──────────────────────────────────────────────────
+  // ── 3. Presa em "Preciso agir" depois de respondida ──────────────────────
+  //
+  // Enquanto a regra de disparo olhava o TEXTO, resposta de verdade era
+  // marcada como campanha -- e campanha não tira ninguém de "Preciso agir",
+  // que é a proteção certa para o caso errado. Resultado: a RENATA perguntou
+  // "A Daiane estará aí?", a recepção respondeu dois minutos depois, e a
+  // conversa continuou na fila como se ninguém tivesse falado com ela.
+  //
+  // A regra já foi corrigida (vale quem falou nas últimas 48h, não o texto).
+  // Estas aqui ficaram para trás: a última mensagem é do SALÃO e mesmo assim
+  // elas estão em "Preciso agir". Quem já foi respondida sai da fila.
+  const { data: naFila } = await supabaseAdmin
+    .from('crm_conversas').select('id, ultima_de, ultima_em')
+    .eq('salao_id', salaoId).eq('estado', 'acao_necessaria')
+    .limit(1000)
+
+  const respondidas: string[] = []
+  for (const c of naFila || []) {
+    // A última mensagem REAL da conversa, não o resumo -- o resumo não é
+    // atualizado justamente quando a mensagem entra como campanha.
+    const { data: ult } = await supabaseAdmin
+      .from('crm_mensagens').select('direcao, criado_em')
+      .eq('conversa_id', c.id).order('criado_em', { ascending: false }).limit(1)
+    if (ult?.[0]?.direcao === 'saida') respondidas.push(c.id)
+  }
+
+  // ── 4. Contato sem nome ──────────────────────────────────────────────────
   const { data: semNome } = await supabaseAdmin
     .from('crm_contatos').select('id')
     .eq('salao_id', salaoId).is('nome', null)
@@ -119,6 +145,7 @@ export async function POST(req: NextRequest) {
       simulacao: true,
       conversas_para_promocao: paraPromo.length,
       follow_up_que_volta_para_aguardando: paraAguardando.length,
+      presas_em_preciso_agir: respondidas.length,
       contatos_que_ganham_nome: nomesAchados.size,
       exemplos_de_nome: [...nomesAchados.values()].slice(0, 12),
     })
@@ -149,6 +176,20 @@ export async function POST(req: NextRequest) {
     if (!error) devolvidas += lote.length
   }
 
+  // Ja respondidas, presas em "Preciso agir": saem para Aguardando.
+  let destravadas = 0
+  for (let i = 0; i < respondidas.length; i += 100) {
+    const lote = respondidas.slice(i, i + 100)
+    const { error } = await supabaseAdmin.from('crm_conversas').update({
+      estado: 'aguardando',
+      proxima_acao: proximaAcaoPadrao('aguardando'),
+      aguardando_desde: null,
+      ultima_de: 'salao',
+      atualizado_em: agora,
+    }).in('id', lote)
+    if (!error) destravadas += lote.length
+  }
+
   let nomeados = 0
   for (const [contatoId, nome] of nomesAchados) {
     const { error } = await supabaseAdmin.from('crm_contatos')
@@ -160,6 +201,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     conversas_para_promocao: mudadas,
     follow_up_que_voltou_para_aguardando: devolvidas,
+    presas_destravadas: destravadas,
     contatos_que_ganharam_nome: nomeados,
   })
 }
