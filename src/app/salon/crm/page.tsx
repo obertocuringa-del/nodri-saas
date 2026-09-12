@@ -624,6 +624,25 @@ export default function CrmPage() {
     }, 0)
   }
 
+  // "CLIENTE NOVA" sai quando quem lê a conversa sabe que não é. O relógio
+  // marca por telefone que não aparece no histórico -- e profissional,
+  // fornecedor e parceiro caem na mesma peneira.
+  async function tirarEtiquetaNova() {
+    const ct = aberta?.contato
+    if (!ct?.id) return
+    const restantes = (ct.etiquetas || []).filter((e: string) => e !== 'cliente nova')
+    // Some da tela na hora; o servidor confirma depois.
+    setConversas(atual => atual.map(c =>
+      c.contato?.id === ct.id ? { ...c, contato: { ...c.contato, etiquetas: restantes } } : c))
+    setAberta((a: any) => (a ? { ...a, contato: { ...a.contato, etiquetas: restantes } } : a))
+    try {
+      await fetch('/api/crm/contato', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: ct.id, etiquetas: restantes }),
+      })
+    } catch {}
+  }
+
   async function marcarNaoLida() {
     if (!aberta) return
     const id = aberta.id
@@ -987,7 +1006,7 @@ export default function CrmPage() {
                   fecharAberto={fecharAberto} setFecharAberto={setFecharAberto}
                   desmarqueAberto={desmarqueAberto} setDesmarqueAberto={setDesmarqueAberto}
                   motivos={motivos} origens={origens} desmarques={desmarques}
-                  botoesDeEstado={botoesDeEstado} />
+                  botoesDeEstado={botoesDeEstado} onTirarNova={tirarEtiquetaNova} />
 
                 <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f2efec' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
@@ -1250,11 +1269,20 @@ function TelaConexao({ canal, onConectar }: { canal: any; onConectar: () => void
 // Cor propria, que nao e a de nenhum estado: e uma informacao de outro eixo.
 // Cliente nova que fica sem resposta nao volta -- nao existe segunda chance
 // com quem nunca foi atendido.
-function SeloNova() {
+// O X só aparece onde dá para decidir: no cabeçalho da conversa aberta. Na
+// lista da esquerda o selo é só informação — um X por linha viraria um campo
+// minado de cliques errados numa lista que se rola rápido.
+function SeloNova({ onTirar }: { onTirar?: () => void }) {
   return (
-    <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
+    <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1"
       style={{ background: '#c94d8a', color: '#fff', letterSpacing: '0.03em' }}>
       CLIENTE NOVA
+      {onTirar && (
+        <button onClick={onTirar} title="Não é cliente nova — tirar esta etiqueta"
+          className="leading-none opacity-70 hover:opacity-100">
+          <X size={10} />
+        </button>
+      )}
     </span>
   )
 }
@@ -1370,7 +1398,7 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques, botoesDeEstado }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques, botoesDeEstado, onTirarNova }: any) {
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
   const est = estadoPor(c.estado)
@@ -1398,7 +1426,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           style={{ background: est.fundo, color: est.cor }}>
           {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
         </span>
-        {ehNova(c) && <SeloNova />}
+        {ehNova(c) && <SeloNova onTirar={onTirarNova} />}
         {noCelular && (
           <button onClick={onFicha} title="A cliente"
             className="ml-auto px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1"

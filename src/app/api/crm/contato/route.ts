@@ -50,6 +50,25 @@ export async function PATCH(req: NextRequest) {
     patch.cliente_nome = String(body.cliente_nome || '').trim().slice(0, 160) || null
   }
 
+  // ── Tirar uma etiqueta na mão ─────────────────────────────────────────────
+  //
+  // "CLIENTE NOVA" é posto pelo relógio quando o telefone não aparece no
+  // histórico de atendimento. Para quem nunca foi atendido isso está certo --
+  // mas profissional, fornecedor e parceiro caem na mesma peneira, e a fila
+  // fica cheia de gente marcada como cliente nova que não é cliente nenhuma.
+  //
+  // O relógio não tem como saber disso sozinho. Quem sabe é quem lê a
+  // conversa. Então dá para tirar -- e uma vez tirada, ela não volta: o
+  // `conferido_em` fica marcado como conferido e o relógio respeita a decisão
+  // de quem estava olhando.
+  if (Array.isArray(body?.etiquetas)) {
+    patch.etiquetas = body.etiquetas
+      .map((e: any) => String(e || '').trim())
+      .filter(Boolean)
+      .slice(0, 20)
+    patch.conferido_em = new Date().toISOString()
+  }
+
   const { error } = await supabaseAdmin
     .from('crm_contatos').update(patch).eq('id', id).eq('salao_id', sess.salaoId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
