@@ -97,6 +97,8 @@ export default function CrmPage() {
   const [atendentes, setAtendentes] = useState<any[]>([])
   const [atendente, setAtendente] = useState<string>('')
   const [modeloPendente, setModeloPendente] = useState<any>(null)
+  const [profissionais, setProfissionais] = useState<any[]>([])
+  const [escolhas, setEscolhas] = useState<{ atendente: string; profissional: string }>({ atendente: '', profissional: '' })
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -122,33 +124,52 @@ export default function CrmPage() {
   const nomeDaCliente = () =>
     aberta?.contato?.nome || aberta?.contato?.cliente_nome || aberta?.contato?.nome_agenda || ''
 
-  function porNaCaixa(texto: string, quem: string) {
-    setTexto(preencherMensagem(texto, { cliente: nomeDaCliente(), atendente: quem }))
+  function porNaCaixa(texto: string, quem: string, prof: string) {
+    setTexto(preencherMensagem(texto, {
+      cliente: nomeDaCliente(), atendente: quem, profissional: prof,
+    }))
     setTimeout(() => areaTexto.current?.focus(), 0)
   }
 
   // ── A mensagem pronta ─────────────────────────────────────────────────────
   //
-  // Se ela pede assinatura, a janelinha abre e a caixa só é preenchida depois
-  // que alguém escolhe. Perguntar SEMPRE, e não uma vez por computador: quem
-  // senta na recepção muda ao longo do dia, e mandar "Meu nome é Dariana"
-  // assinado pela Raissa é pior do que um clique a mais.
+  // Ela pode pedir duas coisas que o sistema não adivinha: quem assina e qual
+  // profissional vai atender. A janelinha pergunta as que faltam, uma de cada
+  // vez, e a caixa só é preenchida quando as duas estão resolvidas.
+  //
+  // Perguntar SEMPRE, e não uma vez por computador: quem senta na recepção
+  // muda ao longo do dia, e o profissional muda a cada agendamento. Mandar
+  // "com a Val" quando é com a Dai é pior do que um clique a mais.
+  const precisa = (texto: string) => ({
+    atendente: /\{atendente\}/i.test(texto) && atendentes.length > 0,
+    profissional: /\{profissional\}/i.test(texto) && profissionais.length > 0,
+  })
+
   function usarModelo(m: any) {
     const texto = String(m?.texto || '')
-    if (/\{atendente\}/i.test(texto) && atendentes.length) {
+    const p = precisa(texto)
+    if (p.atendente || p.profissional) {
+      setEscolhas({ atendente: '', profissional: '' })
       setModeloPendente(m)
       return
     }
     setModeloPendente(null)
-    porNaCaixa(texto, '')
+    porNaCaixa(texto, '', '')
   }
 
-  /** Escolheu quem assina: preenche e fecha a janelinha. */
-  function assinarCom(nome: string) {
+  /** Registra uma escolha; quando não falta mais nada, preenche e fecha. */
+  function escolher(qual: 'atendente' | 'profissional', nome: string) {
+    const novas = { ...escolhas, [qual]: nome }
+    setEscolhas(novas)
+    if (qual === 'atendente') setAtendente(nome)
+
     const m = modeloPendente
+    const p = m ? precisa(String(m.texto || '')) : { atendente: false, profissional: false }
+    const falta = (p.atendente && !novas.atendente) || (p.profissional && !novas.profissional)
+    if (falta || !m) return
+
     setModeloPendente(null)
-    setAtendente(nome)
-    if (m) porNaCaixa(String(m.texto || ''), nome)
+    porNaCaixa(String(m.texto || ''), novas.atendente, novas.profissional)
   }
 
   async function puxarCanal() {
@@ -164,6 +185,7 @@ export default function CrmPage() {
       setForaDoAr(d.foraDoAr || null)
       setEstadosCfg(d.estados || ESTADOS_VAZIO)
       setAtendentes(d.atendentes || [])
+      setProfissionais(d.profissionais || [])
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -1058,27 +1080,40 @@ export default function CrmPage() {
                       em cima da página e abria em top -95, fora da tela. No
                       fluxo normal, logo acima da caixa, ele sempre aparece --
                       e some assim que alguém escolhe, então não rouba altura. */}
-                  {modeloPendente && atendentes.length > 0 && (
-                    <div className="mb-2 p-3 rounded-xl"
-                      style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 6px 20px rgba(26,22,20,.10)' }}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="text-[12px] font-bold flex-1" style={{ color: '#1a1a1a' }}>
-                          Quem está atendendo?
-                        </p>
-                        <button onClick={() => setModeloPendente(null)} title="Fechar"
-                          className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
+                  {modeloPendente && (() => {
+                    const p = precisa(String(modeloPendente.texto || ''))
+                    // Uma pergunta por vez: as duas listas juntas viram um
+                    // paredão de nomes e o clique erra de coluna.
+                    const qual: 'atendente' | 'profissional' | null =
+                      (p.atendente && !escolhas.atendente) ? 'atendente'
+                        : (p.profissional && !escolhas.profissional) ? 'profissional'
+                          : null
+                    if (!qual) return null
+                    const lista = qual === 'atendente' ? atendentes : profissionais
+                    return (
+                      <div className="mb-2 p-3 rounded-xl"
+                        style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 6px 20px rgba(26,22,20,.10)' }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-[12px] font-bold flex-1" style={{ color: '#1a1a1a' }}>
+                            {qual === 'atendente' ? 'Quem está atendendo?' : 'Com qual profissional?'}
+                          </p>
+                          <button onClick={() => setModeloPendente(null)} title="Fechar"
+                            className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
+                        </div>
+                        <div className="flex gap-1.5 flex-wrap max-h-32 overflow-y-auto">
+                          {lista.map((a: any) => (
+                            <button key={a.id} onClick={() => escolher(qual, a.nome)}
+                              className="px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                              style={qual === 'atendente'
+                                ? { background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }
+                                : { background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
+                              {a.nome}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {atendentes.map((a: any) => (
-                          <button key={a.id} onClick={() => assinarCom(a.nome)}
-                            className="px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-                            style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
-                            {a.nome}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {/* ── Formatar e emoji ──────────────────────────────────
                       O WhatsApp não tem botão de formatar: ele lê *asterisco*

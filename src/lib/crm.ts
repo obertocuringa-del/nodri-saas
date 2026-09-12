@@ -300,11 +300,14 @@ export const ORIGENS_PADRAO = [
 // Quando o nome da cliente não existe, a frase tem que continuar lendo bem:
 // "Olá {cliente}, tudo bem?" não pode virar "Olá , tudo bem?". Por isso a
 // substituição limpa espaço solto e vírgula órfã depois de trocar.
-export const ATALHOS_MENSAGEM = ['{cliente}', '{atendente}'] as const
+// `{profissional}` é a terceira: quem vai atender na cadeira. "Tenho segunda
+// 18h30 com a Val" escrito à mão erra o nome do profissional, e errar o nome
+// de quem vai atender é pior do que errar o horário.
+export const ATALHOS_MENSAGEM = ['{cliente}', '{atendente}', '{profissional}'] as const
 
 export function preencherMensagem(
   texto: string,
-  dados: { cliente?: string | null; atendente?: string | null },
+  dados: { cliente?: string | null; atendente?: string | null; profissional?: string | null },
 ): string {
   // Só o primeiro nome: "Olá Maria Aparecida da Silva, tudo bem?" soa a
   // cadastro, não a conversa.
@@ -312,6 +315,7 @@ export function preencherMensagem(
   return String(texto || '')
     .replace(/\{cliente\}/gi, primeiro(dados.cliente))
     .replace(/\{atendente\}/gi, primeiro(dados.atendente))
+    .replace(/\{profissional\}/gi, primeiro(dados.profissional))
     // "Olá , tudo bem?" → "Olá, tudo bem?"
     .replace(/[ \t]+([,.!?;:])/g, '$1')
     // espaço dobrado que sobrou do lugar do nome

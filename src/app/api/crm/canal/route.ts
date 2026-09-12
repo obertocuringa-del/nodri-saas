@@ -101,8 +101,18 @@ export async function GET() {
   // profissionais, cargo "Recepcionista" -- lista que o salao ja mantem, em
   // vez de uma segunda lista para alguem esquecer de atualizar.
   const { data: profs } = await supabaseAdmin
-    .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento')
+    .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento, vinculo')
     .eq('salao_id', sess!.salaoId).limit(500)
+  // Quem atende na cadeira -- para a mensagem dizer "com a Val" sem ninguem
+  // digitar o nome. Mesmo filtro da vitrine: setor nao atende, e CLT e
+  // equipe interna; quem atende cliente e CNPJ.
+  const profissionais = (profs || [])
+    .filter((x: any) => x.ativo !== false && !x.is_departamento
+      && String(x.vinculo || '').toUpperCase() !== 'CLT')
+    .map((x: any) => ({ id: x.id, nome: x.apelido || x.nome_completo || '' }))
+    .filter((x: any) => x.nome)
+    .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
   const atendentes = (profs || [])
     .filter((p: any) => p.ativo !== false && !p.is_departamento && /recep/i.test(String(p.cargo || '')))
     .map((p: any) => ({ id: p.id, nome: p.apelido || p.nome_completo || '' }))
@@ -115,7 +125,7 @@ export async function GET() {
     .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
   const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
 
-  return NextResponse.json({ canal, foraDoAr, estados, atendentes, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  return NextResponse.json({ canal, foraDoAr, estados, atendentes, profissionais, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
 }
 
 /** "Já conferi": apaga o aviso de que a ponte ficou fora do ar. */

@@ -284,7 +284,7 @@ export default function ConfigCrmPage() {
                 cliente escrita como está. */}
             <div className="rounded-xl p-3 mb-4" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
               <p className="text-[12px] font-bold mb-1" style={{ color: '#9a6b12' }}>
-                Duas coisas o sistema preenche sozinho
+                Três coisas o sistema preenche sozinho
               </p>
               <p className="text-[12px] leading-relaxed" style={{ color: '#6b6860' }}>
                 <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4 }}>{'{cliente}'}</code>{' '}
@@ -297,7 +297,11 @@ export default function ConfigCrmPage() {
                 Profissionais, cargo <strong>Recepcionista</strong> — quem entra e sai da
                 equipe é atualizado lá, e não aqui.
                 <br />
-                <strong style={{ color: '#9a6b12' }}>Escreva as duas exatamente assim</strong>, com as
+                <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4 }}>{'{profissional}'}</code>{' '}
+                vira quem vai atender na cadeira — <em>“Tenho segunda 18h30 com a {'{profissional}'}”</em>.
+                Ao clicar na mensagem, o CRM pergunta qual é.
+                <br />
+                <strong style={{ color: '#9a6b12' }}>Escreva as três exatamente assim</strong>, com as
                 chaves e em minúsculas. Trocada ou traduzida, ela não dá erro: vai para a
                 cliente escrita do jeito que estiver.
               </p>
