@@ -96,7 +96,6 @@ export default function CrmPage() {
   // Quem da recepcao esta assinando as mensagens neste computador.
   const [atendentes, setAtendentes] = useState<any[]>([])
   const [atendente, setAtendente] = useState<string>('')
-  const [trocandoAtendente, setTrocandoAtendente] = useState(false)
   const [modeloPendente, setModeloPendente] = useState<any>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
