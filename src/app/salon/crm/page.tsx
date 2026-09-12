@@ -826,13 +826,35 @@ export default function CrmPage() {
           {/* ── Conversa ── */}
           <main className={`${noCelular && !aberta ? 'hidden' : 'flex-1'} flex flex-col min-w-0`} style={{ background: '#f2efec' }}>
             {!aberta ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                <div className="rounded-full flex items-center justify-center"
-                  style={{ width: 52, height: 52, background: '#e8e6e0' }}>
-                  <Send size={20} style={{ color: '#b5aca4' }} />
+              // A única tela do CRM com atenção sobrando: aqui ninguém está
+              // no meio de um atendimento. Por isso é onde cabe o respiro --
+              // e só aqui. Na tela com conversa aberta, enfeite vira estorvo.
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 relative overflow-hidden"
+                style={{ background: '#fdfbf7' }}>
+                {/* Ramo ao fundo, quase invisível de propósito: dá o tom da
+                    marca sem disputar com nada, porque não há nada com que
+                    disputar nesta tela. */}
+                <svg viewBox="0 0 220 220" aria-hidden="true"
+                  className="absolute pointer-events-none"
+                  style={{ right: -12, bottom: -16, width: 300, height: 300, opacity: .5 }}>
+                  <g fill="none" stroke="#e3d6bd" strokeWidth="1.4" strokeLinecap="round">
+                    <path d="M28 208 C 70 170, 96 126, 112 74" />
+                    <path d="M112 74 C 118 52, 126 36, 140 22" />
+                    <path d="M96 118 C 74 112, 60 96, 56 76 C 78 78, 92 94, 96 118 Z" />
+                    <path d="M104 96 C 124 86, 136 68, 138 46 C 118 54, 106 74, 104 96 Z" />
+                    <path d="M84 150 C 62 146, 48 132, 42 112 C 64 114, 80 128, 84 150 Z" />
+                    <path d="M92 132 C 112 122, 124 104, 126 82 C 106 90, 94 110, 92 132 Z" />
+                    <path d="M64 182 C 46 178, 34 166, 30 150 C 48 152, 60 164, 64 182 Z" />
+                  </g>
+                </svg>
+                <div className="rounded-full flex items-center justify-center relative"
+                  style={{ width: 72, height: 72, background: '#f4f0e9', border: '1px solid #e8e0d2' }}>
+                  <Send size={26} style={{ color: '#c3b39a' }} />
                 </div>
-                <p className="text-[13.5px] font-bold" style={{ color: '#6b6860' }}>Escolha uma conversa</p>
-                <p className="text-[12px]" style={{ color: '#8f877f' }}>A fila da esquerda está na ordem do trabalho.</p>
+                <p className="text-[15px] font-bold relative" style={{ color: '#4a453f' }}>Escolha uma conversa</p>
+                <p className="text-[12.5px] relative text-center px-6" style={{ color: '#8f877f' }}>
+                  A fila da esquerda está na ordem do trabalho.
+                </p>
               </div>
             ) : (
               <>
