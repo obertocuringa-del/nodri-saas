@@ -28,7 +28,7 @@ const EMOJIS = [
 import { useIsMobile } from '@/lib/useIsMobile'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
-  urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, type EstadoConversa,
+  urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, preencherMensagem, type EstadoConversa,
 } from '@/lib/crm'
 
 type Conversa = any
@@ -93,6 +93,11 @@ export default function CrmPage() {
   const [foraDoAr, setForaDoAr] = useState<any>(null)
   // Como o salao deixou a faixa de botoes. Ver src/lib/crmEstados.ts.
   const [estadosCfg, setEstadosCfg] = useState<ConfigEstados>(ESTADOS_VAZIO)
+  // Quem da recepcao esta assinando as mensagens neste computador.
+  const [atendentes, setAtendentes] = useState<any[]>([])
+  const [atendente, setAtendente] = useState<string>('')
+  const [trocandoAtendente, setTrocandoAtendente] = useState(false)
+  const [modeloPendente, setModeloPendente] = useState<any>(null)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -115,6 +120,45 @@ export default function CrmPage() {
     try { await fetch('/api/crm/canal', { method: 'PATCH' }) } catch {}
   }
 
+  // ── Quem está assinando hoje ──────────────────────────────────────────────
+  //
+  // Fica no navegador, não na conta: o salão usa UM login de recepção e quem
+  // senta na cadeira muda ao longo do dia. Guardar por máquina acerta o caso
+  // real -- cada computador tem a sua pessoa na maior parte do turno -- e
+  // custa um clique para trocar quando não acerta.
+  useEffect(() => {
+    if (!atendentes.length) return
+    let salvo = ''
+    try { salvo = localStorage.getItem('crm_atendente') || '' } catch {}
+    const existe = atendentes.some((a: any) => a.nome === salvo)
+    setAtendente(existe ? salvo : '')
+  }, [atendentes])
+
+  function escolherAtendente(nome: string) {
+    setAtendente(nome)
+    setTrocandoAtendente(false)
+    try { localStorage.setItem('crm_atendente', nome) } catch {}
+  }
+
+  // Põe a mensagem pronta na caixa, já com o nome da cliente e o de quem
+  // assina. Se a mensagem pede assinatura e ninguém escolheu ainda, pergunta
+  // primeiro -- mandar "Meu nome é {atendente}" para a cliente seria pior do
+  // que um clique a mais.
+  function usarModelo(m: any) {
+    const texto = String(m?.texto || '')
+    if (/\{atendente\}/i.test(texto) && !atendente && atendentes.length) {
+      setTrocandoAtendente(true)
+      setModeloPendente(m)
+      return
+    }
+    setModeloPendente(null)
+    setTexto(preencherMensagem(texto, {
+      cliente: aberta?.contato?.nome || aberta?.contato?.cliente_nome || aberta?.contato?.nome_agenda,
+      atendente,
+    }))
+    setTimeout(() => areaTexto.current?.focus(), 0)
+  }
+
   async function puxarCanal() {
     try {
       const r = await fetch('/api/crm/canal')
@@ -127,6 +171,7 @@ export default function CrmPage() {
       setDesmarques(d.desmarques || [])
       setForaDoAr(d.foraDoAr || null)
       setEstadosCfg(d.estados || ESTADOS_VAZIO)
+      setAtendentes(d.atendentes || [])
     } catch {} finally { setCanalLido(true) }
   }
 
@@ -984,7 +1029,7 @@ export default function CrmPage() {
                   {modelos.length > 0 && (
                     <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
                       {modelos.map(m => (
-                        <button key={m.id} onClick={() => setTexto(m.texto)} title={m.texto}
+                        <button key={m.id} onClick={() => usarModelo(m)} title={m.texto}
                           className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94] transition duration-100 hover:brightness-95 active:scale-[.94]"
                           style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
                           {m.nome}
@@ -992,6 +1037,36 @@ export default function CrmPage() {
                       ))}
                     </div>
                   )}
+                  {/* ── Quem está assinando ────────────────────────────────
+                      A mensagem de boas-vindas diz "Meu nome é ___". Esse nome
+                      sai do cadastro de profissionais (cargo Recepcionista), e
+                      não de alguém digitar — digitar cem vezes por dia termina
+                      com o nome errado na primeira frase da conversa. */}
+                  {atendentes.length > 0 && (
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      {(trocandoAtendente || !atendente) ? (
+                        <>
+                          <span className="text-[11px]" style={{ color: '#8f877f' }}>Quem está atendendo?</span>
+                          {atendentes.map((a: any) => (
+                            <button key={a.id} onClick={() => {
+                              escolherAtendente(a.nome)
+                              if (modeloPendente) setTimeout(() => usarModelo({ ...modeloPendente }), 0)
+                            }}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                              style={{ background: '#fff', color: '#5b4fcf', border: '1px solid #5b4fcf40' }}>
+                              {a.nome}
+                            </button>
+                          ))}
+                        </>
+                      ) : (
+                        <button onClick={() => setTrocandoAtendente(true)}
+                          className="text-[11px] flex items-center gap-1" style={{ color: '#8f877f' }}>
+                          Assinando como <strong style={{ color: '#5b4fcf' }}>{atendente}</strong> · trocar
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {/* ── Formatar e emoji ──────────────────────────────────
                       O WhatsApp não tem botão de formatar: ele lê *asterisco*
                       como negrito. Quem não sabe disso manda tudo liso; quem
@@ -1066,7 +1141,7 @@ export default function CrmPage() {
                         const m = texto.trim().match(/^\/(\S+)$/)
                         const pronta = m && modelos.find(x =>
                           String(x.atalho || '').toLowerCase() === m[1].toLowerCase())
-                        if (pronta) { setTexto(pronta.texto); return }
+                        if (pronta) { usarModelo(pronta); return }
                         enviar()
                       }}
                       placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"

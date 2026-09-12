@@ -118,10 +118,35 @@ export default function ConfigCrmPage() {
                 <Save size={13} />{salvando === 'modelos' ? 'Salvando' : 'Salvar'}
               </button>
             </div>
-            <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
+            <p className="text-[12px] mb-2" style={{ color: '#8f877f' }}>
               Aparecem como botões acima do campo de resposta. Use colchetes para o que muda
               a cada cliente — [dia], [hora], [valor] — para quem responde lembrar de trocar.
             </p>
+
+            {/* As duas peças que o sistema preenche sozinho. Precisam estar
+                ditas aqui, com o aviso de não traduzir nem reescrever: uma
+                chave alterada não dá erro nenhum — ela simplesmente vai para a
+                cliente escrita como está. */}
+            <div className="rounded-xl p-3 mb-4" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+              <p className="text-[12px] font-bold mb-1" style={{ color: '#9a6b12' }}>
+                Duas coisas o sistema preenche sozinho
+              </p>
+              <p className="text-[12px] leading-relaxed" style={{ color: '#6b6860' }}>
+                <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4 }}>{'{cliente}'}</code>{' '}
+                vira o primeiro nome de quem está do outro lado. Se o contato ainda não
+                tem nome, some sem deixar buraco: <em>“Olá {'{cliente}'}, tudo bem?”</em> sai
+                como <em>“Olá, tudo bem?”</em>.
+                <br />
+                <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4 }}>{'{atendente}'}</code>{' '}
+                vira o nome de quem está na recepção. A lista sai do cadastro de
+                Profissionais, cargo <strong>Recepcionista</strong> — quem entra e sai da
+                equipe é atualizado lá, e não aqui.
+                <br />
+                <strong style={{ color: '#9a6b12' }}>Escreva as duas exatamente assim</strong>, com as
+                chaves e em minúsculas. Trocada ou traduzida, ela não dá erro: vai para a
+                cliente escrita do jeito que estiver.
+              </p>
+            </div>
 
             {modelos.length === 0 && (
               <p className="text-[12.5px]" style={{ color: '#8f877f' }}>Nenhuma mensagem. Clique em Nova.</p>

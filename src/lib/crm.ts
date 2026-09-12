@@ -271,9 +271,40 @@ export const ORIGENS_PADRAO = [
   'Não sei',
 ]
 
+// ── As duas peças que a mensagem pronta preenche sozinha ────────────────────
+//
+// `{cliente}`   o primeiro nome de quem está do outro lado
+// `{atendente}` quem da recepção está escrevendo
+//
+// Escrever "Olá Germana" à mão cem vezes por dia termina em "Olá Mariana" para
+// a Germana -- e um nome trocado na primeira frase custa mais do que a
+// mensagem inteira vale.
+//
+// Quando o nome da cliente não existe, a frase tem que continuar lendo bem:
+// "Olá {cliente}, tudo bem?" não pode virar "Olá , tudo bem?". Por isso a
+// substituição limpa espaço solto e vírgula órfã depois de trocar.
+export const ATALHOS_MENSAGEM = ['{cliente}', '{atendente}'] as const
+
+export function preencherMensagem(
+  texto: string,
+  dados: { cliente?: string | null; atendente?: string | null },
+): string {
+  // Só o primeiro nome: "Olá Maria Aparecida da Silva, tudo bem?" soa a
+  // cadastro, não a conversa.
+  const primeiro = (n?: string | null) => String(n || '').trim().split(/\s+/)[0] || ''
+  return String(texto || '')
+    .replace(/\{cliente\}/gi, primeiro(dados.cliente))
+    .replace(/\{atendente\}/gi, primeiro(dados.atendente))
+    // "Olá , tudo bem?" → "Olá, tudo bem?"
+    .replace(/[ \t]+([,.!?;:])/g, '$1')
+    // espaço dobrado que sobrou do lugar do nome
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+$/gm, '')
+}
+
 /** Mensagens prontas de fábrica. Sem dado de salão nenhum — só o esqueleto. */
 export const MODELOS_PADRAO = [
-  { nome: 'Boas-vindas', atalho: 'oi', texto: 'Oi! Que bom te ver por aqui. Me conta o que você tem vontade de fazer que eu te ajudo.' },
+  { nome: 'Boas-vindas', atalho: 'oi', texto: 'Olá {cliente}, tudo bem?\nMeu nome é {atendente}, sou da recepção e vou cuidar do seu agendamento.' },
   { nome: 'Enviar horários', atalho: 'horarios', texto: 'Tenho [dia] às [hora] e [dia] às [hora]. Qual fica melhor para você?' },
   { nome: 'Responder preço', atalho: 'preco', texto: 'Começa em R$ [valor]. O valor muda pelo comprimento e pelo estado do fio, por isso a gente avalia antes — assim você não tem surpresa na hora de pagar.' },
   { nome: 'Retomar contato', atalho: 'retomar', texto: 'Passei para avisar que consegui um encaixe [dia] às [hora]. Quer que eu segure para você?' },

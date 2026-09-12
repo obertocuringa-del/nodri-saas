@@ -97,13 +97,25 @@ export async function GET() {
   const desdeSinal = canal.visto_em ? (Date.now() - new Date(canal.visto_em).getTime()) / 1000 : null
   canal.ponte_viva = desdeSinal !== null && desdeSinal < 120
 
+  // Quem da recepcao pode assinar a mensagem. Sai do cadastro de
+  // profissionais, cargo "Recepcionista" -- lista que o salao ja mantem, em
+  // vez de uma segunda lista para alguem esquecer de atualizar.
+  const { data: profs } = await supabaseAdmin
+    .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento')
+    .eq('salao_id', sess!.salaoId).limit(500)
+  const atendentes = (profs || [])
+    .filter((p: any) => p.ativo !== false && !p.is_departamento && /recep/i.test(String(p.cargo || '')))
+    .map((p: any) => ({ id: p.id, nome: p.apelido || p.nome_completo || '' }))
+    .filter((p: any) => p.nome)
+    .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
   // Os botoes da faixa, como o salao deixou. Ver src/lib/crmEstados.ts.
   const { data: estRow } = await supabaseAdmin
     .from('salao_config').select('valor')
     .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
   const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
 
-  return NextResponse.json({ canal, foraDoAr, estados, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  return NextResponse.json({ canal, foraDoAr, estados, atendentes, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
 }
 
 /** "Já conferi": apaga o aviso de que a ponte ficou fora do ar. */
