@@ -10,8 +10,20 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle, Smile } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
+
+// Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
+// em lugar nenhum (ícone aqui é lucide); isto aqui é conteúdo de mensagem,
+// escrito por gente para uma cliente, onde um "obrigada 😊" muda o tom.
+const EMOJIS = [
+  '😊','😄','😁','🥰','😍','🤩','😉','🙂','😂','🥳',
+  '😢','😮','🤔','😅','🙈','😴','🥺','😘','🤗','😎',
+  '👍','👏','🙏','💪','👋','🤝','✌️','🫶','💅','💇‍♀️',
+  '❤️','💜','💖','✨','🌟','🔥','🎉','🎁','💐','🌸',
+  '📅','⏰','📍','💰','✅','❌','⚠️','📸','💬','☕',
+] as const
+
 import { useIsMobile } from '@/lib/useIsMobile'
 import {
   ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
@@ -67,6 +79,12 @@ export default function CrmPage() {
   const [anexando, setAnexando] = useState(false)
   const [citando, setCitando] = useState<Mensagem | null>(null)
   const escolherArquivo = useRef<HTMLInputElement>(null)
+  const areaTexto = useRef<HTMLTextAreaElement>(null)
+  // O que já foi clicado na tabela de preços e está escrito na resposta. Serve
+  // para o item SUMIR da lista: quem monta "corte + escova + hidratação" no
+  // clique perde a conta de onde parou, e manda o mesmo serviço duas vezes.
+  const [inseridos, setInseridos] = useState<string[]>([])
+  const [emojisAberto, setEmojisAberto] = useState(false)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -101,7 +119,7 @@ export default function CrmPage() {
   }
 
   async function abrirConversa(c: Conversa) {
-    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null)
+    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null); setInseridos([]); setEmojisAberto(false)
     try {
       // Assumir primeiro: a trava vale desde o instante em que a pessoa abre,
       // não depois que as mensagens carregam.
@@ -349,7 +367,7 @@ export default function CrmPage() {
     }
     const citadaAgora = citando?.id || null
 
-    setTexto(''); setCitando(null)
+    setTexto(''); setCitando(null); setInseridos([]); setEmojisAberto(false)
     setMensagens(atual => [...atual, provisorio])
     setEnviando(true)
 
@@ -461,8 +479,70 @@ export default function CrmPage() {
   // Acrescenta uma linha ao que ja esta escrito, em vez de substituir: a
   // recepcao monta "corte 80, escova 60" clicando, que e como ela responde
   // de verdade.
-  function inserirNoTexto(linha: string) {
-    setTexto(t => (t.trim() ? t.replace(/\s+$/, '') + '\n' + linha : linha))
+  // Linha em branco entre um item e outro. Dez serviços colados viram um
+  // parágrafo que a cliente não lê -- e é no WhatsApp dela que isso aparece,
+  // onde não dá para consertar depois de enviado.
+  function inserirNoTexto(linha: string, chave?: string) {
+    setTexto(t => (t.trim() ? t.replace(/\s+$/, '') + '\n\n' + linha : linha))
+    if (chave) setInseridos(a => (a.includes(chave) ? a : [...a, chave]))
+    // O foco volta para onde a pessoa escreve. Sem isto ela clica em cinco
+    // serviços e precisa achar o campo de texto de novo para continuar.
+    setTimeout(() => areaTexto.current?.focus(), 0)
+  }
+
+  // ── Negrito e itálico do WhatsApp ─────────────────────────────────────────
+  //
+  // O WhatsApp não tem botão de formatar: ele lê *asterisco* como negrito e
+  // _sublinhado_ como itálico. Quem não sabe disso escreve sem formatar, e
+  // quem sabe erra o lado do símbolo. Aqui a pessoa seleciona e clica.
+  //
+  // Sem seleção, insere o par e deixa o cursor no meio, que é o que acontece
+  // em qualquer editor.
+  function envolver(marca: string) {
+    const el = areaTexto.current
+    if (!el) return
+    const ini = el.selectionStart ?? 0
+    const fim = el.selectionEnd ?? 0
+    const antes = texto.slice(0, ini)
+    const meio = texto.slice(ini, fim)
+    const depois = texto.slice(fim)
+    // Já estava marcado? Então o clique DESMARCA -- é o que a pessoa espera
+    // de um botão de negrito, e sem isso não há como desfazer sem apagar.
+    if (meio && antes.endsWith(marca) && depois.startsWith(marca)) {
+      const novo = antes.slice(0, -marca.length) + meio + depois.slice(marca.length)
+      setTexto(novo)
+      setTimeout(() => {
+        el.focus()
+        el.setSelectionRange(ini - marca.length, fim - marca.length)
+      }, 0)
+      return
+    }
+    setTexto(antes + marca + meio + marca + depois)
+    setTimeout(() => {
+      el.focus()
+      el.setSelectionRange(ini + marca.length, fim + marca.length)
+    }, 0)
+  }
+
+  // O campo cresce com o texto. Preso em duas linhas, a recepção escrevia uma
+  // resposta de seis linhas enxergando duas -- e só via o erro de digitação
+  // depois de a mensagem já estar no WhatsApp da cliente.
+  useEffect(() => {
+    const el = areaTexto.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(Math.max(el.scrollHeight, 78), 320) + 'px'
+  }, [texto, aberta])
+
+  function inserirEmoji(e: string) {
+    const el = areaTexto.current
+    const ini = el?.selectionStart ?? texto.length
+    const fim = el?.selectionEnd ?? texto.length
+    setTexto(texto.slice(0, ini) + e + texto.slice(fim))
+    setTimeout(() => {
+      el?.focus()
+      el?.setSelectionRange(ini + e.length, ini + e.length)
+    }, 0)
   }
 
   async function marcarNaoLida() {
@@ -573,7 +653,7 @@ export default function CrmPage() {
             {/* Com nome, nao so um icone: a engrenagem sozinha ninguem acha --
                 e nao achou mesmo. */}
             <a href="/salon/crm/painel" title="Painel: conversao, motivos de perda e tempo de resposta"
-              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
               style={{ background: '#e6f1eb', color: '#2f6b4f' }}>
               <BarChart3 size={13} /> Painel
             </a>
@@ -793,18 +873,58 @@ export default function CrmPage() {
                         className="p-0.5" style={{ color: '#8f877f' }}><X size={13} /></button>
                     </div>
                   )}
-                  <PainelPrecos onInserir={inserirNoTexto} />
+                  <PainelPrecos onInserir={inserirNoTexto} inseridos={inseridos} />
                   {modelos.length > 0 && (
                     <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
                       {modelos.map(m => (
                         <button key={m.id} onClick={() => setTexto(m.texto)} title={m.texto}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0"
+                          className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94] transition duration-100 hover:brightness-95 active:scale-[.94]"
                           style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
                           {m.nome}
                         </button>
                       ))}
                     </div>
                   )}
+                  {/* ── Formatar e emoji ──────────────────────────────────
+                      O WhatsApp não tem botão de formatar: ele lê *asterisco*
+                      como negrito. Quem não sabe disso manda tudo liso; quem
+                      sabe erra o símbolo. Aqui seleciona e clica.
+
+                      Não sequestrei o botão direito de propósito: no campo de
+                      texto ele é o Colar, e tirar o Colar da recepção custaria
+                      mais do que o menu resolveria. Ctrl+B e Ctrl+I também
+                      funcionam. */}
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <BotaoFormato titulo="Negrito (Ctrl+B)" onClick={() => envolver('*')}>
+                      <span className="font-black">N</span>
+                    </BotaoFormato>
+                    <BotaoFormato titulo="Itálico (Ctrl+I)" onClick={() => envolver('_')}>
+                      <span className="italic font-serif">I</span>
+                    </BotaoFormato>
+                    <BotaoFormato titulo="Tachado" onClick={() => envolver('~')}>
+                      <span className="line-through">S</span>
+                    </BotaoFormato>
+                    <BotaoFormato titulo="Carinhas" ativo={emojisAberto}
+                      onClick={() => setEmojisAberto(v => !v)}>
+                      <Smile size={14} />
+                    </BotaoFormato>
+                    <span className="text-[10px] ml-1" style={{ color: '#a9a29a' }}>
+                      selecione o texto e clique
+                    </span>
+                  </div>
+
+                  {emojisAberto && (
+                    <div className="mb-2 p-2 rounded-xl flex flex-wrap gap-0.5 max-h-32 overflow-y-auto"
+                      style={{ background: '#fdfcfa', border: '1px solid #e8e6e0' }}>
+                      {EMOJIS.map(e => (
+                        <button key={e} onClick={() => inserirEmoji(e)} title={e}
+                          className="w-7 h-7 rounded-lg text-[16px] leading-none transition hover:bg-[#f1eefc] active:scale-90">
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 items-end">
                     <input ref={escolherArquivo} type="file" className="hidden"
                       onChange={e => { const f = e.target.files?.[0]; if (f) anexar(f); e.target.value = '' }} />
@@ -822,8 +942,14 @@ export default function CrmPage() {
                         : { background: '#faf9f7', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                       {gravando ? <Square size={15} /> : <Mic size={15} />}
                     </button>
-                    <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2}
+                    <textarea ref={areaTexto} value={texto} onChange={e => setTexto(e.target.value)} rows={3}
                       onKeyDown={e => {
+                        if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+                          e.preventDefault(); envolver('*'); return
+                        }
+                        if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+                          e.preventDefault(); envolver('_'); return
+                        }
                         if (e.key !== 'Enter' || e.shiftKey) return
                         e.preventDefault()
                         // Atalho: "/oi" vira a mensagem de boas-vindas inteira.
@@ -837,8 +963,8 @@ export default function CrmPage() {
                         enviar()
                       }}
                       placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
-                      className="flex-1 px-3.5 py-3 rounded-xl text-[13.5px] resize-none focus:outline-none"
-                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
+                      className="flex-1 px-3.5 py-3 rounded-xl text-[13.5px] resize-none focus:outline-none leading-relaxed"
+                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a', minHeight: 78, maxHeight: 320 }} />
                     <button onClick={() => enviar()} disabled={!texto.trim() || anexando}
                       className="px-4 py-3 rounded-xl font-bold text-[13px] flex items-center gap-1.5 disabled:opacity-40"
                       style={{ background: '#5b4fcf', color: '#fff' }}>
@@ -1160,7 +1286,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           <div className="flex gap-1.5 flex-wrap">
             {(desmarques || []).map((m: any) => (
               <button key={m.id} onClick={() => onEstado('desmarcou', { motivo_perda: m.nome })}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
                 style={{ background: '#fff', border: '1px solid #efd4dd', color: '#a33c5b' }}>
                 {m.nome}
               </button>
@@ -1176,7 +1302,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           <div className="flex gap-1.5 flex-wrap">
             {motivos.map((m: any) => (
               <button key={m.id} onClick={() => onEstado('sem_conversao', { motivo_perda: m.nome })}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
                 style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                 {m.nome}
               </button>
@@ -1399,7 +1525,7 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: any }) {
 //
 // Os valores vêm do catálogo do próprio NODRI. Mexeu lá, mudou aqui no mesmo
 // instante — não existe segunda lista para alguém esquecer de atualizar.
-function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
+function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, chave?: string) => void; inseridos: string[] }) {
   const [aberto, setAberto] = useState(false)
   const [dados, setDados] = useState<any>(null)
   const [lado, setLado] = useState<'servicos' | 'produtos'>('servicos')
@@ -1412,7 +1538,15 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
       .then(d => setDados(d || { servicos: [], produtos: [] })).catch(() => {})
   }, [aberto, dados])
 
-  const grupos: any[] = (dados?.[lado] || [])
+  // O que já foi clicado sai da lista. Montando "corte + escova + hidratação"
+  // no clique, a pessoa perde a conta de onde parou e manda o mesmo serviço
+  // duas vezes -- e quem recebe a conta repetida é a cliente.
+  const jaFoi = useMemo(() => new Set(inseridos), [inseridos])
+  const chaveDe = (grupoNome: string, it: any) => grupoNome + '|' + it.nome
+
+  const grupos: any[] = useMemo(() => (dados?.[lado] || [])
+    .map((g: any) => ({ ...g, itens: g.itens.filter((it: any) => !jaFoi.has(chaveDe(g.grupo, it))) }))
+    .filter((g: any) => g.itens.length > 0), [dados, lado, jaFoi])
   const atual = grupos.find(g => g.grupo === grupo) || null
 
   const achados = useMemo(() => {
@@ -1459,12 +1593,12 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
     <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fdfcfa', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-1.5 mb-2">
         <button onClick={() => { setLado('servicos'); setGrupo('') }}
-          className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
           style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
           Serviço
         </button>
         <button onClick={() => { setLado('produtos'); setGrupo('') }}
-          className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
           style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
           Produto
         </button>
@@ -1493,7 +1627,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
           {achados.map((it, i) => (
             <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
               texto={rotulo(it)}
-              onClick={() => onInserir(linha(it))} />
+              onClick={() => onInserir(linha(it), (it.grupo || atual?.grupo || '') + '|' + it.nome)} />
           ))}
         </div>
       )}
@@ -1502,7 +1636,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
         <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
           {grupos.map(g => (
             <button key={g.grupo} onClick={() => setGrupo(g.grupo)}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-bold"
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
               style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0' }}>
               {g.grupo} <span style={{ color: '#8f877f' }}>({g.itens.length})</span>
             </button>
@@ -1520,7 +1654,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
             {atual.itens.map((it: any, i: number) => (
                 <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
                 texto={rotulo(it)}
-                onClick={() => onInserir(linha(it))} />
+                onClick={() => onInserir(linha(it), (it.grupo || atual?.grupo || '') + '|' + it.nome)} />
             ))}
           </div>
         </>
@@ -1541,11 +1675,23 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
 // A observação aparece no próprio botão, em cinza. Quem clica precisa ver o
 // que vai junto ANTES de inserir -- descobrir a ressalva depois, já na caixa
 // de texto, é descobrir tarde.
+function BotaoFormato({ titulo, ativo, onClick, children }: { titulo: string; ativo?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} title={titulo} type="button"
+      className="w-7 h-7 rounded-lg text-[12px] flex items-center justify-center transition active:scale-90"
+      style={ativo
+        ? { background: '#5b4fcf', color: '#fff', border: '1px solid #5b4fcf' }
+        : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
+      {children}
+    </button>
+  )
+}
+
 function BotaoPreco({ texto, obs, semPreco, onClick }: { texto: string; obs?: string | null; semPreco?: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} disabled={semPreco}
       title={semPreco ? 'Cadastre o preço em Serviços para poder inserir' : undefined}
-      className="px-2.5 py-1 rounded-lg text-[11px] text-left disabled:cursor-not-allowed"
+      className="px-2.5 py-1 rounded-lg text-[11px] text-left transition duration-100 enabled:hover:border-[#5b4fcf] enabled:hover:bg-[#f7f5ff] enabled:active:scale-[.94] disabled:cursor-not-allowed"
       style={{
         background: semPreco ? '#faf9f7' : '#fff',
         color: semPreco ? '#8f877f' : '#1a1a1a',
