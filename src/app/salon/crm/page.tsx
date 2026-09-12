@@ -1035,9 +1035,13 @@ export default function CrmPage() {
                       cliques por hora. Agora abre POR CIMA, só quando a
                       mensagem escolhida precisa de assinatura, e fecha ao
                       escolher. Nada de espaço permanente. */}
+                  {/* Sem `absolute`: ele se posicionava contra um ancestral lá
+                      em cima da página e abria em top -95, fora da tela. No
+                      fluxo normal, logo acima da caixa, ele sempre aparece --
+                      e some assim que alguém escolhe, então não rouba altura. */}
                   {modeloPendente && atendentes.length > 0 && (
-                    <div className="absolute left-0 right-0 bottom-full mb-2 mx-4 z-40 p-3 rounded-xl"
-                      style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 10px 30px rgba(26,22,20,.14)' }}>
+                    <div className="mb-2 p-3 rounded-xl"
+                      style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 6px 20px rgba(26,22,20,.10)' }}>
                       <div className="flex items-center gap-2 mb-2">
                         <p className="text-[12px] font-bold flex-1" style={{ color: '#1a1a1a' }}>
                           Quem está atendendo?
