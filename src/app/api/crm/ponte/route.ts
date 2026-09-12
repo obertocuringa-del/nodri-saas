@@ -772,8 +772,21 @@ export async function POST(req: NextRequest) {
     const outras = (recentes || []).filter((m: any) => m.conversa_id && m.conversa_id !== conversa?.id)
     irmas = outras.filter((m: any) => m.texto === texto)
 
-    // Mesmo texto para outra pessoa: é disparo já na segunda.
-    if (irmas.length >= 1) emMassa = true
+    // ── Quem está esperando resposta exige prova mais forte ────────────────
+    //
+    // Caso real, PAULA, 12/09/2026: ela perguntou por horário e a recepção
+    // respondeu "Tenho apenas esse horário com as duas". Resposta legítima --
+    // mas a mesma frase saiu para outra cliente na mesma hora, porque é o tipo
+    // de coisa que se repete naturalmente num dia de agenda apertada. Marcada
+    // como disparo, ela ficou presa em "Preciso agir" mesmo depois de
+    // respondida.
+    //
+    // Duas pessoas recebendo a mesma frase é coincidência de expediente.
+    // Quatro é campanha. Então, para conversa em "Preciso agir", o mínimo sobe
+    // -- e fora dela o antigo continua, que é onde ele acerta.
+    const esperandoResposta = conversa?.estado === 'acao_necessaria'
+    const minimoIrmas = esperandoResposta ? 3 : 1
+    if (irmas.length >= minimoIrmas) emMassa = true
 
     // Personalizado: tira o nome e compara o molde. O nome da cliente é o que
     // o salão troca a cada envio -- vem entre asteriscos, ou é a primeira
@@ -782,7 +795,7 @@ export async function POST(req: NextRequest) {
       const molde = moldeDaMensagem(texto)
       if (molde.length >= 8) {
         const mesmoMolde = outras.filter((m: any) => moldeDaMensagem(m.texto || '') === molde)
-        if (mesmoMolde.length >= 1) { emMassa = true; irmas = mesmoMolde }
+        if (mesmoMolde.length >= minimoIrmas) { emMassa = true; irmas = mesmoMolde }
       }
     }
 

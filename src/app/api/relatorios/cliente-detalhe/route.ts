@@ -57,11 +57,28 @@ export async function GET(req: NextRequest) {
   let casouPor: 'telefone' | 'nome' | null = null
 
   if (celular.length >= 8) {
+    // ── Todas as grafias do mesmo número ──────────────────────────────────
+    //
+    // Procurar só o número como veio do WhatsApp não acha quem está gravado
+    // de outro jeito na planilha do salão. O Marcos é o caso: no WhatsApp ele
+    // é 61 9358-7833 e na base está 61 9 9358-7833, com o nono dígito. Um
+    // `ilike` com o número cru não casa -- e o painel dele, que sempre
+    // apareceu, ficou zerado do nada.
+    //
+    // É a mesma lista de grafias que o relógio já usava para casar contato
+    // com cliente. Ela precisava estar aqui também.
+    const so = celular.replace(/\D+/g, '')
+    const sem55 = so.startsWith('55') ? so.slice(2) : so
+    const formas = new Set<string>([sem55])
+    if (sem55.length === 11 && sem55[2] === '9') formas.add(sem55.slice(0, 2) + sem55.slice(3))
+    if (sem55.length === 10) formas.add(sem55.slice(0, 2) + '9' + sem55.slice(2))
+
+    const filtro = [...formas].map(f => `celular.ilike.%${f}%`).join(',')
     const r = await supabaseAdmin
       .from('atendimentos_raw')
       .select('servico, data_comanda, profissional, qtd, valor, total')
       .eq('salao_id', p.salaoId)
-      .ilike('celular', `%${celular}%`)
+      .or(filtro)
       .limit(4000)
     if (r.data?.length) { atend = r.data; casouPor = 'telefone' }
   }
