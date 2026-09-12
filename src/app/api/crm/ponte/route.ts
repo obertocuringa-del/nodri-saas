@@ -747,17 +747,45 @@ export async function POST(req: NextRequest) {
   // agir" — e a pergunta dela ficaria enterrada embaixo de um texto que não
   // era para ela.
   //
-  // Um disparo é reconhecido de dois jeitos: pela marca de lista de
-  // transmissão que o WhatsApp manda, e pelo texto idêntico saindo para mais
-  // de uma pessoa em poucos minutos (que é como o salão de fato dispara,
-  // copiando e colando). Quando é disparo, a mensagem é gravada e mostrada,
-  // mas NÃO mexe no estado da conversa: quem estava esperando continua
-  // esperando.
+  // ── O QUE SEPARA OS DOIS NÃO É O TEXTO ────────────────────────────────────
+  //
+  // Passei o dia tentando distinguir pelo texto -- igual, mesmo molde, ritmo --
+  // e cada regra errou de um jeito. A frase do dono resolveu:
+  //
+  //   "a mensagem padrão está lá dentro. Se eu mandar a mensagem padrão para
+  //    cinco pessoas em doze minutos ele já vai cair como lista. Não dá."
+  //
+  // Ele tem razão e o erro era meu na raiz: as mensagens prontas existem PARA
+  // serem repetidas. Cinco "Boas-vindas" em dez minutos é a recepção
+  // trabalhando, não campanha. Texto nunca ia separar isso.
+  //
+  // O que separa é OUTRA COISA, e é simples: a cliente falou aqui há pouco?
+  //
+  //   FALOU   -> o que o salão mandou é RESPOSTA. Sempre. Mesmo que a frase
+  //              seja idêntica à de outras dez conversas.
+  //   NÃO FALOU -> o salão está iniciando. Aí sim vale olhar se o mesmo texto
+  //              está saindo para muita gente ao mesmo tempo.
+  //
+  // Campanha vai para quem não pediu nada -- é o que campanha é. E resposta
+  // vai para quem perguntou. O sinal estava na conversa, não na frase.
   const JANELA_DISPARO_MIN = 15
+  const HORAS_FALOU_RECENTE = 48
   let emMassa = !!body?.em_massa
   let irmas: any[] = []
 
-  if (!daCliente && !emMassa && texto.trim().length > 0) {
+  // A cliente falou nesta conversa nas últimas 48h? Então tudo que o salão
+  // mandar aqui é resposta, e nenhuma regra de texto se aplica.
+  let falouRecente = false
+  if (!daCliente && conversa?.id) {
+    const desdeFala = new Date(Date.now() - HORAS_FALOU_RECENTE * 3600e3).toISOString()
+    const { count } = await supabaseAdmin
+      .from('crm_mensagens').select('id', { count: 'exact', head: true })
+      .eq('conversa_id', conversa.id).eq('direcao', 'entrada')
+      .gte('criado_em', desdeFala)
+    falouRecente = (count || 0) > 0
+  }
+
+  if (!daCliente && !emMassa && !falouRecente && texto.trim().length > 0) {
     const desde = new Date(Date.now() - JANELA_DISPARO_MIN * 60000).toISOString()
     // Traz TUDO que saiu na janela, não só o texto igual: o disparo do salão é
     // personalizado ("Olá *LUCIANA*, tudo bem?" / "Olá *Thatiana*, tudo bem?")
@@ -784,9 +812,9 @@ export async function POST(req: NextRequest) {
     // Duas pessoas recebendo a mesma frase é coincidência de expediente.
     // Quatro é campanha. Então, para conversa em "Preciso agir", o mínimo sobe
     // -- e fora dela o antigo continua, que é onde ele acerta.
-    const esperandoResposta = conversa?.estado === 'acao_necessaria'
-    const minimoIrmas = esperandoResposta ? 3 : 1
-    if (irmas.length >= minimoIrmas) emMassa = true
+    // Duas pessoas já bastam: aqui dentro ninguém falou com o salão nas
+    // últimas 48h, então texto repetido não é coincidência de expediente.
+    if (irmas.length >= 1) emMassa = true
 
     // Personalizado: tira o nome e compara o molde. O nome da cliente é o que
     // o salão troca a cada envio -- vem entre asteriscos, ou é a primeira
@@ -795,7 +823,7 @@ export async function POST(req: NextRequest) {
       const molde = moldeDaMensagem(texto)
       if (molde.length >= 8) {
         const mesmoMolde = outras.filter((m: any) => moldeDaMensagem(m.texto || '') === molde)
-        if (mesmoMolde.length >= minimoIrmas) { emMassa = true; irmas = mesmoMolde }
+        if (mesmoMolde.length >= 1) { emMassa = true; irmas = mesmoMolde }
       }
     }
 
@@ -825,7 +853,7 @@ export async function POST(req: NextRequest) {
     // quem está em Preciso agir, só o TEXTO decide: mesma frase ou mesmo molde
     // saindo para outras pessoas é disparo; qualquer outra coisa é resposta, e
     // resposta tira a conversa da fila.
-    if (!emMassa && conversa?.estado !== 'acao_necessaria') {
+    if (!emMassa) {
       const pessoas = new Set(outras.map((m: any) => m.conversa_id))
       if (pessoas.size >= 4) emMassa = true
     }
