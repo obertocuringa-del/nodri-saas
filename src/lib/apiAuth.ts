@@ -51,6 +51,30 @@ export async function bloquearEdicao(metodo: 'POST' | 'PUT' | 'DELETE' | 'PATCH'
   return false                                                            // sub comum: grava no que tem permissão
 }
 
+// ── O CRM é trabalho de recepção, não edição de cadastro ───────────────────
+//
+// `escritaBloqueadaSub()` deixava a recepção em somente leitura sempre que ela
+// estivesse em Modo Caixa -- e no CRM isso quer dizer não poder RESPONDER
+// cliente, que é a única coisa que a recepção faz ali. A tela abria e não
+// servia para nada.
+//
+// Aqui a régua é outra, e é a mesma do resto do sistema: responder, mudar a
+// conversa de pasta e anotar sobre a cliente são EXECUÇÃO, e Modo Caixa
+// sempre pôde executar. Quem tem a permissão `crm` trabalha inteiro.
+//
+// O que continua só do dono: conectar e desconectar o WhatsApp, e mexer nas
+// mensagens prontas, motivos e origens. Desconectar por engano deixa o salão
+// mudo, e não é uma tecla que a recepção precisa ter ao alcance.
+export async function crmBloqueado(): Promise<boolean> {
+  const s = await getSessao()
+  if (!s) return true
+  if (s.role === 'profissional') return true      // profissional nunca vê cliente de outro
+  if (s.role === 'sub') {
+    return !(Array.isArray(s.permissoes) && s.permissoes.includes('crm'))
+  }
+  return false                                     // dono e master: livres
+}
+
 // ── MODO CAIXA ──────────────────────────────────────────────────────────────
 // Sub-usuário marcado como "Modo Caixa" pode EXECUTAR e ADICIONAR, mas nunca
 // editar ou excluir o que já existe. A flag vive no array de permissões.

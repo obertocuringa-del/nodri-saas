@@ -17,6 +17,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'feedback_cliente', label: 'Feedback de Cliente' },
       { chave: 'feedback_prof', label: 'Feedback Profissional' },
       { chave: 'relatorios', label: 'Relatórios' },
+      { chave: 'crm', label: 'CRM · WhatsApp (responder cliente)' },
       { chave: 'calculadora', label: 'Calculadora de Custo' },
       { chave: 'academia', label: 'Academia' },
       { chave: 'checklist', label: 'Check List' },

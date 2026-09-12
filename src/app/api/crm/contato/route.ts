@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
+import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,8 +17,8 @@ export async function PATCH(req: NextRequest) {
   if (sess.role === 'profissional') {
     return NextResponse.json({ error: 'O CRM é do salão.' }, { status: 403 })
   }
-  if (await escritaBloqueadaSub()) {
-    return NextResponse.json({ error: 'Este acesso é somente leitura.' }, { status: 403 })
+  if (await crmBloqueado()) {
+    return NextResponse.json({ error: 'Este acesso não tem o CRM liberado. Peça ao dono em Usuários e Permissões.' }, { status: 403 })
   }
 
   const body = await req.json().catch(() => ({}))
