@@ -24,6 +24,15 @@ export interface DefEstado {
   naFila: boolean
   /** O relógio do SLA corre neste estado? */
   contaTempo: boolean
+  /**
+   * O que o BOTÃO diz.
+   *
+   * A etiqueta na conversa é um estado ("Agendado"); o botão é a ação de quem
+   * clica ("Agendou"). Não são o mesmo texto, e usar um no lugar do outro
+   * troca "Não fechou" por "Sem conversão" na faixa -- além de perder o prazo
+   * que o verbo carregava, como em "Pausar 7 dias".
+   */
+  acao?: string
   explica: string
 }
 
@@ -33,35 +42,43 @@ export const ESTADOS: DefEstado[] = [
     explica: 'A cliente falou por último. Alguém precisa responder.' },
   { chave: 'aguardando', rotulo: 'Aguardando cliente', cor: '#9A6B12', fundo: '#FBF2E0',
     naFila: false, contaTempo: false,
+    acao: 'Aguardando cliente',
     explica: 'O salão respondeu. A bola está com a cliente.' },
   // Promoção é espera de outra natureza: disparo para cem pessoas, em que o
   // silêncio é o normal e não um atendimento atrasado. Misturar com a espera
   // de uma conversa de verdade faz a fila de "Aguardando" perder o sentido.
   { chave: 'aguardando_promo', rotulo: 'Aguardando promoção', cor: '#7A5AF8', fundo: '#F1EEFC',
     naFila: false, contaTempo: false,
+    acao: 'Aguardando promoção',
     explica: 'Recebeu uma promoção e ainda não respondeu.' },
   { chave: 'follow_up', rotulo: 'Follow-up', cor: '#C2603A', fundo: '#FBEFE7',
     naFila: true,  contaTempo: false,
+    acao: 'Follow-up amanhã',
     explica: 'A cliente não respondeu no prazo. Vale retomar.' },
   { chave: 'pausada', rotulo: 'Em pausa', cor: '#5B4FCF', fundo: '#F1EEFC',
     naFila: false, contaTempo: false,
+    acao: 'Pausar 7 dias',
     explica: 'A cliente pediu para falar depois. Volta sozinha na data.' },
   { chave: 'agendado', rotulo: 'Agendado', cor: '#2F6B4F', fundo: '#E7F1E9',
     naFila: false, contaTempo: false,
+    acao: 'Agendou',
     explica: 'Virou horário marcado. Oportunidade ganha.' },
   // Agendado e confirmado são a mesma vitória em dois momentos. Separar os
   // dois é o que deixa a recepção saber de quem ainda falta ouvir "ok,
   // confirmado" — e é a diferença entre lembrar a cliente e ligar sem motivo.
   { chave: 'confirmado', rotulo: 'Confirmou', cor: '#1B5E3F', fundo: '#D9EDE1',
     naFila: false, contaTempo: false,
+    acao: 'Confirmou',
     explica: 'A cliente respondeu confirmando o horário.' },
   // Desmarque não é "não fechou": aqui houve horário e ele caiu. O motivo de
   // desistir depois de marcar é outro, e por isso a lista de motivos é outra.
   { chave: 'desmarcou', rotulo: 'Desmarcou', cor: '#A33C5B', fundo: '#FAE8EE',
     naFila: false, contaTempo: false,
+    acao: 'Desmarcou',
     explica: 'Tinha horário marcado e desmarcou, com o motivo registrado.' },
   { chave: 'sem_conversao', rotulo: 'Sem conversão', cor: '#6B6860', fundo: '#F0ECE7',
     naFila: false, contaTempo: false,
+    acao: 'Não fechou',
     explica: 'Fechada sem agendamento, com o motivo registrado.' },
 ]
 

@@ -22,6 +22,7 @@ export const CHAVE_ESTADOS = 'crm_estados'
 export interface AjusteEstado {
   /** chave do estado de fábrica que este ajuste altera */
   chave: string
+  /** o texto do BOTÃO. A etiqueta da conversa continua a de fábrica. */
   rotulo?: string
   oculto?: boolean
   ordem?: number
@@ -91,7 +92,9 @@ export function estadosVisiveis(cfg: ConfigEstados): DefEstado[] {
     .filter(e => !porChave.get(e.chave)?.oculto)
     .map((e, i) => ({
       ...e,
-      rotulo: porChave.get(e.chave)?.rotulo || e.rotulo,
+      // O salão renomeia o BOTÃO; a etiqueta do estado continua a de fábrica,
+      // senão a conversa antiga passaria a se chamar outra coisa.
+      acao: porChave.get(e.chave)?.rotulo || e.acao || e.rotulo,
       ordem: porChave.get(e.chave)?.ordem ?? i,
     }))
 

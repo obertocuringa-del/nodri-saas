@@ -1428,14 +1428,14 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
               return (
                 <BotaoAcao key={e.chave} onClick={() => setDesmarqueAberto(!desmarqueAberto)}
                   cor={e.cor} fundo={e.fundo}
-                  icone={desmarqueAberto ? <X size={12} /> : undefined} texto={e.rotulo} />
+                  icone={desmarqueAberto ? <X size={12} /> : undefined} texto={e.acao || e.rotulo} />
               )
             }
             if (e.chave === 'sem_conversao') {
               return (
                 <BotaoAcao key={e.chave} onClick={() => setFecharAberto(!fecharAberto)}
                   cor={e.cor} fundo={e.fundo}
-                  icone={fecharAberto ? <X size={12} /> : undefined} texto={e.rotulo} />
+                  icone={fecharAberto ? <X size={12} /> : undefined} texto={e.acao || e.rotulo} />
               )
             }
             // Follow-up e Pausa nascem com prazo: sem data, "volto depois"
@@ -1450,7 +1450,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
                 : undefined
             return (
               <BotaoAcao key={e.chave} onClick={() => onEstado(e.chave, extra)}
-                cor={e.cor} fundo={e.fundo} icone={icone} texto={e.rotulo} />
+                cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} />
             )
           })}
         </div>
