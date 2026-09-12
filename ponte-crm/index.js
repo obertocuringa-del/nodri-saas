@@ -64,6 +64,12 @@ const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '
 /** Sessões vivas, uma por salão. */
 const sessoes = new Map()
 
+// Salão que pediu o CRM e não escaneou: até quando não insistir.
+// salaoId -> instante (ms) em que pode tentar de novo.
+const semNinguem = new Map()
+const QR_ANTES_DE_DESISTIR = Number(process.env.CRM_QR_MAX || 6)
+const ESPERA_SEM_QR = Number(process.env.CRM_QR_ESPERA_MS || 15 * 60000)
+
 // Quantas mensagens enviadas ficam guardadas para poder reenviar. O pedido de
 // reenvio chega minutos depois, no máximo horas -- 300 cobre um dia inteiro de
 // recepção com folga, e é memória de sobra (só o conteúdo, não a mídia).
@@ -457,6 +463,30 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     const { connection, lastDisconnect, qr } = u
 
     if (qr) {
+      // ── Quem nunca escaneia não pode ficar pedindo QR a noite inteira ─────
+      //
+      // Um salão que clicou em "Iniciar CRM" e nunca leu o código fica com a
+      // linha em `crm_canais`, e a ponte reabria a sessão para ele a cada 20
+      // segundos, para sempre. Em 11/09/2026 foram 989 QRs em tres horas de um
+      // salão sem ninguém do outro lado -- tudo saindo do MESMO IP de onde sai
+      // a conexão que está funcionando. Isso é exatamente o comportamento que
+      // faz o WhatsApp desconfiar do endereço.
+      //
+      // Depois de QR_ANTES_DE_DESISTIR o socket fecha e o salão volta para a
+      // fila normal: a próxima volta reabre e ele ganha códigos novos. Quem
+      // está de fato na frente da tela escaneia muito antes disso.
+      registroSessao.qrs = (registroSessao.qrs || 0) + 1
+      if (registroSessao.qrs > QR_ANTES_DE_DESISTIR) {
+        registro(salaoId, `${QR_ANTES_DE_DESISTIR} códigos sem ninguém escanear — parando por ${Math.round(ESPERA_SEM_QR / 60000)} min`)
+        // Encerra o socket SEM apagar nada. fecharSessao() serve para quando o
+        // salão desconecta de verdade: ela faz logout e apaga a pasta de
+        // credenciais. Aqui é só uma pausa.
+        registroSessao.fechando = true
+        try { sock.end() } catch {}
+        sessoes.delete(salaoId)
+        semNinguem.set(salaoId, Date.now() + ESPERA_SEM_QR)
+        return
+      }
       // O NODRI mostra a imagem direto na tela, então a ponte já manda pronta.
       const imagem = await QRCode.toDataURL(qr, { margin: 1, width: 320 }).catch(() => null)
       if (imagem) {
@@ -667,10 +697,21 @@ async function despacharFila(salaoId) {
 
   for (const msg of fila) {
     try {
-      // Endereco de envio: telefone quando existe, senao o proprio LID --
-      // que e um endereco valido do WhatsApp e o unico que temos para quem
-      // veio do historico de uma conta nova.
-      const jid = msg.telefone ? `${msg.telefone}@s.whatsapp.net` : msg.lid
+      // ── O LID vem primeiro; o telefone é o reserva ───────────────────────
+      //
+      // Era o contrário, e o contrário era a causa do "Aguardando esta
+      // mensagem" na tela da cliente. Medido no log de 11/09/2026: depois de
+      // a ponte passar a responder o pedido de reenvio, doze destinatários
+      // receberam sem um único pedido -- todos endereçados por LID. O ÚNICO
+      // endereçado por telefone (556185081274) pediu reenvio em TODAS as
+      // mensagens, sempre em menos de um segundo, e nem o reenvio abria,
+      // porque ele saía pelo mesmo endereço errado.
+      //
+      // A conta do salão é das novas, que o WhatsApp endereça por LID. Falar
+      // com ela pelo telefone monta a sessão com a identidade errada e o
+      // aparelho não consegue decifrar. O telefone continua aqui para o
+      // contato que só tem número e nunca escreveu -- aí não há LID para usar.
+      const jid = msg.lid || (msg.telefone ? `${msg.telefone}@s.whatsapp.net` : null)
       if (!jid) { registro(salaoId, 'mensagem sem endereço de destino — pulada'); continue }
       // Citacao: o WhatsApp so precisa da chave da mensagem original e de um
       // texto para o balaozinho. A ponte nao guarda historico, entao monta o
@@ -740,6 +781,10 @@ async function volta() {
   // Abre o que falta
   for (const c of canais) {
     if (!sessoes.has(c.salao_id)) {
+      // Ainda de castigo por ninguém ter escaneado. Ver QR_ANTES_DE_DESISTIR.
+      const espera = semNinguem.get(c.salao_id)
+      if (espera && Date.now() < espera) continue
+      semNinguem.delete(c.salao_id)
       registro(c.salao_id, 'abrindo sessão')
       abrirSessao(c.salao_id).catch(e => {
         registro(c.salao_id, 'falha ao abrir:', e.message)
