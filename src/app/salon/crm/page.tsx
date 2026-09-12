@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 
 // Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
@@ -1352,8 +1352,10 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
             cor="#5b4fcf" fundo="#f1eefc" texto="Pausar 7 dias" />
           <BotaoAcao onClick={() => setFecharAberto(!fecharAberto)} cor="#6b6860" fundo="#f0ece7"
             icone={fecharAberto ? <X size={12} /> : undefined} texto="Não fechou" />
-          <BotaoAcao onClick={onNaoLida} cor="#6b6860" fundo="#f0ece7"
-            icone={<Eye size={12} />} texto="Não li ainda" />
+          {/* "Não li ainda" saiu a pedido do salão. A função continua inteira
+              (onNaoLida, e a rota que devolve a conversa para a fila): quem
+              tirou o botão pode querer de volta, e apagar o caminho junto com
+              o atalho custaria muito mais do que deixá-lo quieto aqui. */}
         </div>
       </div>
 
