@@ -668,6 +668,24 @@ export default function CrmPage() {
             </p>
           </div>
 
+          {/* Na MESMA linha do título, e não numa faixa só dela: uma linha
+              inteira para um botão é altura que sai da conversa. */}
+          {conectado && (
+            <button onClick={() => setAbasAbertas(v => !v)}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
+              style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25', minWidth: 190 }}>
+              <span className="flex-1 text-left truncate">{rotuloDoFiltro}</span>
+              {filtro !== 'fila' && contagem.fila > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] flex-shrink-0"
+                  style={{ background: '#FBEAE6', color: '#b4322a' }}>
+                  {contagem.fila} esperando
+                </span>
+              )}
+              <ChevronDown size={14} className="flex-shrink-0"
+                style={{ transform: abasAbertas ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+            </button>
+          )}
+
           <div className="flex-1" />
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -689,10 +707,6 @@ export default function CrmPage() {
           </div>
         </div>
 
-        {/* Linha propria para as abas. Tentei encaixa-las na linha do titulo e,
-            numa janela estreita, "Preciso agir (27)" virou tres linhas de uma
-            palavra cada. Linha inteira para elas resolve em qualquer largura, e
-            so a linha de cima precisa desviar da busca global. */}
         {/* O numero conectado mudou e as conversas continuam sendo do
             anterior. Nao da para "atualizar": o WhatsApp so entrega historico
             no pareamento. Entao a tela diz isso e oferece o unico caminho que
@@ -711,34 +725,6 @@ export default function CrmPage() {
               className="px-3 py-2 rounded-lg text-[12px] font-bold disabled:opacity-50"
               style={{ background: '#9a6b12', color: '#fff' }}>
               {recomecando ? 'Limpando...' : 'Limpar e escanear de novo'}
-            </button>
-          </div>
-        )}
-
-        {/* ── A faixa de abas vira um botão ───────────────────────────────────
-            Nove abas em linha ocupavam uma faixa inteira da altura, e o que
-            encolhia era a conversa e a caixa de escrever -- as duas coisas em
-            que a recepção passa o dia. Agora a faixa só aparece quando alguém
-            pede, e aparece POR CIMA: abrir não pode empurrar a conversa para
-            baixo, senão troca um incômodo por outro.
-
-            O que fica sempre à vista é a aba em que a pessoa está e, quando
-            ela está em outra, quantas pessoas esperam resposta -- esse número
-            é a única coisa aqui que não pode ficar escondida. */}
-        {conectado && (
-          <div className="px-4 pb-2 relative">
-            <button onClick={() => setAbasAbertas(v => !v)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 transition duration-100 hover:brightness-95 active:scale-[.98]"
-              style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25', minWidth: 220 }}>
-              <span className="flex-1 text-left">{rotuloDoFiltro}</span>
-              {filtro !== 'fila' && contagem.fila > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px]"
-                  style={{ background: '#FBEAE6', color: '#b4322a' }}>
-                  {contagem.fila} esperando
-                </span>
-              )}
-              <ChevronDown size={14}
-                style={{ transform: abasAbertas ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
             </button>
           </div>
         )}
