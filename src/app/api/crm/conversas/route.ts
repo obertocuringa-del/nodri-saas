@@ -32,19 +32,37 @@ export async function GET(req: NextRequest) {
   const estado = searchParams.get('estado') || ''
   const busca = (searchParams.get('busca') || '').trim().toLowerCase()
 
-  let q = supabaseAdmin
+  // ── Tudo, não os 300 mais recentes ────────────────────────────────────────
+  //
+  // Havia um `.limit(300)` aqui. Com 900 conversas no banco, seiscentas
+  // sumiam da tela -- e, pior, as CONTAGENS das abas eram calculadas em cima
+  // dessas 300: "Aguardando (206)" era o que cabia na fatia, não o que existe.
+  // Um número errado numa aba é pior que número nenhum, porque ninguém
+  // desconfia dele.
+  //
+  // O PostgREST entrega no máximo 1000 linhas por requisição, faça o pedido
+  // que fizer -- então a busca vai em páginas até acabar. O teto existe só
+  // para o dia em que um salão tiver dezenas de milhares: melhor a tela
+  // mostrar muito do que travar o navegador.
+  const PAGINA = 1000
+  const TETO = 6000
+  const lote = () => supabaseAdmin
     .from('crm_conversas')
     .select('*, contato:crm_contatos(id, nome, nome_agenda, telefone, telefone_bruto, cliente_nome, etiquetas, lid, observacao)')
     .eq('salao_id', sess!.salaoId)
     .order('ultima_em', { ascending: false, nullsFirst: false })
-    .limit(300)
 
-  if (estado) q = q.eq('estado', estado)
+  const todas: any[] = []
+  for (let de = 0; de < TETO; de += PAGINA) {
+    let q = lote().range(de, de + PAGINA - 1)
+    if (estado) q = q.eq('estado', estado)
+    const { data, error } = await q
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    todas.push(...(data || []))
+    if (!data || data.length < PAGINA) break
+  }
 
-  const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  let lista = data || []
+  let lista = todas
   if (busca) {
     lista = lista.filter((c: any) => {
       const ct = c.contato || {}
