@@ -120,43 +120,36 @@ export default function CrmPage() {
     try { await fetch('/api/crm/canal', { method: 'PATCH' }) } catch {}
   }
 
-  // ── Quem está assinando hoje ──────────────────────────────────────────────
-  //
-  // Fica no navegador, não na conta: o salão usa UM login de recepção e quem
-  // senta na cadeira muda ao longo do dia. Guardar por máquina acerta o caso
-  // real -- cada computador tem a sua pessoa na maior parte do turno -- e
-  // custa um clique para trocar quando não acerta.
-  useEffect(() => {
-    if (!atendentes.length) return
-    let salvo = ''
-    try { salvo = localStorage.getItem('crm_atendente') || '' } catch {}
-    const existe = atendentes.some((a: any) => a.nome === salvo)
-    setAtendente(existe ? salvo : '')
-  }, [atendentes])
+  const nomeDaCliente = () =>
+    aberta?.contato?.nome || aberta?.contato?.cliente_nome || aberta?.contato?.nome_agenda || ''
 
-  function escolherAtendente(nome: string) {
-    setAtendente(nome)
-    setTrocandoAtendente(false)
-    try { localStorage.setItem('crm_atendente', nome) } catch {}
+  function porNaCaixa(texto: string, quem: string) {
+    setTexto(preencherMensagem(texto, { cliente: nomeDaCliente(), atendente: quem }))
+    setTimeout(() => areaTexto.current?.focus(), 0)
   }
 
-  // Põe a mensagem pronta na caixa, já com o nome da cliente e o de quem
-  // assina. Se a mensagem pede assinatura e ninguém escolheu ainda, pergunta
-  // primeiro -- mandar "Meu nome é {atendente}" para a cliente seria pior do
-  // que um clique a mais.
+  // ── A mensagem pronta ─────────────────────────────────────────────────────
+  //
+  // Se ela pede assinatura, a janelinha abre e a caixa só é preenchida depois
+  // que alguém escolhe. Perguntar SEMPRE, e não uma vez por computador: quem
+  // senta na recepção muda ao longo do dia, e mandar "Meu nome é Dariana"
+  // assinado pela Raissa é pior do que um clique a mais.
   function usarModelo(m: any) {
     const texto = String(m?.texto || '')
-    if (/\{atendente\}/i.test(texto) && !atendente && atendentes.length) {
-      setTrocandoAtendente(true)
+    if (/\{atendente\}/i.test(texto) && atendentes.length) {
       setModeloPendente(m)
       return
     }
     setModeloPendente(null)
-    setTexto(preencherMensagem(texto, {
-      cliente: aberta?.contato?.nome || aberta?.contato?.cliente_nome || aberta?.contato?.nome_agenda,
-      atendente,
-    }))
-    setTimeout(() => areaTexto.current?.focus(), 0)
+    porNaCaixa(texto, '')
+  }
+
+  /** Escolheu quem assina: preenche e fecha a janelinha. */
+  function assinarCom(nome: string) {
+    const m = modeloPendente
+    setModeloPendente(null)
+    setAtendente(nome)
+    if (m) porNaCaixa(String(m.texto || ''), nome)
   }
 
   async function puxarCanal() {
@@ -1038,32 +1031,30 @@ export default function CrmPage() {
                     </div>
                   )}
                   {/* ── Quem está assinando ────────────────────────────────
-                      A mensagem de boas-vindas diz "Meu nome é ___". Esse nome
-                      sai do cadastro de profissionais (cargo Recepcionista), e
-                      não de alguém digitar — digitar cem vezes por dia termina
-                      com o nome errado na primeira frase da conversa. */}
-                  {atendentes.length > 0 && (
-                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                      {(trocandoAtendente || !atendente) ? (
-                        <>
-                          <span className="text-[11px]" style={{ color: '#8f877f' }}>Quem está atendendo?</span>
-                          {atendentes.map((a: any) => (
-                            <button key={a.id} onClick={() => {
-                              escolherAtendente(a.nome)
-                              if (modeloPendente) setTimeout(() => usarModelo({ ...modeloPendente }), 0)
-                            }}
-                              className="px-2.5 py-1 rounded-full text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-                              style={{ background: '#fff', color: '#5b4fcf', border: '1px solid #5b4fcf40' }}>
-                              {a.nome}
-                            </button>
-                          ))}
-                        </>
-                      ) : (
-                        <button onClick={() => setTrocandoAtendente(true)}
-                          className="text-[11px] flex items-center gap-1" style={{ color: '#8f877f' }}>
-                          Assinando como <strong style={{ color: '#5b4fcf' }}>{atendente}</strong> · trocar
-                        </button>
-                      )}
+                      Isto era uma linha fixa com todos os nomes, e linha fixa
+                      custa altura de tela o dia inteiro para servir em dois
+                      cliques por hora. Agora abre POR CIMA, só quando a
+                      mensagem escolhida precisa de assinatura, e fecha ao
+                      escolher. Nada de espaço permanente. */}
+                  {modeloPendente && atendentes.length > 0 && (
+                    <div className="absolute left-0 right-0 bottom-full mb-2 mx-4 z-40 p-3 rounded-xl"
+                      style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 10px 30px rgba(26,22,20,.14)' }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-[12px] font-bold flex-1" style={{ color: '#1a1a1a' }}>
+                          Quem está atendendo?
+                        </p>
+                        <button onClick={() => setModeloPendente(null)} title="Fechar"
+                          className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {atendentes.map((a: any) => (
+                          <button key={a.id} onClick={() => assinarCom(a.nome)}
+                            className="px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                            style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
+                            {a.nome}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
