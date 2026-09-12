@@ -27,6 +27,52 @@ export const dynamic = 'force-dynamic'
 //   GET  ?salao=<id>       a ponte busca o que está na fila para enviar
 // ════════════════════════════════════════════════════════════════════════════
 
+// Palavras que NUNCA são o nome da cliente, mesmo aparecendo onde o nome
+// apareceria. Sem esta lista, "Olá, tudo bem?" viraria uma cliente chamada
+// "Tudo" -- e nome errado na fila é pior que número, porque parece certo.
+const NAO_E_NOME = new Set([
+  'bom', 'boa', 'tudo', 'como', 'voce', 'você', 'obrigada', 'obrigado', 'sim',
+  'nao', 'não', 'ok', 'claro', 'tenho', 'temos', 'sou', 'eu', 'me', 'para',
+  'pra', 'por', 'favor', 'senhora', 'senhor', 'cliente', 'amiga', 'amor',
+  'querida', 'linda', 'flor', 'entao', 'então', 'ainda', 'ja', 'já',
+  'desculpe', 'oi', 'ola', 'olá', 'sei', 'ver', 'vou', 'vamos', 'aqui',
+  'hoje', 'amanha', 'amanhã', 'bem', 'dia', 'tarde', 'noite', 'tem', 'esta',
+  'está', 'meu', 'minha', 'nome', 'chamo', 'gente', 'equipe', 'time',
+  'salao', 'salão', 'pessoal', 'galera', 'pode', 'posso', 'preciso',
+])
+
+const SAUDACAO = /^(?:ol[aá]|oi|e a[ií]|bom dia|boa tarde|boa noite)[\s,!]+/i
+const NOME_DEPOIS = /^([\p{Lu}][\p{L}]{1,28}(?:\s+[\p{Lu}][\p{L}]{1,28})?)\s*[,!\n]/u
+const NOME_ANTES = /^([\p{Lu}][\p{L}]{1,28}(?:\s+[\p{Lu}][\p{L}]{1,28})?)\s*,\s*(?:bom dia|boa tarde|boa noite|tudo bem)/iu
+
+function nomeAceitavel(n: string): string | null {
+  const nome = String(n || '').trim().replace(/\s+/g, ' ')
+  if (nome.length < 2 || nome.length > 30) return null
+  if (/[0-9@]/.test(nome)) return null
+  if (nome.split(' ').some(p => NAO_E_NOME.has(p.toLowerCase()))) return null
+  return nome
+}
+
+/**
+ * O nome da cliente escrito na própria mensagem que o salão mandou.
+ *
+ * "Olá KATARINA," e "TELMA, boa tarde!" -- é assim que o salão fala com a
+ * cliente, e é o único lugar onde o nome dela existe quando a agenda do
+ * WhatsApp não veio. Conferido contra 18 frases reais do salão, incluindo as
+ * que NÃO podem virar nome ("Oi claro, da sim.", "Olá, tudo bem?").
+ */
+function nomeNaMensagem(t: string): string | null {
+  const txt = String(t || '').replace(/[*_~]/g, '').trim()
+  const sem = txt.replace(SAUDACAO, '')
+  if (sem !== txt) {
+    const m = sem.match(NOME_DEPOIS)
+    if (m) return nomeAceitavel(m[1])
+  }
+  const m2 = txt.match(NOME_ANTES)
+  if (m2) return nomeAceitavel(m2[1])
+  return null
+}
+
 /**
  * As formas em que o mesmo celular pode estar gravado: com 55 e sem, com o
  * nono dígito e sem. Procurar uma só é procurar errado -- e o banco não sabe
@@ -659,6 +705,25 @@ export async function POST(req: NextRequest) {
 
   const contato = await acharOuCriarContato(salaoId, telefone, body?.nome, body?.lid)
   if (!contato) return NextResponse.json({ error: 'sem telefone e sem lid' }, { status: 400 })
+
+  // ── O nome estava escrito na mensagem o tempo todo ────────────────────────
+  //
+  // 276 das 300 conversas apareciam na fila como "Contato 315487", porque a
+  // agenda do WhatsApp quase não veio -- e a recepção não sabe com quem está
+  // falando. Só que o salão escreve o nome da cliente em toda mensagem que
+  // manda: "Olá KATARINA,", "TELMA, boa tarde!".
+  //
+  // Então o nome sai de lá. Vale só quando o contato não tem nome nenhum:
+  // nada aqui sobrescreve o que já está certo, e um palpite só é melhor que
+  // um número quando não há nada melhor.
+  if (!daCliente && !contato.nome) {
+    const achado = nomeNaMensagem(texto)
+    if (achado) {
+      await supabaseAdmin.from('crm_contatos')
+        .update({ nome: achado }).eq('id', contato.id)
+      contato.nome = achado
+    }
+  }
 
   const idWpp = body?.id_whatsapp || null
 
