@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle, Smile } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Eye, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 
 // Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
@@ -85,6 +85,9 @@ export default function CrmPage() {
   // clique perde a conta de onde parou, e manda o mesmo serviço duas vezes.
   const [inseridos, setInseridos] = useState<string[]>([])
   const [emojisAberto, setEmojisAberto] = useState(false)
+  // A faixa de abas nasce fechada: a tela tem informacao demais, e a conversa
+  // e a caixa de escrever valem mais altura que uma linha de botoes.
+  const [abasAbertas, setAbasAbertas] = useState(false)
   const [fecharAberto, setFecharAberto] = useState(false)
   const [desmarqueAberto, setDesmarqueAberto] = useState(false)
   const [motivoFiltro, setMotivoFiltro] = useState('')
@@ -323,6 +326,25 @@ export default function CrmPage() {
       novas: comTempo.filter(ehNova).length,
     }
   }, [comTempo])
+
+  // O nome da aba em que a pessoa está, para caber no botão que abre a faixa.
+  const rotuloDoFiltro = useMemo(() => {
+    const n = (x: number) => (x ? ` (${x})` : '')
+    switch (filtro) {
+      case 'fila':        return `Preciso agir${n(contagem.fila)}`
+      case 'novas':       return `Clientes novas${n(contagem.novas)}`
+      case 'antigas':     return `Sem resposta${n(contagem.antigas)}`
+      case 'aguardando':  return `Aguardando${n(contagem.aguardando)}`
+      case 'aguardando_promo': return `Promoção${n(contagem.promo)}`
+      case 'follow_up':   return `Follow-up${n(contagem.followUp)}`
+      case 'pausada':     return `Pausadas${n(contagem.pausadas)}`
+      case 'agendado':    return `Agendadas${n(contagem.agendadas)}`
+      case 'confirmado':  return `Confirmadas${n(contagem.confirmadas)}`
+      case 'desmarcou':   return `Desmarcou${n(contagem.desmarcadas)}`
+      case 'sem_conversao': return `Não fechou${n(contagem.perdidas)}`
+      default:            return 'Todas'
+    }
+  }, [filtro, contagem])
 
   // Por que se perdeu, com quantas. É este quadro que vira ação comercial:
   // quem caiu por preço recebe promoção, quem caiu por horário recebe encaixe.
@@ -629,7 +651,7 @@ export default function CrmPage() {
     // dobra.
     <div className="h-screen flex flex-col" style={{ background: '#faf9f7' }}>
       {/* ── Barra ── */}
-      <div className="flex-shrink-0 z-20 border-b" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+      <div className="flex-shrink-0 z-20 border-b relative" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
         {/* A barra global de busca flutua no canto direito, por cima de tudo
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
@@ -693,8 +715,38 @@ export default function CrmPage() {
           </div>
         )}
 
+        {/* ── A faixa de abas vira um botão ───────────────────────────────────
+            Nove abas em linha ocupavam uma faixa inteira da altura, e o que
+            encolhia era a conversa e a caixa de escrever -- as duas coisas em
+            que a recepção passa o dia. Agora a faixa só aparece quando alguém
+            pede, e aparece POR CIMA: abrir não pode empurrar a conversa para
+            baixo, senão troca um incômodo por outro.
+
+            O que fica sempre à vista é a aba em que a pessoa está e, quando
+            ela está em outra, quantas pessoas esperam resposta -- esse número
+            é a única coisa aqui que não pode ficar escondida. */}
         {conectado && (
-          <div className="px-4 pb-2 flex gap-1 flex-wrap">
+          <div className="px-4 pb-2 relative">
+            <button onClick={() => setAbasAbertas(v => !v)}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 transition duration-100 hover:brightness-95 active:scale-[.98]"
+              style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25', minWidth: 220 }}>
+              <span className="flex-1 text-left">{rotuloDoFiltro}</span>
+              {filtro !== 'fila' && contagem.fila > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px]"
+                  style={{ background: '#FBEAE6', color: '#b4322a' }}>
+                  {contagem.fila} esperando
+                </span>
+              )}
+              <ChevronDown size={14}
+                style={{ transform: abasAbertas ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+            </button>
+          </div>
+        )}
+
+        {conectado && abasAbertas && (
+          <div className="absolute left-0 right-0 z-40 mx-4 mb-2 p-2 rounded-xl flex gap-1 flex-wrap"
+            style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 10px 30px rgba(26,22,20,.12)' }}
+            onClick={() => setAbasAbertas(false)}>
             <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
               texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
             {contagem.novas > 0 && (
