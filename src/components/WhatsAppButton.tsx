@@ -13,7 +13,11 @@ const SEM_BOTAO = ['/', '/landing']
 // olhando é CLIENTE DO SALÃO: mandar essa pessoa falar com o suporte do
 // sistema é pior do que não ter botão nenhum. Lá o contato certo já sai
 // pelos botões de agendar, que abrem o WhatsApp do próprio salão.
-const PREFIXOS_SEM_BOTAO = ['/promocoes/', '/vitrine/']
+//
+// E fora do CRM também. Ali a bolinha verde fica em cima da área de escrever,
+// e o que ela oferece é falar com o suporte pelo WhatsApp -- numa tela que É
+// o WhatsApp do salão. Botão que promete o que a tela já faz só atrapalha.
+const PREFIXOS_SEM_BOTAO = ['/promocoes/', '/vitrine/', '/salon/crm']
 
 export default function WhatsAppButton() {
   const rota = usePathname()
