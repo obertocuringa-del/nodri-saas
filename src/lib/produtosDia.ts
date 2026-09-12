@@ -59,7 +59,17 @@ export function lerLinhas(linhas: any[]): LinhaProduto[] {
     if (!comanda) continue
     const qtd = Number(l?.qtd) || 1
     const valor = num(l?.valor)
-    const total = num(l?.total) || Number((valor * qtd).toFixed(2))
+    // ── `valor` é a LINHA, não a unidade ──────────────────────────────────
+    //
+    // O fallback aqui era `valor * qtd`, e isso inflava. Conferido no dado
+    // real de setembro/2026: "CAFÉ - BOLO DA IVONE NO POTE", qtd 3, valor 54 —
+    // são três de dezoito, e o total gravado saiu 162. Cento e oito reais de
+    // produto que ninguém vendeu, indo direto para a conferência de caixa, que
+    // passa a acusar dinheiro a mais e vira alarme falso.
+    //
+    // Só aparece em linha com quantidade maior que um, e por isso passou tanto
+    // tempo despercebido: quase toda venda é de uma unidade.
+    const total = num(l?.total) || valor
     if (!total) continue
     saida.push({
       num_comanda: comanda,
