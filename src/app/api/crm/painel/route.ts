@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { minutosUteis } from '@/lib/crm'
+import { paginar } from '@/lib/paginar'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,12 +32,15 @@ export async function GET(req: NextRequest) {
   const dias = Math.min(Math.max(Number(new URL(req.url).searchParams.get('dias') || 30), 1), 365)
   const desde = new Date(Date.now() - dias * 864e5).toISOString()
 
-  const { data: conversas } = await supabaseAdmin
+  // Em páginas: o limite de 5000 daqui devolvia 1000 calado, e o funil inteiro
+  // saía calculado sobre uma fatia. Ver src/lib/paginar.ts.
+  const { dados: conversas } = await paginar<any>((de, ate) => supabaseAdmin
     .from('crm_conversas')
     .select('id, estado, origem, motivo_perda, criado_em, fechada_em, aguardando_desde, importada, contato:crm_contatos(etiquetas)')
     .eq('salao_id', sess.salaoId)
     .gte('criado_em', desde)
-    .limit(5000)
+    .order('criado_em', { ascending: true })
+    .range(de, ate))
 
   const lista = conversas || []
 
@@ -89,13 +93,16 @@ export async function GET(req: NextRequest) {
   // ── Tempo de resposta ─────────────────────────────────────────────────────
   // Sai dos eventos: 'entrou' é a cliente falando, 'respondeu' é o salão. O par
   // mais próximo de cada conversa dá a espera real.
-  const { data: eventos } = await supabaseAdmin
+  // Em páginas. O limite de 12000 daqui devolvia 1000: o tempo de resposta e o
+  // quadro de quem trabalhou a fila saíam calculados sobre uma fatia, e
+  // pareciam certos.
+  const { dados: eventos } = await paginar<any>((de, ate) => supabaseAdmin
     .from('crm_eventos')
     .select('conversa_id, tipo, criado_em, autor_nome, para_estado')
     .eq('salao_id', sess.salaoId)
     .gte('criado_em', desde)
     .order('criado_em', { ascending: true })
-    .limit(12000)
+    .range(de, ate), 60000)
 
   const esperas: number[] = []
   const pendente = new Map<string, string>()

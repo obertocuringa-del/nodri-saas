@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { proximaAcaoPadrao } from '@/lib/crm'
 import { nomeNaMensagem } from '@/lib/crmNomes'
+import { paginar } from '@/lib/paginar'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,12 +40,14 @@ export async function POST(req: NextRequest) {
   // salão que saiu para VÁRIAS pessoas no mesmo minuto. Só mexe em conversa
   // que está em 'aguardando' -- Preciso agir, Follow-up, Pausadas, Agendadas
   // e Confirmou não se tocam, pela mesma razão de sempre.
-  const { data: saidas } = await supabaseAdmin
+  // Em páginas: o `.limit(4000)` daqui devolvia 1000, e a recuperação de nomes
+  // só olhava as mil mensagens mais recentes. Ver src/lib/paginar.ts.
+  const { dados: saidas } = await paginar<any>((de, ate) => supabaseAdmin
     .from('crm_mensagens')
     .select('conversa_id, texto, criado_em')
     .eq('salao_id', salaoId).eq('direcao', 'saida')
     .order('criado_em', { ascending: false })
-    .limit(4000)
+    .range(de, ate), 40000)
 
   // Agrupa por minuto: disparo sai em rajada, resposta de gente não.
   const porMinuto = new Map<string, Set<string>>()
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
   const { data: emAguardando } = await supabaseAdmin
     .from('crm_conversas').select('id')
     .eq('salao_id', salaoId).eq('estado', 'aguardando')
-    .limit(2000)
+    .limit(1000)
 
   const paraPromo = (emAguardando || []).map(c => c.id).filter(id => deRajada.has(id))
 

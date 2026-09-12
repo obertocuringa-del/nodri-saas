@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao } from '@/lib/crm'
 import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
+import { paginar } from '@/lib/paginar'
 
 export const dynamic = 'force-dynamic'
 
@@ -283,8 +284,14 @@ export async function POST(req: NextRequest) {
     // Quem já perguntamos alguma vez não volta para a fila, nem quando a
     // resposta foi "não tem WhatsApp": perguntar de novo em massa é o
     // comportamento que faz o WhatsApp bloquear o número do salão.
-    const { data: jaVistos } = await supabaseAdmin
-      .from('crm_lid_cache').select('telefone').eq('salao_id', salaoId).limit(10000)
+    //
+    // E em PÁGINAS: o `.limit(10000)` daqui devolvia 1000. Do telefone 1001 em
+    // diante, o cache não era encontrado e o número voltava para a fila --
+    // exatamente a pergunta repetida que este bloco existe para impedir, e
+    // exatamente o que faz o WhatsApp bloquear o número do salão.
+    const { dados: jaVistos } = await paginar<any>((de, ate) => supabaseAdmin
+      .from('crm_lid_cache').select('telefone')
+      .eq('salao_id', salaoId).order('telefone').range(de, ate), 60000)
     const vistos = new Set((jaVistos || []).map((x: any) => x.telefone))
 
     // ── Varredura em páginas ────────────────────────────────────────────────
