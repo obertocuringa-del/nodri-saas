@@ -104,9 +104,19 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
   // ── 2. Respondeu e a cliente sumiu ────────────────────────────────────────
   // O relógio conta expediente, não hora de parede: mensagem mandada sábado à
   // noite não vira cobrança de domingo de manhã.
+  //
+  // CONVERSA IMPORTADA NÃO ENTRA. Ela veio do celular no pareamento e é
+  // histórico, não oportunidade que o salão criou -- é a mesma razão pela qual
+  // ela já fica de fora da conta de conversão. Sem esta trava, o relógio varria
+  // o histórico inteiro para dentro do Follow-up: medido em 12/09/2026, logo
+  // depois de uma reconexão, 475 das 476 conversas em Follow-up eram
+  // importadas e só UMA era do salão. Uma lista de trabalho com 99,8% de
+  // entulho não é lista de trabalho -- ninguém abre, e a que importava se
+  // perdeu no meio.
   const { data: aguardando } = await supabaseAdmin
     .from('crm_conversas').select('id, ultima_em, ultima_de')
     .eq('salao_id', salaoId).eq('estado', 'aguardando')
+    .or('importada.is.null,importada.eq.false')
     .not('ultima_em', 'is', null).limit(300)
 
   for (const c of aguardando || []) {

@@ -72,7 +72,19 @@ export async function POST(req: NextRequest) {
 
   const paraPromo = (emAguardando || []).map(c => c.id).filter(id => deRajada.has(id))
 
-  // ── 2. Contato sem nome ──────────────────────────────────────────────────
+  // ── 2. Histórico varrido para dentro do Follow-up ────────────────────────
+  //
+  // O relógio levava conversa importada para o Follow-up junto com as de
+  // verdade. Resultado medido: 475 de 476 eram importadas e UMA era do salão.
+  // O relógio já foi corrigido; estas aqui ficaram e voltam para "Aguardando",
+  // que é de onde nunca deviam ter saído.
+  const { data: fuImportadas } = await supabaseAdmin
+    .from('crm_conversas').select('id')
+    .eq('salao_id', salaoId).eq('estado', 'follow_up').eq('importada', true)
+    .limit(3000)
+  const paraAguardando = (fuImportadas || []).map(c => c.id)
+
+  // ── 3. Contato sem nome ──────────────────────────────────────────────────
   const { data: semNome } = await supabaseAdmin
     .from('crm_contatos').select('id')
     .eq('salao_id', salaoId).is('nome', null)
@@ -103,6 +115,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       simulacao: true,
       conversas_para_promocao: paraPromo.length,
+      follow_up_que_volta_para_aguardando: paraAguardando.length,
       contatos_que_ganham_nome: nomesAchados.size,
       exemplos_de_nome: [...nomesAchados.values()].slice(0, 12),
     })
@@ -121,6 +134,18 @@ export async function POST(req: NextRequest) {
     if (!error) mudadas += lote.length
   }
 
+  // Histórico de volta para Aguardando.
+  let devolvidas = 0
+  for (let i = 0; i < paraAguardando.length; i += 100) {
+    const lote = paraAguardando.slice(i, i + 100)
+    const { error } = await supabaseAdmin.from('crm_conversas').update({
+      estado: 'aguardando',
+      proxima_acao: proximaAcaoPadrao('aguardando'),
+      atualizado_em: agora,
+    }).in('id', lote)
+    if (!error) devolvidas += lote.length
+  }
+
   let nomeados = 0
   for (const [contatoId, nome] of nomesAchados) {
     const { error } = await supabaseAdmin.from('crm_contatos')
@@ -131,6 +156,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     conversas_para_promocao: mudadas,
+    follow_up_que_voltou_para_aguardando: devolvidas,
     contatos_que_ganharam_nome: nomeados,
   })
 }
