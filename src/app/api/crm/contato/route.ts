@@ -26,7 +26,20 @@ export async function PATCH(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'Contato não informado' }, { status: 400 })
 
   const patch: any = { atualizado_em: new Date().toISOString() }
-  if (body?.nome !== undefined) patch.nome = String(body.nome || '').trim().slice(0, 120) || null
+  if (body?.nome !== undefined) {
+    patch.nome = String(body.nome || '').trim().slice(0, 120) || null
+    // ── Digitou o nome? O relógio tem que olhar de novo ──────────────────────
+    //
+    // O casamento com o histórico do salão é por telefone e, quem não tem
+    // telefone, por NOME. Um contato que chegou sem nenhum dos dois já foi
+    // conferido, não achou nada, e só voltaria à fila doze horas depois.
+    //
+    // Então a recepção digitava "Rosilda Prates" na ficha e a tela continuava
+    // dizendo que não havia histórico -- com as oito visitas dela guardadas no
+    // sistema o tempo todo. Zerar a conferência põe o contato na próxima volta
+    // do minuto.
+    patch.conferido_em = null
+  }
   if (body?.observacao !== undefined) {
     patch.observacao = String(body.observacao || '').trim().slice(0, 2000) || null
   }

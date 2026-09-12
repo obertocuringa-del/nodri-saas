@@ -67,6 +67,8 @@ export interface ResumoRelogio {
   ligados_ao_sistema: number
   /** Contatos sem telefone: não dá para afirmar se são novas ou não. */
   sem_como_conferir: number
+  /** Ganharam o celular vindo do histórico de atendimento, pelo nome. */
+  ganharam_telefone: number
 }
 
 export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
@@ -75,7 +77,7 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
   const r: ResumoRelogio = {
     pausas_vencidas: 0, viraram_follow_up: 0, agendaram_sozinho: 0,
     contatos_conferidos: 0, clientes_novas: 0, ligados_ao_sistema: 0,
-    sem_como_conferir: 0,
+    sem_como_conferir: 0, ganharam_telefone: 0,
   }
 
   // ── 1. A pausa venceu ─────────────────────────────────────────────────────
@@ -198,7 +200,7 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       return !porChave.get(k) && String(ct.nome || '').trim().length >= 3
     })
 
-    const porNome = new Map<string, { nome: string; ultima: number }>()
+    const porNome = new Map<string, { nome: string; ultima: number; celular?: string }>()
     if (semTelefone.length) {
       const nomes = [...new Set(semTelefone.map(c => String(c.nome).trim()))]
       const filtro = nomes
@@ -206,7 +208,10 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         .join(',')
       const { data: porNomeRaw } = await supabaseAdmin
         .from('atendimentos_raw')
-        .select('cliente, data_comanda')
+        // O CELULAR vem junto. Achar a cliente pelo nome e não aproveitar o
+        // número que está na mesma linha é deixar a recepção sem como ligar
+        // para alguém que o salão atende há anos.
+        .select('cliente, celular, data_comanda')
         .eq('salao_id', salaoId)
         .or(filtro)
         .limit(4000)
@@ -215,7 +220,9 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         if (!k) continue
         const quando = tsData(a.data_comanda)
         const atual = porNome.get(k)
-        if (!atual || quando > atual.ultima) porNome.set(k, { nome: a.cliente, ultima: quando })
+        if (!atual || quando > atual.ultima) {
+          porNome.set(k, { nome: a.cliente, ultima: quando, celular: a.celular || atual?.celular })
+        }
       }
     }
 
@@ -230,6 +237,23 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         // Já é cliente da casa. O nome do sistema é o que abre o painel da
         // direita com visitas, ticket e o que ela costuma fazer.
         if (!ct.cliente_nome) { patch.cliente_nome = achou.nome; r.ligados_ao_sistema++ }
+        // ── E o TELEFONE vem junto ────────────────────────────────────────
+        //
+        // Quem casou pelo NOME estava sem número -- é por isso que caiu nesse
+        // caminho. Mas o número dela está na mesma linha do atendimento, e o
+        // salão a atende há anos. Deixá-lo lá seria manter na tela uma cliente
+        // conhecida que ninguém consegue chamar.
+        //
+        // Só preenche o que está vazio: nada aqui sobrescreve número que já
+        // veio do WhatsApp, que é sempre a fonte mais confiável.
+        if (!ct.telefone && (achou as any).celular) {
+          const limpo = String((achou as any).celular).replace(/\D+/g, '')
+          if (limpo.length >= 10) {
+            patch.telefone = limpo.startsWith('55') ? limpo : '55' + limpo
+            patch.telefone_bruto = String((achou as any).celular)
+            r.ganharam_telefone = (r.ganharam_telefone || 0) + 1
+          }
+        }
         const i = etiquetas.indexOf('cliente nova')
         if (i >= 0) { etiquetas.splice(i, 1); patch.etiquetas = etiquetas }
       } else if (!ct.cliente_nome && ct.telefone) {
