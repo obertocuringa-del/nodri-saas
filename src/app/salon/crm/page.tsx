@@ -1514,17 +1514,28 @@ function PainelCliente({ c }: { c: Conversa }) {
   const [dados, setDados] = useState<any>(null)
   const ct = c.contato || {}
   const nomeBusca = ct.cliente_nome || ct.nome || ct.nome_agenda || ''
+  // ── O telefone vai junto, e é ele que manda ───────────────────────────────
+  //
+  // A busca ia só com o nome. O painel então somava TODAS as Vanessas do
+  // salão: 37 visitas de várias pessoas, e "última visita 08/09" numa cliente
+  // que tinha vindo em 29/08. A recepção lê isso e repete para a cliente.
+  //
+  // Nome se repete e se escreve de dez jeitos; telefone é único.
+  const telBusca = String(ct.telefone || ct.telefone_bruto || '').replace(/\D/g, '')
 
   useEffect(() => {
     let vivo = true
     setDados(null)
-    if (!nomeBusca) return
-    fetch(`/api/relatorios/cliente-detalhe?cliente=${encodeURIComponent(nomeBusca)}`)
+    if (!nomeBusca && !telBusca) return
+    const q = new URLSearchParams()
+    q.set('cliente', nomeBusca || '-')
+    if (telBusca) q.set('celular', telBusca)
+    fetch(`/api/relatorios/cliente-detalhe?${q.toString()}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (vivo) setDados(d) })
       .catch(() => {})
     return () => { vivo = false }
-  }, [nomeBusca])
+  }, [nomeBusca, telBusca])
 
   return (
     <aside className="w-[288px] flex-shrink-0 border-l overflow-y-auto"
@@ -1543,7 +1554,37 @@ function PainelCliente({ c }: { c: Conversa }) {
           <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Procurando o histórico...</p>
         )}
 
-        {dados && (
+        {/* Mais de uma pessoa atende por esse nome e não temos o telefone.
+            Mostrar a soma delas seria entregar à recepção o histórico de uma
+            estranha com cara de certo. */}
+        {dados?.ambiguo && (
+          <div className="px-2.5 py-2 rounded-lg mb-2" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+            <p className="text-[11.5px]" style={{ color: '#6b6860' }}>
+              <strong style={{ color: '#9a6b12' }}>{dados.homonimos} clientes com esse nome.</strong>{' '}
+              Sem o telefone não dá para saber qual é — e mostrar a soma das {dados.homonimos} seria
+              pior do que não mostrar nada. Pergunte o telefone e anote na ficha.
+            </p>
+          </div>
+        )}
+
+        {/* Casou pelo NOME, não pelo telefone: é palpite, e tem que estar dito. */}
+        {dados?.encontrado && dados.casou_por === 'nome' && (
+          <div className="px-2.5 py-2 rounded-lg mb-2" style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+            <p className="text-[11px]" style={{ color: '#6b6860' }}>
+              <strong style={{ color: '#9a6b12' }}>Ligado pelo NOME, não pelo telefone.</strong>{' '}
+              O histórico abaixo pode ser de outra pessoa com o mesmo nome.
+            </p>
+            {dados.celular_na_base && (
+              <p className="text-[11px] mt-1" style={{ color: '#6b6860' }}>
+                No sistema esse nome está com o celular{' '}
+                <strong style={{ color: '#1a1a1a' }}>{telefoneBonito(dados.celular_na_base)}</strong>.
+                Se for o mesmo do WhatsApp dela, o histórico é dela.
+              </p>
+            )}
+          </div>
+        )}
+
+        {dados && !dados.ambiguo && (
           <div className="space-y-2.5">
             <Linha rotulo="Visitas" valor={dados.total_visitas ?? '—'} />
             {/* Ticket médio no lugar do total gasto: quem responde no balcão

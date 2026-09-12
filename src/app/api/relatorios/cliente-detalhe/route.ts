@@ -40,28 +40,73 @@ export async function GET(req: NextRequest) {
   const celular = (url.searchParams.get('celular') || '').replace(/\D/g, '')
   if (!cliente) return NextResponse.json({ error: 'cliente obrigatório' }, { status: 400 })
 
-  // Nome EXATO (ilike sem curinga = exato sem diferenciar maiúscula). Com
-  // curinga, "ANA" traria também "ANA BEATRIZ" e o painel misturaria clientes.
-  let { data: atend } = await supabaseAdmin
-    .from('atendimentos_raw')
-    .select('servico, data_comanda, profissional, qtd, valor, total')
-    .eq('salao_id', p.salaoId)
-    .ilike('cliente', cliente)
-    .limit(4000)
+  // ── O TELEFONE MANDA. Sempre ─────────────────────────────────────────────
+  //
+  // Aqui a busca era por NOME, e o celular só entrava se o nome não achasse
+  // nada. Com isso o painel somava TODAS as Vanessas do salão numa pessoa só:
+  // 37 visitas, ticket médio de outra, e "última visita 08/09" quando a
+  // Vanessa daquela conversa tinha vindo em 29/08.
+  //
+  // Isso não é um número feio na tela -- é a recepção dizendo à cliente uma
+  // data que não é dela, com o histórico de outra pessoa do lado.
+  //
+  // Nome se repete e se escreve de dez jeitos; telefone é único. Então: tendo
+  // telefone, é SÓ por telefone. O nome vira reserva para quem não tem número.
+  let atend: any[] | null = null
+  let casouPor: 'telefone' | 'nome' | null = null
 
-  // Sem resultado pelo nome, tenta pelo celular: o mesmo cliente às vezes está
-  // grafado diferente entre importações.
-  if ((!atend || atend.length === 0) && celular.length >= 8) {
+  if (celular.length >= 8) {
     const r = await supabaseAdmin
       .from('atendimentos_raw')
       .select('servico, data_comanda, profissional, qtd, valor, total')
       .eq('salao_id', p.salaoId)
       .ilike('celular', `%${celular}%`)
       .limit(4000)
-    atend = r.data
+    if (r.data?.length) { atend = r.data; casouPor = 'telefone' }
+  }
+
+  // Sem telefone (ou sem nada encontrado por ele), procura pelo nome EXATO --
+  // ilike sem curinga é exato sem diferenciar maiúscula. Com curinga, "ANA"
+  // traria "ANA BEATRIZ" e misturaria duas clientes.
+  let homonimos = 0
+  let celularNaBase: string | null = null
+  if (!atend) {
+    const { data: porNome } = await supabaseAdmin
+      .from('atendimentos_raw')
+      .select('servico, data_comanda, profissional, qtd, valor, total, celular')
+      .eq('salao_id', p.salaoId)
+      .ilike('cliente', cliente)
+      .limit(4000)
+
+    // Quantas PESSOAS diferentes atendem por esse nome? Se for mais de uma, o
+    // que sairia daqui seria a soma de estranhas. Melhor não mostrar nada do
+    // que mostrar o histórico da cliente errada -- a tela avisa e a recepção
+    // pergunta o telefone.
+    const numeros = new Set(
+      (porNome || []).map((a: any) => String(a.celular || '').replace(/\D/g, ''))
+        .filter((n: string) => n.length >= 8)
+    )
+    homonimos = numeros.size
+    if (homonimos <= 1) {
+      atend = porNome || null
+      casouPor = 'nome'
+      // O celular que está na BASE vai junto na resposta. Casou pelo nome quer
+      // dizer que ninguém conferiu nada -- e a pergunta seguinte de quem olha a
+      // tela é sempre a mesma: "como eu sei que é ela?". Com o número à vista,
+      // dá para comparar com o WhatsApp ou procurar no Avec. Sem ele, a única
+      // saída era acreditar.
+      celularNaBase = [...numeros][0] || null
+    }
   }
 
   const linhas = atend || []
+  if (homonimos > 1) {
+    return NextResponse.json({
+      encontrado: false, ambiguo: true, homonimos,
+      total_visitas: 0, servicos: [], profissionais_atendidos: [],
+      servicos_ultima: [], profissionais_ultima: [],
+    })
+  }
   if (linhas.length === 0) {
     return NextResponse.json({
       encontrado: false, total_visitas: 0, servicos: [], profissionais_atendidos: [],
@@ -99,6 +144,12 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     encontrado: true,
+    // Como esta pessoa foi encontrada. A tela precisa saber: casar por nome é
+    // um palpite, e um palpite não pode ser mostrado com a mesma cara de um
+    // dado conferido pelo telefone.
+    casou_por: casouPor,
+    // Para conferir no Avec quando o casamento foi pelo nome.
+    celular_na_base: celularNaBase,
     total_visitas,
     primeira_visita: datas[0] || null,
     ultima_visita,
