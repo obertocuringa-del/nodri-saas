@@ -628,7 +628,12 @@ async function abrirDeVerdade(salaoId, registroSessao) {
             em_massa: !!m.broadcast,
           }),
         })
-        registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(tel || lid), '—', texto.slice(0, 40))
+        // A marca de lista de transmissão fica dita no log. O campo existe no
+        // protocolo, mas se ele vem preenchido de verdade neste fluxo só se
+        // sabe olhando um disparo real -- e é o que decide se dá para parar de
+        // adivinhar disparo por texto repetido.
+        registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(tel || lid),
+          m.broadcast ? '[LISTA DE TRANSMISSÃO] —' : '—', texto.slice(0, 40))
       } catch (e) {
         registro(salaoId, 'falha ao entregar mensagem:', e.message)
       }

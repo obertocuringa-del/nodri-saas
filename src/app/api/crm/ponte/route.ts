@@ -649,8 +649,13 @@ export async function POST(req: NextRequest) {
 
   if (!conversa) {
     // Disparo para quem nunca falou com o salão não abre oportunidade: seria
-    // inventar uma conversa que ninguém teve.
-    const estado = daCliente ? 'acao_necessaria' : 'aguardando'
+    // inventar uma conversa que ninguém teve. E nasce em "Aguardando
+    // promoção", não em "Aguardando cliente": cem disparos por dia caindo na
+    // mesma pasta das conversas de verdade fazem a recepção parar de abrir a
+    // pasta -- e aí a espera que importa se perde no meio do disparo.
+    const estado = daCliente
+      ? 'acao_necessaria'
+      : (emMassa ? 'aguardando_promo' : 'aguardando')
     const { data: nova } = await supabaseAdmin.from('crm_conversas').insert({
       salao_id: salaoId,
       contato_id: contato.id,
@@ -691,8 +696,35 @@ export async function POST(req: NextRequest) {
       nao_lidas: 0,
       atualizado_em: agora,
     }).eq('id', conversa.id)
+  } else if (conversa.estado === 'aguardando') {
+    // ── Disparo em conversa onde NINGUÉM estava esperando ───────────────────
+    //
+    // Só daqui o disparo tem permissão de mexer. "Aguardando cliente" tem de
+    // significar "eu falei com essa pessoa e estou esperando a resposta DELA";
+    // com cem disparos por dia caindo ali dentro, deixa de significar isso.
+    //
+    // As outras pastas ficam intocadas de propósito:
+    //
+    // - "Preciso agir" é o caso que este bloco inteiro existe para proteger.
+    //   A cliente perguntou um preço, o disparo saiu para a lista montada pelo
+    //   relatório -- sem olhar quem estava na fila -- e pegou ela junto. Se o
+    //   disparo a tirasse daqui, a pergunta dela ficaria enterrada embaixo de
+    //   um texto que não era para ela. Ela continua em Preciso agir.
+    // - Follow-up e Pausadas são filas de trabalho: se o disparo esvaziasse
+    //   elas, o salão perderia a lista de quem precisa retomar, e perderia
+    //   sem perceber, num dia em que só mandou promoção.
+    // - Agendadas e Confirmou já estão decididas.
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'aguardando_promo',
+      proxima_acao: proximaAcaoPadrao('aguardando_promo'),
+      aguardando_desde: null,
+      ultima_em: agora,
+      ultima_de: 'salao',
+      ultima_previa: texto.slice(0, 120),
+      atualizado_em: agora,
+    }).eq('id', conversa.id)
   }
-  // emMassa em conversa que já existia: nada muda. É o ponto inteiro disto.
+  // Disparo em qualquer outra pasta: nada muda. É o ponto inteiro disto.
 
   if (!conversa) return NextResponse.json({ error: 'falha ao abrir a conversa' }, { status: 500 })
 
