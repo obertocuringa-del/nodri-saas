@@ -138,6 +138,20 @@ export default function PainelCrmPage() {
             {d.motivos.length === 0
               ? <p className="text-[12.5px]" style={{ color: '#8f877f' }}>Nenhuma conversa fechada sem conversão no período.</p>
               : <Barras itens={d.motivos.map((m: any) => ({ nome: m.nome, valor: m.total }))} cor="#b4322a" />}
+
+            {/* A fila dizia "Não fechou (8)" e aqui aparecia 3. As duas estavam
+                certas -- cinco vieram do histórico do celular e não entram na
+                conta. A diferença era muda, e duas telas discordando em
+                silêncio derrubam a confiança nas duas. */}
+            {d.fora_da_conta?.perdidas > 0 && (
+              <p className="text-[11.5px] mt-3 pt-3 border-t" style={{ color: '#8f877f', borderColor: '#f0ece7' }}>
+                Outras <strong>{d.fora_da_conta.perdidas}</strong> conversas marcadas como
+                “Não fechou” vieram do histórico do celular e ficam de fora desta conta —
+                não foram oportunidades que o salão gerou. Por isso a fila mostra{' '}
+                {d.fora_da_conta.perdidas + (d.geral?.perdidas || 0) - (d.geral?.desmarcadas || 0)} e aqui aparece{' '}
+                {(d.geral?.perdidas || 0) - (d.geral?.desmarcadas || 0)}.
+              </p>
+            )}
           </section>
 
           {/* ── Por que desmarcou ── */}

@@ -171,5 +171,22 @@ export async function GET(req: NextRequest) {
     // Importadas ficam visíveis mas fora da conta, para ninguém achar que
     // sumiram — e para ninguém somá-las por engano.
     importadas: lista.length - geradas.length,
+    // ── Quanto ficou de fora, por pasta ──────────────────────────────────
+    //
+    // A fila mostrava "Não fechou (8)" e o painel dizia 3. As duas estavam
+    // certas: cinco eram conversas importadas do celular, que não entram na
+    // conta porque não são oportunidade que o salão gerou. Só que a diferença
+    // era MUDA -- e duas telas discordando em silêncio derrubam a confiança
+    // nas duas. Agora o painel diz quantas deixou de fora.
+    fora_da_conta: (() => {
+      const imp = lista.filter((c: any) => c.importada)
+      const conta = (e: string) => imp.filter((c: any) => c.estado === e).length
+      return {
+        total: imp.length,
+        perdidas: conta('sem_conversao'),
+        desmarcadas: conta('desmarcou'),
+        agendadas: conta('agendado') + conta('confirmado'),
+      }
+    })(),
   })
 }
