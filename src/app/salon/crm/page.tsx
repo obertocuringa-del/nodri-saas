@@ -1621,9 +1621,14 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
           ? { background: '#faf7ef', color: '#6b6860', border: '1px dashed #d8c9a6',
               borderRadius: 14 }
           : {
-              background: meu ? '#5b4fcf' : '#fff',
-              color: meu ? '#fff' : '#1a1a1a',
-              boxShadow: meu ? '0 1px 2px rgba(91,79,207,.25)' : '0 1px 2px rgba(26,22,20,.09)',
+              // O balão do salão era roxo cheio com texto branco -- a cor da
+              // marca, forte demais para uma tela olhada o dia inteiro, e
+              // texto branco em fundo saturado cansa mais do que texto escuro
+              // em fundo claro. Um tom claro do mesmo roxo mantém o lado de
+              // quem falou reconhecível e deixa a conversa legível por horas.
+              background: meu ? '#ebe8fb' : '#fff',
+              color: '#1a1a1a',
+              boxShadow: meu ? '0 1px 2px rgba(91,79,207,.14)' : '0 1px 2px rgba(26,22,20,.09)',
               // Canto "mordido" do lado de quem falou, como todo mensageiro
               // faz: diz de quem é a fala antes de a pessoa ler a cor.
               borderRadius: meu ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
@@ -1636,8 +1641,8 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
         {citada && (
           <div className="mb-1.5 px-2 py-1 rounded text-[11.5px] truncate"
             style={{
-              background: meu ? 'rgba(255,255,255,.16)' : '#f1eefc',
-              borderLeft: `3px solid ${meu ? 'rgba(255,255,255,.55)' : '#5b4fcf'}`,
+              background: meu ? 'rgba(91,79,207,.10)' : '#f1eefc',
+              borderLeft: '3px solid #5b4fcf',
               opacity: 0.92,
             }}>
             {citada.texto || `[${citada.tipo}]`}
