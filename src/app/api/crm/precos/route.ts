@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
+import { getConfig } from '@/lib/vitrineConfig'
 import type { LinhaProduto } from '@/lib/produtosDia'
 
 export const dynamic = 'force-dynamic'
@@ -44,14 +45,21 @@ export async function GET() {
     return NextResponse.json({ error: 'O CRM é do salão.' }, { status: 403 })
   }
 
-  const [{ data: servicos }, { data: vendidos }, { data: catalogo }] = await Promise.all([
+  const [{ data: servicos }, { data: vendidos }, { data: catalogo }, vitrine] = await Promise.all([
     supabaseAdmin.from('salao_servicos')
       // A OBSERVAÇÃO vem junto. É ela que evita a discussão no caixa: "a
       // pigmentação varia conforme o produto usado". Mandar o preço sem a
       // ressalva é mandar meia informação — e a metade que falta é justamente
       // a que gera reclamação depois.
-      .select('nome, categoria, preco_fixo, preco_min, observacao')
-      .eq('salao_id', sess.salaoId).eq('ativo', true)
+      // Mesmas colunas e mesma ordem da rota da vitrine, de propósito. O `id`
+      // entra porque é por ele que o salão oculta um serviço no link.
+      //
+      // E `ativo` vem para ser filtrado AQUI, não no banco: a vitrine usa
+      // `ativo !== false`, que deixa passar quem está com o campo em branco.
+      // Um `.eq('ativo', true)` cortava esses -- e as duas telas mostrariam
+      // listas diferentes sem ninguém entender por quê.
+      .select('id, nome, categoria, preco_fixo, preco_min, observacao, ativo')
+      .eq('salao_id', sess.salaoId)
       .order('categoria').order('nome').limit(1000),
     // Doze folhas mensais bastam: produto que não vende há um ano não é preço
     // que a recepção precisa ter na mão.
@@ -65,16 +73,29 @@ export async function GET() {
       .select('nome, marca, preco, unidade')
       .eq('salao_id', sess.salaoId)
       .order('marca').order('nome').limit(1000),
+    // O que o salão escondeu do link de promoções. Sem link configurado não
+    // há nada escondido, e a lista sai inteira.
+    getConfig(sess.salaoId),
   ])
 
   // ── Serviços ──────────────────────────────────────────────────────────────
-  // Serviço sem preço não entra: um botão que insere "R$ 0,00" na conversa é
-  // pior do que botão nenhum.
+  //
+  // A lista tem que ser a MESMA da "Tabela de preços" do link de promoções,
+  // item por item. O salão configura o cardápio num lugar só; se a recepção
+  // tivesse uma lista maior, ela mandaria no WhatsApp um serviço que a cliente
+  // não encontra no link -- e a divergência aparece na frente da cliente.
+  //
+  // Por isso os três filtros abaixo são cópia da rota /api/promocoes/[slug]:
+  // inativo fora, serviço ocultado fora, categoria ocultada fora.
+  const ocultosServ = new Set(vitrine?.ocultos?.servicos || [])
+  const ocultasCat = new Set(vitrine?.ocultos?.categorias || [])
+
   const porCategoria = new Map<string, any[]>()
   for (const s of servicos || []) {
-    const preco = dinheiro(s.preco_fixo) ?? dinheiro(s.preco_min)
-    if (!preco) continue
+    if (s.ativo === false) continue
     const cat = String(s.categoria || 'Outros').trim() || 'Outros'
+    if (ocultosServ.has(s.id) || ocultasCat.has(cat)) continue
+    const preco = dinheiro(s.preco_fixo) ?? dinheiro(s.preco_min)
     if (!porCategoria.has(cat)) porCategoria.set(cat, [])
     porCategoria.get(cat)!.push({
       nome: s.nome,

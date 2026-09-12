@@ -1430,8 +1430,14 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
   // A ressalva vai JUNTO com o preço, na mesma inserção. Separar as duas
   // deixa a recepção decidir se manda -- e, no aperto, ela não manda. É
   // exatamente a ressalva que evita a discussão no caixa.
+  // Serviço sem preço continua na lista, para a tela bater com a tabela do
+  // link -- mas não dá para clicar: inserir "Corte — R$ 0,00" na conversa é
+  // pior do que não ter o botão. Quem vê sabe que o serviço existe e que o
+  // preço ainda não foi cadastrado.
   const rotulo = (it: any) =>
-    `${it.nome}${it.unidade ? ` ${it.unidade}` : ''} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`
+    it.preco
+      ? `${it.nome}${it.unidade ? ` ${it.unidade}` : ''} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`
+      : `${it.nome} · sem preço na tabela`
 
   const linha = (it: any) => {
     const nome = it.unidade ? `${it.nome} (${it.unidade})` : it.nome
@@ -1485,7 +1491,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
         <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
           {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Nada com esse nome.</p>}
           {achados.map((it, i) => (
-            <BotaoPreco key={i} obs={it.observacao}
+            <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
               texto={rotulo(it)}
               onClick={() => onInserir(linha(it))} />
           ))}
@@ -1512,7 +1518,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
           </button>
           <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
             {atual.itens.map((it: any, i: number) => (
-                <BotaoPreco key={i} obs={it.observacao}
+                <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
                 texto={rotulo(it)}
                 onClick={() => onInserir(linha(it))} />
             ))}
@@ -1522,7 +1528,7 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
 
       <p className="text-[10px] mt-2" style={{ color: '#8f877f' }}>
         {lado === 'servicos'
-          ? 'Serviço vem da mesma tabela de preços do link de promoções — inclusive a observação.'
+          ? 'Serviço é a mesma lista da tabela de preços do link de promoções, com a observação junto — o que você oculta lá não aparece aqui.'
           : dados?.fonteProdutos === 'catalogo'
             ? 'Produto vindo do catálogo da calculadora: importe o relatório de produtos vendidos para usar o preço de venda.'
             : 'Produto vem do relatório de produtos vendidos, pelo maior valor já cobrado — sem desconto.'}
@@ -1535,11 +1541,17 @@ function PainelPrecos({ onInserir }: { onInserir: (linha: string) => void }) {
 // A observação aparece no próprio botão, em cinza. Quem clica precisa ver o
 // que vai junto ANTES de inserir -- descobrir a ressalva depois, já na caixa
 // de texto, é descobrir tarde.
-function BotaoPreco({ texto, obs, onClick }: { texto: string; obs?: string | null; onClick: () => void }) {
+function BotaoPreco({ texto, obs, semPreco, onClick }: { texto: string; obs?: string | null; semPreco?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick}
-      className="px-2.5 py-1 rounded-lg text-[11px] text-left"
-      style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0', maxWidth: obs ? 280 : undefined }}>
+    <button onClick={onClick} disabled={semPreco}
+      title={semPreco ? 'Cadastre o preço em Serviços para poder inserir' : undefined}
+      className="px-2.5 py-1 rounded-lg text-[11px] text-left disabled:cursor-not-allowed"
+      style={{
+        background: semPreco ? '#faf9f7' : '#fff',
+        color: semPreco ? '#8f877f' : '#1a1a1a',
+        border: '1px solid #e8e6e0',
+        maxWidth: obs ? 280 : undefined,
+      }}>
       {texto}
       {obs && (
         <span className="block text-[10px] leading-tight mt-0.5" style={{ color: '#8f877f' }}>
