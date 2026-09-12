@@ -26,6 +26,11 @@ o que separa "automatizado" de "número bloqueado pelo WhatsApp".
 - Pausa que vence volta como follow-up
 - Cliente que não responde por um dia de expediente vira follow-up
 - Cliente nova detectada pelo telefone, cruzando com `atendimentos_raw`
+- **Disparo em massa cai em "Aguardando promoção"**, separado da conversa de
+  verdade -- mas só sai de "Aguardando cliente". Quem estava em Preciso agir,
+  Follow-up ou Pausada NÃO se mexe: a lista de disparo é montada pelo
+  relatório, sem olhar a fila, e mais cedo ou mais tarde pega junto uma
+  cliente que ainda espera resposta
 - **Agendado marcado sozinho** quando a cliente aparece no atendimento
 
 **Responder**
