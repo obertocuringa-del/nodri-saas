@@ -132,16 +132,40 @@ export async function POST() {
     return NextResponse.json({ error: 'Só o dono do salão pode instalar.' }, { status: 403 })
   }
 
+  // ── exec_sql não existe neste banco ───────────────────────────────────────
+  //
+  // Esta rota nasceu chamando `supabaseAdmin.rpc('exec_sql')`, como outras do
+  // sistema fazem. A função NÃO existe aqui: toda chamada falhava em silêncio,
+  // e a rota respondia "ok" porque a conferência logo abaixo achava as tabelas
+  // -- que alguém tinha criado na mão. Uma instalação que nunca instalou nada
+  // e sempre disse que deu certo.
+  //
+  // E instalar não é o que falta. As tabelas do CRM são do BANCO INTEIRO, com
+  // uma coluna `salao_id` -- salão novo não precisa de tabela nova. O que ele
+  // precisa (mensagens prontas, motivos, origens) já é semeado sozinho no
+  // primeiro uso, em /api/crm/canal.
+  //
+  // Então a rota passou a fazer o que é honesto e útil: CONFERIR. Se faltar
+  // alguma coisa, ela devolve o SQL para colar no Supabase, em vez de fingir
+  // que resolveu.
+  let podeExecutar = false
+  try {
+    const { error } = await supabaseAdmin.rpc('exec_sql', { sql: 'select 1' })
+    podeExecutar = !error
+  } catch { podeExecutar = false }
+
   const erros: string[] = []
   let feitos = 0
-  for (const sql of COMANDOS) {
-    try {
-      const { error } = await supabaseAdmin.rpc('exec_sql', { sql })
-      if (error && !String(error.message || '').includes('already exists')) {
-        erros.push(String(error.message).slice(0, 200))
-      } else feitos++
-    } catch (e: any) {
-      erros.push(String(e?.message || e).slice(0, 200))
+  if (podeExecutar) {
+    for (const sql of COMANDOS) {
+      try {
+        const { error } = await supabaseAdmin.rpc('exec_sql', { sql })
+        if (error && !String(error.message || '').includes('already exists')) {
+          erros.push(String(error.message).slice(0, 200))
+        } else feitos++
+      } catch (e: any) {
+        erros.push(String(e?.message || e).slice(0, 200))
+      }
     }
   }
 
@@ -158,9 +182,20 @@ export async function POST() {
 
   return NextResponse.json({
     ok: faltando.length === 0,
-    comandos_executados: feitos,
+    // Dito na cara: este banco executa SQL a partir daqui, ou não?
+    pode_executar_sql: podeExecutar,
+    comandos_executados: podeExecutar ? feitos : 0,
     tabelas: conferencia,
     faltando: faltando.length ? faltando : undefined,
     erros: erros.length ? erros : undefined,
+    // Quando não dá para executar e falta alguma coisa, o SQL vai junto na
+    // resposta -- é o único caminho que sobra, e esconder isso só faria a
+    // pessoa descobrir o problema com o salão já vendido.
+    sql_para_colar: (!podeExecutar && faltando.length)
+      ? COMANDOS.map(c => c.trim() + ';').join('\n\n')
+      : undefined,
+    recado: faltando.length === 0
+      ? 'Tudo no lugar. Salão novo não precisa de instalação: as tabelas são do banco inteiro e o resto é semeado no primeiro uso.'
+      : 'Faltam tabelas. Cole o SQL de `sql_para_colar` no editor do Supabase.',
   })
 }
