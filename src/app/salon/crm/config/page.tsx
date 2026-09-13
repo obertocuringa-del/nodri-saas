@@ -17,6 +17,7 @@ import {
   ESTADOS_VAZIO, CORES_ESTADO, chaveDoExtra, ehEstadoDoSalao,
   type ConfigEstados,
 } from '@/lib/crmEstados'
+import AutomacaoFeedback from './AutomacaoFeedback'
 
 type Item = { id?: string; nome: string; texto?: string; atalho?: string; ativo?: boolean }
 
@@ -462,6 +463,9 @@ export default function ConfigCrmPage() {
               ))}
             </div>
           </section>
+
+          {/* ── Automação de feedback (Avec → WhatsApp) ── */}
+          <AutomacaoFeedback />
 
           {/* ── Recomecar ── */}
           <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8d9b0' }}>
