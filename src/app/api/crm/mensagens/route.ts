@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, crmBloqueado } from '@/lib/apiAuth'
-import { MINUTOS_DONO, proximaAcaoPadrao } from '@/lib/crm'
+import { MINUTOS_DONO, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO } from '@/lib/crm'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,10 +90,15 @@ export async function POST(req: NextRequest) {
   })
   if (erroMsg) return NextResponse.json({ error: erroMsg.message }, { status: 500 })
 
-  // O salão respondeu: a bola passa para a cliente e o relógio para.
+  // O salão respondeu: a bola passa para a cliente e o relógio para. Se o
+  // que saiu foi o feedback, a confirmação ou uma lista, a conversa vai para
+  // a pasta do tipo -- quem mandou estava olhando para ela, então aqui não
+  // há pasta protegida.
+  const tipoSaida = tipoDaMensagemDoSalao(texto)
+  const novoEstado = tipoSaida ? ESTADO_DO_TIPO[tipoSaida] : 'aguardando'
   await supabaseAdmin.from('crm_conversas').update({
-    estado: 'aguardando',
-    proxima_acao: proximaAcaoPadrao('aguardando'),
+    estado: novoEstado,
+    proxima_acao: proximaAcaoPadrao(novoEstado),
     aguardando_desde: null,
     ultima_em: agora,
     ultima_de: 'salao',
@@ -110,7 +115,7 @@ export async function POST(req: NextRequest) {
     conversa_id: conversaId,
     tipo: 'respondeu',
     de_estado: conversa.estado,
-    para_estado: 'aguardando',
+    para_estado: novoEstado,
     autor_id: sess!.usuarioId || null,
     autor_nome: quem,
   })

@@ -405,6 +405,8 @@ export default function CrmPage() {
       agendadas: comTempo.filter(c => c.estado === 'agendado').length,
       perdidas: comTempo.filter(c => c.estado === 'sem_conversao').length,
       promo: comTempo.filter(c => c.estado === 'aguardando_promo').length,
+      feedback: comTempo.filter(c => c.estado === 'feedback').length,
+      confirmacao: comTempo.filter(c => c.estado === 'confirmacao').length,
       desmarcadas: comTempo.filter(c => c.estado === 'desmarcou').length,
       confirmadas: comTempo.filter(c => c.estado === 'confirmado').length,
       novas: comTempo.filter(ehNova).length,
@@ -421,7 +423,9 @@ export default function CrmPage() {
       case 'novas':       return `Clientes novas${n(contagem.novas)}`
       case 'antigas':     return `Sem resposta${n(contagem.antigas)}`
       case 'aguardando':  return `Aguardando${n(contagem.aguardando)}`
-      case 'aguardando_promo': return `Promoção${n(contagem.promo)}`
+      case 'aguardando_promo': return `Listas${n(contagem.promo)}`
+      case 'feedback':    return `Feedback${n(contagem.feedback)}`
+      case 'confirmacao': return `Confirmação${n(contagem.confirmacao)}`
       case 'follow_up':   return `Follow-up${n(contagem.followUp)}`
       case 'pausada':     return `Pausadas${n(contagem.pausadas)}`
       case 'agendado':    return `Agendadas${n(contagem.agendadas)}`
@@ -878,7 +882,15 @@ export default function CrmPage() {
               texto={`Aguardando (${contagem.aguardando})`} />
             {contagem.promo > 0 && (
               <Aba ativo={filtro === 'aguardando_promo'} onClick={() => setFiltro('aguardando_promo')}
-                texto={`Promoção (${contagem.promo})`} />
+                texto={`Listas (${contagem.promo})`} />
+            )}
+            {contagem.feedback > 0 && (
+              <Aba ativo={filtro === 'feedback'} onClick={() => setFiltro('feedback')}
+                texto={`Feedback (${contagem.feedback})`} />
+            )}
+            {contagem.confirmacao > 0 && (
+              <Aba ativo={filtro === 'confirmacao'} onClick={() => setFiltro('confirmacao')}
+                texto={`Confirmação (${contagem.confirmacao})`} />
             )}
             {contagem.followUp > 0 && (
               <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}

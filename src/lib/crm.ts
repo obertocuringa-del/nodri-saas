@@ -8,6 +8,8 @@ export type EstadoConversa =
   | 'acao_necessaria'
   | 'aguardando'
   | 'aguardando_promo'
+  | 'feedback'
+  | 'confirmacao'
   | 'follow_up'
   | 'pausada'
   | 'agendado'
@@ -47,10 +49,21 @@ export const ESTADOS: DefEstado[] = [
   // Promoção é espera de outra natureza: disparo para cem pessoas, em que o
   // silêncio é o normal e não um atendimento atrasado. Misturar com a espera
   // de uma conversa de verdade faz a fila de "Aguardando" perder o sentido.
-  { chave: 'aguardando_promo', rotulo: 'Aguardando promoção', cor: '#7A5AF8', fundo: '#F1EEFC',
+  { chave: 'aguardando_promo', rotulo: 'Listas', cor: '#7A5AF8', fundo: '#F1EEFC',
     naFila: false, contaTempo: false,
-    acao: 'Aguardando promoção',
-    explica: 'Recebeu uma promoção e ainda não respondeu.' },
+    acao: 'Listas',
+    explica: 'Recebeu uma lista (promoção, disparo) e ainda não respondeu.' },
+  // Feedback e confirmação são disparos de outra natureza: saem todo dia, para
+  // quem já veio ou já marcou, e o silêncio é o esperado. Cada um tem a sua
+  // pasta para a recepção achar o que procura sem garimpar a de promoção.
+  { chave: 'feedback', rotulo: 'Feedback', cor: '#1F6F78', fundo: '#E3F1F2',
+    naFila: false, contaTempo: false,
+    acao: 'Feedback',
+    explica: 'Recebeu a mensagem de feedback pós-visita e ainda não respondeu.' },
+  { chave: 'confirmacao', rotulo: 'Confirmação', cor: '#4A5FC1', fundo: '#E8ECFA',
+    naFila: false, contaTempo: false,
+    acao: 'Confirmação',
+    explica: 'Recebeu a confirmação do horário e ainda não respondeu.' },
   { chave: 'follow_up', rotulo: 'Follow-up', cor: '#C2603A', fundo: '#FBEFE7',
     naFila: true,  contaTempo: false,
     acao: 'Follow-up amanhã',
@@ -236,7 +249,9 @@ export function proximaAcaoPadrao(estado: EstadoConversa): string {
   switch (estado) {
     case 'acao_necessaria': return 'Responder a cliente'
     case 'aguardando':      return 'Aguardar resposta'
-    case 'aguardando_promo': return 'Aguardar resposta da promoção'
+    case 'aguardando_promo': return 'Aguardar resposta da lista'
+    case 'feedback':        return 'Aguardar o feedback da cliente'
+    case 'confirmacao':     return 'Aguardar a cliente confirmar'
     case 'follow_up':       return 'Retomar a conversa'
     case 'pausada':         return 'Voltar a falar na data combinada'
     case 'agendado':        return 'Confirmar o horário na agenda'
@@ -245,6 +260,69 @@ export function proximaAcaoPadrao(estado: EstadoConversa): string {
     case 'sem_conversao':   return 'Nenhuma'
   }
 }
+
+// ── O que o salão mandou: feedback, confirmação ou lista? ───────────────────
+//
+// Sem IA. O salão manda os mesmos três tipos de mensagem todo dia, e cada um
+// tem frases que só ele usa: "agradecer pela sua visita", "confirmar o seu
+// agendamento", "válido até". O sistema reconhece a frase e leva a conversa
+// para a pasta certa, para o disparo diário não cair em "Aguardando".
+//
+// Confirmação ganha de feedback, que ganha de lista: a confirmação costuma
+// vir com uma promoção pendurada no rodapé, e o que importa é a confirmação.
+export type TipoSaida = 'confirmacao' | 'feedback' | 'lista'
+
+export const ESTADO_DO_TIPO: Record<TipoSaida, EstadoConversa> = {
+  confirmacao: 'confirmacao',
+  feedback: 'feedback',
+  lista: 'aguardando_promo',
+}
+
+const ASSINATURAS: [TipoSaida, RegExp[]][] = [
+  ['confirmacao', [
+    /confirmar (o |a )?(seu|sua|o|a) (agendamento|hor[áa]rio|presen[çc]a)/i,
+    /lembrete d[eo] (seu )?agendamento/i,
+    /podemos confirmar/i,
+    /confirma(r|ção|çao)? (d[eo] )?(seu )?(agendamento|hor[áa]rio)/i,
+    /(agendamento|hor[áa]rio) (est[áa] )?(marcado|agendado|reservado) para/i,
+  ]],
+  ['feedback', [
+    /agradecer pela (sua )?visita/i,
+    /como foi (a )?sua experi[êe]ncia/i,
+    /sua opini[ãa]o [ée] muito importante/i,
+    /o que achou d[oa]s? nossos?/i,
+    /avalia(r|ção|çao) (d[oa] |o )?(seu )?atendimento/i,
+    /feed ?back/i,
+  ]],
+  ['lista', [
+    /\/promocoes\//i,
+    /promo[çc][ãa]o|promo[çc][õo]es/i,
+    /de r\$ ?[\d.,]+.{0,40}por (apenas )?r\$/i,
+    /v[áa]lid[oa] (de|at[ée]|somente)/i,
+    /a[çc][õo]es (especiais|comerciais|do m[êe]s|de \w+)/i,
+    /vagas limitadas/i,
+    /sentimos (a )?sua falta/i,
+    /estava acompanhando seus cuidados/i,
+    /\bcombo\b|\boferta\b|\bcupom\b|\bdesconto\b/i,
+  ]],
+]
+
+/** Reconhece o tipo pela frase. `null` é mensagem comum, escrita para a pessoa. */
+export function tipoDaMensagemDoSalao(texto: string | null | undefined): TipoSaida | null {
+  const t = String(texto || '')
+  if (t.trim().length < 12) return null
+  for (const [tipo, regras] of ASSINATURAS) {
+    if (regras.some(r => r.test(t))) return tipo
+  }
+  return null
+}
+
+/**
+ * Pastas de onde um disparo (lista, feedback, confirmação) pode tirar a
+ * conversa. "Preciso agir", Follow-up, Pausadas e as pastas do salão ficam
+ * intocadas: tem gente esperando ou alguém decidiu à mão.
+ */
+export const PASSIVAS_DO_DISPARO: EstadoConversa[] = ['aguardando', 'aguardando_promo', 'feedback', 'confirmacao']
 
 /** Motivos de perda de fábrica — semeados no salão que ainda não tem os seus. */
 export const MOTIVOS_PERDA_PADRAO = [

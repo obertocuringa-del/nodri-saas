@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO } from '@/lib/crm'
 import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
@@ -893,6 +893,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Feedback, confirmação ou lista: a frase diz o que é ──────────────────
+  //
+  // Ritmo e texto repetido continuam valendo para a promoção improvisada. Mas
+  // os três disparos de todo dia têm frase própria, e a frase é prova mais
+  // forte que o ritmo: o primeiro feedback do dia já cai na pasta certa, sem
+  // esperar o segundo sair para provar que era disparo.
+  const tipo = daCliente ? null : tipoDaMensagemDoSalao(texto)
+  const disparo = emMassa || !!tipo
+  const destino = tipo ? ESTADO_DO_TIPO[tipo] : 'aguardando_promo'
 
   if (!conversa) {
     // Disparo para quem nunca falou com o salão não abre oportunidade: seria
@@ -902,12 +911,12 @@ export async function POST(req: NextRequest) {
     // pasta -- e aí a espera que importa se perde no meio do disparo.
     const estado = daCliente
       ? 'acao_necessaria'
-      : (emMassa ? 'aguardando_promo' : 'aguardando')
+      : (disparo ? destino : 'aguardando')
     const { data: nova } = await supabaseAdmin.from('crm_conversas').insert({
       salao_id: salaoId,
       contato_id: contato.id,
       estado,
-      importada: emMassa,
+      importada: disparo,
       proxima_acao: proximaAcaoPadrao(estado as any),
       aguardando_desde: daCliente ? agora : null,
       ultima_em: agora,
@@ -921,7 +930,7 @@ export async function POST(req: NextRequest) {
     // fica. Da cliente, sobe com não lida (a tela põe em "Preciso agir" até
     // alguém abrir). Do salão, só atualiza a prévia -- e disparo não mexe em
     // nada, como em qualquer outra pasta fechada.
-    if (daCliente || !emMassa) {
+    if (daCliente || !disparo) {
       await supabaseAdmin.from('crm_conversas').update({
         ultima_em: agora,
         ultima_de: daCliente ? 'cliente' : 'salao',
@@ -944,7 +953,7 @@ export async function POST(req: NextRequest) {
       nao_lidas: (conversa.nao_lidas || 0) + 1,
       atualizado_em: agora,
     }).eq('id', conversa.id)
-  } else if (!emMassa) {
+  } else if (!disparo) {
     // Resposta de verdade, digitada no celular: vale como resposta e a bola
     // passa para a cliente, exatamente como se tivesse sido escrita aqui.
     await supabaseAdmin.from('crm_conversas').update({
@@ -957,7 +966,7 @@ export async function POST(req: NextRequest) {
       nao_lidas: 0,
       atualizado_em: agora,
     }).eq('id', conversa.id)
-  } else if (conversa.estado === 'aguardando') {
+  } else if (PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
     // ── Disparo em conversa onde NINGUÉM estava esperando ───────────────────
     //
     // Só daqui o disparo tem permissão de mexer. "Aguardando cliente" tem de
@@ -975,9 +984,11 @@ export async function POST(req: NextRequest) {
     //   elas, o salão perderia a lista de quem precisa retomar, e perderia
     //   sem perceber, num dia em que só mandou promoção.
     // - Agendadas e Confirmou já estão decididas.
+    // A pasta de destino é a do tipo da frase (Feedback, Confirmação, Listas);
+    // sem frase conhecida, é Listas -- o disparo genérico.
     await supabaseAdmin.from('crm_conversas').update({
-      estado: 'aguardando_promo',
-      proxima_acao: proximaAcaoPadrao('aguardando_promo'),
+      estado: destino,
+      proxima_acao: proximaAcaoPadrao(destino),
       aguardando_desde: null,
       ultima_em: agora,
       ultima_de: 'salao',

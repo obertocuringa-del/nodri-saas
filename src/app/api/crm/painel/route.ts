@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 // de EXPEDIENTE, não de relógio — mensagem que chega domingo à noite não conta
 // como doze horas de atraso.
 
-const ABERTOS = ['acao_necessaria', 'aguardando', 'aguardando_promo', 'follow_up', 'pausada']
+const ABERTOS = ['acao_necessaria', 'aguardando', 'aguardando_promo', 'feedback', 'confirmacao', 'follow_up', 'pausada']
 
 export async function GET(req: NextRequest) {
   const sess = await getSessao()

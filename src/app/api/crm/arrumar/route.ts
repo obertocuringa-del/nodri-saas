@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
-import { proximaAcaoPadrao } from '@/lib/crm'
+import { proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO } from '@/lib/crm'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
 
@@ -276,8 +276,41 @@ export async function POST(req: NextRequest) {
     if (!e3) { apagadas.add(nova.id); fundidas++; Object.assign(alvo, patch) }
   }
 
+  // ── 6. Feedback, confirmação e lista, cada um na sua pasta ────────────────
+  //
+  // As três pastas nasceram em 13/09/2026. O que já estava em "Aguardando" e
+  // em "Listas" foi classificado pela mesma frase que vale ao vivo: a última
+  // mensagem do salão diz se é feedback, confirmação ou lista. Só mexe em
+  // conversa cuja última fala é do salão e que está numa pasta passiva.
+  let classificadas = 0
+  const { dados: passivas } = await paginar<any>((de, ate) => supabaseAdmin
+    .from('crm_conversas').select('id, estado, ultima_de')
+    .eq('salao_id', salaoId).in('estado', PASSIVAS_DO_DISPARO)
+    .eq('ultima_de', 'salao').range(de, ate))
+  for (const c of passivas || []) {
+    const { data: ult } = await supabaseAdmin
+      .from('crm_mensagens').select('texto')
+      .eq('conversa_id', c.id).eq('direcao', 'saida')
+      .order('criado_em', { ascending: false }).limit(1)
+    const tipo = tipoDaMensagemDoSalao((ult || [])[0]?.texto)
+    if (!tipo) continue
+    const destino = ESTADO_DO_TIPO[tipo]
+    if (destino === c.estado) continue
+    classificadas++
+    if (!aplicar) continue
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: destino, proxima_acao: proximaAcaoPadrao(destino), atualizado_em: agora,
+    }).eq('id', c.id)
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: c.id, tipo: 'mudou_estado',
+      de_estado: c.estado, para_estado: destino,
+      autor_nome: 'Arrumação', detalhe: 'Classificada pela frase da mensagem',
+    })
+  }
+
   return NextResponse.json({
     ok: true,
+    classificadas_por_tipo: classificadas,
     conversas_duplicadas_fundidas: fundidas,
     conversas_para_promocao: mudadas,
     follow_up_que_voltou_para_aguardando: devolvidas,
