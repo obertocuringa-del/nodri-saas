@@ -140,9 +140,54 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── 5. Conversa duplicada depois de decidida ─────────────────────────────
+  //
+  // Antes de 13/09/2026, conversa fechada ("Agendou", "Nao fechou") nunca
+  // recebia mensagem: qualquer coisa que chegasse depois abria uma conversa
+  // nova. Maria Jose agendou, a recepcao clicou em Agendou, e o "Ok.Obrigada"
+  // dela virou uma segunda Maria Jose na lista. Catorze casos num dia so.
+  //
+  // A regra mudou (mensagem na mesma semana vai para a conversa que ja
+  // existe -- ver /api/crm/ponte), mas as duplicadas ja gravadas ficaram.
+  // Aqui elas voltam para dentro da conversa original: mensagens e eventos
+  // mudam de conversa, a decisao mais recente vale, e a duplicada some.
+  //
+  // So mexe no que nasceu nos ultimos 7 dias: e o periodo em que a regra
+  // antiga fez estrago com a recepcao usando a tela. Antes disso nao havia
+  // ninguem clicando em Agendou, entao nao ha duplicada para fundir.
+  const FECHADOS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
+  const semanaAtras = Date.now() - 7 * 864e5
+  const { dados: todasConversas } = await paginar<any>((de, ate) => supabaseAdmin
+    .from('crm_conversas')
+    .select('id, contato_id, estado, criado_em, fechada_em, ultima_em, ultima_de, ultima_previa, nao_lidas, motivo_perda')
+    .eq('salao_id', salaoId)
+    .order('criado_em', { ascending: true })
+    .range(de, ate))
+  const porContato = new Map<string, any[]>()
+  for (const c of todasConversas || []) {
+    if (!c.contato_id) continue
+    if (!porContato.has(c.contato_id)) porContato.set(c.contato_id, [])
+    porContato.get(c.contato_id)!.push(c)
+  }
+  // Pares (duplicada -> original). A original e a fechada MAIS ANTIGA cuja
+  // decisao veio ate 7 dias antes de a duplicada nascer: numa cadeia de tres
+  // (agendou, confirmou, agradeceu) tudo cai na primeira.
+  const fusoes: { nova: any; alvo: any }[] = []
+  for (const lista of porContato.values()) {
+    for (const n of lista) {
+      const nasceu = new Date(n.criado_em).getTime()
+      if (nasceu < semanaAtras) continue
+      const alvo = lista.find(f => f.id !== n.id && FECHADOS.includes(f.estado) && f.fechada_em
+        && new Date(f.fechada_em).getTime() < nasceu
+        && nasceu < new Date(f.fechada_em).getTime() + 7 * 864e5)
+      if (alvo) fusoes.push({ nova: n, alvo })
+    }
+  }
+
   if (!aplicar) {
     return NextResponse.json({
       simulacao: true,
+      conversas_duplicadas_para_fundir: fusoes.length,
       conversas_para_promocao: paraPromo.length,
       follow_up_que_volta_para_aguardando: paraAguardando.length,
       presas_em_preciso_agir: respondidas.length,
@@ -197,8 +242,43 @@ export async function POST(req: NextRequest) {
     if (!error) nomeados++
   }
 
+  // Duplicadas de volta para a conversa original.
+  let fundidas = 0
+  const apagadas = new Set<string>()
+  for (const { nova, alvo } of fusoes) {
+    if (apagadas.has(nova.id) || apagadas.has(alvo.id)) continue
+    const { error: e1 } = await supabaseAdmin.from('crm_mensagens')
+      .update({ conversa_id: alvo.id }).eq('conversa_id', nova.id)
+    if (e1) continue
+    await supabaseAdmin.from('crm_eventos')
+      .update({ conversa_id: alvo.id }).eq('conversa_id', nova.id)
+    const decidida = FECHADOS.includes(nova.estado)
+    const patch: any = {
+      ultima_em: nova.ultima_em && (!alvo.ultima_em || nova.ultima_em > alvo.ultima_em) ? nova.ultima_em : alvo.ultima_em,
+      ultima_de: nova.ultima_de,
+      ultima_previa: nova.ultima_previa,
+      // Aberta com a cliente falando por ultimo: fica com nao lida para
+      // aparecer em "Preciso agir" ate alguem abrir -- e o que a regra nova
+      // faria.
+      nao_lidas: (!decidida && nova.ultima_de === 'cliente')
+        ? Math.max(Number(nova.nao_lidas || 0), 1) : Number(nova.nao_lidas || 0),
+      atualizado_em: agora,
+    }
+    if (decidida) {
+      patch.estado = nova.estado
+      patch.fechada_em = nova.fechada_em
+      patch.motivo_perda = nova.motivo_perda
+      patch.proxima_acao = proximaAcaoPadrao(nova.estado)
+    }
+    const { error: e2 } = await supabaseAdmin.from('crm_conversas').update(patch).eq('id', alvo.id)
+    if (e2) continue
+    const { error: e3 } = await supabaseAdmin.from('crm_conversas').delete().eq('id', nova.id)
+    if (!e3) { apagadas.add(nova.id); fundidas++; Object.assign(alvo, patch) }
+  }
+
   return NextResponse.json({
     ok: true,
+    conversas_duplicadas_fundidas: fundidas,
     conversas_para_promocao: mudadas,
     follow_up_que_voltou_para_aguardando: devolvidas,
     presas_destravadas: destravadas,

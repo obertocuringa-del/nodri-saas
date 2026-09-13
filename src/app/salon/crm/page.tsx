@@ -40,6 +40,8 @@ type Mensagem = any
 // informacao diferente de "cliente antiga e esta sem resposta", e a primeira
 // e a que se perde para sempre se ninguem responder.
 const ETIQUETA_NOVA = 'cliente nova'
+// Conversas ja decididas. Mensagem nova numa delas nao reabre; so avisa.
+const FECHADOS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
 const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
 
 // Como chamar a pessoa na tela. Ordem: o nome que o WhatsApp deu, o nome do
@@ -347,7 +349,12 @@ export default function CrmPage() {
     // para "Sem resposta". Continua sendo trabalho, mas nao pode enterrar
     // quem escreveu agora de manha.
     const antiga = c.estado === 'acao_necessaria' && min > 3 * 24 * 60
-    return { ...c, _min: min, _urg: urgenciaPorMinutos(min), _antiga: antiga }
+    // Conversa ja decidida ("Agendou", "Nao fechou") em que a cliente
+    // escreveu depois. A decisao fica; a mensagem nao pode ficar escondida
+    // atras dela -- pode ser "obrigada", pode ser "quero acrescentar um
+    // corte". Entra em "Preciso agir" ate alguem abrir e ler.
+    const depoisDeFechar = FECHADOS.includes(c.estado) && (c.nao_lidas || 0) > 0
+    return { ...c, _min: min, _urg: urgenciaPorMinutos(min), _antiga: antiga, _depois: depoisDeFechar }
   }), [conversas, agora])
 
   const visiveis = useMemo(() => {
@@ -356,7 +363,7 @@ export default function CrmPage() {
     // propria: sao trabalhos diferentes -- um e responder quem falou agora, o
     // outro e correr atras de quem sumiu -- e misturar os dois faz a fila do
     // dia parecer maior do que e, ate a pessoa desistir de olhar.
-    if (filtro === 'fila') lista = lista.filter(c => c.estado === 'acao_necessaria' && !c._antiga)
+    if (filtro === 'fila') lista = lista.filter(c => (c.estado === 'acao_necessaria' && !c._antiga) || c._depois)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro === 'novas') lista = lista.filter(ehNova)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
@@ -374,8 +381,8 @@ export default function CrmPage() {
     // Quem espera há mais tempo aparece primeiro — é a ordem do trabalho,
     // não a ordem de chegada.
     return [...lista].sort((a, b) => {
-      const fa = estadoPor(a.estado).naFila ? 0 : 1
-      const fb = estadoPor(b.estado).naFila ? 0 : 1
+      const fa = (estadoPor(a.estado).naFila || a._depois) ? 0 : 1
+      const fb = (estadoPor(b.estado).naFila || b._depois) ? 0 : 1
       if (fa !== fb) return fa - fb
       // Cliente nova na frente: e a que nao volta se ficar sem resposta.
       const na = ehNova(a) ? 0 : 1
@@ -387,7 +394,7 @@ export default function CrmPage() {
   }, [comTempo, filtro, busca, motivoFiltro])
 
   const contagem = useMemo(() => {
-    const naFila = comTempo.filter(c => c.estado === 'acao_necessaria' && !c._antiga)
+    const naFila = comTempo.filter(c => (c.estado === 'acao_necessaria' && !c._antiga) || c._depois)
     return {
       fila: naFila.length,
       antigas: comTempo.filter(c => c._antiga).length,

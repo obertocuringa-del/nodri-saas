@@ -734,10 +734,44 @@ export async function POST(req: NextRequest) {
   const { data: abertas } = await supabaseAdmin
     .from('crm_conversas').select('*')
     .eq('salao_id', salaoId).eq('contato_id', contato.id)
-    .not('estado', 'in', '("agendado","sem_conversao")')
+    .not('estado', 'in', '("agendado","confirmado","sem_conversao","desmarcou")')
     .order('ultima_em', { ascending: false }).limit(1)
 
   let conversa = (abertas || [])[0]
+
+  // ── "Ok, obrigada" não é oportunidade nova ────────────────────────────────
+  //
+  // Caso real, Maria José, 12/09/2026: a recepção agendou, clicou em "Agendou"
+  // e trinta segundos depois chegou o "Ok.Obrigada" dela. Conversa fechada não
+  // reabre, então nasceu uma SEGUNDA conversa -- duas Maria José na lista, uma
+  // com o histórico inteiro e outra só com o obrigada.
+  //
+  // O que fecha a conta de conversão é a cliente que volta DEPOIS: semanas
+  // mais tarde, querendo outro horário. Quem escreve na mesma semana ainda
+  // está na mesma conversa -- agradecendo, confirmando o horário quando o
+  // lembrete chega, ou pedindo para acrescentar um corte. Nos três casos a
+  // mensagem vai para a conversa que já existe, e a decisão ("Agendou", "Não
+  // fechou") fica como está. O que muda é que ela sobe com a bolinha de não
+  // lida: a tela mostra conversa fechada com mensagem nova em "Preciso agir"
+  // até alguém abrir.
+  //
+  // Sete dias, e não 48h, por causa do lembrete: o salão agenda na segunda e
+  // manda "confirma seu horário?" na quinta. Com 48h o "Sim" dela abria uma
+  // conversa nova, e a mesma cliente virava duas vitórias no painel -- uma
+  // "Agendou" e uma "Confirmou". Medido em 12/09/2026: 14 conversas assim.
+  const DIAS_MESMA_CONVERSA = 7
+  let fechadaHaPouco = false
+  if (!conversa) {
+    const limite = new Date(Date.now() - DIAS_MESMA_CONVERSA * 864e5).toISOString()
+    const { data: fechadas } = await supabaseAdmin
+      .from('crm_conversas').select('*')
+      .eq('salao_id', salaoId).eq('contato_id', contato.id)
+      .in('estado', ['agendado', 'confirmado', 'sem_conversao', 'desmarcou'])
+      .order('ultima_em', { ascending: false }).limit(1)
+    const f = (fechadas || [])[0]
+    const quando = f?.fechada_em || f?.ultima_em
+    if (f && quando && quando >= limite) { conversa = f; fechadaHaPouco = true }
+  }
 
   // ── Disparo em massa ──────────────────────────────────────────────────────
   //
@@ -882,6 +916,20 @@ export async function POST(req: NextRequest) {
       nao_lidas: daCliente ? 1 : 0,
     }).select().maybeSingle()
     conversa = nova
+  } else if (fechadaHaPouco) {
+    // Conversa decidida há menos de 48h: a mensagem entra nela e a decisão
+    // fica. Da cliente, sobe com não lida (a tela põe em "Preciso agir" até
+    // alguém abrir). Do salão, só atualiza a prévia -- e disparo não mexe em
+    // nada, como em qualquer outra pasta fechada.
+    if (daCliente || !emMassa) {
+      await supabaseAdmin.from('crm_conversas').update({
+        ultima_em: agora,
+        ultima_de: daCliente ? 'cliente' : 'salao',
+        ultima_previa: texto.slice(0, 120),
+        nao_lidas: daCliente ? (conversa.nao_lidas || 0) + 1 : 0,
+        atualizado_em: agora,
+      }).eq('id', conversa.id)
+    }
   } else if (daCliente) {
     // A cliente respondeu: volta para a fila e o relógio recomeça. Só marca o
     // início da espera se ela ainda não estava esperando, senão um cliente que
@@ -995,9 +1043,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (daCliente) {
+    // Na conversa fechada o estado não mudou; o evento registra que ela
+    // escreveu depois da decisão, sem fingir que voltou para a fila.
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
-      para_estado: 'acao_necessaria', autor_nome: contato.nome || 'Cliente',
+      para_estado: fechadaHaPouco ? conversa.estado : 'acao_necessaria',
+      autor_nome: contato.nome || 'Cliente',
     })
   }
 
