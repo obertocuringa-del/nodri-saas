@@ -4,6 +4,7 @@ import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoS
 import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
+import { ehEstadoDoSalao } from '@/lib/crmEstados'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 
 export const dynamic = 'force-dynamic'
@@ -461,17 +462,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, criadas: 0, mensagens: 0, erro: erroContatos })
     }
 
-    const { data: abertasExistentes } = await supabaseAdmin
-      .from('crm_conversas').select('id, contato_id, estado, ultima_em')
+    // ── Conversa DECIDIDA também conta ────────────────────────────────────
+    //
+    // Esta consulta escondia 'agendado' e 'sem_conversao'. Resultado: a cliente
+    // que escrevia "obrigada" depois de a recepção clicar em "Agendou" não
+    // achava a conversa dela e ganhava uma NOVA -- dois Yuri na fila, um com o
+    // histórico inteiro e outro com uma palavra. O caminho ao vivo já
+    // reaproveitava a conversa decidida há menos de 7 dias; o histórico não, e
+    // é por ele que quase tudo entra quando a conexão oscila.
+    const { data: todasDoContato } = await supabaseAdmin
+      .from('crm_conversas').select('id, contato_id, estado, ultima_em, fechada_em, nao_lidas, aguardando_desde')
       .eq('salao_id', salaoId).in('contato_id', idsContato)
-      .not('estado', 'in', '("agendado","sem_conversao")')
+
+    const DIAS_REABRIR = 7
+    const limiteReabrir = new Date(Date.now() - DIAS_REABRIR * 864e5).toISOString()
+    const DECIDIDA = (e: string) => ESTADOS_DECIDIDOS.includes(e as any) && e !== 'pausada'
 
     const porContato = new Map<string, any>()
-    for (const cv of abertasExistentes || []) {
-      const anterior = porContato.get(cv.contato_id)
-      if (!anterior || (cv.ultima_em || '') > (anterior.ultima_em || '')) {
-        porContato.set(cv.contato_id, cv)
+    for (const cv of todasDoContato || []) {
+      if (DECIDIDA(cv.estado)) {
+        // Decidida e antiga não reabre: quem volta meses depois é oportunidade
+        // nova, e é isso que faz a conta de conversão parar de pé.
+        const quando = cv.fechada_em || cv.ultima_em
+        if (!quando || quando < limiteReabrir) continue
       }
+      const anterior = porContato.get(cv.contato_id)
+      const melhor = !anterior
+        // Conversa em aberto ganha de conversa decidida.
+        || (DECIDIDA(anterior.estado) && !DECIDIDA(cv.estado))
+        || (DECIDIDA(anterior.estado) === DECIDIDA(cv.estado)
+            && (cv.ultima_em || '') > (anterior.ultima_em || ''))
+      if (melhor) porContato.set(cv.contato_id, cv)
     }
 
     const resumo = lote.map((c: any) => {
@@ -583,12 +604,15 @@ export async function POST(req: NextRequest) {
       // feedback preso em Aguardando). Agora a pasta é recalculada da última
       // mensagem, igual ao vivo. Menos os estados que a recepção decidiu à mão:
       // esses o histórico não desfaz.
-      if (!ESTADOS_DECIDIDOS.includes(conversa.estado)) {
+      // A cliente falou: sobe a bolinha de não lida mesmo na conversa já
+      // decidida -- a decisão ("Agendou") fica, mas a fala dela não se perde.
+      if (r.daCliente) patch.nao_lidas = Math.max(1, Number(conversa.nao_lidas || 0))
+      // Pasta decidida à mão, e pasta que o salão criou, o histórico não mexe.
+      if (!ESTADOS_DECIDIDOS.includes(conversa.estado) && !ehEstadoDoSalao(conversa.estado)) {
         const novo = estadoPelaUltimaMensagem(r.daCliente, r.ultima.texto)
         patch.estado = novo
         patch.proxima_acao = proximaAcaoPadrao(novo)
         patch.aguardando_desde = r.daCliente ? (conversa.aguardando_desde || r.quando) : null
-        if (r.daCliente) patch.nao_lidas = Math.max(1, Number(conversa.nao_lidas || 0))
       }
       await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conversa.id)
       conversa.ultima_em = r.quando
