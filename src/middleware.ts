@@ -48,6 +48,8 @@ async function roteador(request: NextRequest) {
     // dentro da própria rota contra CRM_PONTE_CHAVE. Passar aqui não a abre —
     // sem a chave certa, a rota devolve 401 na primeira linha.
     pathname === '/api/crm/ponte' ||
+    // A extensão de feedback se apresenta com a chave do salão, não com cookie.
+    pathname === '/api/crm/automacao/extensao' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
