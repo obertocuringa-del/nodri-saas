@@ -32,7 +32,14 @@ export async function POST(req: NextRequest) {
   if (sess.role !== 'salon') return NextResponse.json({ error: 'Só o dono do salão.' }, { status: 403 })
 
   const aplicar = new URL(req.url).searchParams.get('aplicar') === '1'
+  const soReclassificar = new URL(req.url).searchParams.get('so') === 'reclassificar'
   const salaoId = sess.salaoId
+  const agoraGlobal = new Date().toISOString()
+
+  if (soReclassificar) {
+    const r = await reclassificarPelaUltima(salaoId, aplicar, agoraGlobal)
+    return NextResponse.json({ ok: true, ...r })
+  }
 
   // ── 1. Disparo que ficou em "Aguardando cliente" ─────────────────────────
   //
@@ -276,57 +283,7 @@ export async function POST(req: NextRequest) {
     if (!e3) { apagadas.add(nova.id); fundidas++; Object.assign(alvo, patch) }
   }
 
-  // ── 6. A pasta certa a partir da ÚLTIMA MENSAGEM real ─────────────────────
-  //
-  // A raiz da bagunça: com a conexão caindo o tempo todo, quase tudo entrou
-  // pelo histórico, e o histórico não mexia na pasta de conversa já existente.
-  // A cliente respondia e a conversa continuava em "Listas"; um feedback saía e
-  // ficava em "Aguardando". Aqui a conta é refeita para TODA conversa em aberto:
-  // quem falou por último (cliente -> Preciso agir; salão -> a frase decide
-  // Feedback/Confirmação/Listas, ou Aguardando). Não toca no que a recepção
-  // decidiu à mão (Agendou, Confirmou, Não fechou, Desmarcou, Pausar).
-  //
-  // Em lotes, com teto por chamada, para não estourar o tempo da Vercel: a tela
-  // chama de novo até "faltam: 0". Idempotente -- só grava o que muda.
-  const TETO_RECLASSIFICAR = aplicar ? 250 : 4000
-  let reclassificadas = 0
-  let faltam = 0
-  {
-    const { dados: abertas } = await paginar<any>((de, ate) => supabaseAdmin
-      .from('crm_conversas').select('id, estado, ultima_de, ultima_previa, ultima_em, aguardando_desde, nao_lidas')
-      .eq('salao_id', salaoId)
-      .not('estado', 'in', `(${ESTADOS_DECIDIDOS.map(e => `"${e}"`).join(',')})`)
-      .order('ultima_em', { ascending: false, nullsFirst: false })
-      .range(de, ate))
-
-    for (const c of abertas || []) {
-      const daCliente = c.ultima_de !== 'salao'
-      let texto = c.ultima_previa || ''
-      if (!daCliente) {
-        const { data: ult } = await supabaseAdmin
-          .from('crm_mensagens').select('texto')
-          .eq('conversa_id', c.id).eq('direcao', 'saida')
-          .order('criado_em', { ascending: false }).limit(1)
-        texto = (ult || [])[0]?.texto || texto
-      }
-      const novo = estadoPelaUltimaMensagem(daCliente, texto)
-      if (novo === c.estado) continue
-      if (reclassificadas >= TETO_RECLASSIFICAR) { faltam++; continue }
-      reclassificadas++
-      if (!aplicar) continue
-      const patch: any = {
-        estado: novo, proxima_acao: proximaAcaoPadrao(novo), atualizado_em: agora,
-        aguardando_desde: daCliente ? (c.aguardando_desde || c.ultima_em || agora) : null,
-      }
-      if (daCliente) patch.nao_lidas = Math.max(1, Number(c.nao_lidas || 0))
-      await supabaseAdmin.from('crm_conversas').update(patch).eq('id', c.id)
-      await supabaseAdmin.from('crm_eventos').insert({
-        salao_id: salaoId, conversa_id: c.id, tipo: 'mudou_estado',
-        de_estado: c.estado, para_estado: novo,
-        autor_nome: 'Arrumação', detalhe: 'Pasta recalculada pela última mensagem',
-      })
-    }
-  }
+  const { reclassificadas, faltam } = await reclassificarPelaUltima(salaoId, aplicar, agora)
 
 
   return NextResponse.json({
@@ -339,4 +296,47 @@ export async function POST(req: NextRequest) {
     presas_destravadas: destravadas,
     contatos_que_ganharam_nome: nomeados,
   })
+}
+
+// ── Recalcular a pasta pela última mensagem (a passada 6, isolável) ──────────
+// Chamável sozinha por ?so=reclassificar, para rodar rápido em lotes sem
+// repetir as passadas 1-5 a cada volta.
+async function reclassificarPelaUltima(salaoId: string, aplicar: boolean, agora: string) {
+  const TETO = aplicar ? 250 : 4000
+  let reclassificadas = 0
+  let faltam = 0
+  const { dados: abertas } = await paginar<any>((de, ate) => supabaseAdmin
+    .from('crm_conversas').select('id, estado, ultima_de, ultima_previa, ultima_em, aguardando_desde, nao_lidas')
+    .eq('salao_id', salaoId)
+    .not('estado', 'in', `(${ESTADOS_DECIDIDOS.map(e => `"${e}"`).join(',')})`)
+    .order('ultima_em', { ascending: false, nullsFirst: false })
+    .range(de, ate))
+  for (const c of abertas || []) {
+    const daCliente = c.ultima_de !== 'salao'
+    let texto = c.ultima_previa || ''
+    if (!daCliente) {
+      const { data: ult } = await supabaseAdmin
+        .from('crm_mensagens').select('texto')
+        .eq('conversa_id', c.id).eq('direcao', 'saida')
+        .order('criado_em', { ascending: false }).limit(1)
+      texto = (ult || [])[0]?.texto || texto
+    }
+    const novo = estadoPelaUltimaMensagem(daCliente, texto)
+    if (novo === c.estado) continue
+    if (reclassificadas >= TETO) { faltam++; continue }
+    reclassificadas++
+    if (!aplicar) continue
+    const patch: any = {
+      estado: novo, proxima_acao: proximaAcaoPadrao(novo), atualizado_em: agora,
+      aguardando_desde: daCliente ? (c.aguardando_desde || c.ultima_em || agora) : null,
+    }
+    if (daCliente) patch.nao_lidas = Math.max(1, Number(c.nao_lidas || 0))
+    await supabaseAdmin.from('crm_conversas').update(patch).eq('id', c.id)
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: c.id, tipo: 'mudou_estado',
+      de_estado: c.estado, para_estado: novo,
+      autor_nome: 'Arrumação', detalhe: 'Pasta recalculada pela última mensagem',
+    })
+  }
+  return { reclassificadas, faltam }
 }
