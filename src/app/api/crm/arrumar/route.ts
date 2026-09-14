@@ -6,6 +6,9 @@ import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
 
 export const dynamic = 'force-dynamic'
+// Sem isto a Vercel corta a funcao em 10s e a arrumacao nunca terminava
+// nenhuma volta -- ficava rodando e morrendo calada.
+export const maxDuration = 60
 
 // ── Arrumar o que ficou para trás ───────────────────────────────────────────
 //
@@ -302,7 +305,7 @@ export async function POST(req: NextRequest) {
 // Chamável sozinha por ?so=reclassificar, para rodar rápido em lotes sem
 // repetir as passadas 1-5 a cada volta.
 async function reclassificarPelaUltima(salaoId: string, aplicar: boolean, agora: string) {
-  const TETO = aplicar ? 250 : 4000
+  const TETO = aplicar ? 120 : 4000
   let reclassificadas = 0
   let faltam = 0
   const { dados: abertas } = await paginar<any>((de, ate) => supabaseAdmin
