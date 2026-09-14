@@ -678,15 +678,33 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   return registroSessao
 }
 
-async function fecharSessao(salaoId) {
+// ── Fechar a sessão: com ou sem apagar as credenciais ────────────────────────
+//
+// Caso real, 14/09/2026 às 09:24: os DOIS salões sumiram da lista do NODRI
+// no mesmo segundo e voltaram 85 segundos depois. A ponte fez logout no
+// WhatsApp e apagou as credenciais dos dois -- e o salão amanheceu no QR.
+// Não foi o WhatsApp (não houve 401): foi esta função, chamada porque a
+// lista veio vazia por um instante (banco fora do ar, ou outra ponte que
+// assumiu por uma volta e morreu).
+//
+// Sumir da lista é sinal FRACO. Apagar credencial é ação FORTE e sem volta.
+// As duas não se combinam: sumiu da lista, fecha o socket e guarda tudo; o
+// salão volta à lista, reconecta sem QR. Só apaga quando o NODRI diz, com
+// todas as letras, que o salão clicou em Desconectar (`situacao:
+// 'desconectado'`).
+async function fecharSessao(salaoId, { apagar = false } = {}) {
   const s = sessoes.get(salaoId)
   if (!s) return
   s.fechando = true
-  try { await s.sock?.logout() } catch {}
+  if (apagar) { try { await s.sock?.logout() } catch {} }
   try { s.sock?.end() } catch {}
   sessoes.delete(salaoId)
-  fs.rmSync(path.join(PASTA, salaoId), { recursive: true, force: true })
-  registro(salaoId, 'sessão encerrada')
+  if (apagar) {
+    fs.rmSync(path.join(PASTA, salaoId), { recursive: true, force: true })
+    registro(salaoId, 'sessão encerrada e credenciais apagadas (Desconectar no NODRI)')
+  } else {
+    registro(salaoId, 'sessão fechada; credenciais guardadas para reconectar sem QR')
+  }
 }
 
 // ── A fila de saída ─────────────────────────────────────────────────────────
@@ -803,23 +821,23 @@ async function volta() {
     return
   }
 
-  const querem = new Set(canais.map(c => c.salao_id))
+  // Quem o NODRI mandou desligar de vez vem na lista com 'desconectado'
+  // (NODRI novo); quem só sumiu da lista pode ser banco fora do ar ou outra
+  // ponte -- e isso não apaga nada.
+  const desligar = new Set(canais.filter(c => c.situacao === 'desconectado').map(c => c.salao_id))
+  const querem = new Set(canais.filter(c => c.situacao !== 'desconectado').map(c => c.salao_id))
 
-  // O NODRI parou de entregar um salao que esta aberto aqui: outra ponte pegou
-  // a posse. Fechar e o certo -- duas conexoes no mesmo numero se derrubam --
-  // mas em silencio isso vira "o WhatsApp caiu sozinho", entao fica dito.
   for (const salaoId of sessoes.keys()) {
-    if (!querem.has(salaoId)) {
-      // Duas causas possiveis e nao da para distinguir daqui: o salao clicou
-      // em Desconectar, ou outra ponte pegou a posse. Dizer as duas e melhor
-      // que chutar uma -- na primeira versao eu afirmava "outra ponte assumiu"
-      // e o log acusava um culpado que nao existia.
-      registro(salaoId, 'saiu da lista do NODRI — desconectado pelo salão, ou outra ponte assumiu. Rode a ponte em UM computador só.')
+    if (desligar.has(salaoId)) {
+      registro(salaoId, 'o salão clicou em Desconectar no NODRI — encerrando de vez')
+    } else if (!querem.has(salaoId)) {
+      registro(salaoId, 'saiu da lista do NODRI — outra ponte assumiu ou o NODRI oscilou. Fechando sem apagar nada.')
     }
   }
 
   // Abre o que falta
   for (const c of canais) {
+    if (c.situacao === 'desconectado') continue
     if (!sessoes.has(c.salao_id)) {
       // Ainda de castigo por ninguém ter escaneado. Ver QR_ANTES_DE_DESISTIR.
       const espera = semNinguem.get(c.salao_id)
@@ -835,7 +853,8 @@ async function volta() {
 
   // Fecha o que o salão desligou pelo NODRI
   for (const salaoId of [...sessoes.keys()]) {
-    if (!querem.has(salaoId)) await fecharSessao(salaoId)
+    if (desligar.has(salaoId)) await fecharSessao(salaoId, { apagar: true })
+    else if (!querem.has(salaoId)) await fecharSessao(salaoId)
   }
 
   // ── Cruzar por telefone, no sentido que o WhatsApp aceita ─────────────────

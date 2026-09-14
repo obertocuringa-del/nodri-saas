@@ -988,12 +988,21 @@ export async function GET(req: NextRequest) {
     const agora = new Date()
     const limite = new Date(agora.getTime() - 120000).toISOString()
 
-    const { data } = await supabaseAdmin
+    // Com erro do banco a resposta é ERRO, não lista vazia. Lista vazia a
+    // ponte lia como "todos os salões se desconectaram" -- e em 14/09/2026
+    // ela apagou as credenciais dos dois salões por causa de uma volta assim.
+    const { data, error } = await supabaseAdmin
       .from('crm_canais').select('id, salao_id, situacao, ponte_dono, ponte_visto_em')
-      .neq('situacao', 'desconectado')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     const meus: any[] = []
     for (const c of data || []) {
+      // 'desconectado' vai na lista, com o nome, para a ponte que segurava a
+      // sessão fazer o logout de verdade. Sem dono, ninguém precisa saber.
+      if (c.situacao === 'desconectado') {
+        if (dono && c.ponte_dono === dono) meus.push({ salao_id: c.salao_id, situacao: 'desconectado' })
+        continue
+      }
       const livre = !c.ponte_dono || c.ponte_dono === dono
         || !c.ponte_visto_em || c.ponte_visto_em < limite
       if (!dono) { meus.push({ salao_id: c.salao_id, situacao: c.situacao }); continue }
