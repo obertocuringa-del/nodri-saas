@@ -303,6 +303,14 @@ const ASSINATURAS: [TipoSaida, RegExp[]][] = [
     /vagas limitadas/i,
     /sentimos (a )?sua falta/i,
     /estava acompanhando seus cuidados/i,
+    // Medido em 14/09/2026: 96 das 142 conversas presas em "Aguardando" eram
+    // ESTA frase -- o disparo de retomada do dia. Sem ela no reconhecedor, o
+    // disparo inteiro caía na pasta de conversa de verdade.
+    /j[aá] conseguiu agendar/i,
+    /separei algumas a[cç][oõ]es/i,
+    /gostaria de agendar alguma delas/i,
+    /estaremos fechados?|estar[aá] fechad[oa]/i,
+    /sentimos sua falta|sentimos a sua falta/i,
     /\bcombo\b|\boferta\b|\bcupom\b|\bdesconto\b/i,
   ]],
 ]
