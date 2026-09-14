@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { proximaAcaoPadrao, ESTADOS_DECIDIDOS, estadoPelaUltimaMensagem } from '@/lib/crm'
+import { ehEstadoDoSalao } from '@/lib/crmEstados'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
 
@@ -315,6 +316,11 @@ async function reclassificarPelaUltima(salaoId: string, aplicar: boolean, agora:
     .order('ultima_em', { ascending: false, nullsFirst: false })
     .range(de, ate))
   for (const c of abertas || []) {
+    // Pasta que o SALÃO criou (Profissionais, etc.) é decisão de gente, igual
+    // a "Agendou" ou "Não fechou": a reclassificação não entra nela. Passei por
+    // cima de 8 conversas da pasta Profissionais em 14/09/2026 antes desta
+    // trava existir.
+    if (ehEstadoDoSalao(c.estado)) continue
     const daCliente = c.ultima_de !== 'salao'
     // Só a PRÉVIA: as frases de disparo (feedback, retomada, confirmação)
     // ficam todas no começo da mensagem, dentro dos 120 caracteres. Buscar a
