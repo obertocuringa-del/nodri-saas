@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { descreverTempo, type MapaTempos } from '@/lib/servicosTempo'
 import { Loader2, Trash2, Plus, ArrowLeft, Pencil, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -43,6 +44,10 @@ export default function ServicosPage() {
   const [editando, setEditando] = useState<Servico | null>(null)
   const [novo, setNovo] = useState(false)
   const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
+  // O tempo do procedimento mora em salao_config, não na linha do serviço --
+  // por isso é um mapa por id, carregado à parte.
+  const [tempos, setTempos] = useState<MapaTempos>({})
+  const [tempoForm, setTempoForm] = useState({ trabalha1: '', pausa: '', trabalha2: '' })
   const [salvando, setSalvando] = useState(false)
   const [deletando, setDeletando] = useState<string | null>(null)
   // Comparacao com a tabela de precos: quem nasceu dela e ainda nao foi
@@ -59,7 +64,29 @@ export default function ServicosPage() {
     const res = await fetch('/api/servicos')
     const data = await res.json()
     setServicos(Array.isArray(data) ? data : [])
+    // Os tempos vêm de outra rota: erro neles não pode esconder a lista de
+    // serviços, que é o que a tela existe para mostrar.
+    fetch('/api/servicos/tempos')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setTempos(d?.tempos || {}))
+      .catch(() => {})
     setLoading(false)
+  }
+
+  /** Grava o tempo do procedimento. Separado do serviço de propósito. */
+  async function gravarTempo(servicoId: string) {
+    const n = (v: string) => parseInt(v) || 0
+    try {
+      const r = await fetch('/api/servicos/tempos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          servico_id: servicoId,
+          tempo: { trabalha1: n(tempoForm.trabalha1), pausa: n(tempoForm.pausa), trabalha2: n(tempoForm.trabalha2) },
+        }),
+      })
+      const d = await r.json().catch(() => null)
+      if (r.ok && d?.tempos) setTempos(d.tempos)
+    } catch { /* o serviço já foi salvo; o tempo o dono regrava */ }
   }
 
   const categorias = [...new Set(servicos.map(s => s.categoria))].sort()
@@ -70,6 +97,7 @@ export default function ServicosPage() {
 
   function iniciarNovo() {
     setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
+    setTempoForm({ trabalha1: '', pausa: '', trabalha2: '' })
     setEditando(null)
     setNovo(true)
     setProfsDoServico(null)
@@ -98,6 +126,7 @@ export default function ServicosPage() {
       categoria: d.categoria || CATEGORIAS[0], nome: d.nome, preco_tipo: 'fixo', preco: d.preco,
       comissao_valor: '', observacao: '', ciclo_retorno_dias: '',
     })
+    setTempoForm({ trabalha1: '', pausa: '', trabalha2: '' })
     setEditando(null)
     setNovo(true)
     setProfsDoServico(null)
@@ -116,6 +145,12 @@ export default function ServicosPage() {
       comissao_valor: String(s.comissao_valor || ''),
       observacao: s.observacao || '',
       ciclo_retorno_dias: String(s.ciclo_retorno_dias || '')
+    })
+    const t = tempos[s.id]
+    setTempoForm({
+      trabalha1: t?.trabalha1 ? String(t.trabalha1) : '',
+      pausa: t?.pausa ? String(t.pausa) : '',
+      trabalha2: t?.trabalha2 ? String(t.trabalha2) : '',
     })
   }
 
@@ -161,7 +196,7 @@ export default function ServicosPage() {
         // O id so existe depois de criar — por isso quem faz o serviço e
         // gravado aqui, e nao junto: em serviço novo nao havia id para ligar.
         const criado = await res.json().catch(() => null)
-        if (criado?.id) await gravarProfissionais(criado.id)
+        if (criado?.id) { await gravarProfissionais(criado.id); await gravarTempo(criado.id) }
         toast.success('Serviço adicionado!')
       } else if (editando) {
         const res = await fetch('/api/servicos', {
@@ -171,6 +206,7 @@ export default function ServicosPage() {
         })
         if (!res.ok) throw new Error()
         await gravarProfissionais(editando.id)
+        await gravarTempo(editando.id)
         // Configurou: o selo verde sai. Ele marca "ainda nao passou pela sua
         // mao", nao "novo para sempre".
         if (daTabela?.marcados?.includes(editando.id)) {
@@ -297,6 +333,39 @@ export default function ServicosPage() {
               <label className={labelCls}>Ciclo de retorno (dias)</label>
               <input type="number" min="1" value={form.ciclo_retorno_dias} onChange={e => setForm(f => ({ ...f, ciclo_retorno_dias: e.target.value }))} className={inputCls} placeholder="Ex: 7 para manicure, 90 para realinhamento" />
               <p className="text-[10px] text-nodri-t3 mt-1">Usado na análise de clientes perdidos — tempo mínimo para considerar a cliente como perdida</p>
+            </div>
+
+            {/* ── Tempo do procedimento ──
+                Três campos em vez de um número só porque muito procedimento tem
+                PAUSA no meio (aplica, processa, finaliza) e nela o profissional
+                atende outra pessoa. Sem pausa, preenche só o primeiro. */}
+            <div>
+              <label className={labelCls}>Tempo do procedimento</label>
+              <div className="flex items-end gap-2 flex-wrap">
+                <div>
+                  <p className="text-[10px] text-nodri-t3 mb-1">Trabalha (min)</p>
+                  <input type="number" min="0" step="5" value={tempoForm.trabalha1}
+                    onChange={e => setTempoForm(t => ({ ...t, trabalha1: e.target.value }))}
+                    className={inputCls} placeholder="30" style={{ maxWidth: 110 }} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-nodri-t3 mb-1">Pausa (min)</p>
+                  <input type="number" min="0" step="5" value={tempoForm.pausa}
+                    onChange={e => setTempoForm(t => ({ ...t, pausa: e.target.value }))}
+                    className={inputCls} placeholder="0" style={{ maxWidth: 110 }} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-nodri-t3 mb-1">Trabalha (min)</p>
+                  <input type="number" min="0" step="5" value={tempoForm.trabalha2}
+                    onChange={e => setTempoForm(t => ({ ...t, trabalha2: e.target.value }))}
+                    className={inputCls} placeholder="0" style={{ maxWidth: 110 }} />
+                </div>
+              </div>
+              <p className="text-[10px] text-nodri-t3 mt-1">
+                Procedimento simples: preencha só o primeiro (ex.: 60). Com espera no meio:
+                30 · 30 · 30 — a progressiva prende 1h de profissional e ocupa 1h30 na cadeira,
+                e na pausa ele atende outra cliente.
+              </p>
             </div>
 
             <div className="flex gap-2 pt-1">
