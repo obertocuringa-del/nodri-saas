@@ -283,6 +283,9 @@ const ASSINATURAS: [TipoSaida, RegExp[]][] = [
     /confirmar (o |a )?(seu|sua|o|a) (agendamento|hor[áa]rio|presen[çc]a)/i,
     /lembrete d[eo] (seu )?agendamento/i,
     /podemos confirmar/i,
+    // Cabe nos 120 caracteres da previa -- o resto da frase ("o seu
+    // agendamento") as vezes fica depois do corte.
+    /estou entrando em contato para confirmar/i,
     /confirma(r|ção|çao)? (d[eo] )?(seu )?(agendamento|hor[áa]rio)/i,
     /(agendamento|hor[áa]rio) (est[áa] )?(marcado|agendado|reservado) para/i,
   ]],

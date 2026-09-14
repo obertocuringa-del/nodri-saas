@@ -313,15 +313,11 @@ async function reclassificarPelaUltima(salaoId: string, aplicar: boolean, agora:
     .range(de, ate))
   for (const c of abertas || []) {
     const daCliente = c.ultima_de !== 'salao'
-    let texto = c.ultima_previa || ''
-    if (!daCliente) {
-      const { data: ult } = await supabaseAdmin
-        .from('crm_mensagens').select('texto')
-        .eq('conversa_id', c.id).eq('direcao', 'saida')
-        .order('criado_em', { ascending: false }).limit(1)
-      texto = (ult || [])[0]?.texto || texto
-    }
-    const novo = estadoPelaUltimaMensagem(daCliente, texto)
+    // Só a PRÉVIA: as frases de disparo (feedback, retomada, confirmação)
+    // ficam todas no começo da mensagem, dentro dos 120 caracteres. Buscar a
+    // mensagem inteira de cada conversa eram 600+ consultas em sequência e a
+    // função estourava o tempo sem terminar nenhuma vez.
+    const novo = estadoPelaUltimaMensagem(daCliente, c.ultima_previa || '')
     if (novo === c.estado) continue
     if (reclassificadas >= TETO) { faltam++; continue }
     reclassificadas++
