@@ -318,6 +318,38 @@ export function tipoDaMensagemDoSalao(texto: string | null | undefined): TipoSai
 }
 
 /**
+ * Estados que a recepção DECIDIU à mão — ou que já são um desfecho. O
+ * histórico e a reclassificação automática não mexem nestes: quem clicou em
+ * "Agendou", "Não fechou", "Desmarcou" ou "Pausar" mandou mais que a última
+ * mensagem que o WhatsApp reentrega numa reconexão.
+ */
+export const ESTADOS_DECIDIDOS: EstadoConversa[] = [
+  'agendado', 'confirmado', 'sem_conversao', 'desmarcou', 'pausada',
+]
+
+/**
+ * A pasta que a conversa DEVE ter, olhando só a última mensagem. É a mesma
+ * conta nos dois caminhos de entrada -- ao vivo e histórico -- para os dois
+ * nunca discordarem:
+ *
+ *   última é da cliente  -> "Preciso agir" (o salão deve responder)
+ *   última é do salão     -> a frase decide: Feedback, Confirmação, Listas;
+ *                            sem frase conhecida, Aguardando (bola com a cliente)
+ *
+ * Não decide sobre os estados de ESTADOS_DECIDIDOS: o chamador protege esses.
+ */
+export function estadoPelaUltimaMensagem(
+  ultimaDeCliente: boolean,
+  textoUltimaDoSalao?: string | null,
+  emMassa = false,
+): EstadoConversa {
+  if (ultimaDeCliente) return 'acao_necessaria'
+  const tipo = tipoDaMensagemDoSalao(textoUltimaDoSalao)
+  if (tipo) return ESTADO_DO_TIPO[tipo]
+  return emMassa ? 'aguardando_promo' : 'aguardando'
+}
+
+/**
  * Pastas de onde um disparo (lista, feedback, confirmação) pode tirar a
  * conversa. "Preciso agir", Follow-up, Pausadas e as pastas do salão ficam
  * intocadas: tem gente esperando ou alguém decidiu à mão.

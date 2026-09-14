@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO, ESTADOS_DECIDIDOS, estadoPelaUltimaMensagem } from '@/lib/crm'
 import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
@@ -495,7 +495,10 @@ export async function POST(req: NextRequest) {
         // conversa em que a cliente perguntou e ninguem respondeu e mentira,
         // e e a mentira mais cara que existe aqui. Quem separa o de hoje do
         // que ficou para tras e a tela, com a aba "Sem resposta".
-        const estado = r.daCliente ? 'acao_necessaria' : 'aguardando'
+        // Mesma conta do caminho ao vivo: a frase da última mensagem decide
+        // a pasta (Feedback, Confirmação, Listas), em vez de todo salão-por-
+        // último cair em "Aguardando" -- que era o que o histórico fazia.
+        const estado = estadoPelaUltimaMensagem(r.daCliente, r.ultima?.texto)
         return {
           salao_id: salaoId,
           contato_id: r.contato.id,
@@ -566,12 +569,28 @@ export async function POST(req: NextRequest) {
       const conversa = porContato.get(r.contato.id)
       if (!conversa || !r.ultima) continue
       if (r.quando <= (conversa.ultima_em || '')) continue
-      await supabaseAdmin.from('crm_conversas').update({
+      const patch: any = {
         ultima_em: r.quando,
         ultima_de: r.daCliente ? 'cliente' : 'salao',
         ultima_previa: String(r.ultima.texto || '').slice(0, 120),
         atualizado_em: agora,
-      }).eq('id', conversa.id)
+      }
+      // ── A CORREÇÃO ─────────────────────────────────────────────────────────
+      // Antes o histórico atualizava só a última mensagem e DEIXAVA A PASTA como
+      // estava. Com a conexão caindo a cada minuto quase tudo chega pelo
+      // histórico -- então a cliente respondia, o salão respondia, e a conversa
+      // ficava congelada na pasta antiga (um "ta joia" preso em Listas, um
+      // feedback preso em Aguardando). Agora a pasta é recalculada da última
+      // mensagem, igual ao vivo. Menos os estados que a recepção decidiu à mão:
+      // esses o histórico não desfaz.
+      if (!ESTADOS_DECIDIDOS.includes(conversa.estado)) {
+        const novo = estadoPelaUltimaMensagem(r.daCliente, r.ultima.texto)
+        patch.estado = novo
+        patch.proxima_acao = proximaAcaoPadrao(novo)
+        patch.aguardando_desde = r.daCliente ? (conversa.aguardando_desde || r.quando) : null
+        if (r.daCliente) patch.nao_lidas = Math.max(1, Number(conversa.nao_lidas || 0))
+      }
+      await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conversa.id)
       conversa.ultima_em = r.quando
     }
 
