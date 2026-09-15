@@ -78,9 +78,31 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── O batimento é o MENOR intervalo entre o que está ligado ───────────────
+  //
+  // Estava amarrado só ao Feedback: quem punha o aviso ao profissional em 30s
+  // levava 60, porque a extensão só perguntava de minuto em minuto. A tela
+  // prometia 30 e entregava 60. Agora o ritmo da pergunta acompanha a
+  // automação mais apressada que estiver ligada.
+  //
+  // O piso é 30s porque é o mínimo do alarme do Chrome. Prometer 20 seria a
+  // mesma mentira de antes, só que menor.
+  const ritmos: number[] = []
+  if (cfg.ligada) ritmos.push(cfg.intervalo_seg)
+  for (const c of await carregarCampanhas(salaoId)) {
+    if (!c.ligada) continue
+    // Horário fixo não pede pressa: basta a extensão passar por ali no minuto.
+    ritmos.push(c.quando.tipo === 'intervalo' ? (c.quando.segundos || 60) : 60)
+  }
+  // Confirmação é a que a cliente sente: ela mandou "confirmo" e espera.
+  if (conf.ligada) ritmos.push(30)
+  const batimento = ritmos.length ? Math.max(30, Math.min(...ritmos)) : 60
+
   return NextResponse.json({
     ligada: cfg.ligada,
-    intervalo_seg: cfg.intervalo_seg,
+    intervalo_seg: batimento,
+    // O intervalo do feedback em si, para a tela não se confundir com o ritmo.
+    feedback_intervalo_seg: cfg.intervalo_seg,
     url_relatorio: cfg.url_relatorio,
     url_login: cfg.url_login,
     statuses: cfg.statuses,
