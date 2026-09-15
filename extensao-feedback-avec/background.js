@@ -243,8 +243,19 @@ async function executarTarefa(cfg, dados) {
           horario_cumprido: t.horario_cumprido || undefined,
         }),
       }, dados.chave)
+      // Quando nada sai, a tela tem que dizer POR QUE. "enfileirou 0" sozinho
+      // vira "não funciona" e alguém perde uma hora procurando.
+      let porque = ''
+      if (!r.enviadas && r.elegiveis) {
+        if (r.sem_telefone) {
+          porque = ` — ${r.sem_telefone} sem telefone no cadastro`
+          if (r.sem_cadastro && r.sem_cadastro.length) porque += `: ${r.sem_cadastro.slice(0, 4).join(', ')}`
+        } else {
+          porque = ' — todos já receberam hoje'
+        }
+      }
       await saude({
-        texto: `${t.nome}: ${lido.linhas.length} linha(s) de ${t.data}; enfileirou ${r.enviadas || 0}.`,
+        texto: `${t.nome}: ${lido.linhas.length} linha(s) de ${t.data}; ${r.elegiveis || 0} no filtro; enfileirou ${r.enviadas || 0}${porque}.`,
         lidas: r.lidas, elegiveis: r.elegiveis, enviadas: r.enviadas, erro: r.erro || null,
       })
       return

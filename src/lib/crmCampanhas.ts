@@ -254,7 +254,7 @@ interface Alvo {
  */
 async function montarAlvos(
   salaoId: string, c: Campanha, linhas: LinhaRel[], dataBr: string, nomeSalao: string,
-): Promise<{ alvos: Alvo[]; elegiveis: number; semTelefone: number }> {
+): Promise<{ alvos: Alvo[]; elegiveis: number; semTelefone: number; semCadastro: string[] }> {
   const statusOk = new Set(c.statuses.map(semAcento))
   const uteis = linhas.filter(l =>
     statusOk.has(semAcento(l.status)) && String(l.data || '').trim() === dataBr)
@@ -279,7 +279,7 @@ async function montarAlvos(
         },
       }
     })
-    return { alvos, elegiveis: uteis.length, semTelefone: 0 }
+    return { alvos, elegiveis: uteis.length, semTelefone: 0, semCadastro: [] }
   }
 
   // ── profissional ──
@@ -301,10 +301,18 @@ async function montarAlvos(
 
   const alvos: Alvo[] = []
   let semTelefone = 0
+  // Quem não deu: separado entre "não achei no cadastro" e "achei mas sem
+  // telefone" -- são dois consertos diferentes, e a tela precisa dizer qual.
+  const semCadastro: string[] = []
   for (const [k, g] of por) {
     const p = acharProfissional(g.prof, profs || [])
     const telProf = normalizarTelefone(p?.telefone)
-    if (!p || !telProf || telProf.replace(/\D/g, '').length < 12) { semTelefone++; continue }
+    if (!p || !telProf || telProf.replace(/\D/g, '').length < 12) {
+      semTelefone++
+      const motivo = !p ? `${g.prof} (não achei no cadastro)` : `${g.prof} (sem telefone)`
+      if (!semCadastro.includes(motivo)) semCadastro.push(motivo)
+      continue
+    }
     alvos.push({
       chave: k, telefone: telProf, nomeContato: p.apelido || p.nome_completo,
       dados: {
@@ -314,7 +322,7 @@ async function montarAlvos(
       },
     })
   }
-  return { alvos, elegiveis: uteis.length, semTelefone }
+  return { alvos, elegiveis: uteis.length, semTelefone, semCadastro }
 }
 
 /**
@@ -332,7 +340,14 @@ export async function processarCampanha(
   const estados = await carregarEstados(salaoId)
   const agoraIso = new Date().toISOString()
 
-  const resumo = { em: agoraIso, lidas: linhas.length, elegiveis: 0, enviadas: 0, puladas: 0, erro: opts.erro || null }
+  const resumo = {
+    em: agoraIso, lidas: linhas.length, elegiveis: 0, enviadas: 0, puladas: 0,
+    // Zero sem motivo foi o que mais custou tempo neste projeto. Quando nada
+    // sai, a tela tem que dizer POR QUE -- senão vira "não funciona" e alguém
+    // passa uma hora procurando.
+    sem_telefone: 0, sem_cadastro: [] as string[],
+    erro: opts.erro || null,
+  }
   if (!c) return { ...resumo, ok: false, erro: 'Campanha não encontrada' }
 
   const e: EstadoCampanha = estados[c.id] || { ultimo: null, enviados: {}, horarios_feitos: {}, rodou_em: null }
@@ -382,9 +397,11 @@ export async function processarCampanha(
   }
 
   const { data: salao } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
-  const { alvos, elegiveis, semTelefone } = await montarAlvos(salaoId, c, linhas, alvoData.br, String(salao?.nome || '').trim())
+  const { alvos, elegiveis, semTelefone, semCadastro } = await montarAlvos(salaoId, c, linhas, alvoData.br, String(salao?.nome || '').trim())
   resumo.elegiveis = elegiveis
   resumo.puladas += semTelefone
+  resumo.sem_telefone = semTelefone
+  resumo.sem_cadastro = semCadastro
 
   // A marca é por DIA DO DISPARO, não pelo dia do agendamento: a confirmação de
   // amanhã sai hoje às 17h e não pode repetir hoje às 20:50.
