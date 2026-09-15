@@ -1083,10 +1083,17 @@ export async function GET(req: NextRequest) {
   const salaoId = params.get('salao') || ''
   if (!salaoId) return NextResponse.json({ error: 'salao é obrigatório' }, { status: 400 })
 
+  // ── A hora marcada de cada mensagem ───────────────────────────────────────
+  //
+  // `criado_em` no futuro quer dizer "só manda a partir daí". É assim que o
+  // espaçamento das campanhas funciona de verdade: sem este filtro, a ponte
+  // pegava as 60 confirmações de uma vez e mandava a 50 por minuto -- que é
+  // exatamente o que o espaçamento existe para evitar.
   const { data } = await supabaseAdmin
     .from('crm_mensagens')
     .select('id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone, lid))')
     .eq('salao_id', salaoId).eq('situacao', 'na_fila')
+    .lte('criado_em', new Date().toISOString())
     .order('criado_em', { ascending: true }).limit(20)
 
   // A mensagem citada vai junto. A ponte precisa do id do WhatsApp e de quem

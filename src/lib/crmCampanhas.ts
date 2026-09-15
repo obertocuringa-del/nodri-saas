@@ -448,7 +448,9 @@ export function campanhasPadrao(): Campanha[] {
         + 'Sou {atendente}, recepcionista do {salao}. Estou entrando em contato para confirmar o seu agendamento conosco:\n\n'
         + '*Data:* {data}\n*Horário:* {hora}.\n\nPodemos confirmar?',
       ],
-      espacamento_seg: 8,
+      // 20 segundos = 3 por minuto. Ritmo pedido pelo dono para o WhatsApp não
+      // entender o disparo de confirmação como lista.
+      espacamento_seg: 20,
       pasta: 'confirmacao',
     },
     {
