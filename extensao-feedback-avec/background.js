@@ -132,6 +132,15 @@ async function ciclo() {
 
     const cfg = await nodri('/api/crm/automacao/extensao', { method: 'GET' }, dados.chave)
     await reagendar(cfg.intervalo_seg)
+
+    // ── A tarefa da vez ─────────────────────────────────────────────────────
+    // O NODRI é quem tem o relógio. Se ele mandou uma tarefa, ela vem primeiro
+    // -- confirmação e aviso ao profissional são mais urgentes que o feedback.
+    if (cfg.tarefa) {
+      await executarTarefa(cfg, dados)
+      return
+    }
+
     if (!cfg.ligada) { await saude({ texto: 'Automação desligada no NODRI. Nada a fazer.', erro: null }); return }
 
     const urlRel = urlAvec(cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
@@ -193,3 +202,119 @@ chrome.runtime.onMessage.addListener(msg => {
   if (msg?.tipo === 'reagendar') reagendar(60)
 })
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage())
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AS OUTRAS TAREFAS
+//
+// A extensão não decide nada: o NODRI manda `cfg.tarefa` dizendo o que fazer,
+// em que data e com quais status. Aqui só se executa e se devolve o resultado.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function prepararAba(cfg, dados, url) {
+  const abaId = await abaDeTrabalho(url)
+  await esperarCarregar(abaId)
+  let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
+  if (!onde) throw new Error('A aba do Avec não respondeu')
+  if (onde.login) {
+    await saude({ texto: 'Avec deslogado — entrando de novo…' })
+    await entrarNoAvec(abaId, cfg, dados)
+    await chrome.tabs.update(abaId, { url })
+    await esperarCarregar(abaId)
+    onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
+    if (!onde || onde.login) throw new Error('Continuou na tela de login depois de entrar')
+  }
+  return abaId
+}
+
+async function executarTarefa(cfg, dados) {
+  const t = cfg.tarefa
+  try {
+    // ── Campanha: ler o relatório de um dia e devolver as linhas ────────────
+    if (t.tipo === 'campanha') {
+      const url = urlAvec(t.url_relatorio || cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
+      const abaId = await prepararAba(cfg, dados, url)
+      const lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data: t.data }, 3)
+      if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
+
+      const r = await nodri('/api/crm/automacao/extensao', {
+        method: 'POST',
+        body: JSON.stringify({
+          campanha_id: t.campanha_id, linhas: lido.linhas,
+          horario_cumprido: t.horario_cumprido || undefined,
+        }),
+      }, dados.chave)
+      await saude({
+        texto: `${t.nome}: ${lido.linhas.length} linha(s) de ${t.data}; enfileirou ${r.enviadas || 0}.`,
+        lidas: r.lidas, elegiveis: r.elegiveis, enviadas: r.enviadas, erro: r.erro || null,
+      })
+      return
+    }
+
+    // ── Marcar Confirmado no Avec ───────────────────────────────────────────
+    if (t.tipo === 'confirmar_avec') {
+      const url = urlAvec(t.url_relatorio || cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
+      const abaId = await prepararAba(cfg, dados, url)
+
+      // 1) achar pela PLANILHA (telefone é único; o quadro pagina e corta nome)
+      const lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data: t.data }, 3)
+      if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
+
+      const so = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
+      const alvo = so(t.telefone)
+      const linha = (lido.linhas || []).find(l => so(l.celular) === alvo)
+      if (!linha) throw new Error('Não achei o agendamento dela em ' + t.data)
+      if (/confirmad/i.test(linha.status || '')) {
+        // Já estava confirmado: para o NODRI isso é sucesso, e a cliente recebe
+        // o retorno do mesmo jeito.
+        await nodri('/api/crm/automacao/extensao', {
+          method: 'POST',
+          body: JSON.stringify({ pedido_id: t.pedido_id, marcado: true, data: linha.data, hora: linha.hora, profissional: linha.profissional }),
+        }, dados.chave)
+        await saude({ texto: `Confirmação: ${linha.cliente} já estava confirmada.`, erro: null })
+        return
+      }
+
+      // 2) ir à agenda daquele dia e marcar
+      const urlAgenda = AVEC + 'admin/agenda'
+      await chrome.tabs.update(abaId, { url: urlAgenda })
+      await esperarCarregar(abaId)
+      const marcou = await perguntarComPaciencia(abaId, {
+        tipo: 'marcar-confirmado',
+        data: linha.data, hora: linha.hora,
+        profissional: linha.profissional, telefone: t.telefone,
+      }, 3)
+
+      await nodri('/api/crm/automacao/extensao', {
+        method: 'POST',
+        body: JSON.stringify({
+          pedido_id: t.pedido_id, marcado: !!(marcou && marcou.ok),
+          erro: marcou && marcou.ok ? null : (marcou?.erro || 'A agenda não respondeu'),
+          data: linha.data, hora: linha.hora, profissional: linha.profissional,
+        }),
+      }, dados.chave)
+
+      await saude({
+        texto: marcou?.ok
+          ? `Confirmado no Avec: ${linha.cliente} ${linha.data} ${linha.hora}.`
+          : `Não consegui confirmar ${linha.cliente}: ${marcou?.erro || 'sem resposta'}`,
+        erro: marcou?.ok ? null : (marcou?.erro || 'sem resposta'),
+      })
+      return
+    }
+
+    await saude({ texto: 'Tarefa desconhecida: ' + t.tipo, erro: null })
+  } catch (e) {
+    const msg = String(e?.message || e)
+    await saude({ texto: `Falhou em "${t.nome || t.tipo}".`, erro: msg })
+    try {
+      await nodri('/api/crm/automacao/extensao', {
+        method: 'POST',
+        body: JSON.stringify(
+          t.tipo === 'confirmar_avec'
+            ? { pedido_id: t.pedido_id, marcado: false, erro: msg }
+            : { campanha_id: t.campanha_id, linhas: [], erro: msg, horario_cumprido: t.horario_cumprido || undefined },
+        ),
+      }, dados.chave)
+    } catch { /* sem rede: fica no painel da extensão */ }
+  }
+}

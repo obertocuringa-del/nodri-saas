@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { proximaAcaoPadrao } from '@/lib/crm'
 import {
   salaoPelaChave, carregarConfig, carregarEstado, gravarEstado, processarRelatorio, hojeNoFuso,
   type LinhaRelatorio,
 } from '@/lib/crmAutomacao'
+import {
+  carregarCampanhas, carregarEstados, estaNaHora, datasDoSalao, processarCampanha,
+  type LinhaRel,
+} from '@/lib/crmCampanhas'
+import {
+  carregarConfig as cfgConfirmacao, carregarFila, gravarFila,
+} from '@/lib/crmConfirmacao'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -27,13 +36,57 @@ export async function GET(req: NextRequest) {
   // continua viva no computador da recepção.
   est.visto_em = new Date().toISOString()
   await gravarEstado(salaoId, est)
+  // ── A tarefa da vez ───────────────────────────────────────────────────────
+  //
+  // A extensão não tem relógio: ela pergunta e o NODRI responde o que fazer
+  // agora. Assim horário e intervalo se mudam na tela, sem tocar no computador
+  // da recepção. Uma tarefa por vez, porque as três dividem a mesma aba do
+  // Avec -- duas juntas trocariam a data uma da outra.
+  const d = datasDoSalao(cfg.fuso)
+  let tarefa: any = null
+
+  // 1ª prioridade: marcar Confirmado no Avec. A cliente já respondeu e está
+  // esperando o "Combinado".
+  const conf = await cfgConfirmacao(salaoId)
+  if (conf.ligada) {
+    const fila = await carregarFila(salaoId)
+    const p = fila[0]
+    if (p) {
+      tarefa = {
+        tipo: 'confirmar_avec', pedido_id: p.id,
+        url_relatorio: conf.url_relatorio,
+        telefone: p.telefone, nome: p.nome, data: p.data || d.amanha.br,
+      }
+    }
+  }
+
+  // 2ª: as campanhas que estão na hora.
+  if (!tarefa) {
+    const campanhas = await carregarCampanhas(salaoId)
+    const estados = await carregarEstados(salaoId)
+    for (const c of campanhas) {
+      const q = estaNaHora(c, estados[c.id], cfg.fuso)
+      if (!q.sim) continue
+      tarefa = {
+        tipo: 'campanha', campanha_id: c.id, nome: c.nome,
+        url_relatorio: cfg.url_relatorio,
+        data: c.dia === 'amanha' ? d.amanha.br : d.hoje.br,
+        statuses: c.statuses,
+        horario_cumprido: q.horario || null,
+      }
+      break
+    }
+  }
+
   return NextResponse.json({
     ligada: cfg.ligada,
     intervalo_seg: cfg.intervalo_seg,
     url_relatorio: cfg.url_relatorio,
     url_login: cfg.url_login,
     statuses: cfg.statuses,
-    hoje: hojeNoFuso(cfg.fuso).br,
+    hoje: d.hoje.br,
+    amanha: d.amanha.br,
+    tarefa,
   })
 }
 
@@ -51,6 +104,95 @@ export async function POST(req: NextRequest) {
       numero: String(l?.numero || '').trim(),
     }))
     .slice(0, 2000) : []
-  const r = await processarRelatorio(salaoId, linhas, body?.erro ? String(body.erro).slice(0, 300) : null)
+  const erroExt = body?.erro ? String(body.erro).slice(0, 300) : null
+
+  // Resultado de uma CAMPANHA (feedback, confirmação diária, aviso ao profissional)
+  if (body?.campanha_id) {
+    const r = await processarCampanha(salaoId, String(body.campanha_id), linhas as LinhaRel[], {
+      erro: erroExt,
+      horarioCumprido: body?.horario_cumprido ? String(body.horario_cumprido) : undefined,
+    })
+    return NextResponse.json({ ...r, ok: true })
+  }
+
+  // Resultado da MARCAÇÃO no Avec
+  if (body?.pedido_id) {
+    const r = await concluirConfirmacao(salaoId, String(body.pedido_id), body?.marcado === true, erroExt, body)
+    return NextResponse.json({ ok: true, ...r })
+  }
+
+  const r = await processarRelatorio(salaoId, linhas, erroExt)
   return NextResponse.json({ ok: true, ...r })
+}
+
+// ── Depois que a extensão mexeu (ou tentou mexer) no Avec ───────────────────
+//
+// A ORDEM é a regra: o "Combinado" só sai se o Avec foi mesmo marcado. Se a
+// marcação falhou, a conversa vai para "Preciso agir" com o motivo e a cliente
+// não recebe nada -- dizer "confirmado" sem ter confirmado é o pior erro
+// possível aqui.
+async function concluirConfirmacao(
+  salaoId: string, pedidoId: string, marcado: boolean, erro: string | null, body: any,
+) {
+  const fila = await carregarFila(salaoId)
+  const p = fila.find(x => x.id === pedidoId)
+  if (!p) return { erro: 'Pedido não está mais na fila' }
+
+  const agora = new Date().toISOString()
+
+  if (!marcado) {
+    // Três tentativas e desiste: fica para a recepção, com o motivo à vista.
+    p.tentativas = (p.tentativas || 0) + 1
+    if (p.tentativas < 3) {
+      await gravarFila(salaoId, fila)
+      return { marcado: false, tentativas: p.tentativas, erro }
+    }
+    await gravarFila(salaoId, fila.filter(x => x.id !== pedidoId))
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'acao_necessaria',
+      proxima_acao: proximaAcaoPadrao('acao_necessaria'),
+      nao_lidas: 1, atualizado_em: agora,
+    }).eq('id', p.conversa_id).eq('salao_id', salaoId)
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: p.conversa_id, tipo: 'mudou_estado',
+      para_estado: 'acao_necessaria', autor_nome: 'Confirmação automática',
+      detalhe: ('Não consegui marcar no Avec: ' + (erro || 'motivo desconhecido')).slice(0, 200),
+    })
+    return { marcado: false, desistiu: true, erro }
+  }
+
+  // Marcou. Agora sim a cliente recebe o retorno.
+  await gravarFila(salaoId, fila.filter(x => x.id !== pedidoId))
+  const conf = await cfgConfirmacao(salaoId)
+  const primeiro = String(p.nome || '').trim().split(/\s+/)[0] || ''
+  const texto = String(conf.resposta || '')
+    .replace(/\{cliente\}/g, primeiro)
+    .replace(/\{data\}/g, String(body?.data || p.data || ''))
+    .replace(/\{hora\}/g, String(body?.hora || ''))
+    .replace(/\{profissional\}/g, String(body?.profissional || ''))
+    .trim()
+
+  if (texto) {
+    await supabaseAdmin.from('crm_mensagens').insert({
+      salao_id: salaoId, conversa_id: p.conversa_id,
+      direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',
+      autor_nome: 'Confirmação automática', em_massa: false, criado_em: agora,
+    })
+  }
+
+  await supabaseAdmin.from('crm_conversas').update({
+    estado: 'confirmado',
+    proxima_acao: proximaAcaoPadrao('confirmado'),
+    fechada_em: agora, nao_lidas: 0,
+    ultima_em: agora, ultima_de: 'salao',
+    ultima_previa: texto.slice(0, 120), atualizado_em: agora,
+  }).eq('id', p.conversa_id).eq('salao_id', salaoId)
+
+  await supabaseAdmin.from('crm_eventos').insert({
+    salao_id: salaoId, conversa_id: p.conversa_id, tipo: 'fechou',
+    para_estado: 'confirmado', autor_nome: 'Confirmação automática',
+    detalhe: 'Marcado como Confirmado no Avec',
+  })
+
+  return { marcado: true }
 }

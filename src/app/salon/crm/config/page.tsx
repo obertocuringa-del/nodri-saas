@@ -18,6 +18,7 @@ import {
   type ConfigEstados,
 } from '@/lib/crmEstados'
 import AutomacaoFeedback from './AutomacaoFeedback'
+import Campanhas from './Campanhas'
 
 type Item = { id?: string; nome: string; texto?: string; atalho?: string; ativo?: boolean }
 
@@ -466,6 +467,9 @@ export default function ConfigCrmPage() {
 
           {/* ── Automação de feedback (Avec → WhatsApp) ── */}
           <AutomacaoFeedback />
+
+          {/* ── Automações do Avec: confirmação, aviso ao profissional ── */}
+          <Campanhas />
 
           {/* ── Recomecar ── */}
           <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8d9b0' }}>

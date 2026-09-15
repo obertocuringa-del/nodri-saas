@@ -5,6 +5,8 @@ import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
 import { ehEstadoDoSalao } from '@/lib/crmEstados'
+import { carregarConfig as cfgConfirmacao, ehConfirmacao, enfileirar } from '@/lib/crmConfirmacao'
+import { datasDoSalao } from '@/lib/crmCampanhas'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 
 export const dynamic = 'force-dynamic'
@@ -990,6 +992,26 @@ export async function POST(req: NextRequest) {
         }).eq('id', m.conversa_id)
       }
     }
+  }
+
+  // ── "Confirmo" da cliente vira pedido de marcação no Avec ─────────────────
+  //
+  // Só conta na pasta CONFIRMAÇÃO: é lá que a última coisa que o salão mandou
+  // foi mesmo um pedido de confirmação. Fora dali, "ok" não quer dizer nada e
+  // a mensagem segue o caminho normal, para gente responder.
+  if (daCliente && conversa?.estado === 'confirmacao' && texto.trim()) {
+    try {
+      const conf = await cfgConfirmacao(salaoId)
+      if (conf.ligada && ehConfirmacao(texto, conf.palavras)) {
+        await enfileirar(salaoId, {
+          conversa_id: conversa.id,
+          contato_id: contato.id,
+          telefone: contato.telefone || telefone,
+          nome: contato.cliente_nome || contato.nome || '',
+          data: datasDoSalao().amanha.br,
+        })
+      }
+    } catch { /* falha aqui não pode derrubar a entrada da mensagem */ }
   }
 
   if (daCliente) {

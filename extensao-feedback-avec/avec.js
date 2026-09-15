@@ -145,10 +145,118 @@
     return { ok: true, linhas: doDia, total, url: location.href }
   }
 
+  // ── Marcar um agendamento como Confirmado ─────────────────────────────────
+  //
+  // Recebe do NODRI o que a PLANILHA já disse: dia, hora, profissional e o
+  // telefone da cliente. Aqui só se abre o bloquinho certo e se confere o
+  // celular dentro do modal antes de salvar -- duas fontes concordando. Se o
+  // telefone não bater, NÃO salva: confirmar o horário da pessoa errada é pior
+  // do que não confirmar.
+  const soDigitos = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
+
+  async function porODiaNaAgenda(dia) {
+    // "Hoje" primeiro: recarrega a agenda e volta para uma data conhecida.
+    const hoje = Array.from(document.querySelectorAll('button, a')).find(b => /^\s*hoje\s*$/i.test(b.textContent || ''))
+    if (hoje) { hoje.click(); await sleep(1500) }
+
+    const [d, m, a] = String(dia || '').split('/')
+    if (!d || !m || !a) return false
+    const MES = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
+    const alvoMes = MES[Number(m) - 1]
+
+    // Acerta o mês pela setinha, comparando o cabeçalho do calendário.
+    for (let i = 0; i < 18; i++) {
+      const cab = Array.from(document.querySelectorAll('.datepicker-switch, th'))
+        .map(e => txt(e)).find(t => /\d{4}/.test(t) && /[a-zç]{4,}/i.test(t)) || ''
+      const cabN = norm(cab)
+      if (cabN.includes(alvoMes) && cab.includes(a)) break
+      const proxima = Array.from(document.querySelectorAll('.next, th.next, [class*=next]'))
+        .find(e => e.offsetParent !== null)
+      if (!proxima) break
+      proxima.click()
+      await sleep(500)
+    }
+
+    // Clica no dia, evitando os dias "de fora" do mês.
+    const celulas = Array.from(document.querySelectorAll('td'))
+      .filter(td => txt(td) === String(Number(d)) && !/old|new|disabled/.test(td.className))
+    const alvo = celulas.find(td => td.offsetParent !== null)
+    if (!alvo) return false
+    alvo.click()
+    await sleep(2500)
+    return true
+  }
+
+  async function marcarConfirmado({ data, hora, profissional, telefone }) {
+    const ok = await porODiaNaAgenda(data)
+    if (!ok) return { ok: false, erro: 'Não consegui pôr a agenda em ' + data }
+
+    const alvoHora = String(hora || '').slice(0, 5)
+    const alvoTel = soDigitos(telefone)
+
+    // O quadro pagina de 12 em 12 profissionais: procura, e se não achar vira
+    // a página com a setinha e procura de novo.
+    for (let pagina = 0; pagina < 6; pagina++) {
+      const blocos = Array.from(document.querySelectorAll('.reserva-agendada:not(.bloqueio-tipo)'))
+        .filter(b => txt(b).startsWith(alvoHora) || txt(b).includes(alvoHora))
+      for (const b of blocos) {
+        b.click()
+        const modal = await esperarPor(() =>
+          Array.from(document.querySelectorAll('.modal, [role=dialog]'))
+            .find(m => m.offsetParent !== null && /celular/i.test(m.textContent || '')), 8000)
+        if (!modal) continue
+
+        const cel = (/celular:?\s*([\d()\-\s+]{8,})/i.exec(modal.textContent || '') || [])[1]
+        if (soDigitos(cel) !== alvoTel) {
+          const fechar = modal.querySelector('.close, [data-dismiss=modal]')
+            || Array.from(modal.querySelectorAll('button')).find(x => /cancelar/i.test(x.textContent || ''))
+          if (fechar) fechar.click()
+          await sleep(600)
+          continue
+        }
+
+        const botao = Array.from(modal.querySelectorAll('label, button, div, span'))
+          .find(e => /^\s*confirmado\s*$/i.test((e.textContent || '').trim()) && e.offsetParent !== null)
+        if (!botao) return { ok: false, erro: 'Não achei o botão Confirmado no modal' }
+        botao.click()
+        await sleep(400)
+
+        const salvar = Array.from(modal.querySelectorAll('button'))
+          .find(x => /^\s*salvar\s*$/i.test((x.textContent || '').trim()))
+        if (!salvar) return { ok: false, erro: 'Não achei o botão Salvar' }
+        salvar.click()
+        await sleep(1500)
+
+        // "Todos os agendamentos / apenas esse": o dono decidiu TODOS.
+        const caixa = Array.from(document.querySelectorAll('.modal, [role=dialog], .swal2-popup'))
+          .find(m => m.offsetParent !== null && /todos os agendamentos|apenas esse/i.test(m.textContent || ''))
+        if (caixa) {
+          const todos = Array.from(caixa.querySelectorAll('button, a'))
+            .find(x => /todos/i.test(x.textContent || ''))
+          if (todos) { todos.click(); await sleep(1200) }
+        }
+        return { ok: true }
+      }
+
+      const proximaPag = document.querySelector('.fc-next-button, [class*=proxima], .next-prof')
+        || Array.from(document.querySelectorAll('a, button, div')).find(e =>
+          /^\s*❯\s*$/.test(e.textContent || '') && e.offsetParent !== null)
+      if (!proximaPag) break
+      proximaPag.click()
+      await sleep(1500)
+    }
+    return { ok: false, erro: `Não achei o agendamento de ${alvoHora} com ${profissional}` }
+  }
+
   chrome.runtime.onMessage.addListener((msg, _rem, responder) => {
     if (!msg || !msg.tipo) return
     if (msg.tipo === 'onde-estou') { responder({ login: estaNoLogin(), url: location.href }); return }
     if (msg.tipo === 'logar') { logar(msg.email, msg.senha).then(responder); return true }
+    if (msg.tipo === 'marcar-confirmado') {
+      if (estaNoLogin()) { responder({ ok: false, erro: 'Avec deslogado', login: true }); return }
+      marcarConfirmado(msg).then(responder).catch(e => responder({ ok: false, erro: String(e?.message || e) }))
+      return true
+    }
     if (msg.tipo === 'ler-0051') {
       if (estaNoLogin()) { responder({ ok: false, erro: 'Avec deslogado', login: true, url: location.href }); return }
       lerRelatorio(msg.data).then(responder)
