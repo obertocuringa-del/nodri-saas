@@ -227,14 +227,23 @@
         salvar.click()
         await sleep(1500)
 
-        // "Todos os agendamentos / apenas esse": o dono decidiu TODOS.
-        const caixa = Array.from(document.querySelectorAll('.modal, [role=dialog], .swal2-popup'))
-          .find(m => m.offsetParent !== null && /todos os agendamentos|apenas esse/i.test(m.textContent || ''))
-        if (caixa) {
-          const todos = Array.from(caixa.querySelectorAll('button, a'))
-            .find(x => /todos/i.test(x.textContent || ''))
-          if (todos) { todos.click(); await sleep(1200) }
-        }
+        // ── "Todos os agendamentos / apenas esse" ──
+        //
+        // Só aparece quando a cliente tem outros agendamentos NO MESMO DIA, com
+        // outros profissionais (visto em 15/09/2026: "O cliente possui outros
+        // agendamentos para esse dia, deseja confirmar todos os agendamentos
+        // desta data?"). Não alcança recorrência -- por isso TODOS é seguro, e
+        // é o que o dono quer: a cliente confirmou o dia, não um profissional.
+        //
+        // Com um profissional só a caixa não abre e já salvou: por isso ela é
+        // procurada, não esperada.
+        const achaTodos = () => Array.from(document.querySelectorAll('button, a, div, span'))
+          .find(x => x.offsetParent !== null
+            && /^\s*todos os agendamentos\s*$/i.test((x.textContent || '').trim())
+            // Só o elemento mais interno: o pai também contém esse texto.
+            && !Array.from(x.children).some(f => /todos os agendamentos/i.test(f.textContent || '')))
+        const todos = await esperarPor(achaTodos, 3000, 300)
+        if (todos) { todos.click(); await sleep(1500) }
         return { ok: true }
       }
 

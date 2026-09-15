@@ -49,10 +49,14 @@ confirmaria um agendamento que ela não confirmou.
 6. **Conferir o `Celular:` do modal contra o telefone da planilha.**
    Se não bater, **não salvar** — devolver o caso para a recepção.
 7. **Status → `Confirmado`** (botão azul) → **Salvar**.
-8. Se aparecer a caixa **"todos os agendamentos / apenas esse"** → **todos**.
-   > ⚠️ **A CONFERIR:** o modal tem "Recorrência...". Se esse "todos" alcançar a
-   > recorrência futura, confirmaria horários que a cliente nem viu. Só vale
-   > "todos" se for *todos os serviços daquela reserva do mesmo dia*.
+8. Se aparecer a caixa **"todos os agendamentos / apenas esse"** → **TODOS**.
+   - Ela só abre quando a cliente tem outros agendamentos **no mesmo dia, com
+     outros profissionais**. Com um profissional só, salva direto e a caixa nem
+     aparece — por isso a extensão PROCURA a caixa, não espera por ela.
+   - Texto conferido em 15/09/2026: *"O cliente possui outros agendamentos para
+     esse dia, deseja confirmar todos os agendamentos desta data?"*
+   - **Não alcança recorrência** (era a dúvida): é só daquela data. Então TODOS
+     é seguro e é o certo — a cliente confirmou o dia, não um profissional.
 
 ### Status disponíveis no modal
 `Agendado · Confirmado · Aguardando · Em Atendimento · Finalizado · Pago ·
