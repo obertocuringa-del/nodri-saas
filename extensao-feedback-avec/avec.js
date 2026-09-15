@@ -102,7 +102,7 @@
     return m ? Number(String(m[1]).replace(/[.,]/g, '')) : null
   }
 
-  async function lerRelatorio(dia) {
+  async function lerRelatorio(dia, jaInsisti = false) {
     const ini = await esperarPor(() => document.querySelector('input[name="inicio"]'), 15000)
     const fim = document.querySelector('input[name="fim"]')
     if (!ini || !fim) return { ok: false, erro: 'Não achei os campos Data Início / Data Fim (é a tela do relatório 0051?)', url: location.href }
@@ -142,6 +142,19 @@
     // Só o dia pedido: se o Avec ignorou a data, o NODRI ainda filtra por
     // data, mas aqui já se descarta o que não é de hoje.
     const doDia = lido.linhas.filter(l => !l.data || l.data === dia)
+
+    // ── Zero merece uma segunda olhada ────────────────────────────────────
+    //
+    // A tela abre com a data preenchida e a TABELA VAZIA: só enche depois do
+    // Buscar. Se a leitura pegar esse instante, volta zero -- e zero faz a
+    // automação não mandar nada, calada, que é o pior erro possível aqui.
+    // Num dia realmente vazio a segunda tentativa também dá zero e custa 3
+    // segundos. Num dia cheio, salva o disparo inteiro.
+    if (!doDia.length && !jaInsisti) {
+      await sleep(2500)
+      return await lerRelatorio(dia, true)
+    }
+
     return { ok: true, linhas: doDia, total, url: location.href }
   }
 
