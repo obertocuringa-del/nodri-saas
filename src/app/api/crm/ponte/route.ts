@@ -1060,22 +1060,33 @@ export async function GET(req: NextRequest) {
       .from('crm_canais').select('id, salao_id, situacao, ponte_dono, ponte_visto_em')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    // O NOME do salão vai junto. O log da ponte falava só em UUID, e um log que
+    // diz "96de3e30-65a3-... gerou QR" não responde a pergunta que importa --
+    // QUAL salão é esse? Em 15/09/2026 isso me fez ler o log errado e quase dar
+    // um alarme falso de que o Rouge tinha caído.
+    const nomes = new Map<string, string>()
+    const ids = (data || []).map(c => c.salao_id).filter(Boolean)
+    if (ids.length) {
+      const { data: ss } = await supabaseAdmin.from('saloes').select('id, nome').in('id', ids)
+      for (const s of ss || []) nomes.set(s.id, String(s.nome || '').trim())
+    }
+
     const meus: any[] = []
     for (const c of data || []) {
       // 'desconectado' vai na lista, com o nome, para a ponte que segurava a
       // sessão fazer o logout de verdade. Sem dono, ninguém precisa saber.
       if (c.situacao === 'desconectado') {
-        if (dono && c.ponte_dono === dono) meus.push({ salao_id: c.salao_id, situacao: 'desconectado' })
+        if (dono && c.ponte_dono === dono) meus.push({ salao_id: c.salao_id, nome: nomes.get(c.salao_id) || '', situacao: 'desconectado' })
         continue
       }
       const livre = !c.ponte_dono || c.ponte_dono === dono
         || !c.ponte_visto_em || c.ponte_visto_em < limite
-      if (!dono) { meus.push({ salao_id: c.salao_id, situacao: c.situacao }); continue }
+      if (!dono) { meus.push({ salao_id: c.salao_id, nome: nomes.get(c.salao_id) || '', situacao: c.situacao }); continue }
       if (!livre) continue
       await supabaseAdmin.from('crm_canais')
         .update({ ponte_dono: dono, ponte_visto_em: agora.toISOString() })
         .eq('id', c.id)
-      meus.push({ salao_id: c.salao_id, situacao: c.situacao })
+      meus.push({ salao_id: c.salao_id, nome: nomes.get(c.salao_id) || '', situacao: c.situacao })
     }
     return NextResponse.json({ canais: meus })
   }

@@ -59,7 +59,18 @@ if (!CHAVE) {
 const EU = process.env.CRM_PONTE_ID || `${os.hostname()}`
 
 const log = pino({ level: process.env.LOG_LEVEL || 'warn' })
-const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '[ponte]', ...a)
+// ── O log fala em NOME, não em código ───────────────────────────────────────
+//
+// Uma linha dizendo "96de3e30-65a3-497e-af6b-8d6fd718ea37 gerou QR" não responde
+// a pergunta que importa na hora do aperto: QUAL salão é esse? Em 15/09/2026 eu
+// li o log errado por causa disso e quase avisei que o Rouge tinha caído,
+// quando o que gerava QR era outro salão. O NODRI manda o nome junto com a
+// lista de canais, e é ele que aparece aqui.
+const nomeDoSalao = new Map()
+const legivel = x => (typeof x === 'string' && nomeDoSalao.has(x))
+  ? `${nomeDoSalao.get(x)} [${x.slice(0, 8)}]`
+  : x
+const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '[ponte]', ...a.map(legivel))
 
 /** Sessões vivas, uma por salão. */
 const sessoes = new Map()
@@ -824,6 +835,12 @@ async function volta() {
   // Quem o NODRI mandou desligar de vez vem na lista com 'desconectado'
   // (NODRI novo); quem só sumiu da lista pode ser banco fora do ar ou outra
   // ponte -- e isso não apaga nada.
+  // Guarda o nome antes de qualquer registro desta volta, para as linhas de
+  // baixo já saírem legíveis.
+  for (const c of canais) {
+    if (c.salao_id && c.nome) nomeDoSalao.set(c.salao_id, c.nome)
+  }
+
   const desligar = new Set(canais.filter(c => c.situacao === 'desconectado').map(c => c.salao_id))
   const querem = new Set(canais.filter(c => c.situacao !== 'desconectado').map(c => c.salao_id))
 
