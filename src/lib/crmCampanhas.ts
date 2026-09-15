@@ -324,7 +324,7 @@ async function montarAlvos(
  */
 export async function processarCampanha(
   salaoId: string, campanhaId: string, linhas: LinhaRel[],
-  opts: { erro?: string | null; horarioCumprido?: string; fuso?: string } = {},
+  opts: { erro?: string | null; horarioCumprido?: string; fuso?: string; simular?: boolean } = {},
 ) {
   const fuso = opts.fuso || 'America/Sao_Paulo'
   const campanhas = await carregarCampanhas(salaoId)
@@ -346,6 +346,32 @@ export async function processarCampanha(
     const feitos = new Set(e.horarios_feitos[hoje.iso] || [])
     feitos.add(opts.horarioCumprido)
     e.horarios_feitos[hoje.iso] = [...feitos]
+  }
+
+  // ── Simulação ─────────────────────────────────────────────────────────────
+  //
+  // Faz a conta toda e devolve QUEM receberia e o TEXTO exato, sem enfileirar
+  // nada e sem marcar ninguém como já avisado. É o único jeito honesto de
+  // testar automação que manda mensagem: errar na simulação não custa cliente.
+  if (opts.simular) {
+    const { data: s0 } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
+    const { alvos, elegiveis, semTelefone } = await montarAlvos(
+      salaoId, c, linhas, alvoData.br, String(s0?.nome || '').trim())
+    const jaHoje = new Set(e.enviados[hoje.iso] || [])
+    return {
+      ok: true, simulacao: true, campanha: c.nome, ligada: c.ligada,
+      dia: c.dia, data_alvo: alvoData.br,
+      lidas: linhas.length, elegiveis, sem_telefone: semTelefone,
+      ja_receberam_hoje: alvos.filter(a => jaHoje.has(a.chave)).length,
+      mandaria_para: alvos.filter(a => !jaHoje.has(a.chave)).length,
+      exemplos: alvos.filter(a => !jaHoje.has(a.chave)).slice(0, 4).map(a => ({
+        para: a.nomeContato,
+        telefone: a.telefone.slice(0, 4) + '****' + a.telefone.slice(-4),
+        hora: a.dados.hora,
+        servicos: a.dados.servicos,
+        mensagens: c.mensagens.map(m => preencher(m, a.dados)),
+      })),
+    }
   }
 
   if (!c.ligada) {

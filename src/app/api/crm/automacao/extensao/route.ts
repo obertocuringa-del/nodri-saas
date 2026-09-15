@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
     const r = await processarCampanha(salaoId, String(body.campanha_id), linhas as LinhaRel[], {
       erro: erroExt,
       horarioCumprido: body?.horario_cumprido ? String(body.horario_cumprido) : undefined,
+      // `simular` faz a conta e mostra quem receberia, sem mandar nem marcar.
+      simular: body?.simular === true,
     })
     return NextResponse.json({ ...r, ok: true })
   }
