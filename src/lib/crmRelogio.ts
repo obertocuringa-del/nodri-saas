@@ -23,17 +23,6 @@ import {
 const TETO_CONTATOS = 40        // contatos conferidos por volta
 const HORAS_RECONFERIR = 12     // de quanto em quanto tempo reconfere um contato
 
-/** '30/05/2025' e '2025-05-30' viram o mesmo número. */
-function tsData(s: string): number {
-  if (!s) return 0
-  const t = String(s).trim()
-  if (t.includes('/')) {
-    const [d, m, y] = t.split('/')
-    return new Date(`${y}-${m}-${d}T12:00:00`).getTime() || 0
-  }
-  return new Date(t).getTime() || 0
-}
-
 /**
  * As grafias em que o mesmo celular pode estar gravado no atendimentos_raw.
  * Lá veio da planilha do salão: às vezes com 55, às vezes sem, às vezes sem o
@@ -164,19 +153,29 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       todas.push(...g)
     }
 
-    const { data: atends } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('celular, cliente, data_comanda')
-      .eq('salao_id', salaoId)
-      .in('celular', [...new Set(todas)])
-      .limit(4000)
+    // O banco devolve UM resumo por celular (nome e última visita), agregado
+    // lá dentro. Antes vinham as LINHAS de atendimento dos 40 telefones, e o
+    // Supabase entrega no máximo 1.000 por consulta, em silêncio: um lote com
+    // clientes antigas passava de 9.000 linhas, quem ficava fora das 1.000
+    // era "não achada" e ganhava a etiqueta "cliente nova" com 266 visitas
+    // nas costas (Mercedes, 17/09/2026). Resumo por telefone não tem teto.
+    const { data: resumo, error: erroResumo } = await supabaseAdmin
+      .rpc('crm_conferir_celulares', { p_salao: salaoId, p_celulares: [...new Set(todas)] })
+
+    // Sem resposta do banco, não se afirma nada sobre ninguém: um lote
+    // conferido "no escuro" marcaria todo mundo como nova. Fica para a
+    // próxima volta.
+    if (erroResumo) {
+      console.error('[crmRelogio] conferir celulares falhou:', erroResumo.message)
+      return r
+    }
 
     // Agrupa por chave de telefone, que é o que ignora o nono dígito.
     const porChave = new Map<string, { nome: string; ultima: number }>()
-    for (const a of atends || []) {
+    for (const a of (resumo || []) as { celular: string; cliente: string | null; ultima_ms: number | string | null }[]) {
       const k = chaveTelefone(a.celular)
       if (!k) continue
-      const quando = tsData(a.data_comanda)
+      const quando = Number(a.ultima_ms) || 0
       const atual = porChave.get(k)
       if (!atual || quando > atual.ultima) {
         porChave.set(k, { nome: a.cliente || atual?.nome || '', ultima: quando })
