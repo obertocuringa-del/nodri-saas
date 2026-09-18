@@ -167,6 +167,8 @@ export interface LinhaRelatorio {
   celular: string
   status: string
   numero?: string
+  profissional?: string
+  servico?: string
 }
 
 /**

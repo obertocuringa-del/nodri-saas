@@ -139,6 +139,12 @@ export async function POST(req: NextRequest) {
       celular: String(l?.celular || '').trim(),
       status: String(l?.status || '').trim(),
       numero: String(l?.numero || '').trim(),
+      // Profissional e serviço vinham da extensão e morriam AQUI: o mapa só
+      // copiava seis campos, e o aviso ao profissional achava 20 elegíveis e
+      // não mandava para ninguém (18/09/2026). É o que a campanha usa para
+      // saber para QUEM avisar e o que pôr em {servicos}.
+      profissional: String(l?.profissional || '').trim(),
+      servico: String(l?.servico || '').trim(),
     }))
     .slice(0, 2000) : []
   const erroExt = body?.erro ? String(body.erro).slice(0, 300) : null
