@@ -113,7 +113,11 @@ export function normalizarTelefone(bruto: string | null | undefined): string {
   let d = String(bruto || '').replace(/\D+/g, '')
   if (!d) return ''
   if (d.length > 13) d = d.slice(-13)            // corta lixo de prefixo
-  if (!d.startsWith('55') && (d.length === 10 || d.length === 11)) d = '55' + d
+  // 10 ou 11 dígitos é DDD + número, SEMPRE -- mesmo começando com 55. O DDD
+  // 55 existe (Rio Grande do Sul): "55981102528" é (55) 98110-2528, não um
+  // número com código do país. A regra antiga via o 55 na frente, não
+  // completava, e a VANISE ficou fora da confirmação de 18/09/2026.
+  if (d.length === 10 || d.length === 11) d = '55' + d
   return d
 }
 
