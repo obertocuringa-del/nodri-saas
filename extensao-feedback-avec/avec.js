@@ -247,14 +247,32 @@
           continue
         }
 
-        const botao = Array.from(modal.querySelectorAll('label, button, div, span'))
-          .find(e => /^\s*confirmado\s*$/i.test((e.textContent || '').trim()) && e.offsetParent !== null)
-        if (!botao) return { ok: false, erro: 'Não achei o botão Confirmado no modal' }
-        botao.click()
-        await sleep(400)
+        // ── O modal de verdade (conferido em 18/09/2026) ─────────────────────
+        //
+        // O status é um rádio `name=status` dentro de um label (Confirmado =
+        // valor 1.5), e "Salvar" é um `<a class="btn btn-primary
+        // btn-salvar-ativo">` -- não um <button>. Procurar só <button> deu
+        // "Não achei o botão Salvar" em todas as confirmações do dia.
+        // Já estava confirmado? Então não há o que salvar: é sucesso.
+        const radioConfirmado = Array.from(modal.querySelectorAll('input[type=radio][name=status]'))
+          .find(r => /^\s*confirmado\s*$/i.test((r.closest('label')?.textContent || '').trim()) || r.value === '1.5')
+        const labelConfirmado = radioConfirmado?.closest('label')
+          || Array.from(modal.querySelectorAll('label, button, div, span'))
+            .find(e => /^\s*confirmado\s*$/i.test((e.textContent || '').trim()) && e.offsetParent !== null)
+        if (!labelConfirmado) return { ok: false, erro: 'Não achei o botão Confirmado no modal' }
+        if (radioConfirmado?.checked) {
+          const fechar = modal.querySelector('.close, [data-dismiss=modal]')
+          if (fechar) fechar.click()
+          await sleep(600)
+          return { ok: true, jaEstava: true }
+        }
+        labelConfirmado.click()
+        await sleep(300)
+        if (radioConfirmado && !radioConfirmado.checked) { radioConfirmado.click(); await sleep(300) }
+        if (radioConfirmado && !radioConfirmado.checked) return { ok: false, erro: 'O status não mudou para Confirmado ao clicar' }
 
-        const salvar = Array.from(modal.querySelectorAll('button'))
-          .find(x => /^\s*salvar\s*$/i.test((x.textContent || '').trim()))
+        const salvar = Array.from(modal.querySelectorAll('a, button, input[type=submit], input[type=button]'))
+          .find(x => x.offsetParent !== null && /^\s*salvar\s*$/i.test((x.textContent || x.value || '').trim()))
         if (!salvar) return { ok: false, erro: 'Não achei o botão Salvar' }
         salvar.click()
         await sleep(1500)

@@ -387,13 +387,25 @@ async function executarTarefa(cfg, dados) {
       const abaId = await prepararAba(cfg, dados, url)
 
       // 1) achar pela PLANILHA (telefone é único; o quadro pagina e corta nome)
-      const lido = await lerComSegundaChance(abaId, t.data)
-      if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
-
+      //
+      // Amanhã primeiro (é o dia da confirmação automática); não achou, hoje.
+      // A recepção manda confirmação do MESMO dia pelo celular ("18/09 às
+      // 17:00"), a cliente responde "confirmo", e a extensão procurava só em
+      // amanhã: "Não achei o agendamento dela em 19/09" (18/09/2026, 13:38).
+      // Cancelado não conta: se o único agendamento dela está cancelado, não
+      // há o que confirmar.
       const so = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
       const alvo = so(t.telefone)
-      const linha = (lido.linhas || []).find(l => so(l.celular) === alvo)
-      if (!linha) throw new Error('Não achei o agendamento dela em ' + t.data)
+      const valida = l => so(l.celular) === alvo && !/cancelad|faltou/i.test(l.status || '')
+      const datas = [...new Set([t.data, cfg.amanha, cfg.hoje].filter(Boolean))]
+      let linha = null
+      for (const data of datas) {
+        const lido = await lerComSegundaChance(abaId, data)
+        if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
+        linha = (lido.linhas || []).find(valida)
+        if (linha) break
+      }
+      if (!linha) throw new Error('Não achei agendamento dela em ' + datas.join(' nem '))
       if (/confirmad/i.test(linha.status || '')) {
         // Já estava confirmado: para o NODRI isso é sucesso, e a cliente recebe
         // o retorno do mesmo jeito.
