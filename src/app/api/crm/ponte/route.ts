@@ -1089,12 +1089,30 @@ export async function POST(req: NextRequest) {
     try {
       const conf = await cfgConfirmacao(salaoId)
       if (conf.ligada && ehConfirmacao(texto, conf.palavras)) {
+        // ── A data é a que está na mensagem de confirmação ─────────────────
+        //
+        // "Sou da recepção... *Data:* 19/09/2026 *Horário:* 17:00" -- a data
+        // que a cliente está confirmando está escrita na última mensagem que o
+        // salão mandou. Antes o sistema chutava "amanhã": a confirmação que a
+        // recepção manda à mão para o MESMO dia caía em "não achei o
+        // agendamento dela em 19/09". Pedido do dono (18/09/2026): "se estou
+        // mandando a confirmação de uma data, ele tem que entender que é nessa
+        // data". Sem data na mensagem, amanhã continua sendo o padrão.
+        let dataConfirmada = datasDoSalao().amanha.br
+        const { data: ultimasDoSalao } = await supabaseAdmin
+          .from('crm_mensagens').select('texto')
+          .eq('conversa_id', conversa.id).eq('direcao', 'saida')
+          .order('criado_em', { ascending: false }).limit(3)
+        for (const m of ultimasDoSalao || []) {
+          const achou = /(\d{2})\/(\d{2})\/(\d{4})/.exec(String(m.texto || ''))
+          if (achou) { dataConfirmada = `${achou[1]}/${achou[2]}/${achou[3]}`; break }
+        }
         await enfileirar(salaoId, {
           conversa_id: conversa.id,
           contato_id: contato.id,
           telefone: contato.telefone || telefone,
           nome: contato.cliente_nome || contato.nome || '',
-          data: datasDoSalao().amanha.br,
+          data: dataConfirmada,
         })
       }
     } catch { /* falha aqui não pode derrubar a entrada da mensagem */ }
