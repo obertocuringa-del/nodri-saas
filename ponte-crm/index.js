@@ -1130,6 +1130,28 @@ async function despacharFila(salaoId) {
       // contato que só tem número e nunca escreveu -- aí não há LID para usar.
       const jid = msg.lid || (msg.telefone ? `${msg.telefone}@s.whatsapp.net` : null)
       if (!jid) { registro(salaoId, 'mensagem sem endereço de destino — pulada'); continue }
+
+      // ── Editar, apagar, reagir ────────────────────────────────────────────
+      //
+      // Não é mensagem nova: é uma ação em cima de uma que já existe. A chave
+      // da original vem em `citada` (id do WhatsApp e se foi nossa). O
+      // WhatsApp só aceita editar e apagar o que saiu daqui; reagir vale para
+      // qualquer uma.
+      if (String(msg.tipo || '').startsWith('acao_')) {
+        const chave = { remoteJid: jid, id: msg.citada?.id_whatsapp, fromMe: !!msg.citada?.minha }
+        if (!chave.id) throw new Error('a mensagem original não tem id do WhatsApp')
+        let feita
+        if (msg.tipo === 'acao_editar') feita = await s.sock.sendMessage(jid, { text: msg.texto || '', edit: chave })
+        else if (msg.tipo === 'acao_apagar') feita = await s.sock.sendMessage(jid, { delete: chave })
+        else if (msg.tipo === 'acao_reagir') feita = await s.sock.sendMessage(jid, { react: { text: msg.texto || '', key: chave } })
+        else throw new Error('ação desconhecida: ' + msg.tipo)
+        registro(salaoId, msg.tipo.replace('acao_', ''), 'em', chave.id, 'para', soNumero(jid))
+        await nodri('?acao=confirmar', {
+          method: 'POST',
+          body: JSON.stringify({ salao_id: salaoId, mensagem_id: msg.id, enviada: true, id_whatsapp: feita?.key?.id || null }),
+        })
+        continue
+      }
       // Citacao: o WhatsApp so precisa da chave da mensagem original e de um
       // texto para o balaozinho. A ponte nao guarda historico, entao monta o
       // minimo que o protocolo aceita com o que o NODRI mandou junto.

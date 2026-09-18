@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, Pencil, Trash2, SmilePlus, Forward } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
@@ -81,6 +81,10 @@ export default function CrmPage() {
   const [enviando, setEnviando] = useState(false)
   const [anexando, setAnexando] = useState(false)
   const [citando, setCitando] = useState<Mensagem | null>(null)
+  // ── Editar, encaminhar, reagir (o que o WhatsApp tem, o CRM tem) ─────────
+  const [editando, setEditando] = useState<Mensagem | null>(null)
+  const [encaminhando, setEncaminhando] = useState<Mensagem | null>(null)
+  const [reagindoA, setReagindoA] = useState<string | null>(null)
   const escolherArquivo = useRef<HTMLInputElement>(null)
   const areaTexto = useRef<HTMLTextAreaElement>(null)
   // O que já foi clicado na tabela de preços e está escrito na resposta. Serve
@@ -201,7 +205,7 @@ export default function CrmPage() {
   }
 
   async function abrirConversa(c: Conversa) {
-    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null); setInseridos([]); setEmojisAberto(false)
+    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null); setInseridos([]); setEmojisAberto(false); setEditando(null); setReagindoA(null); setEncaminhando(null)
     try {
       // Assumir primeiro: a trava vale desde o instante em que a pessoa abre,
       // não depois que as mensagens carregam.
@@ -459,10 +463,68 @@ export default function CrmPage() {
   // que não foi.
   //
   // Se o servidor recusar, o balão vira "falhou" e o texto VOLTA para a caixa:
+  // ── Editar, apagar, reagir, encaminhar ────────────────────────────────────
+  //
+  // Pedido do dono (18/09/2026): tudo que o WhatsApp tem, o CRM tem. As três
+  // primeiras vão para a fila como ação (a ponte executa e o NODRI aplica);
+  // encaminhar é mandar uma cópia para outra conversa, pelo caminho normal.
+  async function acaoNaMensagem(m: Mensagem, acao: 'editar' | 'apagar' | 'reagir', extra: any = {}) {
+    const r = await fetch('/api/crm/mensagens', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id, acao, ...extra }),
+    })
+    if (!r.ok) { alert((await r.json().catch(() => ({}))).error || 'Não consegui.'); return false }
+    // A ponte faz em ~1 s; recarrega em seguida para a tela mostrar o efeito.
+    setTimeout(() => {
+      fetch(`/api/crm/mensagens?conversa=${m.conversa_id}&ler=0`)
+        .then(x => x.json()).then(d => { if (d?.mensagens && aberta?.id === m.conversa_id) setMensagens(d.mensagens) })
+        .catch(() => {})
+    }, 2500)
+    return true
+  }
+  function comecarEdicao(m: Mensagem) {
+    setCitando(null); setEditando(m); setTexto(String(m.texto || ''))
+    setTimeout(() => areaTexto.current?.focus(), 0)
+  }
+  async function salvarEdicao(novo: string) {
+    if (!editando) return
+    const alvo = editando
+    setEditando(null); setTexto('')
+    if (!novo || novo === String(alvo.texto || '').trim()) return
+    // Mostra o texto novo na hora; a confirmação da ponte chega em seguida.
+    setMensagens(atual => atual.map(m => m.id === alvo.id ? { ...m, texto: novo } : m))
+    await acaoNaMensagem(alvo, 'editar', { texto: novo })
+  }
+  async function apagarMensagem(m: Mensagem) {
+    if (!confirm('Apagar esta mensagem para a cliente também? (como o "apagar para todos" do WhatsApp)')) return
+    setMensagens(atual => atual.map(x => x.id === m.id ? { ...x, texto: '(mensagem apagada)', tipo: 'apagada', midia_url: null } : x))
+    await acaoNaMensagem(m, 'apagar')
+  }
+  async function reagir(m: Mensagem, emoji: string) {
+    setReagindoA(null)
+    await acaoNaMensagem(m, 'reagir', { emoji })
+  }
+  async function encaminharPara(destino: Conversa) {
+    const m = encaminhando
+    if (!m) return
+    setEncaminhando(null)
+    const r = await fetch('/api/crm/mensagens', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversa: destino.id, texto: m.texto && !/^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto) ? m.texto : '',
+        midia_url: m.midia_url || null, tipo: m.midia_url ? (m.tipo || 'documento') : 'texto',
+      }),
+    })
+    if (!r.ok) { alert((await r.json().catch(() => ({}))).error || 'Não consegui encaminhar.'); return }
+    puxarConversas()
+    alert(`Encaminhada para ${nomeDoContato(destino.contato || {})}.`)
+  }
+
   // sumir com o que a pessoa escreveu é pior do que demorar.
   async function enviar(midia?: { url: string; tipo: string }) {
     const t = texto.trim()
     if ((!t && !midia) || !aberta || enviando) return
+    if (editando && !midia) { await salvarEdicao(t); return }
 
     const conversaId = aberta.id
     const provisorio = {
@@ -952,6 +1014,10 @@ export default function CrmPage() {
         )}
       </div>
 
+      {encaminhando && (
+        <Encaminhar m={encaminhando} conversas={conversas} onFechar={() => setEncaminhando(null)} onEscolher={encaminharPara} />
+      )}
+
       {!canalLido ? (
         <div className="flex-1 min-h-0 flex items-center justify-center">
           <p className="text-[13px]" style={{ color: '#8f877f' }}>Verificando a conexao...</p>
@@ -1082,14 +1148,20 @@ export default function CrmPage() {
 
                 <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f2efec' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
-                  {mensagens.map((m, i) => (
+                  {mensagens.filter(m => !String(m.tipo || '').startsWith('acao_') || m.situacao === 'falhou').map((m, i, lista) => (
                     <div key={m.id}>
                       {/* Separador de dia. Sem ele, uma conversa de seis meses
                           vira um bloco unico e ninguem sabe se "amanha as 15h"
                           foi combinado ontem ou em marco. */}
-                      {diaMudou(mensagens[i - 1], m) && <SeparadorDia em={m.criado_em} />}
+                      {diaMudou(lista[i - 1], m) && <SeparadorDia em={m.criado_em} />}
                       <Balao m={m} onCitar={() => setCitando(m)}
-                        citada={m.responde_a ? mensagens.find(x => x.id === m.responde_a) : null} />
+                        citada={m.responde_a ? mensagens.find(x => x.id === m.responde_a) : null}
+                        onEditar={m.direcao === 'saida' && m.tipo === 'texto' && m.id_whatsapp && (Date.now() - new Date(m.criado_em).getTime()) < 15 * 60000 ? () => comecarEdicao(m) : undefined}
+                        onApagar={m.direcao === 'saida' && m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' ? () => apagarMensagem(m) : undefined}
+                        onReagir={m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' ? () => setReagindoA(reagindoA === m.id ? null : m.id) : undefined}
+                        reagindo={reagindoA === m.id}
+                        onEscolherReacao={(e: string) => reagir(m, e)}
+                        onEncaminhar={m.tipo !== 'apagada' && m.tipo !== 'reacao' && (m.texto || m.midia_url) ? () => setEncaminhando(m) : undefined} />
                     </div>
                   ))}
                   <div ref={fimDaConversa} />
@@ -1097,6 +1169,17 @@ export default function CrmPage() {
                 </div>
 
                 <div className="border-t px-4 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+                  {editando && (
+                    <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
+                      style={{ background: '#fbf1df', borderLeft: '3px solid #9a6b12' }}>
+                      <Pencil size={13} style={{ color: '#9a6b12' }} />
+                      <span className="text-[11.5px] truncate flex-1" style={{ color: '#6b6860' }}>
+                        Editando a mensagem — Enter salva, a cliente vê o texto novo
+                      </span>
+                      <button onClick={() => { setEditando(null); setTexto('') }} title="Cancelar"
+                        className="p-0.5" style={{ color: '#8f877f' }}><X size={13} /></button>
+                    </div>
+                  )}
                   {citando && (
                     <div className="mb-2 flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
                       style={{ background: '#f1eefc', borderLeft: '3px solid #5b4fcf' }}>
@@ -1671,11 +1754,48 @@ function SeparadorDia({ em }: { em: string }) {
   )
 }
 
-function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; citada?: Mensagem | null }) {
+const REACOES_RAPIDAS = ['\u{1F44D}', '\u{2764}\u{FE0F}', '\u{1F602}', '\u{1F62E}', '\u{1F622}', '\u{1F64F}']
+
+function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onEscolherReacao, onEncaminhar }: {
+  m: Mensagem; onCitar?: () => void; citada?: Mensagem | null
+  onEditar?: () => void; onApagar?: () => void; onReagir?: () => void; reagindo?: boolean
+  onEscolherReacao?: (e: string) => void; onEncaminhar?: () => void
+}) {
   const meu = m.direcao === 'saida'
   const hora = m.criado_em
     ? new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : ''
+  // Uma ação que a ponte não conseguiu fazer aparece como uma nota, não some
+  // calada: quem clicou em "editar" precisa saber que a cliente ainda vê o
+  // texto antigo.
+  if (String(m.tipo || '').startsWith('acao_')) {
+    return (
+      <p className="text-[10.5px] text-center my-1" style={{ color: '#b4322a' }}>
+        Não consegui {String(m.tipo).replace('acao_', '')} a mensagem{m.erro ? `: ${m.erro}` : ''}
+      </p>
+    )
+  }
+  // As ações ficam num botãozinho por mensagem, visível só sob o cursor.
+  const Acoes = () => (
+    <div className={`opacity-0 group-hover:opacity-100 transition self-center flex items-center gap-0.5 ${meu ? 'mr-1' : 'ml-1'}`}
+      style={{ color: '#8f877f' }}>
+      {!meu && onCitar && <button onClick={onCitar} title="Responder citando" className="p-1"><CornerUpLeft size={13} /></button>}
+      {meu && onCitar && <button onClick={onCitar} title="Responder citando" className="p-1"><CornerUpLeft size={13} /></button>}
+      {onReagir && <button onClick={onReagir} title="Reagir" className="p-1"><SmilePlus size={13} /></button>}
+      {onEncaminhar && <button onClick={onEncaminhar} title="Encaminhar para outra conversa" className="p-1"><Forward size={13} /></button>}
+      {onEditar && <button onClick={onEditar} title="Editar (até 15 min depois de enviar)" className="p-1"><Pencil size={13} /></button>}
+      {onApagar && <button onClick={onApagar} title="Apagar para todos" className="p-1"><Trash2 size={13} /></button>}
+    </div>
+  )
+  const Seletor = () => reagindo ? (
+    <div className={`flex gap-1 mb-1 ${meu ? 'justify-end' : 'justify-start'}`}>
+      <div className="px-2 py-1 rounded-full flex gap-1" style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 4px 14px rgba(26,22,20,.10)' }}>
+        {REACOES_RAPIDAS.map(e => (
+          <button key={e} onClick={() => onEscolherReacao?.(e)} className="text-[18px] leading-none px-1 hover:scale-125 transition">{e}</button>
+        ))}
+      </div>
+    </div>
+  ) : null
   // ── A curtida ─────────────────────────────────────────────────────────────
   // A cliente reagiu a uma mensagem em vez de responder. Aparece pequena, com
   // o trecho do que ela curtiu -- é isso que diz se foi um "confirmo" (em
@@ -1694,14 +1814,12 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
     )
   }
   return (
+    <>
+    <Seletor />
     <div className={`flex mb-1.5 group ${meu ? 'justify-end' : 'justify-start'}`}>
-      {/* O botao de citar so aparece no balao sob o cursor. Um icone fixo em
-          cada mensagem polui uma conversa de duzentas linhas. */}
-      {meu && onCitar && (
-        <button onClick={onCitar} title="Responder citando"
-          className="opacity-0 group-hover:opacity-100 transition self-center mr-1 p-1"
-          style={{ color: '#8f877f' }}><CornerUpLeft size={13} /></button>
-      )}
+      {/* As ações so aparecem no balao sob o cursor. Icones fixos em cada
+          mensagem poluem uma conversa de duzentas linhas. */}
+      {meu && <Acoes />}
       <div className="max-w-[68%] px-3 py-2"
         style={m.em_massa
           // Disparo de lista não é resposta para aquela pessoa. Fica com a
@@ -1738,7 +1856,8 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
         )}
         <Anexo m={m} />
         {m.texto && !(m.midia_url && /^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto)) && (
-          <p className="text-[14px] leading-[1.45] whitespace-pre-wrap break-words">{m.texto}</p>
+          <p className="text-[14px] leading-[1.45] whitespace-pre-wrap break-words"
+            style={m.tipo === 'apagada' ? { fontStyle: 'italic', opacity: 0.6 } : undefined}>{m.texto}</p>
         )}
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}
@@ -1754,11 +1873,47 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
           {meu && m.situacao === 'lida' && <span title="Ela leu" style={{ color: '#2f80ed', opacity: 1 }}> ✓✓</span>}
         </p>
       </div>
-      {!meu && onCitar && (
-        <button onClick={onCitar} title="Responder citando"
-          className="opacity-0 group-hover:opacity-100 transition self-center ml-1 p-1"
-          style={{ color: '#8f877f' }}><CornerUpLeft size={13} /></button>
-      )}
+      {!meu && <Acoes />}
+    </div>
+    </>
+  )
+}
+
+// ── Encaminhar: escolher para quem ──────────────────────────────────────────
+function Encaminhar({ m, conversas, onFechar, onEscolher }: { m: Mensagem; conversas: Conversa[]; onFechar: () => void; onEscolher: (c: Conversa) => void }) {
+  const [busca, setBusca] = useState('')
+  const q = busca.trim().toLowerCase()
+  const lista = conversas
+    .filter(c => c.id !== m.conversa_id)
+    .filter(c => !q || nomeDoContato(c.contato || {}).toLowerCase().includes(q) || String(c.contato?.telefone || '').includes(q))
+    .slice(0, 40)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(26,22,20,.35)' }} onClick={onFechar}>
+      <div className="w-[420px] max-w-[92vw] rounded-2xl p-4" style={{ background: '#fff' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2 mb-2">
+          <Forward size={16} style={{ color: '#5b4fcf' }} />
+          <p className="font-bold text-[14px] flex-1" style={{ color: '#1a1a1a' }}>Encaminhar para</p>
+          <button onClick={onFechar} className="p-1" style={{ color: '#8f877f' }}><X size={15} /></button>
+        </div>
+        <p className="text-[11.5px] mb-2 truncate" style={{ color: '#8f877f' }}>
+          {m.midia_url ? `[${m.tipo}] ` : ''}{String(m.texto || '').slice(0, 90)}
+        </p>
+        <input autoFocus value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente..."
+          className="w-full px-3 py-2 rounded-lg text-[13px] mb-2 focus:outline-none"
+          style={{ background: '#faf9f7', border: '1px solid #e8e6e0' }} />
+        <div className="max-h-[50vh] overflow-y-auto">
+          {lista.map(c => (
+            <button key={c.id} onClick={() => onEscolher(c)}
+              className="w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 hover:brightness-95"
+              style={{ background: '#fff' }}>
+              <Avatar nome={nomeDoContato(c.contato || {})} nova={false} tamanho={28} />
+              <span className="text-[13px] flex-1 truncate" style={{ color: '#1a1a1a' }}>{nomeDoContato(c.contato || {})}</span>
+              <span className="text-[11px]" style={{ color: '#8f877f' }}>{c.contato?.telefone ? telefoneBonito(c.contato.telefone) : ''}</span>
+            </button>
+          ))}
+          {!lista.length && <p className="text-[12px] px-3 py-4" style={{ color: '#8f877f' }}>Ninguém com esse nome.</p>}
+        </div>
+      </div>
     </div>
   )
 }

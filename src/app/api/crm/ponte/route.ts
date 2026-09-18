@@ -491,6 +491,36 @@ export async function POST(req: NextRequest) {
       erro: ok ? null : String(body?.erro || 'falha no envio'),
       enviado_em: ok ? agora : null,
     }).eq('id', id).eq('salao_id', salaoId)
+
+    // ── Editar / apagar / reagir: a ponte fez, o CRM aplica ─────────────────
+    //
+    // A linha da ação aponta (responde_a) para a mensagem original. Deu
+    // certo: editar troca o texto da original; apagar vira "(mensagem
+    // apagada)"; reagir vira uma reação do salão, visível. A linha da ação
+    // some nos dois primeiros casos -- ela existiu só para a ponte.
+    const { data: linha } = await supabaseAdmin
+      .from('crm_mensagens').select('id, tipo, texto, responde_a, conversa_id')
+      .eq('id', id).eq('salao_id', salaoId).maybeSingle()
+    if (ok && linha && String(linha.tipo || '').startsWith('acao_') && linha.responde_a) {
+      if (linha.tipo === 'acao_editar') {
+        const { data: orig } = await supabaseAdmin
+          .from('crm_mensagens').select('id, texto').eq('id', linha.responde_a).maybeSingle()
+        await supabaseAdmin.from('crm_mensagens').update({ texto: linha.texto }).eq('id', linha.responde_a)
+        const { data: cv } = await supabaseAdmin
+          .from('crm_conversas').select('id, ultima_previa').eq('id', linha.conversa_id).maybeSingle()
+        if (cv && orig && String(cv.ultima_previa || '') === String(orig.texto || '').slice(0, 120)) {
+          await supabaseAdmin.from('crm_conversas')
+            .update({ ultima_previa: String(linha.texto || '').slice(0, 120) }).eq('id', cv.id)
+        }
+        await supabaseAdmin.from('crm_mensagens').delete().eq('id', linha.id)
+      } else if (linha.tipo === 'acao_apagar') {
+        await supabaseAdmin.from('crm_mensagens')
+          .update({ texto: '(mensagem apagada)', tipo: 'apagada', midia_url: null }).eq('id', linha.responde_a)
+        await supabaseAdmin.from('crm_mensagens').delete().eq('id', linha.id)
+      } else if (linha.tipo === 'acao_reagir') {
+        await supabaseAdmin.from('crm_mensagens').update({ tipo: 'reacao' }).eq('id', linha.id)
+      }
+    }
     return NextResponse.json({ ok: true })
   }
 
@@ -1355,7 +1385,9 @@ export async function GET(req: NextRequest) {
         ? { id_whatsapp: cit.id_whatsapp, texto: cit.texto || '', minha: cit.direcao === 'saida' }
         : null,
     }
-  }).filter(m => m.telefone)
+  // Telefone OU lid: a cliente que veio do histórico só com o id anônimo
+  // também recebe resposta -- a ponte fala com ela pelo lid.
+  }).filter(m => m.telefone || m.lid)
 
   // Marca como 'enviando' para a ponte não pegar a mesma mensagem duas vezes
   // se demorar a confirmar.
