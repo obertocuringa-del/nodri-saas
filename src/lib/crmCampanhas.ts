@@ -221,7 +221,14 @@ function listar(itens: string[]): string {
 }
 
 export function preencher(modelo: string, d: Record<string, string>) {
-  return String(modelo || '').replace(/\{(\w+)\}/g, (_, k) => d[k] ?? '').trim()
+  return String(modelo || '')
+    .replace(/\{(\w+)\}/g, (_, k) => d[k] ?? '')
+    // Campo vazio não pode deixar cicatriz: "Sou , recepcionista" saiu assim
+    // para 20 clientes em 15/09/2026, porque {atendente} não existe em
+    // campanha automática. Some a vírgula órfã e o espaço dobrado.
+    .replace(/[ \t]+([,.!?;:])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
 }
 
 /** Casa "VERA"/"SUELEN" do Avec com o cadastro do NODRI. */
@@ -488,7 +495,11 @@ export function campanhasPadrao(): Campanha[] {
       destinatario: 'cliente',
       mensagens: [
         'Olá *{cliente}*, tudo bem?\n\n'
-        + 'Sou {atendente}, recepcionista do {salao}. Estou entrando em contato para confirmar o seu agendamento conosco:\n\n'
+        // Sem {atendente}: campanha automática não tem ninguém escrevendo, e o
+        // campo vazio virava "Sou , recepcionista". {salao} continua, mas o
+        // salão deve trocar pelo nome fantasia na tela (o cadastro guarda a
+        // razão social, e "OLIVEIRA E SCHNEIDER LTDA" não é como a cliente o chama).
+        + 'Sou da recepção do {salao}. Estou entrando em contato para confirmar o seu agendamento conosco:\n\n'
         + '*Data:* {data}\n*Horário:* {hora}.\n\nPodemos confirmar?',
       ],
       // 20 segundos = 3 por minuto. Ritmo pedido pelo dono para o WhatsApp não

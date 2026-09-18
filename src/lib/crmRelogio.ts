@@ -143,6 +143,18 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
     .limit(TETO_CONTATOS)
 
   if (contatos?.length) {
+    // Telefone de profissional do salão não é cliente: a manicure, o
+    // cabeleireiro e o produtor de conteúdo apareciam como "cliente nova" e
+    // inflavam o contador do topo do CRM (18/09/2026). O cadastro é pequeno;
+    // uma consulta por volta.
+    const { data: profs } = await supabaseAdmin
+      .from('profissionais').select('telefone').eq('salao_id', salaoId).not('telefone', 'is', null)
+    const telefonesDaEquipe = new Set<string>()
+    for (const p of profs || []) {
+      const k = chaveTelefone(p.telefone)
+      if (k.length >= 12) telefonesDaEquipe.add(k)
+    }
+
     // Uma consulta só para o lote inteiro. Uma por contato seria uma varredura
     // da tabela de atendimentos por pessoa, e isso derruba a volta do minuto.
     const todas: string[] = []
@@ -203,6 +215,16 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
       const achou = porChave.get(k)
       const etiquetas: string[] = Array.isArray(ct.etiquetas) ? [...ct.etiquetas] : []
       const patch: any = { conferido_em: agoraIso }
+
+      if (k && telefonesDaEquipe.has(k)) {
+        // Gente da casa: nem cliente nova, nem vínculo de cliente. Só tira a
+        // etiqueta se alguém a pôs antes e segue.
+        const i = etiquetas.indexOf('cliente nova')
+        if (i >= 0) { etiquetas.splice(i, 1); patch.etiquetas = etiquetas }
+        await supabaseAdmin.from('crm_contatos').update(patch).eq('id', ct.id)
+        r.contatos_conferidos++
+        continue
+      }
 
       if (achou?.nome) {
         // Já é cliente da casa. O nome do sistema é o que abre o painel da
