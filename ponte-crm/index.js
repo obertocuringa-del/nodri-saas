@@ -524,9 +524,41 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   const { state, saveCreds } = await useMultiFileAuthState(pasta)
   const { version } = await fetchLatestBaileysVersion()
 
+  // Nós de mensagem que vieram da fila do servidor (offline), por id. Serve
+  // para dois consertos abaixo: negar reenvio ao lixo velho e tirá-lo da fila.
+  const nosDaFila = new Map()
+  const meuNumero = () => new Set([
+    soNumero(registroSessao.sock?.user?.id), soNumero(registroSessao.sock?.user?.lid),
+  ].filter(Boolean))
+  const ehMinhaVelha = (id) => {
+    const no = nosDaFila.get(id)
+    return !!no && meuNumero().has(soNumero(no.attrs?.from))
+  }
+
+  // ── Reenvio: não para o que o próprio salão mandou dias atrás ─────────────
+  //
+  // Para cada mensagem que não abre o Baileys pede reenvio ao remetente, até
+  // cinco vezes, com 250 ms entre um pedido e outro, dentro de uma fila que
+  // também segura a decifração. Com 1.900 mensagens velhas do próprio celular
+  // que nunca vão abrir, isso são oito minutos de fila a cada reconexão -- e a
+  // conexão caía por keep-alive (408) aos dois. Este contador diz ao Baileys
+  // "já tentou o máximo" para mensagem VELHA do PRÓPRIO SALÃO; para mensagem
+  // de cliente ele conta de verdade, e o reenvio continua existindo.
+  const contadorReal = new Map()
+  const contadorDeReenvio = {
+    get(chave) {
+      const id = String(chave || '').split(':')[0]
+      if (ehMinhaVelha(id)) return 99
+      return contadorReal.get(chave)
+    },
+    set(chave, valor) { contadorReal.set(chave, valor); return true },
+    del(chave) { return contadorReal.delete(chave) ? 1 : 0 },
+  }
+
   const sock = makeWASocket({
     version,
     auth: state,
+    msgRetryCounterCache: contadorDeReenvio,
     // Filho com o id do salão: é o que deixa saidaDoLog contar por salão as
     // mensagens que chegaram e não abriram.
     logger: log.child({ salao: salaoId }),
@@ -610,6 +642,43 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   if (sock.ws?.removeAllListeners && sock.ws?.on) {
     sock.ws.removeAllListeners('CB:ib,,offline_preview')
     sock.ws.on('CB:ib,,offline_preview', pedirLoteInteiro)
+  }
+
+  // ── O lixo que a fila devolve para sempre ─────────────────────────────────
+  //
+  // Medido em 18/09/2026 09:42: a fila trazia 1.913 mensagens que o próprio
+  // celular do salão mandou dias atrás e que a ponte NÃO consegue abrir ("No
+  // matching sessions"). O Baileys pede reenvio cinco vezes, desiste, e nunca
+  // confirma o recebimento -- então o servidor guarda tudo e entrega de novo
+  // a cada reconexão. Cada reconexão virava dois minutos de decifração
+  // falhando, o keep-alive vencia (408), reconectava, e recomeçava: 1.914,
+  // 1.920, 1.930... a fila só crescia.
+  //
+  // Mensagem do PRÓPRIO SALÃO que veio da fila velha e não abriu não tem
+  // conserto e não faz falta: é histórico que o celular já tem. A ponte
+  // confirma o recebimento ao servidor (o mesmo `ack` que o Baileys manda para
+  // mensagem ignorada) e ela sai da fila de vez. Mensagem de CLIENTE que não
+  // abriu continua com o Baileys, que pede reenvio -- e o reenvio costuma abrir.
+  //
+  // O `ack` sai NA HORA em que o nó chega, para tudo que veio da fila -- não
+  // depois de decifrar. O Baileys 6.7 só "confirma" mensagem pelo recibo de
+  // entrega (quando abre) ou pelo pedido de reenvio (quando não abre); o que
+  // não abre e não tem mais reenvio fica sem resposta nenhuma, e o servidor,
+  // esperando 1.700 respostas, para de atender qualquer pergunta nossa até
+  // o keep-alive vencer (408 aos dois minutos, medido três vezes seguidas em
+  // 18/09/2026 09:44-09:55). O ack é o que o WhatsApp Web manda para todo
+  // stanza de mensagem; o recibo de entrega continua indo por fora.
+  sock.ws?.on?.('CB:message', (no) => {
+    if (!no?.attrs?.offline || !no.attrs.id) return
+    nosDaFila.set(no.attrs.id, no)
+    while (nosDaFila.size > 5000) nosDaFila.delete(nosDaFila.keys().next().value)
+    sock.sendMessageAck(no).catch(() => {})
+  })
+  const descartarDaFila = (chave) => {
+    const no = chave?.id ? nosDaFila.get(chave.id) : null
+    if (!no) return false
+    nosDaFila.delete(chave.id)
+    return true
   }
   sock.ws?.on?.('CB:ib,,offline', (n) => {
     const a = n?.content?.[0]?.attrs || {}
@@ -795,6 +864,9 @@ async function abrirDeVerdade(salaoId, registroSessao) {
         // "toco" sem conteúdo. Contar e seguir -- é o sinal que vigiarSaude lê.
         if (!m.message && m.messageStubType) {
           registroSessao.naoAbriu++
+          if (m.key?.fromMe && type === 'append' && descartarDaFila(m.key)) {
+            registroSessao.descartadas = (registroSessao.descartadas || 0) + 1
+          }
           continue
         }
         // Mensagem de verdade, aberta: a sessão está sã. Se a tela estava com
@@ -1170,6 +1242,13 @@ async function vigiarSaude(salaoId, s) {
   const abertaHa = Date.now() - s.abertoEm
 
   soltarBufferPreso(salaoId, s)
+
+  // Um resumo por minuto do que a fila velha trouxe, só quando há o que dizer.
+  if ((s.descartadas || 0) !== (s.descartadasDitas || 0) && (!s.resumoEm || Date.now() - s.resumoEm > 60000)) {
+    registro(salaoId, `${s.descartadas} mensagem(ns) velha(s) do próprio celular não abriram e foram tiradas da fila do servidor; ${s.eventos} abriram`)
+    s.descartadasDitas = s.descartadas
+    s.resumoEm = Date.now()
+  }
 
   // Cifradas que não abriram, sem NENHUMA que tenha aberto: sessão podre.
   // O mínimo existe porque uma ou duas falhas acontecem em sessão sã (aparelho
