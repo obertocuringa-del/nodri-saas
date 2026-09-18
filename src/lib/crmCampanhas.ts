@@ -364,10 +364,25 @@ export async function processarCampanha(
 
   // O horário fixo é marcado como cumprido MESMO se não houver ninguém para
   // mandar: senão a campanha tentaria de novo a cada volta até virar o dia.
+  //
+  // MAS não quando a extensão veio de mãos vazias por ERRO. Em 18/09/2026 às
+  // 17:01 ela não achou os campos do relatório (o Avec demorou a montar a
+  // tela), devolveu zero linhas com o erro escrito -- e o 17:00 foi marcado
+  // como feito: nenhuma confirmação saiu e nada tentaria de novo até as
+  // 20:50. Erro com zero linhas é "tenta de novo na próxima volta". Só depois
+  // de cinco tentativas seguidas falhando o horário é dado por perdido, para
+  // não ficar o dia inteiro martelando um Avec fora do ar.
+  const TENTATIVAS_MAX = 5
+  const falhouSemLer = !!opts.erro && linhas.length === 0 && !opts.simular
   if (opts.horarioCumprido) {
-    const feitos = new Set(e.horarios_feitos[hoje.iso] || [])
-    feitos.add(opts.horarioCumprido)
-    e.horarios_feitos[hoje.iso] = [...feitos]
+    const chaveTent = `${hoje.iso} ${opts.horarioCumprido}`
+    const tent = ((e as any).tentativas_horario?.[chaveTent] || 0) + (falhouSemLer ? 1 : 0)
+    ;(e as any).tentativas_horario = { [chaveTent]: tent }
+    if (!falhouSemLer || tent >= TENTATIVAS_MAX) {
+      const feitos = new Set(e.horarios_feitos[hoje.iso] || [])
+      feitos.add(opts.horarioCumprido)
+      e.horarios_feitos[hoje.iso] = [...feitos]
+    }
   }
 
   // ── Simulação ─────────────────────────────────────────────────────────────
