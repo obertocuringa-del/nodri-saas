@@ -91,6 +91,32 @@ async function perguntarComPaciencia(abaId, msg, tentativas = 8) {
   return null
 }
 
+/**
+ * Navega e espera a página NOVA carregar. `chrome.tabs.update` volta antes
+ * de a navegação começar, e `esperarCarregar` via a página VELHA já em
+ * "complete" -- aí a pergunta seguinte era respondida pelo documento antigo,
+ * que estava morrendo. Aqui se espera o evento de carregamento desta
+ * navegação, com um teto para não travar se o Avec engasgar.
+ */
+function navegar(abaId, url, ms = 45000) {
+  return new Promise(resolve => {
+    let pronto = false
+    const encerrar = (ok) => {
+      if (pronto) return
+      pronto = true
+      clearTimeout(fim)
+      chrome.tabs.onUpdated.removeListener(ouvir)
+      resolve(ok)
+    }
+    const fim = setTimeout(() => encerrar(false), ms)
+    const ouvir = (id, info) => {
+      if (id === abaId && info.status === 'complete') encerrar(true)
+    }
+    chrome.tabs.onUpdated.addListener(ouvir)
+    chrome.tabs.update(abaId, { url }).catch(() => encerrar(false))
+  })
+}
+
 /** A aba de trabalho: a mesma de sempre, ou uma nova se sumiu. */
 async function abaDeTrabalho(url) {
   const { abaId } = await guardado()
@@ -100,12 +126,13 @@ async function abaDeTrabalho(url) {
     // para www.avec.app, e exigir o endereço do admin aqui abria uma aba NOVA a
     // cada ciclo (uma a cada 30 s) enquanto a antiga ficava lá, parada.
     if (existe && /avec\.(beauty|app)/.test(String(existe.url || ''))) {
-      await chrome.tabs.update(abaId, { url })
+      await navegar(abaId, url)
       return abaId
     }
   }
   const nova = await chrome.tabs.create({ url, active: false })
   await chrome.storage.local.set({ abaId: nova.id })
+  await esperarCarregar(nova.id)
   return nova.id
 }
 
@@ -167,8 +194,7 @@ async function entrarNoAvec(abaId, cfg, dados) {
   const urlLogin = urlAvec(cfg.url_login, '')
   if (!urlLogin) throw new Error('Avec deslogado e sem endereço de login configurado no NODRI')
   // 1) o endereço de login, e espera a tela carregar de verdade
-  await chrome.tabs.update(abaId, { url: urlLogin })
-  await esperarCarregar(abaId)
+  await navegar(abaId, urlLogin)
   await sleep(1500)
   // 2) e-mail, senha e o botão -- o content script faz os três
   const r = await perguntarComPaciencia(abaId, { tipo: 'logar', email: dados.email, senha: dados.senha }, 12)
@@ -230,13 +256,12 @@ async function ciclo() {
     if (onde.login) {
       await saude({ texto: 'Avec deslogado — entrando de novo…' })
       await entrarNoAvec(abaId, cfg, dados)
-      await chrome.tabs.update(abaId, { url: urlRel })
-      await esperarCarregar(abaId)
+      await navegar(abaId, urlRel)
       onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
       if (!onde || onde.login) throw new Error('Continuou na tela de login depois de entrar')
     }
 
-    const lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data: cfg.hoje }, 3)
+    const lido = await lerComSegundaChance(abaId, cfg.hoje)
     if (!lido) throw new Error('O relatório não respondeu')
     if (!lido.ok) {
       await nodri('/api/crm/automacao/extensao', { method: 'POST', body: JSON.stringify({ linhas: [], erro: lido.erro }) }, dados.chave)
@@ -297,12 +322,28 @@ async function prepararAba(cfg, dados, url) {
   if (onde.login) {
     await saude({ texto: 'Avec deslogado — entrando de novo…' })
     await entrarNoAvec(abaId, cfg, dados)
-    await chrome.tabs.update(abaId, { url })
-    await esperarCarregar(abaId)
+    await navegar(abaId, url)
     onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
     if (!onde || onde.login) throw new Error('Continuou na tela de login depois de entrar')
   }
   return abaId
+}
+
+/**
+ * Lê o 0051; se a tela não estava pronta, recarrega e tenta UMA vez mais.
+ * Às 17:01 de 18/09/2026 o Avec demorou a montar os campos de data e a
+ * leitura voltou "não achei os campos" -- sem segunda chance, o disparo de
+ * confirmação do dia inteiro morreu nessa volta.
+ */
+async function lerComSegundaChance(abaId, data) {
+  let lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data }, 3)
+  if (lido && lido.ok) return lido
+  await saude({ texto: 'O relatório não estava pronto — recarregando para tentar de novo…' })
+  const aba = await infoDaAba(abaId)
+  await navegar(abaId, String(aba?.url || AVEC + 'admin/relatorio/0051'))
+  await sleep(3000)
+  lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data }, 3)
+  return lido
 }
 
 async function executarTarefa(cfg, dados) {
@@ -312,7 +353,7 @@ async function executarTarefa(cfg, dados) {
     if (t.tipo === 'campanha') {
       const url = urlAvec(t.url_relatorio || cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
       const abaId = await prepararAba(cfg, dados, url)
-      const lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data: t.data }, 3)
+      const lido = await lerComSegundaChance(abaId, t.data)
       if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
 
       const r = await nodri('/api/crm/automacao/extensao', {
@@ -346,7 +387,7 @@ async function executarTarefa(cfg, dados) {
       const abaId = await prepararAba(cfg, dados, url)
 
       // 1) achar pela PLANILHA (telefone é único; o quadro pagina e corta nome)
-      const lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data: t.data }, 3)
+      const lido = await lerComSegundaChance(abaId, t.data)
       if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
 
       const so = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
@@ -366,8 +407,8 @@ async function executarTarefa(cfg, dados) {
 
       // 2) ir à agenda daquele dia e marcar
       const urlAgenda = AVEC + 'admin/agenda'
-      await chrome.tabs.update(abaId, { url: urlAgenda })
-      await esperarCarregar(abaId)
+      await navegar(abaId, urlAgenda)
+      await sleep(2000)
       const marcou = await perguntarComPaciencia(abaId, {
         tipo: 'marcar-confirmado',
         data: linha.data, hora: linha.hora,

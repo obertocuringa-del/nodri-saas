@@ -120,7 +120,9 @@
   }
 
   async function lerRelatorio(dia, jaInsisti = false) {
-    const ini = await esperarPor(() => document.querySelector('input[name="inicio"]'), 15000)
+    // 30 s: no horário de pico o Avec leva mais de 15 para montar a tela
+    // (18/09/2026, 17:01), e desistir cedo custou o disparo de confirmação.
+    const ini = await esperarPor(() => document.querySelector('input[name="inicio"]'), 30000)
     const fim = document.querySelector('input[name="fim"]')
     if (!ini || !fim) return { ok: false, erro: 'Não achei os campos Data Início / Data Fim (é a tela do relatório 0051?)', url: location.href }
 
