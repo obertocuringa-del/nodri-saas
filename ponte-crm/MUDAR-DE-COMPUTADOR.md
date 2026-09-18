@@ -15,9 +15,11 @@ automação de feedback e **a lista de quem já recebeu feedback hoje**.
 | Item | Onde |
 |---|---|
 | Sessão do WhatsApp (evita reescanear o QR) | `ponte-crm/sessoes/` |
+| Memória de reenvio e fila de reentrega da ponte | `ponte-crm/sessoes/memoria-*.json` (vai junto com a pasta) |
 | Chave da ponte | dentro do `ponte-crm/INICIAR-PONTE.bat` |
 | Dependências | `ponte-crm/node_modules/` (recriável com `npm install`) |
-| Chave + e-mail/senha do Avec da extensão | dentro do Chrome, nas Opções da extensão |
+| Chave + e-mail/senha do Avec da extensão | dentro do Chrome, nas Opções da extensão — **não vai na cópia da pasta**, tem que digitar de novo no computador novo |
+| Energia do Windows (não dormir, Wi-Fi sem economia) | configuração do próprio computador — refazer no novo (passo 3.4) |
 
 ---
 
@@ -53,17 +55,39 @@ automação de feedback e **a lista de quem já recebeu feedback hoje**.
      Conectar aparelho.
 3. Pôr para iniciar junto com o Windows: Windows + R → `shell:startup` → criar
    atalho apontando para o `INICIAR-PONTE.bat`.
+4. **Energia** (o que derrubou o CRM em 15/09 e em 18/09): abrir o PowerShell
+   como administrador e colar, uma linha por vez:
+   ```
+   powercfg /change standby-timeout-ac 0
+   powercfg /change standby-timeout-dc 0
+   powercfg /change hibernate-timeout-ac 0
+   powercfg /change hibernate-timeout-dc 0
+   powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+   powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+   powercfg /setacvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
+   powercfg /setdcvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
+   powercfg /setactive SCHEME_CURRENT
+   ```
+   (nunca suspender, nunca hibernar, fechar a tampa não faz nada, Wi-Fi em
+   desempenho máximo). Se der para ligar por **cabo de rede** em vez de Wi-Fi,
+   melhor ainda. E na tomada, sempre.
 
 ### 4. A extensão de feedback
 
 1. `chrome://extensions` → ligar **Modo do desenvolvedor**.
-2. **Carregar sem compactação** → escolher a pasta `extensao-feedback-avec`.
+2. **Carregar sem compactação** → escolher a pasta `extensao-feedback-avec`
+   (tem que aparecer a versão **1.3.1** ou mais nova). Carregar em **um perfil
+   só** do Chrome — em dois perfis ela roda duas vezes.
 3. Clicar na extensão → **Opções** → preencher:
    - **Chave**: copiar em NODRI › CRM › Configurar › Automação de feedback.
    - **E-mail e senha do Avec** (ficam só neste computador, não vão para o NODRI).
 4. **Salvar** → **Rodar um ciclo agora**.
 
 ### 5. Conferir que ficou tudo de pé
+
+Melhor hora para fazer a troca: **de manhã, na abertura**, com alguém olhando.
+Fora dos horários das automações (17:00 e 20:50 é a confirmação; o feedback
+roda o dia inteiro, então uma pausa de 20 minutos só atrasa, não perde).
 
 - CRM mostra **"Conectado"** e o número certo.
 - Em Configurar › Automação de feedback: **"Extensão vista: há 1 min"**.
