@@ -788,13 +788,6 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     // fez a primeira mensagem de teste sumir sem deixar rastro.
     if (type !== 'notify' && type !== 'append') return
     registro(salaoId, `chegaram ${messages.length} evento(s) de mensagem (${type})`)
-    registroSessao.eventos += messages.length
-    // Chegou coisa: se a tela estava com o aviso de sessão doente, ele já não
-    // vale. Limpa uma vez e volta a vigiar.
-    if (registroSessao.alertou) {
-      registroSessao.alertou = false
-      avisar(salaoId, { erro: null }).catch(() => {})
-    }
     for (const m of messages) {
       try {
         const bruto = m.key?.remoteJid || ''
@@ -803,6 +796,13 @@ async function abrirDeVerdade(salaoId, registroSessao) {
         if (!m.message && m.messageStubType) {
           registroSessao.naoAbriu++
           continue
+        }
+        // Mensagem de verdade, aberta: a sessão está sã. Se a tela estava com
+        // o aviso de sessão doente, ele já não vale -- limpa e volta a vigiar.
+        registroSessao.eventos++
+        if (registroSessao.alertou) {
+          registroSessao.alertou = false
+          avisar(salaoId, { erro: null }).catch(() => {})
         }
         // O que o salão mandou pelo celular TAMBÉM entra. Sem isso a conversa
         // no CRM fica pela metade: aparece a pergunta da cliente e não a
@@ -1174,7 +1174,11 @@ async function vigiarSaude(salaoId, s) {
   // Cifradas que não abriram, sem NENHUMA que tenha aberto: sessão podre.
   // O mínimo existe porque uma ou duas falhas acontecem em sessão sã (aparelho
   // que trocou de chave, mensagem velha na fila) e não são motivo de alarme.
-  if (!s.alertou && s.eventos === 0 && s.naoAbriu >= MINIMO_NAO_ABRIU && abertaHa > 60000) {
+  // Cinco minutos de folga: logo depois de reconectar vem a fila velha do
+  // servidor, cheia de mensagem antiga que já não abre mesmo (sessão girou),
+  // e isso não é doença -- em 18/09/2026 foram 91 velhas para 6 boas na
+  // primeira leva. Doença é passar cinco minutos sem UMA abrir.
+  if (!s.alertou && s.eventos === 0 && s.naoAbriu >= MINIMO_NAO_ABRIU && abertaHa > 5 * 60000) {
     s.alertou = true
     registro(salaoId, `${s.naoAbriu} mensagens chegaram cifradas e nenhuma abriu — avisando a tela que a sessão precisa ser pareada de novo`)
     await avisar(salaoId, { erro: AVISO_SESSAO_PODRE })
