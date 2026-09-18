@@ -414,14 +414,27 @@ export async function processarCampanha(
   // amanhã sai hoje às 17h e não pode repetir hoje às 20:50.
   const jaHoje = new Set(e.enviados[hoje.iso] || [])
 
-  for (const a of alvos) {
-    if (jaHoje.has(a.chave)) { resumo.puladas++; continue }
-
+  // ── Em lotes paralelos, gravando a lista a cada lote ──────────────────────
+  //
+  // Um alvo por vez são cinco idas ao banco em fila; com 20 confirmações a
+  // função passava de 60 s e a Vercel a matava no meio (504 em 15/09/2026
+  // 17:00). As mensagens já estavam na fila -- mas a lista de quem recebeu
+  // NÃO foi gravada, e às 20:50 as mesmas 20 clientes receberiam de novo.
+  //
+  // Agora seis alvos correm juntos, e a lista de quem recebeu é gravada ao
+  // fim de cada lote. Se a função morrer, morre com a lista em dia.
+  const LOTE = 6
+  const fila = alvos.filter(a => {
+    if (jaHoje.has(a.chave)) { resumo.puladas++; return false }
+    return true
+  })
+  let posicao = 0
+  const processarAlvo = async (a: Alvo) => {
     const contato = await acharOuCriarContato(salaoId, a.telefone, a.nomeContato || undefined, null)
-    if (!contato) { resumo.puladas++; continue }
+    if (!contato) { resumo.puladas++; return }
 
     const textos = c.mensagens.map(m => preencher(m, a.dados)).filter(Boolean)
-    if (!textos.length) { resumo.puladas++; continue }
+    if (!textos.length) { resumo.puladas++; return }
     const previa = (textos[textos.length - 1] || '').slice(0, 120)
 
     const { data: abertas } = await supabaseAdmin
@@ -452,23 +465,36 @@ export async function processarCampanha(
       }
       await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conversa.id)
     }
-    if (!conversa) { resumo.puladas++; continue }
+    if (!conversa) { resumo.puladas++; return }
 
     // O espaçamento entra no `criado_em`: a ponte manda a fila em ordem, então
     // separar aqui separa lá. Sem isso, 60 confirmações saem num piscar e o
-    // WhatsApp entende como disparo de lista.
-    const base = Date.now() + resumo.enviadas * c.espacamento_seg * 1000
-    const fila = textos.map((texto, i) => ({
+    // WhatsApp entende como disparo de lista. A posição na fila é tomada
+    // ANTES das idas ao banco, para dois alvos paralelos não pegarem a mesma.
+    const minhaPosicao = posicao++
+    const base = Date.now() + minhaPosicao * c.espacamento_seg * 1000
+    const mensagens = textos.map((texto, i) => ({
       salao_id: salaoId, conversa_id: conversa!.id,
       direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',
       autor_nome: c.nome, em_massa: false,
       criado_em: new Date(base + i * 1000).toISOString(),
     }))
-    const { error } = await supabaseAdmin.from('crm_mensagens').insert(fila)
-    if (error) { resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); continue }
+    const { error } = await supabaseAdmin.from('crm_mensagens').insert(mensagens)
+    if (error) { resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); return }
 
     jaHoje.add(a.chave)
     resumo.enviadas++
+  }
+
+  for (let i = 0; i < fila.length; i += LOTE) {
+    await Promise.all(fila.slice(i, i + LOTE).map(a => processarAlvo(a).catch(e => {
+      resumo.puladas++
+      resumo.erro = String(e?.message || e).slice(0, 200)
+    })))
+    e.enviados[hoje.iso] = [...jaHoje]
+    e.ultimo = resumo
+    estados[c.id] = e
+    await gravarEstados(salaoId, estados)
   }
 
   e.enviados[hoje.iso] = [...jaHoje]

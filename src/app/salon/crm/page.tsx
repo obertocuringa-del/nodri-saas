@@ -816,6 +816,26 @@ export default function CrmPage() {
           </div>
         </div>
 
+        {/* ── Conectado no papel, surdo na prática ──────────────────────────
+            A ponte vigia a sessão (mensagens que chegam cifradas e não abrem)
+            e escreve o motivo em canal.erro. Em 15/09/2026 o CRM ficou três
+            dias "Conectado" sem receber nada e a tela não disse uma palavra.
+            Aqui ela diz, e diz o que fazer. */}
+        {conectado && canal.erro && (
+          <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-center gap-3 flex-wrap"
+            style={{ background: '#FBEAE6', border: '1px solid #e8c5be' }}>
+            <AlertTriangle size={16} style={{ color: '#b4322a', flexShrink: 0 }} />
+            <p className="text-[12.5px] flex-1 min-w-[240px]" style={{ color: '#6b6860' }}>
+              <strong style={{ color: '#b4322a' }}>Conexão com problema.</strong>{' '}{canal.erro}
+            </p>
+            <button onClick={() => conectar('desconectar')}
+              className="px-3 py-2 rounded-lg text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.96]"
+              style={{ background: '#b4322a', color: '#fff' }}>
+              Desconectar e ler o QR de novo
+            </button>
+          </div>
+        )}
+
         {/* ── O CRM ficou fora do ar e ninguém soube ─────────────────────────
             Mensagem que chegou nesse período está SÓ no celular: para o
             WhatsApp, aparelho desconectado deixou de existir, e não há como
@@ -1676,6 +1696,13 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
           {meu && m.situacao === 'na_fila' && ' · na fila'}
           {meu && m.situacao === 'falhou' && ' · falhou'}
           {meu && m.autor_nome ? ` · ${m.autor_nome}` : ''}
+          {/* Os tiques do WhatsApp, repassados pela ponte: um = saiu daqui,
+              dois = chegou no aparelho dela, azul = ela leu. Sem isto,
+              "enviada" escondia mensagem que nunca abriu do outro lado (62
+              delas em 15/09/2026). */}
+          {meu && m.situacao === 'enviada' && <span title="Saiu do CRM; ainda não chegou no aparelho dela"> ✓</span>}
+          {meu && m.situacao === 'entregue' && <span title="Chegou no aparelho dela"> ✓✓</span>}
+          {meu && m.situacao === 'lida' && <span title="Ela leu" style={{ color: '#2f80ed', opacity: 1 }}> ✓✓</span>}
         </p>
       </div>
       {!meu && onCitar && (
@@ -1774,9 +1801,15 @@ function PainelCliente({ c }: { c: Conversa }) {
             {Array.isArray(dados.servicos) && dados.servicos.length > 0 && (
               <div className="pt-2">
                 <p className="text-[10.5px] font-bold mb-1" style={{ color: '#8f877f' }}>COSTUMA FAZER</p>
-                {dados.servicos.slice(0, 5).map((s: any, i: number) => (
-                  <p key={i} className="text-[11.5px]" style={{ color: '#6b6860' }}>
-                    {s.nome} · {s.vezes}x
+                {/* Quantas vezes E quando foi a última: "Manicure · 53x · última
+                    05/09" é o que deixa a recepção puxar assunto com a data
+                    certa em vez de chutar. Pedido do dono em 18/09/2026. */}
+                {dados.servicos.slice(0, 6).map((s: any, i: number) => (
+                  <p key={i} className="text-[11.5px] flex justify-between gap-2" style={{ color: '#6b6860' }}>
+                    <span className="truncate">{s.nome} · {s.vezes}x</span>
+                    {s.ultima && (
+                      <span className="flex-shrink-0" style={{ color: '#8f877f' }}>última {String(s.ultima).slice(0, 5)}</span>
+                    )}
                   </p>
                 ))}
               </div>

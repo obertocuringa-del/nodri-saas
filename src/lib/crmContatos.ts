@@ -70,12 +70,28 @@ export async function acharOuCriarContato(
     achado = (data || []).find((c: any) => c.telefone && chaveTelefone(c.telefone) === alvo) || null
   }
 
-  if (!achado && lidLimpo) {
+  // ── A mesma pessoa em duas fichas ─────────────────────────────────────────
+  //
+  // Acontece assim: a cliente veio do histórico só com o LID (uma ficha), a
+  // campanha de confirmação a encontrou pelo telefone do relatório e criou
+  // outra (segunda ficha). Quando ela escreve ao vivo, a mensagem traz os dois
+  // -- telefone e LID -- e é a única hora em que dá para saber que são a
+  // mesma pessoa. Então as duas viram uma: as conversas da ficha do LID vão
+  // para a ficha do telefone, o que faltava numa é copiado da outra, e a
+  // ficha do LID some. Sem isto a recepção via duas "Maria" na lista, cada
+  // uma com metade da conversa.
+  let pelaLid: any = null
+  if (lidLimpo) {
     const { data } = await supabaseAdmin
       .from('crm_contatos').select('*')
       .eq('salao_id', salaoId).eq('lid', lidLimpo).limit(1)
-    achado = (data || [])[0] || null
+    pelaLid = (data || [])[0] || null
   }
+  if (achado && pelaLid && pelaLid.id !== achado.id) {
+    await fundirContatos(salaoId, achado, pelaLid)
+    pelaLid = null
+  }
+  if (!achado && pelaLid) achado = pelaLid
 
   if (achado) {
     // Completa o que faltava, sem sobrescrever o que já estava certo.
@@ -112,3 +128,30 @@ export async function acharOuCriarContato(
   return novo
 }
 
+
+/**
+ * Funde a ficha `apagar` na ficha `manter`. Conversas mudam de dono; nome,
+ * observação, etiquetas e vínculo com o sistema são copiados quando `manter`
+ * não tem; a ficha `apagar` é excluída. Nunca perde mensagem: mensagem
+ * pertence à conversa, e a conversa só troca de ficha.
+ */
+export async function fundirContatos(salaoId: string, manter: any, apagar: any) {
+  if (!manter?.id || !apagar?.id || manter.id === apagar.id) return
+  const patch: any = {}
+  if (!manter.lid && apagar.lid) patch.lid = apagar.lid
+  if (!manter.nome && apagar.nome) patch.nome = apagar.nome
+  if (!manter.nome_agenda && apagar.nome_agenda) patch.nome_agenda = apagar.nome_agenda
+  if (!manter.cliente_nome && apagar.cliente_nome) patch.cliente_nome = apagar.cliente_nome
+  if (!manter.observacao && apagar.observacao) patch.observacao = apagar.observacao
+  if ((!Array.isArray(manter.etiquetas) || !manter.etiquetas.length)
+      && Array.isArray(apagar.etiquetas) && apagar.etiquetas.length) patch.etiquetas = apagar.etiquetas
+
+  await supabaseAdmin.from('crm_conversas')
+    .update({ contato_id: manter.id }).eq('salao_id', salaoId).eq('contato_id', apagar.id)
+  // O LID tem índice único: sai da ficha velha antes de entrar na nova.
+  await supabaseAdmin.from('crm_contatos').delete().eq('id', apagar.id).eq('salao_id', salaoId)
+  if (Object.keys(patch).length) {
+    await supabaseAdmin.from('crm_contatos').update(patch).eq('id', manter.id)
+    Object.assign(manter, patch)
+  }
+}

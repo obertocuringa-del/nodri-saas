@@ -24,12 +24,6 @@ export const dynamic = 'force-dynamic'
 // Uso: /api/relatorios/cliente-detalhe?cliente=NOME&celular=61999999999
 // ─────────────────────────────────────────────────────────────────────────────
 
-const tsData = (s: string) => {
-  if (!s) return 0
-  if (s.includes('/')) { const [d, m, y] = s.split('/'); return new Date(`${y}-${m}-${d}`).getTime() || 0 }
-  return new Date(s).getTime() || 0
-}
-
 export async function GET(req: NextRequest) {
   const token = cookies().get('nodri_token')?.value
   const p = token ? await verifyJWT(token) : null
@@ -53,93 +47,63 @@ export async function GET(req: NextRequest) {
   //
   // Nome se repete e se escreve de dez jeitos; telefone é único. Então: tendo
   // telefone, é SÓ por telefone. O nome vira reserva para quem não tem número.
-  let atend: any[] | null = null
-  let casouPor: 'telefone' | 'nome' | null = null
-
-  if (celular.length >= 8) {
-    // ── Todas as grafias do mesmo número ──────────────────────────────────
-    //
-    // Procurar só o número como veio do WhatsApp não acha quem está gravado
-    // de outro jeito na planilha do salão. O Marcos é o caso: no WhatsApp ele
-    // é 61 9358-7833 e na base está 61 9 9358-7833, com o nono dígito. Um
-    // `ilike` com o número cru não casa -- e o painel dele, que sempre
-    // apareceu, ficou zerado do nada.
-    //
-    // É a mesma lista de grafias que o relógio já usava para casar contato
-    // com cliente. Ela precisava estar aqui também.
-    const so = celular.replace(/\D+/g, '')
-    const sem55 = so.startsWith('55') ? so.slice(2) : so
-    const formas = new Set<string>([sem55])
-    if (sem55.length === 11 && sem55[2] === '9') formas.add(sem55.slice(0, 2) + sem55.slice(3))
-    if (sem55.length === 10) formas.add(sem55.slice(0, 2) + '9' + sem55.slice(2))
-
-    const filtro = [...formas].map(f => `celular.ilike.%${f}%`).join(',')
-    const r = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('servico, data_comanda, profissional, qtd, valor, total')
-      .eq('salao_id', p.salaoId)
-      .or(filtro)
-      .limit(4000)
-    if (r.data?.length) { atend = r.data; casouPor = 'telefone' }
-  }
-
-  // ── E SÓ. Sem telefone, não se mostra histórico ──────────────────────────
+  // ── Tudo no banco, casando por DÍGITOS ──────────────────────────────────
   //
-  // Havia aqui uma busca por nome, como reserva. Ela saiu por decisão do dono
-  // em 12/09/2026, e a razão dele é melhor que a minha:
+  // Duas coisas quebravam aqui. O `ilike` com o número cru não casava com o
+  // celular gravado formatado na planilha -- "(61) 9822-15272", 2.914 linhas
+  // só no Rouge -- e a cliente com 48 visitas aparecia "sem histórico". E o
+  // `limit(4000)` que o banco corta em MIL calado: cliente antiga perdia as
+  // visitas mais velhas e a "primeira visita" saía errada.
   //
-  //   "se eu tiver conversando com a cliente vou pegar aquelas informações
-  //    para vender mais para ela. E aí falo: você fez o corte aqui um tempo
-  //    atrás — e a cliente não fez corte. Eu estou mentindo."
-  //
-  // Nome não identifica ninguém: o salão tem duas Márcias, e a NOEMIA que
-  // apareceu com 164 visitas e ticket de R$ 346,80 podia ser a soma de outra
-  // pessoa. Um aviso em amarelo não conserta isso -- quem está atendendo lê o
-  // número, não o aviso.
-  //
-  // Sem telefone a tela não mostra nada e diz por quê. É menos informação e
-  // nenhuma mentira.
-  const linhas = atend || []
-  if (linhas.length === 0) {
+  // Agora é uma função no banco (crm_historico_cliente): compara os dígitos
+  // dos dois lados, usa o índice por dígitos, e devolve o resumo já pronto --
+  // inclusive a ÚLTIMA DATA de cada serviço, que é o que a recepção precisa
+  // para puxar assunto ("a última manicure foi dia 5").
+  if (celular.length < 8) {
     return NextResponse.json({
       encontrado: false, total_visitas: 0, servicos: [], profissionais_atendidos: [],
       servicos_ultima: [], profissionais_ultima: [],
     })
   }
 
-  // Cada DATA distinta é uma visita (uma comanda pode ter vários serviços).
-  const datas = [...new Set(linhas.map(a => a.data_comanda).filter(Boolean))].sort((a, b) => tsData(a) - tsData(b))
-  const ultima_visita = datas[datas.length - 1] || null
-  const total_visitas = datas.length
-
-  const contagem: Record<string, number> = {}
-  let faturamento = 0
-  for (const a of linhas) {
-    const s = a.servico || 'Não informado'
-    contagem[s] = (contagem[s] || 0) + (Number(a.qtd) || 1)
-    faturamento += Number(a.total) || Number(a.valor) || 0
+  const so = celular.replace(/\D+/g, '')
+  const sem55 = so.startsWith('55') ? so.slice(2) : so
+  const formas = new Set<string>([sem55, '55' + sem55])
+  if (sem55.length === 11 && sem55[2] === '9') {
+    const curto = sem55.slice(0, 2) + sem55.slice(3)
+    formas.add(curto); formas.add('55' + curto)
   }
-  const servicos = Object.entries(contagem)
-    .map(([nome, vezes]) => ({ nome, vezes }))
-    .sort((a, b) => b.vezes - a.vezes)
-
-  const daUltima = ultima_visita ? linhas.filter(a => a.data_comanda === ultima_visita) : []
-
-  let freq_media_dias: number | null = null
-  if (datas.length >= 2) {
-    const difs: number[] = []
-    for (let i = 1; i < datas.length; i++) {
-      const d = (tsData(datas[i]) - tsData(datas[i - 1])) / 86400000
-      if (d > 0) difs.push(d)
-    }
-    if (difs.length) freq_media_dias = Math.round(difs.reduce((a, b) => a + b, 0) / difs.length)
+  if (sem55.length === 10) {
+    const longo = sem55.slice(0, 2) + '9' + sem55.slice(2)
+    formas.add(longo); formas.add('55' + longo)
   }
+
+  const { data: r, error } = await supabaseAdmin
+    .rpc('crm_historico_cliente', { p_salao: p.salaoId, p_celulares: [...formas] })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const total_visitas = Number(r?.total_visitas || 0)
+  if (!Number(r?.linhas || 0) || !total_visitas) {
+    return NextResponse.json({
+      encontrado: false, total_visitas: 0, servicos: [], profissionais_atendidos: [],
+      servicos_ultima: [], profissionais_ultima: [],
+    })
+  }
+
+  const faturamento = Number(r.faturamento || 0)
+  const servicos = (Array.isArray(r.servicos) ? r.servicos : [])
+    .map((s: any) => ({ nome: String(s.nome || ''), vezes: Number(s.vezes || 0), ultima: s.ultima || null }))
+  const ultima_visita = r.ultima_visita || null
+  const casouPor: 'telefone' = 'telefone'
+  const freq_media_dias = r.freq_media_dias != null ? Number(r.freq_media_dias) : null
+  const datas = [r.primeira_visita || null]
+  const linhas = { profissionais_atendidos: r.profissionais_atendidos, servicos_ultima: r.servicos_ultima, profissionais_ultima: r.profissionais_ultima }
 
   return NextResponse.json({
     encontrado: true,
-    // Como esta pessoa foi encontrada. A tela precisa saber: casar por nome é
-    // um palpite, e um palpite não pode ser mostrado com a mesma cara de um
-    // dado conferido pelo telefone.
+    // Como esta pessoa foi encontrada. Só por telefone: casar por nome saiu por
+    // decisão do dono em 12/09/2026 (mostrar o histórico de outra pessoa é
+    // pior do que não mostrar nada).
     casou_por: casouPor,
     total_visitas,
     primeira_visita: datas[0] || null,
@@ -148,9 +112,10 @@ export async function GET(req: NextRequest) {
     ticket_medio: total_visitas > 0 ? faturamento / total_visitas : 0,
     freq_media_dias,
     cliente_fiel: total_visitas >= 5,
+    // Cada serviço com quantas vezes e a ÚLTIMA data em que foi feito.
     servicos,
-    profissionais_atendidos: [...new Set(linhas.map(a => a.profissional).filter(Boolean))],
-    servicos_ultima: [...new Set(daUltima.map(a => a.servico).filter(Boolean))],
-    profissionais_ultima: [...new Set(daUltima.map(a => a.profissional).filter(Boolean))],
+    profissionais_atendidos: Array.isArray(linhas.profissionais_atendidos) ? linhas.profissionais_atendidos : [],
+    servicos_ultima: Array.isArray(linhas.servicos_ultima) ? linhas.servicos_ultima : [],
+    profissionais_ultima: Array.isArray(linhas.profissionais_ultima) ? linhas.profissionais_ultima : [],
   })
 }

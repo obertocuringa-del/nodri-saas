@@ -312,8 +312,11 @@ export async function POST(req: NextRequest) {
     const lista = Array.isArray(body?.contatos) ? body.contatos : []
     if (!lista.length) return NextResponse.json({ ok: true, atualizados: 0 })
 
-    const { data: todos } = await supabaseAdmin
-      .from('crm_contatos').select('id, telefone, lid, nome').eq('salao_id', salaoId)
+    // Em páginas: acima de mil contatos o banco cortava a lista calado e o
+    // nome que chegava para o contato 1001 se perdia.
+    const { dados: todos } = await paginar<any>((de, ate) => supabaseAdmin
+      .from('crm_contatos').select('id, telefone, lid, nome')
+      .eq('salao_id', salaoId).order('id').range(de, ate), 60000)
 
     let atualizados = 0
     for (const c of lista) {
@@ -346,6 +349,38 @@ export async function POST(req: NextRequest) {
       atualizados++
     }
     return NextResponse.json({ ok: true, atualizados })
+  }
+
+  // ── O que aconteceu com o que saiu: chegou? foi lido? ─────────────────────
+  //
+  // "enviada" era o fim da história para o CRM, e não é: em 15/09/2026 saíram
+  // 62 mensagens com um tique e boa parte nunca abriu no aparelho da cliente
+  // ("Aguardando mensagem"). O WhatsApp conta o resto -- dois tiques, azul --
+  // e a ponte repassa para cá. Só sobe: enviada -> entregue -> lida, nunca
+  // volta, porque um aviso atrasado de "entregue" não pode apagar um "lida".
+  if (acao === 'status') {
+    const itens = Array.isArray(body?.itens) ? body.itens : []
+    const ids = (s: string) => itens
+      .filter((i: any) => i?.situacao === s && i?.id_whatsapp)
+      .map((i: any) => String(i.id_whatsapp))
+    const lidas = ids('lida')
+    const entregues = ids('entregue')
+    let mexidas = 0
+    if (lidas.length) {
+      const { count } = await supabaseAdmin.from('crm_mensagens')
+        .update({ situacao: 'lida' }, { count: 'exact' })
+        .eq('salao_id', salaoId).eq('direcao', 'saida')
+        .in('id_whatsapp', lidas).in('situacao', ['enviada', 'entregue'])
+      mexidas += count || 0
+    }
+    if (entregues.length) {
+      const { count } = await supabaseAdmin.from('crm_mensagens')
+        .update({ situacao: 'entregue' }, { count: 'exact' })
+        .eq('salao_id', salaoId).eq('direcao', 'saida')
+        .in('id_whatsapp', entregues).eq('situacao', 'enviada')
+      mexidas += count || 0
+    }
+    return NextResponse.json({ ok: true, mexidas })
   }
 
   // ── A ponte confirma o envio (ou avisa que falhou) ────────────────────────
@@ -407,16 +442,64 @@ export async function POST(req: NextRequest) {
     // cada conversa do lote — com o WhatsApp de um salão de verdade isso é
     // centenas de idas ao banco numa requisição só, e a função morre no
     // tempo limite antes de gravar qualquer coisa.
-    const { data: contatosExistentes } = await supabaseAdmin
-      .from('crm_contatos').select('id, telefone, lid, nome').eq('salao_id', salaoId)
+    // Em páginas: o salão passou de 950 contatos e o banco entrega mil por
+    // pedido, calado. Do contato 1001 em diante a busca não achava, tentava
+    // criar quem já existia e o índice único derrubava o lote inteiro.
+    const { dados: contatosExistentes } = await paginar<any>((de, ate) => supabaseAdmin
+      .from('crm_contatos').select('id, telefone, lid, nome')
+      .eq('salao_id', salaoId).order('id').range(de, ate), 60000)
 
-    const porChave = new Map<string, any>()
-    // Chave: telefone normalizado quando existe, senão o lid. Uma só, para o
-    // lote inteiro, em vez de dois caminhos de código para o mesmo assunto.
+    // ── A mesma pessoa tem DUAS chaves, e as duas valem ───────────────────
+    //
+    // Quem veio do histórico de uma conta nova entrou só com o LID. Quando o
+    // WhatsApp entrega o par LID -> telefone (no pareamento seguinte, ou ao
+    // vivo), a conversa chega com os dois. Casar só por telefone criava a
+    // pessoa de novo -- uma com LID, outra com número -- e a recepção via
+    // duas "Maria" na lista, cada uma com metade da conversa.
+    //
+    // Então: procura pelo telefone; não achou, procura pelo LID. Achou pelo
+    // LID e agora tem telefone? O contato ganha o número. É assim que as 802
+    // conversas sem número do Rouge vão ganhar número no próximo pareamento.
+    const porTelefone = new Map<string, any>()
+    const porLid = new Map<string, any>()
     const chaveDe = (x: any) => x?.telefone ? chaveTelefone(x.telefone) : (x?.lid ? 'lid:' + x.lid : '')
-    for (const c of contatosExistentes || []) {
-      const k = chaveDe(c)
-      if (k) porChave.set(k, c)
+    const guardar = (c: any) => {
+      if (c?.telefone) porTelefone.set(chaveTelefone(c.telefone), c)
+      if (c?.lid) porLid.set(c.lid, c)
+    }
+    const achar = (x: any) =>
+      (x?.telefone && porTelefone.get(chaveTelefone(x.telefone)))
+      || (x?.lid && porLid.get(x.lid))
+      || null
+    for (const c of contatosExistentes || []) guardar(c)
+    // porChave é o que o resto do bloco usa: conversa -> contato.
+    const porChave = new Map<string, any>()
+    for (const c of lote) { const a = achar(c); if (a) porChave.set(chaveDe(c), a) }
+
+    // Contato que existia só com LID e agora veio com telefone: liga os dois.
+    // `conferido_em` volta a nulo para o relógio cruzar com o histórico do
+    // salão na próxima volta -- é o número que faz a lateral aparecer.
+    const ganharamNumero: { id: string; telefone: string }[] = []
+    for (const c of lote) {
+      const a = porChave.get(chaveDe(c))
+      if (!a || !c.telefone || a.telefone) continue
+      if (ganharamNumero.some(g => g.id === a.id)) continue
+      ganharamNumero.push({ id: a.id, telefone: c.telefone })
+      a.telefone = c.telefone
+      porTelefone.set(chaveTelefone(c.telefone), a)
+    }
+    for (const g of ganharamNumero) {
+      await supabaseAdmin.from('crm_contatos')
+        .update({ telefone: g.telefone, telefone_bruto: g.telefone, conferido_em: null })
+        .eq('id', g.id)
+    }
+    // O contrário também: contato com número que ainda não tinha LID.
+    for (const c of lote) {
+      const a = porChave.get(chaveDe(c))
+      if (!a || !c.lid || a.lid) continue
+      a.lid = c.lid
+      porLid.set(c.lid, a)
+      await supabaseAdmin.from('crm_contatos').update({ lid: c.lid }).eq('id', a.id)
     }
 
     const criarContatos = lote
@@ -442,7 +525,10 @@ export async function POST(req: NextRequest) {
       const { data: novos, error } = await supabaseAdmin
         .from('crm_contatos').insert(criarContatos).select('id, telefone, lid, nome')
       if (error) erroContatos = String(error.message || error).slice(0, 300)
-      for (const n of novos || []) { const k = chaveDe(n); if (k) porChave.set(k, n) }
+      for (const n of novos || []) {
+        guardar(n)
+        for (const c of lote) if (!porChave.has(chaveDe(c)) && achar(c) === n) porChave.set(chaveDe(c), n)
+      }
     }
 
     // Nome de agenda que chegou depois preenche o que estava vazio, mas nunca

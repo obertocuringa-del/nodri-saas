@@ -29,6 +29,7 @@ import makeWASocket, {
   ALL_WA_PATCH_NAMES,
   USyncQuery,
   USyncUser,
+  BufferJSON,
 } from '@whiskeysockets/baileys'
 import QRCode from 'qrcode'
 import pino from 'pino'
@@ -58,7 +59,27 @@ if (!CHAVE) {
 // de erro dizer ALGUMA coisa util quando isso acontecer.
 const EU = process.env.CRM_PONTE_ID || `${os.hostname()}`
 
-const log = pino({ level: process.env.LOG_LEVEL || 'warn' })
+// ── O log do Baileys passa por aqui antes de ir para a tela ─────────────────
+//
+// Ele registra "failed to decrypt message" toda vez que chega uma mensagem que
+// a ponte não consegue abrir. Em 15/09/2026 foram centenas por dia, e ninguém
+// viu: a tela dizia "Conectado" e o CRM não recebia nada. Contar essas linhas
+// por salão é o que permite à ponte perceber sozinha que a sessão apodreceu e
+// avisar na tela (ver vigiarSaude), em vez de esperar alguém ler 15 MB de log.
+const contadores = new Map()   // salaoId -> { naoAbriu: n }
+const saidaDoLog = {
+  write(linha) {
+    if (linha.includes('failed to decrypt message')) {
+      try {
+        const j = JSON.parse(linha)
+        const c = contadores.get(j.salao)
+        if (c) c.naoAbriu++
+      } catch {}
+    }
+    process.stdout.write(linha)
+  },
+}
+const log = pino({ level: process.env.LOG_LEVEL || 'warn' }, saidaDoLog)
 // ── O log fala em NOME, não em código ───────────────────────────────────────
 //
 // Uma linha dizendo "96de3e30-65a3-497e-af6b-8d6fd718ea37 gerou QR" não responde
@@ -114,20 +135,118 @@ const ESPERA_SEM_QR = Number(process.env.CRM_QR_ESPERA_MS || 20 * 60000)
 // recepção com folga, e é memória de sobra (só o conteúdo, não a mídia).
 const ULTIMAS_ENVIADAS = 300
 
+// ── Memória por salão que sobrevive à reconexão e ao reinício ───────────────
+//
+// Duas listas moram aqui, e as duas ficavam em lugar errado:
+//
+// `enviadas` -- o conteúdo do que saiu, para reenviar quando o aparelho da
+// cliente pede. Ficava DENTRO do registro da sessão, e o registro nasce de
+// novo a cada queda (em 15/09/2026 o WhatsApp derrubou a conexão a cada ~50
+// minutos, motivo 500). O pedido de reenvio chegava depois da queda, a ponte
+// respondia "não está mais guardada" e na tela da cliente ficava "Aguardando
+// mensagem" para sempre. Visto no log em 15/09 18:09, 16/09 00:43 e 02:05.
+//
+// `pendentes` -- mensagem de cliente que chegou enquanto o NODRI estava fora
+// de alcance ("fetch failed"). Era descartada com um registro no log e nada
+// mais: 21 mensagens de cliente sumiram assim em 14/09/2026. Agora fica na
+// fila e é reentregue na volta seguinte, na ordem em que chegou.
+//
+// Em disco porque reiniciar a ponte é rotina (o Windows atualiza, alguém fecha
+// a janela) e nenhum dos dois pedidos espera. Fora da pasta de credenciais de
+// propósito: Desconectar apaga a pasta, e o que está pendente de entrega não
+// pode ir junto.
+const memorias = new Map()   // salaoId -> { enviadas: Map, pendentes: [] }
+const arquivoMemoria = salaoId => path.join(PASTA, `memoria-${salaoId}.json`)
+
+function memoriaDe(salaoId) {
+  let m = memorias.get(salaoId)
+  if (m) return m
+  m = { enviadas: new Map(), pendentes: [], gravar: null }
+  try {
+    const bruto = JSON.parse(fs.readFileSync(arquivoMemoria(salaoId), 'utf8'), BufferJSON.reviver)
+    for (const [id, conteudo] of bruto?.enviadas || []) m.enviadas.set(id, conteudo)
+    if (Array.isArray(bruto?.pendentes)) m.pendentes = bruto.pendentes
+  } catch { /* primeira vez, ou arquivo estragado: começa vazio */ }
+  memorias.set(salaoId, m)
+  return m
+}
+
+/** Grava com um respiro de 1 s: dez envios seguidos viram uma escrita só. */
+function salvarMemoria(salaoId) {
+  const m = memoriaDe(salaoId)
+  if (m.gravar) return
+  m.gravar = setTimeout(() => {
+    m.gravar = null
+    try {
+      fs.mkdirSync(PASTA, { recursive: true })
+      fs.writeFileSync(arquivoMemoria(salaoId), JSON.stringify({
+        enviadas: [...m.enviadas.entries()],
+        pendentes: m.pendentes,
+      }, BufferJSON.replacer), 'utf8')
+    } catch (e) {
+      registro(salaoId, 'falha ao gravar a memória:', e.message)
+    }
+  }, 1000)
+}
+
 /**
  * Guarda o conteúdo de uma mensagem que acabou de sair, para conseguir
  * reenviá-la se o aparelho da cliente pedir (ver getMessage, em
  * abrirDeVerdade). Para foto e áudio isto NÃO guarda o arquivo: guarda o
  * ponteiro que o WhatsApp já subiu, então é barato.
  */
-function guardarEnviada(sessao, id, conteudo) {
-  if (!sessao?.enviadas || !id || !conteudo) return
-  sessao.enviadas.set(id, conteudo)
+function guardarEnviada(salaoId, id, conteudo) {
+  if (!id || !conteudo) return
+  const m = memoriaDe(salaoId)
+  m.enviadas.set(id, conteudo)
   // Map guarda a ordem de inserção, então a primeira chave é sempre a mais
   // velha -- dá uma fila que se limpa sozinha, sem biblioteca nenhuma.
-  while (sessao.enviadas.size > ULTIMAS_ENVIADAS) {
-    sessao.enviadas.delete(sessao.enviadas.keys().next().value)
+  while (m.enviadas.size > ULTIMAS_ENVIADAS) {
+    m.enviadas.delete(m.enviadas.keys().next().value)
   }
+  salvarMemoria(salaoId)
+}
+
+// Teto da fila de reentrega. Mais que isso é o NODRI fora do ar por horas, e
+// aí o problema não é a ponte -- mas as primeiras 500 ainda merecem chegar.
+const TETO_PENDENTES = 500
+
+/** Entrega uma mensagem ao NODRI; se ele estiver fora de alcance, guarda para a volta seguinte. */
+async function entregarAoNodri(salaoId, corpo) {
+  try {
+    await nodri('?acao=entrada', { method: 'POST', body: JSON.stringify(corpo) })
+    return true
+  } catch (e) {
+    const m = memoriaDe(salaoId)
+    // Erro do próprio NODRI (400, 500 com resposta) não melhora tentando de
+    // novo; só rede fora ("fetch failed") vale a fila.
+    if (!/fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|socket hang up|network/i.test(e.message)) throw e
+    if (m.pendentes.length >= TETO_PENDENTES) m.pendentes.shift()
+    m.pendentes.push(corpo)
+    salvarMemoria(salaoId)
+    registro(salaoId, `NODRI fora de alcance — mensagem guardada para reentrega (${m.pendentes.length} na fila)`)
+    return false
+  }
+}
+
+/** A fila de reentrega, na ordem em que chegou. Para na primeira falha. */
+async function reentregarPendentes(salaoId) {
+  const m = memoriaDe(salaoId)
+  if (!m.pendentes.length) return
+  let entregues = 0
+  while (m.pendentes.length) {
+    const corpo = m.pendentes[0]
+    try {
+      await nodri('?acao=entrada', { method: 'POST', body: JSON.stringify(corpo) })
+    } catch (e) {
+      if (/fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|socket hang up|network/i.test(e.message)) break
+      registro(salaoId, 'reentrega recusada pelo NODRI, descartando:', e.message)
+    }
+    m.pendentes.shift()
+    entregues++
+  }
+  salvarMemoria(salaoId)
+  if (entregues) registro(salaoId, `${entregues} mensagem(ns) reentregue(s) ao NODRI; ${m.pendentes.length} ainda na fila`)
 }
 
 // ── Conversa com o NODRI ────────────────────────────────────────────────────
@@ -228,6 +347,11 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
   // identidade. Exigir telefone aqui era jogar fora o historico INTEIRO das
   // contas novas -- 5.053 conversas descartadas num unico lote.
   const resolver = jid => ehTelefone(jid) ? jid : (paraTelefone.get(jid) || jid || null)
+  // O LID de quem foi resolvido para telefone vai JUNTO. É ele que liga a
+  // conversa nova ao contato que já existia só com o id anônimo: sem isso o
+  // NODRI criava a mesma pessoa duas vezes -- uma com LID, outra com número.
+  const lidDe = new Map()   // telefone@s.whatsapp.net -> lid
+  for (const [de, para] of paraTelefone) if (ehLid(de)) lidDe.set(para, de)
 
   // Nome de agenda por número, para a conversa não abrir como "556199...".
   const nomes = new Map()
@@ -280,7 +404,7 @@ async function mandarHistorico(salaoId, { chats = [], contacts = [], messages = 
     const temTelefone = ehTelefone(jid)
     conversas.push({
       telefone: temTelefone ? soNumero(jid) : null,
-      lid: temTelefone ? null : jid,
+      lid: temTelefone ? (lidDe.get(jid) || null) : jid,
       nome: nomes.get(soNumero(jid)) || null,
       mensagens: msgs.slice(-MSGS_POR_CONVERSA),
     })
@@ -376,10 +500,14 @@ async function abrirSessao(salaoId) {
   // duas vezes no mesmo segundo.
   const registroSessao = {
     sock: null, salaoId, conectado: false, fechando: false,
-    // As últimas mensagens que saíram daqui. Ver guardarEnviada().
-    enviadas: new Map(),
+    // ── Sinais vitais desta conexão. Ver vigiarSaude() ─────────────────────
+    abertoEm: 0,         // quando a conexão abriu (ms)
+    eventos: 0,          // mensagens que o WhatsApp entregou à ponte nesta conexão
+    naoAbriu: 0,         // mensagens que chegaram cifradas e a ponte não conseguiu abrir
+    alertou: false,      // já avisou a tela que a sessão está doente
   }
   sessoes.set(salaoId, registroSessao)
+  contadores.set(salaoId, registroSessao)
 
   try {
     return await abrirDeVerdade(salaoId, registroSessao)
@@ -399,7 +527,9 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   const sock = makeWASocket({
     version,
     auth: state,
-    logger: log,
+    // Filho com o id do salão: é o que deixa saidaDoLog contar por salão as
+    // mensagens que chegaram e não abriram.
+    logger: log.child({ salao: salaoId }),
     printQRInTerminal: false,
     // Aparece assim na lista de "Aparelhos conectados" do celular, para o
     // salão saber o que é aquilo e não desconectar por engano.
@@ -433,7 +563,7 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     // duas sessões de criptografia diferentes do MESMO contato. Uma decifrou,
     // a outra pediu de novo e não teve resposta.
     getMessage: async (chave) => {
-      const guardada = registroSessao.enviadas.get(chave?.id)
+      const guardada = memoriaDe(salaoId).enviadas.get(chave?.id)
       // Fica no log porque é invisível de todo o resto: ninguém no salão vê
       // que uma cliente não conseguiu abrir a mensagem. Se um dia voltar a
       // aparecer "Aguardando esta mensagem", é esta linha que diz se a ponte
@@ -539,6 +669,7 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
     if (connection === 'open') {
       registroSessao.conectado = true
+      registroSessao.abertoEm = Date.now()
       // Escanearam: a contagem zera e este salão passa a ser "de verdade".
       qrsPorSalao.delete(salaoId)
       semNinguem.delete(salaoId)
@@ -579,6 +710,10 @@ async function abrirDeVerdade(salaoId, registroSessao) {
       if (motivo === DisconnectReason.loggedOut) {
         registro(salaoId, 'desconectado no celular — credenciais apagadas')
         fs.rmSync(pasta, { recursive: true, force: true })
+        // O que saiu pelo aparelho antigo não serve para reenviar pelo novo:
+        // são identidades diferentes. A fila de reentrega fica.
+        memoriaDe(salaoId).enviadas.clear()
+        salvarMemoria(salaoId)
         await avisar(salaoId, { situacao: 'desconectado', qr: null, numero: null })
         return
       }
@@ -616,9 +751,22 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     // fez a primeira mensagem de teste sumir sem deixar rastro.
     if (type !== 'notify' && type !== 'append') return
     registro(salaoId, `chegaram ${messages.length} evento(s) de mensagem (${type})`)
+    registroSessao.eventos += messages.length
+    // Chegou coisa: se a tela estava com o aviso de sessão doente, ele já não
+    // vale. Limpa uma vez e volta a vigiar.
+    if (registroSessao.alertou) {
+      registroSessao.alertou = false
+      avisar(salaoId, { erro: null }).catch(() => {})
+    }
     for (const m of messages) {
       try {
         const bruto = m.key?.remoteJid || ''
+        // Mensagem que chegou cifrada e não abriu: o Baileys entrega um
+        // "toco" sem conteúdo. Contar e seguir -- é o sinal que vigiarSaude lê.
+        if (!m.message && m.messageStubType) {
+          registroSessao.naoAbriu++
+          continue
+        }
         // O que o salão mandou pelo celular TAMBÉM entra. Sem isso a conversa
         // no CRM fica pela metade: aparece a pergunta da cliente e não a
         // resposta, e quem abre a tela não sabe se alguém já falou com ela.
@@ -656,34 +804,56 @@ async function abrirDeVerdade(salaoId, registroSessao) {
         // ela mandou — e aí o CRM virou um passo a mais, não um a menos.
         const midia = tipo === 'texto' ? null : await guardarMidia(salaoId, m, tipo)
 
-        await nodri('?acao=entrada', {
-          method: 'POST',
-          body: JSON.stringify({
-            salao_id: salaoId,
-            telefone: tel ? soNumero(tel) : null,
-            lid: lid || null,
-            nome: deMim ? null : (m.pushName || null),
-            texto: texto || `[${tipo}]`,
-            tipo,
-            midia_url: midia,
-            id_whatsapp: m.key?.id || null,
-            direcao: deMim ? 'saida' : 'entrada',
-            // Lista de transmissão. O NODRI usa isto para não deixar um
-            // disparo apagar a pergunta da cliente que ainda está sem
-            // resposta — quem decide é lá, a ponte só conta o que viu.
-            em_massa: !!m.broadcast,
-          }),
+        const entregou = await entregarAoNodri(salaoId, {
+          salao_id: salaoId,
+          telefone: tel ? soNumero(tel) : null,
+          lid: lid || null,
+          nome: deMim ? null : (m.pushName || null),
+          texto: texto || `[${tipo}]`,
+          tipo,
+          midia_url: midia,
+          id_whatsapp: m.key?.id || null,
+          direcao: deMim ? 'saida' : 'entrada',
+          // Lista de transmissão. O NODRI usa isto para não deixar um
+          // disparo apagar a pergunta da cliente que ainda está sem
+          // resposta — quem decide é lá, a ponte só conta o que viu.
+          em_massa: !!m.broadcast,
         })
         // A marca de lista de transmissão fica dita no log. O campo existe no
         // protocolo, mas se ele vem preenchido de verdade neste fluxo só se
         // sabe olhando um disparo real -- e é o que decide se dá para parar de
         // adivinhar disparo por texto repetido.
         registro(salaoId, deMim ? 'saída para' : 'entrada de', soNumero(tel || lid),
-          m.broadcast ? '[LISTA DE TRANSMISSÃO] —' : '—', texto.slice(0, 40))
+          m.broadcast ? '[LISTA DE TRANSMISSÃO] —' : '—', texto.slice(0, 40),
+          entregou ? '' : '(na fila de reentrega)')
       } catch (e) {
         registro(salaoId, 'falha ao entregar mensagem:', e.message)
       }
     }
+  })
+
+  // ── O que aconteceu com o que a ponte mandou ──────────────────────────────
+  //
+  // "Enviada" no CRM queria dizer só "saiu da ponte". Em 15/09/2026 saíram 62
+  // mensagens assim, com um tique, e boa parte nunca abriu no aparelho da
+  // cliente -- e ninguém no salão tinha como saber. O WhatsApp conta o resto
+  // da história por aqui: chegou no aparelho (dois tiques), foi lida (azul).
+  // A ponte só repassa; a tela do CRM mostra.
+  //
+  // 3 = chegou no aparelho, 4 = lida, 5 = áudio ouvido. Abaixo de 3 (1 pendente,
+  // 2 o servidor recebeu) não muda nada na tela.
+  sock.ev.on('messages.update', (atualizacoes) => {
+    const itens = []
+    for (const u of atualizacoes || []) {
+      const st = Number(u?.update?.status)
+      if (!u?.key?.fromMe || !u.key.id || !(st >= 3)) continue
+      itens.push({ id_whatsapp: u.key.id, situacao: st >= 4 ? 'lida' : 'entregue' })
+    }
+    if (!itens.length) return
+    nodri('?acao=status', {
+      method: 'POST',
+      body: JSON.stringify({ salao_id: salaoId, itens }),
+    }).catch(e => registro(salaoId, 'falha ao repassar status de entrega:', e.message))
   })
 
   return registroSessao
@@ -712,6 +882,8 @@ async function fecharSessao(salaoId, { apagar = false } = {}) {
   sessoes.delete(salaoId)
   if (apagar) {
     fs.rmSync(path.join(PASTA, salaoId), { recursive: true, force: true })
+    memoriaDe(salaoId).enviadas.clear()
+    salvarMemoria(salaoId)
     registro(salaoId, 'sessão encerrada e credenciais apagadas (Desconectar no NODRI)')
   } else {
     registro(salaoId, 'sessão fechada; credenciais guardadas para reconectar sem QR')
@@ -795,7 +967,11 @@ async function despacharFila(salaoId) {
       // Guardada ANTES de confirmar: o pedido de reenvio pode chegar no
       // segundo seguinte, e chegar antes de a mensagem estar guardada seria
       // exatamente o caso que este código existe para cobrir.
-      guardarEnviada(s, enviada?.key?.id, enviada?.message)
+      guardarEnviada(salaoId, enviada?.key?.id, enviada?.message)
+      // Fica no log. Sem esta linha o envio pelo CRM era invisível aqui, e em
+      // 18/09/2026 não deu para dizer se um teste tinha saído ou não.
+      registro(salaoId, 'enviada para', soNumero(jid), '—', String(msg.texto || `[${msg.tipo}]`).slice(0, 40),
+        'id', enviada?.key?.id || '?')
       await nodri('?acao=confirmar', {
         method: 'POST',
         body: JSON.stringify({
@@ -891,6 +1067,8 @@ async function volta() {
   // "conexão caiu" em vez de fingir que está tudo bem quando a ponte morreu.
   for (const [salaoId, s] of sessoes) {
     if (s.conectado) {
+      await vigiarSaude(salaoId, s)
+      await reentregarPendentes(salaoId)
       // Sinal de vida SEM mandar situacao. Mandando 'conectado' a cada quatro
       // segundos, a ponte desfazia o "Desconectar" que o salao acabara de
       // clicar: o NODRI gravava 'desconectado', a volta seguinte gravava
@@ -899,6 +1077,53 @@ async function volta() {
       // que acontece uma vez; o resto e so dizer "estou viva".
       avisar(salaoId, {}).catch(() => {})
     }
+  }
+}
+
+// ── A sessão está viva de verdade? ──────────────────────────────────────────
+//
+// "Conectado" no topo da tela não diz nada. Em 15/09/2026 o CRM ficou três
+// dias conectado e surdo: o WhatsApp entregava as mensagens, a ponte não
+// conseguia abrir nenhuma (centenas de "failed to decrypt" no log), o servidor
+// derrubava a conexão a cada ~50 minutos com erro 500, e a tela seguia verde.
+// Ninguém percebeu até uma cliente reclamar.
+//
+// Dois sinais, e os dois se medem sem perguntar nada ao WhatsApp:
+//
+// 1. O BUFFER PRESO. O Baileys segura os eventos numa fila enquanto faz a
+//    sincronia inicial e só solta depois. Se a sincronia falha no meio (a
+//    conexão cai, o pedido dá "Timed Out"), o estado dele fica travado e a fila
+//    nunca é solta -- as mensagens chegam, decifram, e ficam guardadas para
+//    sempre sem chegar aqui. Ele expõe `isBuffering()`; se passou de 45 s de
+//    conexão aberta e ainda está segurando, a ponte solta na mão.
+//
+// 2. A SESSÃO PODRE. Mensagens chegam e não abrem ("No matching sessions",
+//    "Key used already"), e nenhuma abre. Isso não se conserta daqui: só
+//    pareando de novo. O que a ponte pode fazer é DIZER na tela, em vez de
+//    fingir que está tudo bem.
+const SEGUNDOS_BUFFER = 45
+const MINIMO_NAO_ABRIU = 12
+const AVISO_SESSAO_PODRE =
+  'A sessão do WhatsApp está corrompida: as mensagens chegam e o CRM não consegue abri-las. ' +
+  'Clique em Desconectar e leia o QR de novo com o celular do salão.'
+
+async function vigiarSaude(salaoId, s) {
+  const sock = s.sock
+  if (!sock || !s.abertoEm) return
+  const abertaHa = Date.now() - s.abertoEm
+
+  if (abertaHa > SEGUNDOS_BUFFER * 1000 && typeof sock.ev?.isBuffering === 'function' && sock.ev.isBuffering()) {
+    registro(salaoId, `o Baileys segurava os eventos há ${Math.round(abertaHa / 1000)} s sem soltar — soltando na mão`)
+    try { sock.ev.flush() } catch (e) { registro(salaoId, 'falha ao soltar os eventos:', e.message) }
+  }
+
+  // Cifradas que não abriram, sem NENHUMA que tenha aberto: sessão podre.
+  // O mínimo existe porque uma ou duas falhas acontecem em sessão sã (aparelho
+  // que trocou de chave, mensagem velha na fila) e não são motivo de alarme.
+  if (!s.alertou && s.eventos === 0 && s.naoAbriu >= MINIMO_NAO_ABRIU && abertaHa > 60000) {
+    s.alertou = true
+    registro(salaoId, `${s.naoAbriu} mensagens chegaram cifradas e nenhuma abriu — avisando a tela que a sessão precisa ser pareada de novo`)
+    await avisar(salaoId, { erro: AVISO_SESSAO_PODRE })
   }
 }
 
