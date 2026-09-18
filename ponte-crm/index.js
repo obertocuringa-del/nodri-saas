@@ -966,6 +966,23 @@ async function abrirDeVerdade(salaoId, registroSessao) {
   sock.ev.on('messages.update', (atualizacoes) => {
     const itens = []
     for (const u of atualizacoes || []) {
+      // ── Mensagem editada ──────────────────────────────────────────────────
+      //
+      // A cliente manda, corrige e manda de novo -- e o CRM ficava com o texto
+      // velho para sempre (18/09/2026). O WhatsApp avisa a edição como uma
+      // atualização da mensagem original, com o texto novo dentro.
+      const editada = u?.update?.message?.editedMessage?.message
+      if (editada && u?.key?.id) {
+        const texto = textoDaMensagem({ message: editada })
+        if (texto) {
+          nodri('?acao=edicao', {
+            method: 'POST',
+            body: JSON.stringify({ salao_id: salaoId, id_whatsapp: u.key.id, texto }),
+          }).then(r => { if (r?.ok) registro(salaoId, 'mensagem editada', u.key.id, '—', texto.slice(0, 40)) })
+            .catch(e => registro(salaoId, 'falha ao repassar edição:', e.message))
+        }
+        continue
+      }
       const st = Number(u?.update?.status)
       if (!u?.key?.fromMe || !u.key.id || !(st >= 3)) continue
       itens.push({ id_whatsapp: u.key.id, situacao: st >= 4 ? 'lida' : 'entregue' })
@@ -975,6 +992,44 @@ async function abrirDeVerdade(salaoId, registroSessao) {
       method: 'POST',
       body: JSON.stringify({ salao_id: salaoId, itens }),
     }).catch(e => registro(salaoId, 'falha ao repassar status de entrega:', e.message))
+  })
+
+  // ── A curtida ───────────────────────────────────────────────────────────────
+  //
+  // No dia a dia a cliente não responde "ok": ela põe um joinha na mensagem.
+  // Isso é um "sim" (pedido do dono, 18/09/2026) -- e a ponte jogava fora,
+  // porque reação não tem texto. Vai para o NODRI com QUAL mensagem ela
+  // curtiu, que é o que decide se aquilo confirma um horário ou é só um "vi".
+  // Reação vazia é a cliente tirando a curtida.
+  sock.ev.on('messages.reaction', (lista) => {
+    for (const r of lista || []) {
+      try {
+        const alvo = r?.key            // a mensagem que recebeu a reação
+        const reacao = r?.reaction     // { text, key: { id, remoteJid, fromMe, participant... } }
+        if (!alvo?.id || !reacao?.key) continue
+        const bruto = reacao.key.remoteJid || alvo.remoteJid || ''
+        if (bruto.endsWith('@g.us') || bruto === 'status@broadcast' || !ehCliente(bruto)) continue
+        const deMim = !!reacao.key.fromMe
+        const tel = ehTelefone(bruto) ? bruto : (deMim ? null : (reacao.key.senderPn || reacao.key.participantPn || null))
+        const lid = ehLid(bruto) ? bruto : null
+        nodri('?acao=reacao', {
+          method: 'POST',
+          body: JSON.stringify({
+            salao_id: salaoId,
+            telefone: tel ? soNumero(tel) : null,
+            lid,
+            direcao: deMim ? 'saida' : 'entrada',
+            id_whatsapp: reacao.key.id || null,
+            alvo_id_whatsapp: alvo.id,
+            emoji: String(reacao.text || ''),
+          }),
+        }).then(x => {
+          if (x?.ok && !deMim) registro(salaoId, 'reação de', soNumero(tel || lid), reacao.text ? `— ${reacao.text}` : '— (tirou a reação)', x.confirmou ? '(vale como confirmação)' : '')
+        }).catch(e => registro(salaoId, 'falha ao repassar reação:', e.message))
+      } catch (e) {
+        registro(salaoId, 'falha na reação:', e.message)
+      }
+    }
   })
 
   return registroSessao

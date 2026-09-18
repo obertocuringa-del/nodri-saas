@@ -1676,6 +1676,23 @@ function Balao({ m, onCitar, citada }: { m: Mensagem; onCitar?: () => void; cita
   const hora = m.criado_em
     ? new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : ''
+  // ── A curtida ─────────────────────────────────────────────────────────────
+  // A cliente reagiu a uma mensagem em vez de responder. Aparece pequena, com
+  // o trecho do que ela curtiu -- é isso que diz se foi um "confirmo" (em
+  // cima do pedido de confirmação) ou só um "vi".
+  if ((m as any).tipo === 'reacao') {
+    return (
+      <div className={`flex mb-1.5 ${meu ? 'justify-end' : 'justify-start'}`}>
+        <div className="max-w-[68%] px-3 py-1.5 rounded-full flex items-center gap-2"
+          style={{ background: '#fff', border: '1px solid #e8e6e0' }}>
+          <span className="text-[18px] leading-none">{m.texto}</span>
+          <span className="text-[11px] truncate" style={{ color: '#8f877f' }}>
+            reagiu{citada ? ` a "${String(citada.texto || `[${citada.tipo}]`).replace(/\s+/g, ' ').slice(0, 60)}"` : ''} · {hora}
+          </span>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={`flex mb-1.5 group ${meu ? 'justify-end' : 'justify-start'}`}>
       {/* O botao de citar so aparece no balao sob o cursor. Um icone fixo em

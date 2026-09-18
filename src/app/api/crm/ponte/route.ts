@@ -383,6 +383,103 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, mexidas })
   }
 
+  // ── Mensagem editada ──────────────────────────────────────────────────────
+  //
+  // A cliente manda, corrige e manda de novo. O CRM ficava com o texto velho
+  // para sempre (18/09/2026): a recepção lia "amanhã às 14" quando ela já
+  // tinha corrigido para 15. Troca o texto na mensagem e, se era a última, a
+  // prévia da conversa também.
+  if (acao === 'edicao') {
+    const id = String(body?.id_whatsapp || '')
+    const texto = String(body?.texto || '').trim()
+    if (!id || !texto) return NextResponse.json({ ok: false })
+    const { data: msg } = await supabaseAdmin
+      .from('crm_mensagens').select('id, conversa_id, texto')
+      .eq('salao_id', salaoId).eq('id_whatsapp', id).maybeSingle()
+    if (!msg) return NextResponse.json({ ok: false, motivo: 'mensagem não encontrada' })
+    await supabaseAdmin.from('crm_mensagens').update({ texto }).eq('id', msg.id)
+    const { data: cv } = await supabaseAdmin
+      .from('crm_conversas').select('id, ultima_previa').eq('id', msg.conversa_id).maybeSingle()
+    if (cv && String(cv.ultima_previa || '') === String(msg.texto || '').slice(0, 120)) {
+      await supabaseAdmin.from('crm_conversas')
+        .update({ ultima_previa: texto.slice(0, 120), atualizado_em: agora }).eq('id', cv.id)
+    }
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── A curtida (reação) ────────────────────────────────────────────────────
+  //
+  // No dia a dia a cliente não escreve "ok": põe um joinha na mensagem. Um
+  // joinha em cima de um pedido de confirmação É a confirmação (pedido do
+  // dono, 18/09/2026); em cima de qualquer outra coisa é um "vi", que não
+  // precisa de ninguém. A reação entra como mensagem dela, citando a que foi
+  // curtida, para a recepção ver o que ela curtiu -- mas NÃO puxa a conversa
+  // para "Preciso agir": joinha não é pergunta.
+  if (acao === 'reacao') {
+    const alvoId = String(body?.alvo_id_whatsapp || '')
+    const emoji = String(body?.emoji || '').trim()
+    const idReacao = String(body?.id_whatsapp || '') || null
+    if (!alvoId) return NextResponse.json({ ok: false })
+    if (body?.direcao === 'saida') return NextResponse.json({ ok: true, ignorada: 'do salão' })
+
+    const { data: alvo } = await supabaseAdmin
+      .from('crm_mensagens').select('id, conversa_id, texto, direcao')
+      .eq('salao_id', salaoId).eq('id_whatsapp', alvoId).maybeSingle()
+    if (!alvo) return NextResponse.json({ ok: false, motivo: 'mensagem curtida não encontrada' })
+
+    // Tirou a curtida: some a linha que a registrava.
+    if (!emoji) {
+      if (idReacao) await supabaseAdmin.from('crm_mensagens').delete()
+        .eq('salao_id', salaoId).eq('id_whatsapp', idReacao)
+      return NextResponse.json({ ok: true, removida: true })
+    }
+
+    // Reação repetida (a ponte reentregando) não vira linha nova.
+    if (idReacao) {
+      const { data: jaTem } = await supabaseAdmin
+        .from('crm_mensagens').select('id').eq('salao_id', salaoId).eq('id_whatsapp', idReacao).limit(1)
+      if (jaTem?.length) return NextResponse.json({ ok: true, repetida: true })
+    }
+
+    const { data: cv } = await supabaseAdmin
+      .from('crm_conversas').select('*').eq('id', alvo.conversa_id).maybeSingle()
+    if (!cv) return NextResponse.json({ ok: false })
+
+    await supabaseAdmin.from('crm_mensagens').insert({
+      salao_id: salaoId, conversa_id: cv.id,
+      direcao: 'entrada', texto: emoji, tipo: 'reacao',
+      situacao: 'entregue', em_massa: false,
+      id_whatsapp: idReacao, responde_a: alvo.id,
+    })
+    await supabaseAdmin.from('crm_conversas').update({
+      ultima_em: agora, ultima_de: 'cliente',
+      ultima_previa: `Reagiu com ${emoji}`, atualizado_em: agora,
+    }).eq('id', cv.id)
+
+    // Joinha em cima de um pedido de confirmação = confirmou.
+    const POSITIVA = /[\u{1F44D}\u{2705}\u{2611}\u{2714}\u{2764}\u{1F9E1}\u{1F49B}\u{1F49A}\u{1F499}\u{1F49C}\u{1F5A4}\u{1F90D}\u{1F90E}\u{1F496}\u{1F497}\u{1F493}\u{1F49E}\u{1F495}\u{1F64F}\u{1F44C}\u{1F60A}\u{1F60D}\u{1F970}\u{1F618}\u{1F917}\u{1F44F}\u{1F4AF}\u{1FAF6}\u{1F64C}\u{1F601}\u{1F600}\u{1F603}\u{1F604}\u{1F929}\u{263A}\u{1F337}\u{1F339}\u{1F338}\u{2728}]/u
+    let confirmou = false
+    if (alvo.direcao === 'saida' && POSITIVA.test(emoji)
+        && tipoDaMensagemDoSalao(alvo.texto) === 'confirmacao') {
+      try {
+        const conf = await cfgConfirmacao(salaoId)
+        if (conf.ligada) {
+          const { data: ct } = await supabaseAdmin
+            .from('crm_contatos').select('id, telefone, nome, cliente_nome').eq('id', cv.contato_id).maybeSingle()
+          const achou = /(\d{2})\/(\d{2})\/(\d{4})/.exec(String(alvo.texto || ''))
+          confirmou = await enfileirar(salaoId, {
+            conversa_id: cv.id,
+            contato_id: cv.contato_id,
+            telefone: ct?.telefone || String(body?.telefone || ''),
+            nome: ct?.cliente_nome || ct?.nome || '',
+            data: achou ? `${achou[1]}/${achou[2]}/${achou[3]}` : datasDoSalao().amanha.br,
+          })
+        }
+      } catch { /* a reação já está registrada; a confirmação é bônus */ }
+    }
+    return NextResponse.json({ ok: true, confirmou })
+  }
+
   // ── A ponte confirma o envio (ou avisa que falhou) ────────────────────────
   if (acao === 'confirmar') {
     const id = String(body?.mensagem_id || '')
