@@ -61,12 +61,25 @@ export async function GET(req: NextRequest) {
   }
 
   // 2ª: as campanhas que estão na hora.
+  //
+  // ── Revezamento com o feedback ────────────────────────────────────────────
+  //
+  // Uma tarefa por ciclo, e o feedback não é "tarefa": ele roda quando NÃO há
+  // tarefa. Com o aviso ao profissional a cada 15 s e a extensão perguntando a
+  // cada 30 s, o aviso estava SEMPRE na hora -- e o feedback nunca rodava
+  // (18/09/2026: aviso falhando a cada ciclo, feedback parado o dia todo).
+  // Então: se o ciclo anterior levou uma campanha de intervalo, este ciclo é
+  // do feedback. Horário fixo (17:00) e a confirmação no Avec não entram no
+  // revezamento -- uma acontece duas vezes por dia, a outra tem cliente
+  // esperando.
+  const anterior = est.ultima_tarefa || null
   if (!tarefa) {
     const campanhas = await carregarCampanhas(salaoId)
     const estados = await carregarEstados(salaoId)
     for (const c of campanhas) {
       const q = estaNaHora(c, estados[c.id], cfg.fuso)
       if (!q.sim) continue
+      if (c.quando.tipo === 'intervalo' && cfg.ligada && anterior === 'campanha') continue
       tarefa = {
         tipo: 'campanha', campanha_id: c.id, nome: c.nome,
         url_relatorio: cfg.url_relatorio,
@@ -77,6 +90,8 @@ export async function GET(req: NextRequest) {
       break
     }
   }
+  est.ultima_tarefa = tarefa?.tipo === 'campanha' ? 'campanha' : 'feedback'
+  await gravarEstado(salaoId, est)
 
   // ── O batimento é o MENOR intervalo entre o que está ligado ───────────────
   //

@@ -48,6 +48,8 @@ export interface EstadoAutomacao {
   } | null
   /** 'AAAA-MM-DD' → celulares que já receberam naquele dia */
   enviados: Record<string, string[]>
+  /** o que o último ciclo da extensão fez: revezamento entre campanha e feedback */
+  ultima_tarefa?: 'campanha' | 'feedback' | null
 }
 
 // Padrão genérico: nada de dado de salão aqui (regra do NODRI). O dono troca
@@ -113,6 +115,7 @@ export async function carregarEstado(salaoId: string): Promise<EstadoAutomacao> 
     visto_em: v.visto_em || null,
     ultimo: v.ultimo || null,
     enviados: (v.enviados && typeof v.enviados === 'object') ? v.enviados : {},
+    ultima_tarefa: v.ultima_tarefa || null,
   }
 }
 
