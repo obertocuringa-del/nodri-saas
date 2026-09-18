@@ -777,9 +777,12 @@ export default function CrmPage() {
             </p>
           </div>
 
-          {/* Na MESMA linha do título, e não numa faixa só dela: uma linha
-              inteira para um botão é altura que sai da conversa. */}
-          {conectado && (
+          {/* No computador as pastas ficam FIXAS numa linha abaixo (ver
+              "Pastas fixas"). O botão que abre e fecha só existe no celular,
+              onde não cabe linha nenhuma. Pedido do dono em 18/09/2026: a
+              faixa escondida confundia -- na hora de trocar de pasta a
+              recepção clicava no status da cliente. */}
+          {conectado && noCelular && (
             <button onClick={() => setAbasAbertas(v => !v)}
               className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
               style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25', minWidth: 190 }}>
@@ -884,10 +887,18 @@ export default function CrmPage() {
           </div>
         )}
 
-        {conectado && abasAbertas && (
-          <div className="absolute left-0 right-0 z-40 mx-4 mb-2 p-2 rounded-xl flex gap-1 flex-wrap"
-            style={{ background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 10px 30px rgba(26,22,20,.12)' }}
-            onClick={() => setAbasAbertas(false)}>
+        {/* ── Pastas fixas ───────────────────────────────────────────────────
+            Uma linha só, sempre à vista, rolando de lado se não couber. No
+            celular é a caixa flutuante de antes, aberta pelo botão. */}
+        {conectado && (noCelular ? abasAbertas : true) && (
+          <div
+            className={noCelular
+              ? 'absolute left-0 right-0 z-40 mx-4 mb-2 p-2 rounded-xl flex gap-1 flex-wrap'
+              : 'mx-4 mb-2 pb-1 flex gap-1 items-center'}
+            style={noCelular
+              ? { background: '#fff', border: '1px solid #e8e6e0', boxShadow: '0 10px 30px rgba(26,22,20,.12)' }
+              : { overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'thin' }}
+            onClick={() => { if (noCelular) setAbasAbertas(false) }}>
             <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
               texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
             {contagem.novas > 0 && (
@@ -1364,7 +1375,7 @@ function SeloNova({ onTirar }: { onTirar?: () => void }) {
 function Aba({ ativo, onClick, texto, destaque }: any) {
   return (
     <button onClick={onClick}
-      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition"
+      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition flex-shrink-0 whitespace-nowrap"
       style={ativo
         ? { background: '#5b4fcf', color: '#fff' }
         : { background: destaque ? '#fbebe9' : '#faf9f7', color: destaque ? '#b4322a' : '#6b6860' }}>
@@ -1476,6 +1487,15 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
   const est = estadoPor(c.estado)
+  // ── Os onze botões de estado moram atrás de "Definir status" ──────────────
+  //
+  // Ficavam sempre à vista, na mesma altura em que a recepção procurava as
+  // pastas -- e a pessoa mudava o status da cliente achando que estava
+  // trocando de pasta (18/09/2026). Agora: um botão; clicou, abre a fileira;
+  // escolheu, fecha. Trocar de conversa também fecha.
+  const [statusAberto, setStatusAberto] = useState(false)
+  useEffect(() => { setStatusAberto(false) }, [c.id])
+  const escolher = (chave: string, extra?: any) => { setStatusAberto(false); onEstado(chave, extra) }
   return (
     <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-3 flex-wrap">
@@ -1509,48 +1529,60 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           </button>
         )}
         <div className="flex-1" />
-        {/* ── A faixa sai da configuração, não do código ────────────────────
-            O salão esconde, renomeia e cria os seus botões em Configurar. Os
-            de fábrica continuam com o comportamento que o relógio conhece; os
-            criados aqui são pastas que só se mexem na mão.
-
-            'acao_necessaria' fica de fora: ninguém marca "preciso agir" à mão
-            -- é a cliente falando que põe a conversa lá. */}
-        <div className="flex gap-1.5 flex-wrap">
-          {(botoesDeEstado as any[]).filter((e: any) => e.chave !== 'acao_necessaria').map((e: any) => {
-            // Os dois que pedem motivo abrem o painel em vez de mudar direto:
-            // fechar sem motivo é o que transforma "perdemos 40" em nada.
-            if (e.chave === 'desmarcou') {
-              return (
-                <BotaoAcao key={e.chave} onClick={() => setDesmarqueAberto(!desmarqueAberto)}
-                  cor={e.cor} fundo={e.fundo}
-                  icone={desmarqueAberto ? <X size={12} /> : undefined} texto={e.acao || e.rotulo} />
-              )
-            }
-            if (e.chave === 'sem_conversao') {
-              return (
-                <BotaoAcao key={e.chave} onClick={() => setFecharAberto(!fecharAberto)}
-                  cor={e.cor} fundo={e.fundo}
-                  icone={fecharAberto ? <X size={12} /> : undefined} texto={e.acao || e.rotulo} />
-              )
-            }
-            // Follow-up e Pausa nascem com prazo: sem data, "volto depois"
-            // vira nunca.
-            const extra = e.chave === 'follow_up'
-              ? { prazo: new Date(Date.now() + 864e5).toISOString() }
-              : e.chave === 'pausada'
-                ? { prazo: new Date(Date.now() + 7 * 864e5).toISOString() }
-                : undefined
-            const icone = e.chave === 'agendado' ? <Check size={12} />
-              : e.chave === 'confirmado' ? <CheckCheck size={12} />
-                : undefined
-            return (
-              <BotaoAcao key={e.chave} onClick={() => onEstado(e.chave, extra)}
-                cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} />
-            )
-          })}
-        </div>
+        <button onClick={() => { setStatusAberto(v => !v); setFecharAberto(false); setDesmarqueAberto(false) }}
+          className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-1.5 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
+          style={statusAberto
+            ? { background: '#5b4fcf', color: '#fff' }
+            : { background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
+          <Tag size={13} /> Definir status
+          <ChevronDown size={13} style={{ transform: statusAberto ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+        </button>
       </div>
+
+      {/* ── A faixa sai da configuração, não do código ──────────────────────
+          O salão esconde, renomeia e cria os seus botões em Configurar. Os
+          de fábrica continuam com o comportamento que o relógio conhece; os
+          criados aqui são pastas que só se mexem na mão.
+
+          'acao_necessaria' fica de fora: ninguém marca "preciso agir" à mão
+          -- é a cliente falando que põe a conversa lá. */}
+      {statusAberto && (
+        <div className="mt-3 p-3 rounded-xl" style={{ background: '#faf9f7', border: '1px solid #e8e6e0' }}>
+          <p className="text-[11px] font-bold mb-2" style={{ color: '#8f877f' }}>MARCAR ESTA CONVERSA COMO</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {(botoesDeEstado as any[]).filter((e: any) => e.chave !== 'acao_necessaria').map((e: any) => {
+              // Os dois que pedem motivo abrem o painel em vez de mudar direto:
+              // fechar sem motivo é o que transforma "perdemos 40" em nada.
+              if (e.chave === 'desmarcou') {
+                return (
+                  <BotaoAcao key={e.chave} onClick={() => { setStatusAberto(false); setFecharAberto(false); setDesmarqueAberto(true) }}
+                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} />
+                )
+              }
+              if (e.chave === 'sem_conversao') {
+                return (
+                  <BotaoAcao key={e.chave} onClick={() => { setStatusAberto(false); setDesmarqueAberto(false); setFecharAberto(true) }}
+                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} />
+                )
+              }
+              // Follow-up e Pausa nascem com prazo: sem data, "volto depois"
+              // vira nunca.
+              const extra = e.chave === 'follow_up'
+                ? { prazo: new Date(Date.now() + 864e5).toISOString() }
+                : e.chave === 'pausada'
+                  ? { prazo: new Date(Date.now() + 7 * 864e5).toISOString() }
+                  : undefined
+              const icone = e.chave === 'agendado' ? <Check size={12} />
+                : e.chave === 'confirmado' ? <CheckCheck size={12} />
+                  : undefined
+              return (
+                <BotaoAcao key={e.chave} onClick={() => escolher(e.chave, extra)}
+                  cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 mt-2 flex-wrap">
         {c.proxima_acao && (
