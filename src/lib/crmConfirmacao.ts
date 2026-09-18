@@ -151,3 +151,57 @@ export async function enfileirar(salaoId: string, p: Omit<PedidoConfirmacao, 'id
   await gravarFila(salaoId, fila)
   return true
 }
+
+// ── Aprender com quem clicou em "Confirmou" ─────────────────────────────────
+//
+// Pedido do dono (18/09/2026): a lista de palavras nasce das respostas reais
+// das clientes, e ninguém vai ficar cadastrando uma a uma. Quando alguém da
+// recepção clica em "Confirmou" numa conversa em que o salão tinha pedido
+// confirmação e a cliente respondeu algo que a lista NÃO reconhecia, essa
+// resposta vira palavra-chave -- a pessoa acabou de dizer, com o clique, que
+// aquilo era um "sim".
+//
+// Guardas para não aprender bobagem: só frase curta (até 5 palavras), sem
+// pergunta, sem negação nem pedido de mudança, sem número, e a frase inteira
+// como veio (não pedaços). "Pode confirmar sim." vira "pode confirmar sim";
+// "Boa tarde, confirmado" vira "boa tarde confirmado". A frase inteira é o
+// que garante que "boa tarde" sozinho nunca vira confirmação.
+export function fraseParaAprender(texto: string, palavras: string[]): string | null {
+  const t = semAcento(texto).replace(/[^a-z0-9?\s]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!t || t.includes('?')) return null
+  const n = t.split(' ').length
+  if (n > 5 || t.length > 40) return null
+  if (/\d/.test(t)) return null
+  if (/\bnao\b|\bnem\b|\bcancel|\bdesmarc|\bremarc|\bmud[ae]|\btroc[ae]|\balter[ae]|\badiant|\batras[ae]|mais tarde|mais cedo|outro|outra|\bencaixe|\bantes\b|\bdepois\b/.test(t)) return null
+  // Cumprimento sozinho não é confirmação.
+  if (/^(oi|ola|bom dia|boa tarde|boa noite|obrigad[ao]s?|ok|valeu)$/.test(t)) return null
+  if (ehConfirmacao(t, palavras)) return null   // já reconhece: nada a aprender
+  return t
+}
+
+/** Aprende a frase da última resposta da cliente, se couber. Devolve a frase aprendida. */
+export async function aprenderConfirmacao(salaoId: string, conversaId: string): Promise<string | null> {
+  const { data: ultSaida } = await supabaseAdmin
+    .from('crm_mensagens').select('texto, criado_em')
+    .eq('conversa_id', conversaId).eq('direcao', 'saida')
+    .order('criado_em', { ascending: false }).limit(1)
+  const pedido = (ultSaida || [])[0]
+  if (!pedido) return null
+  // Só quando a última coisa do salão foi um pedido de confirmação.
+  const { tipoDaMensagemDoSalao } = await import('@/lib/crm')
+  if (tipoDaMensagemDoSalao(pedido.texto) !== 'confirmacao') return null
+
+  const { data: dela } = await supabaseAdmin
+    .from('crm_mensagens').select('texto')
+    .eq('conversa_id', conversaId).eq('direcao', 'entrada').gt('criado_em', pedido.criado_em)
+    .order('criado_em', { ascending: true }).limit(5)
+  const cfg = await carregarConfig(salaoId)
+  for (const m of dela || []) {
+    const frase = fraseParaAprender(String(m.texto || ''), cfg.palavras)
+    if (!frase) continue
+    cfg.palavras = [...new Set([...cfg.palavras, frase])]
+    await gravarConfig(salaoId, cfg)
+    return frase
+  }
+  return null
+}

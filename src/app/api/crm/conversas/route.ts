@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 import { MINUTOS_DONO, proximaAcaoPadrao, type EstadoConversa } from '@/lib/crm'
+import { aprenderConfirmacao } from '@/lib/crmConfirmacao'
 
 export const dynamic = 'force-dynamic'
 
@@ -157,6 +158,13 @@ export async function PATCH(req: NextRequest) {
   const { error } = await supabaseAdmin.from('crm_conversas').update(patch).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Clicou em "Confirmou" numa resposta que a lista não reconhecia? A
+  // resposta vira palavra-chave. Ver aprenderConfirmacao().
+  let aprendida: string | null = null
+  if (patch.estado === 'confirmado' && atual.estado !== 'confirmado') {
+    try { aprendida = await aprenderConfirmacao(sess!.salaoId, id) } catch { /* aprender é bônus */ }
+  }
+
   await supabaseAdmin.from('crm_eventos').insert({
     salao_id: sess!.salaoId,
     conversa_id: id,
@@ -165,8 +173,8 @@ export async function PATCH(req: NextRequest) {
     para_estado: patch.estado || atual.estado,
     autor_id: (sess as any).usuarioId || null,
     autor_nome: quem,
-    detalhe: patch.motivo_perda || null,
+    detalhe: patch.motivo_perda || (aprendida ? `Palavra-chave aprendida: "${aprendida}"` : null),
   })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, aprendida })
 }
