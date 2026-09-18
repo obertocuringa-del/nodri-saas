@@ -186,10 +186,35 @@
   // do que não confirmar.
   const soDigitos = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
 
+  // ── A agenda de verdade (conferida em 18/09/2026) ─────────────────────────
+  //
+  // É uma tabela. A linha de título tem um `td.ag-titulo` por profissional,
+  // com o nome num div dentro; os bloquinhos `.reserva-agendada` ficam nos
+  // `td` da MESMA coluna (cellIndex). Doze profissionais por página; a
+  // setinha `.bloco-branco-vazio-abs-prox` vira a página. A data que está na
+  // tela mora num `input.datepicker2` escondido, no formato dd/mm/aaaa -- é
+  // por ele que se sabe se o clique no dia já surtiu efeito, em vez de
+  // dormir 2,5 s e torcer (às 17:43 a agenda ainda estava em 18/09 quando a
+  // extensão procurou o horário de 19/09, e não achou).
+  const dataNaTela = () => {
+    const i = Array.from(document.querySelectorAll('input.datepicker2, input[type=text]'))
+      .find(x => /^\d{2}\/\d{2}\/\d{4}$/.test(x.value || ''))
+    return i ? i.value : null
+  }
+  const titulosVisiveis = () => Array.from(document.querySelectorAll('td.ag-titulo'))
+    .filter(td => td.offsetParent !== null)
+    .map(td => {
+      const nome = Array.from(td.querySelectorAll('div, span'))
+        .map(x => txt(x)).find(t => t && /^[A-ZÀ-Ú][A-ZÀ-Ú .]{1,24}$/.test(t)) || txt(td).slice(0, 20)
+      return { idx: td.cellIndex, nome }
+    })
+  const assinaturaTitulos = () => titulosVisiveis().map(t => t.nome).join('|')
+
   async function porODiaNaAgenda(dia) {
     // "Hoje" primeiro: recarrega a agenda e volta para uma data conhecida.
     const hoje = Array.from(document.querySelectorAll('button, a')).find(b => /^\s*hoje\s*$/i.test(b.textContent || ''))
     if (hoje) { hoje.click(); await sleep(1500) }
+    if (dataNaTela() === dia) return true
 
     const [d, m, a] = String(dia || '').split('/')
     if (!d || !m || !a) return false
@@ -210,105 +235,125 @@
     }
 
     // Clica no dia, evitando os dias "de fora" do mês.
-    const celulas = Array.from(document.querySelectorAll('td'))
+    const celulas = Array.from(document.querySelectorAll('td.day, td'))
       .filter(td => txt(td) === String(Number(d)) && !/old|new|disabled/.test(td.className))
     const alvo = celulas.find(td => td.offsetParent !== null)
     if (!alvo) return false
     alvo.click()
-    await sleep(2500)
-    return true
+    // Espera a data da tela virar a pedida E os blocos assentarem.
+    const virou = await esperarPor(() => dataNaTela() === dia, 15000, 300)
+    await sleep(2000)
+    return !!virou || dataNaTela() === dia
+  }
+
+  /** Vira as páginas de profissionais até a coluna de `nomeProf` aparecer. */
+  async function acharColuna(nomeProf) {
+    const alvo = norm(nomeProf).split(' ')[0]
+    for (let pagina = 0; pagina < 8; pagina++) {
+      const t = titulosVisiveis().find(x => norm(x.nome).split(' ')[0] === alvo || norm(x.nome) === norm(nomeProf))
+      if (t) return t.idx
+      const antes = assinaturaTitulos()
+      const prox = Array.from(document.querySelectorAll('.bloco-branco-vazio-abs-prox')).find(e => e.offsetParent !== null)
+      if (!prox) return null
+      prox.click()
+      const mudou = await esperarPor(() => assinaturaTitulos() !== antes, 8000, 300)
+      if (!mudou) return null
+      await sleep(800)
+    }
+    return null
+  }
+
+  async function abrirEConfirmar(bloco, alvoTel) {
+    bloco.click()
+    const modal = await esperarPor(() =>
+      Array.from(document.querySelectorAll('.modal, [role=dialog]'))
+        .find(m => m.offsetParent !== null && /celular/i.test(m.textContent || '')), 8000)
+    if (!modal) return { ok: false, motivo: 'modal não abriu' }
+
+    const cel = (/celular:?\s*([\d()\-\s+]{8,})/i.exec(modal.textContent || '') || [])[1]
+    if (soDigitos(cel) !== alvoTel) {
+      const fechar = modal.querySelector('.close, [data-dismiss=modal]')
+        || Array.from(modal.querySelectorAll('a, button')).find(x => /cancelar/i.test(x.textContent || ''))
+      if (fechar) fechar.click()
+      await sleep(600)
+      return { ok: false, motivo: 'outro telefone' }
+    }
+
+    // O status é um rádio `name=status` (Confirmado = 1.5) dentro de um label;
+    // "Salvar" é um <a class="btn"> -- não <button>.
+    const radioConfirmado = Array.from(modal.querySelectorAll('input[type=radio][name=status]'))
+      .find(r => /^\s*confirmado\s*$/i.test((r.closest('label')?.textContent || '').trim()) || r.value === '1.5')
+    const labelConfirmado = radioConfirmado?.closest('label')
+      || Array.from(modal.querySelectorAll('label, button, div, span'))
+        .find(e => /^\s*confirmado\s*$/i.test((e.textContent || '').trim()) && e.offsetParent !== null)
+    if (!labelConfirmado) return { ok: false, erro: 'Não achei o botão Confirmado no modal', final: true }
+    if (radioConfirmado?.checked) {
+      const fechar = modal.querySelector('.close, [data-dismiss=modal]')
+      if (fechar) fechar.click()
+      await sleep(600)
+      return { ok: true, jaEstava: true }
+    }
+    labelConfirmado.click()
+    await sleep(300)
+    if (radioConfirmado && !radioConfirmado.checked) { radioConfirmado.click(); await sleep(300) }
+    if (radioConfirmado && !radioConfirmado.checked) return { ok: false, erro: 'O status não mudou para Confirmado ao clicar', final: true }
+
+    const salvar = Array.from(modal.querySelectorAll('a, button, input[type=submit], input[type=button]'))
+      .find(x => x.offsetParent !== null && /^\s*salvar\s*$/i.test((x.textContent || x.value || '').trim()))
+    if (!salvar) return { ok: false, erro: 'Não achei o botão Salvar', final: true }
+    salvar.click()
+    await sleep(1500)
+
+    // ── "Todos os agendamentos / apenas esse" ──
+    // Só aparece quando a cliente tem outros agendamentos NO MESMO DIA, com
+    // outros profissionais. Não alcança recorrência -- por isso TODOS é
+    // seguro: a cliente confirmou o dia, não um profissional. A caixa é
+    // procurada, não esperada: com um profissional só ela não abre.
+    const achaTodos = () => Array.from(document.querySelectorAll('button, a, div, span'))
+      .find(x => x.offsetParent !== null
+        && /^\s*todos os agendamentos\s*$/i.test((x.textContent || '').trim())
+        && !Array.from(x.children).some(f => /todos os agendamentos/i.test(f.textContent || '')))
+    const todos = await esperarPor(achaTodos, 3000, 300)
+    if (todos) { todos.click(); await sleep(1500) }
+    return { ok: true }
   }
 
   async function marcarConfirmado({ data, hora, profissional, telefone }) {
     const ok = await porODiaNaAgenda(data)
-    if (!ok) return { ok: false, erro: 'Não consegui pôr a agenda em ' + data }
+    if (!ok) return { ok: false, erro: `Não consegui pôr a agenda em ${data} (ficou em ${dataNaTela() || '?'})` }
 
     const alvoHora = String(hora || '').slice(0, 5)
     const alvoTel = soDigitos(telefone)
+    const blocosDaHora = (idx) => Array.from(document.querySelectorAll('.reserva-agendada:not(.bloqueio-tipo)'))
+      .filter(b => b.offsetParent !== null)
+      .filter(b => idx == null || b.closest('td')?.cellIndex === idx)
+      .filter(b => txt(b).startsWith(alvoHora) || txt(b).includes(alvoHora))
 
-    // O quadro pagina de 12 em 12 profissionais: procura, e se não achar vira
-    // a página com a setinha e procura de novo.
-    for (let pagina = 0; pagina < 6; pagina++) {
-      const blocos = Array.from(document.querySelectorAll('.reserva-agendada:not(.bloqueio-tipo)'))
-        .filter(b => txt(b).startsWith(alvoHora) || txt(b).includes(alvoHora))
-      for (const b of blocos) {
-        b.click()
-        const modal = await esperarPor(() =>
-          Array.from(document.querySelectorAll('.modal, [role=dialog]'))
-            .find(m => m.offsetParent !== null && /celular/i.test(m.textContent || '')), 8000)
-        if (!modal) continue
-
-        const cel = (/celular:?\s*([\d()\-\s+]{8,})/i.exec(modal.textContent || '') || [])[1]
-        if (soDigitos(cel) !== alvoTel) {
-          const fechar = modal.querySelector('.close, [data-dismiss=modal]')
-            || Array.from(modal.querySelectorAll('button')).find(x => /cancelar/i.test(x.textContent || ''))
-          if (fechar) fechar.click()
-          await sleep(600)
-          continue
-        }
-
-        // ── O modal de verdade (conferido em 18/09/2026) ─────────────────────
-        //
-        // O status é um rádio `name=status` dentro de um label (Confirmado =
-        // valor 1.5), e "Salvar" é um `<a class="btn btn-primary
-        // btn-salvar-ativo">` -- não um <button>. Procurar só <button> deu
-        // "Não achei o botão Salvar" em todas as confirmações do dia.
-        // Já estava confirmado? Então não há o que salvar: é sucesso.
-        const radioConfirmado = Array.from(modal.querySelectorAll('input[type=radio][name=status]'))
-          .find(r => /^\s*confirmado\s*$/i.test((r.closest('label')?.textContent || '').trim()) || r.value === '1.5')
-        const labelConfirmado = radioConfirmado?.closest('label')
-          || Array.from(modal.querySelectorAll('label, button, div, span'))
-            .find(e => /^\s*confirmado\s*$/i.test((e.textContent || '').trim()) && e.offsetParent !== null)
-        if (!labelConfirmado) return { ok: false, erro: 'Não achei o botão Confirmado no modal' }
-        if (radioConfirmado?.checked) {
-          const fechar = modal.querySelector('.close, [data-dismiss=modal]')
-          if (fechar) fechar.click()
-          await sleep(600)
-          return { ok: true, jaEstava: true }
-        }
-        labelConfirmado.click()
-        await sleep(300)
-        if (radioConfirmado && !radioConfirmado.checked) { radioConfirmado.click(); await sleep(300) }
-        if (radioConfirmado && !radioConfirmado.checked) return { ok: false, erro: 'O status não mudou para Confirmado ao clicar' }
-
-        const salvar = Array.from(modal.querySelectorAll('a, button, input[type=submit], input[type=button]'))
-          .find(x => x.offsetParent !== null && /^\s*salvar\s*$/i.test((x.textContent || x.value || '').trim()))
-        if (!salvar) return { ok: false, erro: 'Não achei o botão Salvar' }
-        salvar.click()
-        await sleep(1500)
-
-        // ── "Todos os agendamentos / apenas esse" ──
-        //
-        // Só aparece quando a cliente tem outros agendamentos NO MESMO DIA, com
-        // outros profissionais (visto em 15/09/2026: "O cliente possui outros
-        // agendamentos para esse dia, deseja confirmar todos os agendamentos
-        // desta data?"). Não alcança recorrência -- por isso TODOS é seguro, e
-        // é o que o dono quer: a cliente confirmou o dia, não um profissional.
-        //
-        // Com um profissional só a caixa não abre e já salvou: por isso ela é
-        // procurada, não esperada.
-        const achaTodos = () => Array.from(document.querySelectorAll('button, a, div, span'))
-          .find(x => x.offsetParent !== null
-            && /^\s*todos os agendamentos\s*$/i.test((x.textContent || '').trim())
-            // Só o elemento mais interno: o pai também contém esse texto.
-            && !Array.from(x.children).some(f => /todos os agendamentos/i.test(f.textContent || '')))
-        const todos = await esperarPor(achaTodos, 3000, 300)
-        if (todos) { todos.click(); await sleep(1500) }
-        return { ok: true }
+    // 1) A coluna do profissional, virando página se precisar.
+    const idx = await acharColuna(profissional)
+    const vistos = []
+    const tentar = async (lista) => {
+      for (const b of lista) {
+        const r = await abrirEConfirmar(b, alvoTel)
+        if (r.ok || r.final) return r
+        vistos.push(r.motivo)
       }
-
-      // A setinha que vira a página de profissionais. Conferido em 18/09/2026
-      // na agenda real: é um div `.bloco-branco-vazio-abs-prox` com clique
-      // via jQuery, sem texto nenhum -- procurar "❯" não achava nada.
-      const proximaPag = Array.from(document.querySelectorAll('.bloco-branco-vazio-abs-prox, .fc-next-button, [class*=proxima], .next-prof'))
-        .find(e => e.offsetParent !== null)
-        || Array.from(document.querySelectorAll('a, button, div')).find(e =>
-          /^\s*❯\s*$/.test(e.textContent || '') && e.offsetParent !== null)
-      if (!proximaPag) break
-      proximaPag.click()
-      await sleep(1500)
+      return null
     }
-    return { ok: false, erro: `Não achei o agendamento de ${alvoHora} com ${profissional}` }
+    if (idx != null) {
+      const r = await tentar(blocosDaHora(idx))
+      if (r) return r
+    }
+    // 2) Não achou na coluna dele: qualquer coluna desta página, no horário.
+    const r2 = await tentar(blocosDaHora(null))
+    if (r2) return r2
+
+    const profs = titulosVisiveis().map(t => t.nome).join(', ')
+    return {
+      ok: false,
+      erro: `Não achei o agendamento de ${alvoHora} com ${profissional} em ${dataNaTela() || data}`
+        + (idx == null ? ` (coluna de ${profissional} não apareceu; vi: ${profs})` : ` (${vistos.length} bloco(s) nesse horário, nenhum com o telefone dela)`),
+    }
   }
 
   chrome.runtime.onMessage.addListener((msg, _rem, responder) => {
