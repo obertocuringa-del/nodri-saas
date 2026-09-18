@@ -221,21 +221,20 @@ async function concluirConfirmacao(
     .replace(/\{profissional\}/g, String(body?.profissional || ''))
     .trim()
 
-  if (texto) {
-    await supabaseAdmin.from('crm_mensagens').insert({
-      salao_id: salaoId, conversa_id: p.conversa_id,
-      direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',
-      autor_nome: 'Confirmação automática', em_massa: false, criado_em: agora,
-    })
-  }
-
   // ── Ela confirmou E perguntou alguma coisa? ───────────────────────────────
   //
   // MARIA GORETE, 18/09/2026: "Confirmado" e, na mensagem seguinte, "A
-  // Cleide tem horário para escova?". Fechar a conversa como Confirmado
-  // enterraria a pergunta. Se alguma mensagem dela desde o pedido de
-  // confirmação NÃO for confirmação, o Avec é marcado do mesmo jeito, mas a
-  // conversa fica em "Preciso agir" para alguém responder o resto.
+  // Cleide tem horário para escova?". Mandar o "Combinado... qualquer coisa
+  // é só me chamar. Até lá!" em cima de uma pergunta soa como encerrar a
+  // conversa ignorando o que ela perguntou -- foi a leitura do dono, e está
+  // certa. Então, quando há mais do que a confirmação:
+  //
+  //   - o Avec É marcado (é fato, e é o que a cliente pediu);
+  //   - o "Combinado" automático NÃO sai;
+  //   - a conversa fica em "Preciso agir", não lida, e quem responder fala
+  //     das duas coisas numa mensagem só ("confirmado, e sobre a escova...").
+  //
+  // "Obrigada", "ok", figurinha de coração não contam como pergunta.
   let temPergunta = false
   try {
     const { data: ultSaida } = await supabaseAdmin
@@ -245,12 +244,14 @@ async function concluirConfirmacao(
     const desde = (ultSaida || [])[0]?.criado_em
     if (desde) {
       const { data: dela } = await supabaseAdmin
-        .from('crm_mensagens').select('texto')
+        .from('crm_mensagens').select('texto, tipo')
         .eq('conversa_id', p.conversa_id).eq('direcao', 'entrada').gt('criado_em', desde).limit(20)
       const { ehConfirmacao } = await import('@/lib/crmConfirmacao')
       temPergunta = (dela || []).some((m: any) => {
         const t = String(m.texto || '').trim()
-        return t && !ehConfirmacao(t, conf.palavras) && !/^(obrigad|valeu|ok|blz|beleza|👍|🙏|❤|😊|☺)/i.test(t)
+        if (!t || m.tipo === 'figurinha') return false
+        if (ehConfirmacao(t, conf.palavras)) return false
+        return !/^(obrigad[ao]?s?|valeu|ok+|blz|beleza|perfeito|tks|thanks|[\p{Emoji}\s]+)[.!\s]*$/iu.test(t)
       })
     }
   } catch { /* na dúvida, fecha como sempre fechou */ }
@@ -258,15 +259,23 @@ async function concluirConfirmacao(
   if (temPergunta) {
     await supabaseAdmin.from('crm_conversas').update({
       estado: 'acao_necessaria',
-      proxima_acao: proximaAcaoPadrao('acao_necessaria'),
+      proxima_acao: 'Responder: ela confirmou (já está no Avec) e perguntou algo',
       nao_lidas: 1, atualizado_em: agora,
     }).eq('id', p.conversa_id).eq('salao_id', salaoId)
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: p.conversa_id, tipo: 'mudou_estado',
       para_estado: 'acao_necessaria', autor_nome: 'Confirmação automática',
-      detalhe: 'Marcado como Confirmado no Avec — mas ela também perguntou algo: fica para responder',
+      detalhe: 'Marcado como Confirmado no Avec. Ela também perguntou algo, então o "Combinado" automático não foi mandado: responda as duas coisas.',
     })
     return { marcado: true, pergunta: true }
+  }
+
+  if (texto) {
+    await supabaseAdmin.from('crm_mensagens').insert({
+      salao_id: salaoId, conversa_id: p.conversa_id,
+      direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',
+      autor_nome: 'Confirmação automática', em_massa: false, criado_em: agora,
+    })
   }
 
   await supabaseAdmin.from('crm_conversas').update({
