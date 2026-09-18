@@ -95,6 +95,8 @@ const registro = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), '
 
 /** Sessões vivas, uma por salão. */
 const sessoes = new Map()
+// Quedas seguidas sem abrir, por salão. Ver o recuo em connection.update.
+const quedasSeguidas = new Map()
 
 // Salão que pediu o CRM e não escaneou: até quando não insistir.
 // salaoId -> instante (ms) em que pode tentar de novo.
@@ -776,6 +778,7 @@ async function abrirDeVerdade(salaoId, registroSessao) {
     if (connection === 'open') {
       registroSessao.conectado = true
       registroSessao.abertoEm = Date.now()
+      quedasSeguidas.delete(salaoId)
       // Escanearam: a contagem zera e este salão passa a ser "de verdade".
       qrsPorSalao.delete(salaoId)
       semNinguem.delete(salaoId)
@@ -826,9 +829,18 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
       if (registroSessao.fechando) return   // fomos nós que mandamos fechar
 
-      registro(salaoId, 'conexão caiu, motivo', motivo, '— reabrindo')
+      // ── Recuo quando a rede está fora ─────────────────────────────────────
+      //
+      // 18/09/2026, 12:04 às 13:33: o Wi-Fi do notebook caiu por 89 minutos e
+      // a ponte tentou reabrir a cada 3 segundos -- 1.749 tentativas, 1.749
+      // linhas de log, e nada que pudesse dar certo. Queda atrás de queda sem
+      // nunca abrir dobra a espera, até meio minuto; abriu, volta aos 3 s.
+      const seguidas = (quedasSeguidas.get(salaoId) || 0) + 1
+      quedasSeguidas.set(salaoId, seguidas)
+      const espera = Math.min(3000 * 2 ** Math.min(seguidas - 1, 4), 30000)
+      registro(salaoId, 'conexão caiu, motivo', motivo, seguidas > 1 ? `— reabrindo em ${espera / 1000} s (${seguidas}ª seguida)` : '— reabrindo')
       await avisar(salaoId, { situacao: 'conectando' })
-      setTimeout(() => abrirSessao(salaoId).catch(e => registro(salaoId, 'falha ao reabrir:', e.message)), 3000)
+      setTimeout(() => abrirSessao(salaoId).catch(e => registro(salaoId, 'falha ao reabrir:', e.message)), espera)
     }
   })
 
