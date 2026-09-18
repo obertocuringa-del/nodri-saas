@@ -187,7 +187,11 @@ async function concluirConfirmacao(
 
   if (!marcado) {
     // Três tentativas e desiste: fica para a recepção, com o motivo à vista.
+    // O motivo de CADA tentativa fica no pedido: sem isso só se sabia por que
+    // falhou na terceira, e as duas primeiras eram um mistério (18/09/2026).
     p.tentativas = (p.tentativas || 0) + 1
+    ;(p as any).ultimo_erro = String(erro || 'motivo desconhecido').slice(0, 200)
+    ;(p as any).ultima_tentativa_em = agora
     if (p.tentativas < 3) {
       await gravarFila(salaoId, fila)
       return { marcado: false, tentativas: p.tentativas, erro }
