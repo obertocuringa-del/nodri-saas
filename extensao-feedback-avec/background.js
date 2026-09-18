@@ -121,19 +121,80 @@ async function foraDoAdmin(abaId) {
   return !url.startsWith(AVEC)
 }
 
+async function infoDaAba(abaId) {
+  return new Promise(res => chrome.tabs.get(abaId, t => res(chrome.runtime.lastError ? null : t)))
+}
+
+/**
+ * Depois de clicar em "Acessar conta": espera a tela de login SAIR DO LUGAR.
+ *
+ * Era uma pausa fixa de 2,5 s. O Avec leva mais que isso para validar e
+ * redirecionar, e a extensão perguntava cedo demais, via o campo de senha
+ * ainda na tela e concluía "não aceitou o login" -- e no ciclo seguinte
+ * fazia tudo de novo (18/09/2026). Agora pergunta a cada segundo, por até
+ * 40 s, e só desiste quando a tela de login continua lá com todo esse tempo
+ * -- aí é senha errada, código por SMS ou captcha, e o aviso que o próprio
+ * Avec escreveu na tela vai junto no erro.
+ */
+async function esperarSairDoLogin(abaId, ms = 40000) {
+  const fim = Date.now() + ms
+  let ultimo = null
+  while (Date.now() < fim) {
+    await sleep(1000)
+    const aba = await infoDaAba(abaId)
+    if (!aba) throw new Error('A aba do Avec foi fechada no meio do login')
+    if (aba.status !== 'complete') continue
+    const onde = await perguntar(abaId, { tipo: 'onde-estou' })
+    if (onde) {
+      ultimo = onde
+      if (!onde.login) return onde
+      continue
+    }
+    // Sem resposta do content script: ou a página está trocando (normal), ou
+    // o Avec mandou para fora do admin (site público) -- aí não entrou.
+    const url = String(aba.url || '')
+    if (url && !url.startsWith(AVEC) && !/avec\.beauty/.test(url)) {
+      throw new Error('Depois de entrar, o Avec mandou para ' + url.slice(0, 80))
+    }
+  }
+  throw new Error(ultimo?.erro
+    ? 'O Avec não aceitou o login: ' + ultimo.erro
+    : 'A tela de login não saiu do lugar em 40 s (senha errada, código por SMS ou captcha?)')
+}
+
 async function entrarNoAvec(abaId, cfg, dados) {
   if (!dados.email || !dados.senha) throw new Error('Avec deslogado e sem e-mail/senha nas opções da extensão')
   const urlLogin = urlAvec(cfg.url_login, '')
   if (!urlLogin) throw new Error('Avec deslogado e sem endereço de login configurado no NODRI')
+  // 1) o endereço de login, e espera a tela carregar de verdade
   await chrome.tabs.update(abaId, { url: urlLogin })
   await esperarCarregar(abaId)
-  const r = await perguntarComPaciencia(abaId, { tipo: 'logar', email: dados.email, senha: dados.senha })
+  await sleep(1500)
+  // 2) e-mail, senha e o botão -- o content script faz os três
+  const r = await perguntarComPaciencia(abaId, { tipo: 'logar', email: dados.email, senha: dados.senha }, 12)
   if (!r || !r.ok) throw new Error(r?.erro || 'A tela de login não respondeu')
-  // O login redireciona; espera assentar antes de ir ao relatório.
-  await sleep(2500)
+  await saude({ texto: 'Entrando no Avec — esperando a tela de login sair…' })
+  // 3) a pausa de verdade: até a tela de login ir embora
+  await esperarSairDoLogin(abaId)
+  // 4) a página inicial assenta antes de ir ao relatório
+  await sleep(2000)
   await esperarCarregar(abaId)
-  const onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
-  if (!onde || onde.login) throw new Error('O Avec não aceitou o login (senha errada, ou pede código/captcha)')
+}
+
+/**
+ * As abas que sobraram. A versão 1.0 abria uma aba nova a cada ciclo quando o
+ * Avec jogava a de trabalho para o site público -- em 18/09/2026 a recepção
+ * amanheceu com dezenas de abas "avec.app". Fecha as que estão no site
+ * público E não são a aba ativa: ninguém trabalha no site público do Avec, e
+ * a aba de trabalho é uma só.
+ */
+async function fecharAbasSobrando() {
+  try {
+    const { abaId } = await guardado()
+    const abas = await chrome.tabs.query({ url: ['https://www.avec.app/*', 'https://avec.app/*'] })
+    const fechar = abas.filter(t => t.id !== abaId && !t.active && !t.pinned).map(t => t.id)
+    if (fechar.length) await chrome.tabs.remove(fechar)
+  } catch { /* sem permissão ou sem aba: segue */ }
 }
 
 let rodando = false
@@ -144,6 +205,7 @@ async function ciclo() {
   const dados = await guardado()
   try {
     if (!dados.chave) { await saude({ texto: 'Sem chave: cole a chave do NODRI nas opções.' }); return }
+    await fecharAbasSobrando()
 
     const cfg = await nodri('/api/crm/automacao/extensao', { method: 'GET' }, dados.chave)
     await reagendar(cfg.intervalo_seg)

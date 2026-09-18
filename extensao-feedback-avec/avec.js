@@ -31,7 +31,7 @@
       : el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype
     const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
     if (setter) setter.call(el, valor); else el.value = valor
-    for (const tipo of ['input', 'keyup', 'change']) el.dispatchEvent(new Event(tipo, { bubbles: true }))
+    for (const tipo of ['input', 'keyup', 'change', 'blur']) el.dispatchEvent(new Event(tipo, { bubbles: true }))
   }
 
   async function esperarPor(fn, ms = 15000, passo = 300) {
@@ -45,7 +45,16 @@
   }
 
   function estaNoLogin() {
-    return !!document.querySelector('input[type="password"]')
+    // Só campo de senha VISÍVEL: o painel logado tem modal de trocar senha
+    // escondido, e um `querySelector` cego dizia "login" com o Avec aberto.
+    return Array.from(document.querySelectorAll('input[type="password"]')).some(i => i.offsetParent !== null)
+  }
+
+  /** Aviso de erro visível na tela de login ("Usuário ou senha inválidos"). */
+  function avisoDeErro() {
+    const el = Array.from(document.querySelectorAll('[role=alert], .alert, .error, .invalid-feedback, .text-danger, [class*=erro], [class*=error]'))
+      .find(e => e.offsetParent !== null && (e.textContent || '').trim().length > 3)
+    return el ? txt(el).slice(0, 160) : null
   }
 
   // ── Login ──────────────────────────────────────────────────────────────────
@@ -81,8 +90,15 @@
     if (!tab) return null
     const cab = Array.from(tab.querySelectorAll('thead th')).map(th => norm(txt(th)))
     const col = (...nomes) => { for (const n of nomes) { const i = cab.indexOf(n); if (i >= 0) return i } return -1 }
+    // Conferido em 18/09/2026 no relatório real: Data Cadastro Reserva · Data
+    // Reserva · Hora · Cliente · Celular · Data Cadastro Cliente · E-mail ·
+    // Profissional · Serviço · Origem · Status · Observação · Data Comanda ·
+    // Número · Quem Cadastrou. Profissional e Serviço estavam lá o tempo todo
+    // e não eram lidos -- por isso o aviso ao profissional achava 22 elegíveis
+    // e não mandava para ninguém.
     const iData = col('data reserva', 'data'), iHora = col('hora'), iCli = col('cliente'),
-      iCel = col('celular', 'telefone'), iSt = col('status'), iNum = col('numero', 'n comanda', 'comanda')
+      iCel = col('celular', 'telefone'), iSt = col('status'), iNum = col('numero', 'n comanda', 'comanda'),
+      iProf = col('profissional'), iServ = col('servico', 'servicos', 'item')
     if (iCli < 0 || iCel < 0 || iSt < 0) return { erro: 'A tabela não tem as colunas Cliente, Celular e Status', cab }
     const linhas = []
     for (const tr of tab.querySelectorAll('tbody tr')) {
@@ -92,6 +108,7 @@
       linhas.push({
         data: iData >= 0 ? cs[iData] : '', hora: iHora >= 0 ? cs[iHora] : '',
         cliente: cs[iCli], celular: cs[iCel], status: cs[iSt], numero: iNum >= 0 ? cs[iNum] : '',
+        profissional: iProf >= 0 ? cs[iProf] : '', servico: iServ >= 0 ? cs[iServ] : '',
       })
     }
     return { linhas }
@@ -260,7 +277,11 @@
         return { ok: true }
       }
 
-      const proximaPag = document.querySelector('.fc-next-button, [class*=proxima], .next-prof')
+      // A setinha que vira a página de profissionais. Conferido em 18/09/2026
+      // na agenda real: é um div `.bloco-branco-vazio-abs-prox` com clique
+      // via jQuery, sem texto nenhum -- procurar "❯" não achava nada.
+      const proximaPag = Array.from(document.querySelectorAll('.bloco-branco-vazio-abs-prox, .fc-next-button, [class*=proxima], .next-prof'))
+        .find(e => e.offsetParent !== null)
         || Array.from(document.querySelectorAll('a, button, div')).find(e =>
           /^\s*❯\s*$/.test(e.textContent || '') && e.offsetParent !== null)
       if (!proximaPag) break
@@ -272,7 +293,7 @@
 
   chrome.runtime.onMessage.addListener((msg, _rem, responder) => {
     if (!msg || !msg.tipo) return
-    if (msg.tipo === 'onde-estou') { responder({ login: estaNoLogin(), url: location.href }); return }
+    if (msg.tipo === 'onde-estou') { responder({ login: estaNoLogin(), url: location.href, erro: avisoDeErro() }); return }
     if (msg.tipo === 'logar') { logar(msg.email, msg.senha).then(responder); return true }
     if (msg.tipo === 'marcar-confirmado') {
       if (estaNoLogin()) { responder({ ok: false, erro: 'Avec deslogado', login: true }); return }

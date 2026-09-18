@@ -1804,13 +1804,16 @@ function PainelCliente({ c }: { c: Conversa }) {
                 {/* Quantas vezes E quando foi a última: "Manicure · 53x · última
                     05/09" é o que deixa a recepção puxar assunto com a data
                     certa em vez de chutar. Pedido do dono em 18/09/2026. */}
-                {dados.servicos.slice(0, 6).map((s: any, i: number) => (
-                  <p key={i} className="text-[11.5px] flex justify-between gap-2" style={{ color: '#6b6860' }}>
-                    <span className="truncate">{s.nome} · {s.vezes}x</span>
-                    {s.ultima && (
-                      <span className="flex-shrink-0" style={{ color: '#8f877f' }}>última {String(s.ultima).slice(0, 5)}</span>
-                    )}
-                  </p>
+                {/* Nome INTEIRO, quebrando linha se precisar; vezes e última
+                    data na linha de baixo. "PEDICURE E CUIDADOS ESPECIAI..."
+                    cortado não diz o que ela faz. Pedido do dono, 18/09/2026. */}
+                {dados.servicos.slice(0, 8).map((s: any, i: number) => (
+                  <div key={i} className="mb-1.5">
+                    <p className="text-[11.5px] leading-snug break-words" style={{ color: '#3a3733' }}>{s.nome}</p>
+                    <p className="text-[10.5px]" style={{ color: '#8f877f' }}>
+                      {s.vezes}x{s.ultima ? ` · última ${String(s.ultima).slice(0, 5)}` : ''}
+                    </p>
+                  </div>
                 ))}
               </div>
             )}
