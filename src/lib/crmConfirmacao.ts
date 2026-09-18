@@ -115,13 +115,26 @@ export async function gravarFila(salaoId: string, fila: PedidoConfirmacao[]) {
  * parágrafo pedindo para remarcar, não.
  */
 export function ehConfirmacao(texto: string, palavras: string[]): boolean {
-  const t = semAcento(texto).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+  const t = semAcento(texto).replace(/[^a-z0-9?\s]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!t || t.length > 90) return false
-  // Um "não" em qualquer lugar derruba: "não posso confirmar", "não vou poder".
-  if (/\bnao\b|\bnem\b|\bcancela|\bdesmarc|\bremarc|\boutro dia\b|\boutra data\b/.test(t)) return false
+  // ── O que derruba, antes de qualquer palavra ─────────────────────────────
+  //
+  // Um "não" em qualquer lugar: "não posso confirmar", "não vou poder".
+  // Pedido de mudança: "pode ser mais tarde?", "consegue trocar pra 15h?",
+  // "sim, mas queria adiantar" -- tudo isso tem "pode"/"sim" dentro e NÃO é
+  // confirmação; é gente pedindo outra coisa. E pergunta é pergunta: quem
+  // confirma não pergunta. Na dúvida, vai para "Preciso agir" e alguém lê.
+  const derruba = /\bnao\b|\bnem\b|\bcancel|\bdesmarc|\bremarc|\bmud[ae]|\btroc[ae]|\balter[ae]|\badiant|\batras[ae]|mais tarde|mais cedo|outro dia|outra data|outro hor|outra hor|\bencaixe|\bantes\b|\bdepois\b|\?/
+  if (derruba.test(t)) return false
+  // ── Palavra INTEIRA, não pedaço ──────────────────────────────────────────
+  //
+  // A lista do salão tem "s", "ss", "ta", "vou" -- respostas reais de cliente
+  // com pressa. Como pedaço, "s" está dentro de qualquer frase e "ta" está em
+  // "tarde"; como palavra inteira, "s" só vale quando a cliente escreveu "s".
+  const comEspacos = ' ' + t.replace(/\?/g, ' ').replace(/\s+/g, ' ').trim() + ' '
   return palavras.some(p => {
-    const alvo = semAcento(p)
-    return alvo && t.includes(alvo)
+    const alvo = semAcento(p).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+    return !!alvo && comEspacos.includes(' ' + alvo + ' ')
   })
 }
 

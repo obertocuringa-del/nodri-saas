@@ -579,6 +579,43 @@ async function abrirDeVerdade(salaoId, registroSessao) {
 
   sock.ev.on('creds.update', saveCreds)
 
+  // ── O que o servidor diz sobre a fila que ficou esperando ──────────────────
+  //
+  // Ao reconectar, o WhatsApp primeiro entrega o que ficou na fila ("offline")
+  // e só depois avisa que acabou -- e é esse aviso que solta os eventos
+  // segurados pelo Baileys. Em 15/09/2026 o aviso não veio por três dias.
+  // Estas duas linhas no log são o que permite ver ISSO em vez de adivinhar.
+  //
+  // ── A fila de 8.480 que ninguém pedia ─────────────────────────────────────
+  //
+  // Medido em 18/09/2026 09:16: {"count":"8480","message":"2670","receipt":
+  // "3140","notification":"2648"}. O Baileys responde ao aviso pedindo um lote
+  // de CEM e nunca pede o resto. O servidor entrega os cem, fica esperando o
+  // próximo pedido, e enquanto espera não manda nada ao vivo. Foi isso que
+  // deixou o CRM surdo por três dias depois de o notebook dormir: a fila
+  // passou de cem, e a cada reconexão vinham mais cem e mais nada.
+  //
+  // Aqui o pedido do Baileys sai e entra o nosso, com o tamanho da fila
+  // inteira. Quem tem 8.480 esperando quer os 8.480.
+  const pedirLoteInteiro = (n) => {
+    const a = n?.content?.[0]?.attrs || {}
+    const total = Math.max(100, Math.min(Number(a.count) || 0, 50000))
+    registro(salaoId, 'fila do servidor:', JSON.stringify(a), `— pedindo ${total} de uma vez`)
+    try {
+      sock.sendNode({ tag: 'ib', attrs: {}, content: [{ tag: 'offline_batch', attrs: { count: String(total) } }] })
+    } catch (e) {
+      registro(salaoId, 'falha ao pedir a fila do servidor:', e.message)
+    }
+  }
+  if (sock.ws?.removeAllListeners && sock.ws?.on) {
+    sock.ws.removeAllListeners('CB:ib,,offline_preview')
+    sock.ws.on('CB:ib,,offline_preview', pedirLoteInteiro)
+  }
+  sock.ws?.on?.('CB:ib,,offline', (n) => {
+    const a = n?.content?.[0]?.attrs || {}
+    registro(salaoId, 'fila do servidor entregue:', JSON.stringify(a))
+  })
+
   // ── Nomes ─────────────────────────────────────────────────────────────────
   //
   // "Sem nome" repetido na lista nao deixa ninguem escolher uma conversa. O
@@ -1107,15 +1144,32 @@ const AVISO_SESSAO_PODRE =
   'A sessão do WhatsApp está corrompida: as mensagens chegam e o CRM não consegue abri-las. ' +
   'Clique em Desconectar e leia o QR de novo com o celular do salão.'
 
+/**
+ * Solta o buffer do Baileys quando ele fica preso. Roda no laço de 1 s (junto
+ * com a fila de saída), porque cada mensagem que chega pela fila "offline" do
+ * servidor liga o buffer de novo -- e esperar 4 s por mensagem é 4 s a mais
+ * de atraso para a recepção ver a pergunta da cliente.
+ */
+function soltarBufferPreso(salaoId, s) {
+  const sock = s.sock
+  if (!sock || !s.abertoEm || !s.conectado) return
+  const abertaHa = Date.now() - s.abertoEm
+  if (abertaHa <= SEGUNDOS_BUFFER * 1000) return
+  if (typeof sock.ev?.isBuffering !== 'function' || !sock.ev.isBuffering()) return
+  // Uma linha por minuto, não uma por mensagem: o log é para ler.
+  if (!s.soltouEm || Date.now() - s.soltouEm > 60000) {
+    registro(salaoId, `o Baileys segurava os eventos (${Math.round(abertaHa / 1000)} s de conexão) — soltando na mão`)
+    s.soltouEm = Date.now()
+  }
+  try { sock.ev.flush() } catch (e) { registro(salaoId, 'falha ao soltar os eventos:', e.message) }
+}
+
 async function vigiarSaude(salaoId, s) {
   const sock = s.sock
   if (!sock || !s.abertoEm) return
   const abertaHa = Date.now() - s.abertoEm
 
-  if (abertaHa > SEGUNDOS_BUFFER * 1000 && typeof sock.ev?.isBuffering === 'function' && sock.ev.isBuffering()) {
-    registro(salaoId, `o Baileys segurava os eventos há ${Math.round(abertaHa / 1000)} s sem soltar — soltando na mão`)
-    try { sock.ev.flush() } catch (e) { registro(salaoId, 'falha ao soltar os eventos:', e.message) }
-  }
+  soltarBufferPreso(salaoId, s)
 
   // Cifradas que não abriram, sem NENHUMA que tenha aberto: sessão podre.
   // O mínimo existe porque uma ou duas falhas acontecem em sessão sã (aparelho
@@ -1247,7 +1301,9 @@ setInterval(async () => {
   despachando = true
   try {
     for (const [salaoId, s] of sessoes) {
-      if (s.conectado) await despacharFila(salaoId)
+      if (!s.conectado) continue
+      soltarBufferPreso(salaoId, s)
+      await despacharFila(salaoId)
     }
   } catch (e) {
     registro('erro ao despachar:', e.message)
