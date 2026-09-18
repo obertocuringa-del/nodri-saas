@@ -229,6 +229,46 @@ async function concluirConfirmacao(
     })
   }
 
+  // ── Ela confirmou E perguntou alguma coisa? ───────────────────────────────
+  //
+  // MARIA GORETE, 18/09/2026: "Confirmado" e, na mensagem seguinte, "A
+  // Cleide tem horário para escova?". Fechar a conversa como Confirmado
+  // enterraria a pergunta. Se alguma mensagem dela desde o pedido de
+  // confirmação NÃO for confirmação, o Avec é marcado do mesmo jeito, mas a
+  // conversa fica em "Preciso agir" para alguém responder o resto.
+  let temPergunta = false
+  try {
+    const { data: ultSaida } = await supabaseAdmin
+      .from('crm_mensagens').select('criado_em')
+      .eq('conversa_id', p.conversa_id).eq('direcao', 'saida').neq('autor_nome', 'Confirmação automática')
+      .order('criado_em', { ascending: false }).limit(1)
+    const desde = (ultSaida || [])[0]?.criado_em
+    if (desde) {
+      const { data: dela } = await supabaseAdmin
+        .from('crm_mensagens').select('texto')
+        .eq('conversa_id', p.conversa_id).eq('direcao', 'entrada').gt('criado_em', desde).limit(20)
+      const { ehConfirmacao } = await import('@/lib/crmConfirmacao')
+      temPergunta = (dela || []).some((m: any) => {
+        const t = String(m.texto || '').trim()
+        return t && !ehConfirmacao(t, conf.palavras) && !/^(obrigad|valeu|ok|blz|beleza|👍|🙏|❤|😊|☺)/i.test(t)
+      })
+    }
+  } catch { /* na dúvida, fecha como sempre fechou */ }
+
+  if (temPergunta) {
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'acao_necessaria',
+      proxima_acao: proximaAcaoPadrao('acao_necessaria'),
+      nao_lidas: 1, atualizado_em: agora,
+    }).eq('id', p.conversa_id).eq('salao_id', salaoId)
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: p.conversa_id, tipo: 'mudou_estado',
+      para_estado: 'acao_necessaria', autor_nome: 'Confirmação automática',
+      detalhe: 'Marcado como Confirmado no Avec — mas ela também perguntou algo: fica para responder',
+    })
+    return { marcado: true, pergunta: true }
+  }
+
   await supabaseAdmin.from('crm_conversas').update({
     estado: 'confirmado',
     proxima_acao: proximaAcaoPadrao('confirmado'),
