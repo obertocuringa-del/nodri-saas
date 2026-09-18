@@ -96,7 +96,10 @@ async function abaDeTrabalho(url) {
   const { abaId } = await guardado()
   if (abaId) {
     const existe = await new Promise(res => chrome.tabs.get(abaId, t => res(chrome.runtime.lastError ? null : t)))
-    if (existe && String(existe.url || '').startsWith(AVEC)) {
+    // A aba vale mesmo fora do admin: com a sessão vencida o Avec joga a aba
+    // para www.avec.app, e exigir o endereço do admin aqui abria uma aba NOVA a
+    // cada ciclo (uma a cada 30 s) enquanto a antiga ficava lá, parada.
+    if (existe && /avec\.(beauty|app)/.test(String(existe.url || ''))) {
       await chrome.tabs.update(abaId, { url })
       return abaId
     }
@@ -104,6 +107,18 @@ async function abaDeTrabalho(url) {
   const nova = await chrome.tabs.create({ url, active: false })
   await chrome.storage.local.set({ abaId: nova.id })
   return nova.id
+}
+
+/**
+ * Sessão vencida não cai na tela de login: o Avec manda a aba para
+ * www.avec.app, o site público, onde a extensão não roda. O content script não
+ * responde, e o ciclo morria em "A aba do Avec não respondeu" (18/09/2026,
+ * o dia inteiro). Aqui se olha o ENDEREÇO da aba: fora do admin é deslogado.
+ */
+async function foraDoAdmin(abaId) {
+  const aba = await new Promise(res => chrome.tabs.get(abaId, t => res(chrome.runtime.lastError ? null : t)))
+  const url = String(aba?.url || '')
+  return !url.startsWith(AVEC)
 }
 
 async function entrarNoAvec(abaId, cfg, dados) {
@@ -148,6 +163,7 @@ async function ciclo() {
     await esperarCarregar(abaId)
 
     let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
+    if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
     if (!onde) throw new Error('A aba do Avec não respondeu (página não carregou?)')
     if (onde.login) {
       await saude({ texto: 'Avec deslogado — entrando de novo…' })
@@ -214,6 +230,7 @@ async function prepararAba(cfg, dados, url) {
   const abaId = await abaDeTrabalho(url)
   await esperarCarregar(abaId)
   let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
+  if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
   if (!onde) throw new Error('A aba do Avec não respondeu')
   if (onde.login) {
     await saude({ texto: 'Avec deslogado — entrando de novo…' })
