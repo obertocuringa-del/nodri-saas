@@ -1085,7 +1085,28 @@ export async function POST(req: NextRequest) {
   // Só conta na pasta CONFIRMAÇÃO: é lá que a última coisa que o salão mandou
   // foi mesmo um pedido de confirmação. Fora dali, "ok" não quer dizer nada e
   // a mensagem segue o caminho normal, para gente responder.
-  if (daCliente && conversa?.estado === 'confirmacao' && texto.trim()) {
+  //
+  // ── A pasta não decide; a ÚLTIMA MENSAGEM do salão decide ────────────────
+  //
+  // Caso real, MANOELA e VANESSA EID, 18/09/2026 17:35-17:58: as duas estavam
+  // em "Preciso agir" desde a manhã (escreveram e ninguém respondeu). A
+  // confirmação das 17:30 chegou, mas disparo não tira ninguém de Preciso
+  // agir -- então a conversa não estava na pasta Confirmação, o "Sim" delas
+  // não contou, nenhuma recebeu o "Combinado" e o Avec ficou sem marcar.
+  //
+  // O que importa é: a última coisa que o salão mandou foi um pedido de
+  // confirmação? Então "sim" é resposta a ele, esteja a conversa na pasta
+  // que estiver. A trava contra o "ok" solto continua: fora de um pedido de
+  // confirmação, nada aqui acontece.
+  let ultimaDoSalaoEhConfirmacao = false
+  if (daCliente && conversa?.id && texto.trim() && conversa.estado !== 'confirmacao') {
+    const { data: ultSaida } = await supabaseAdmin
+      .from('crm_mensagens').select('texto')
+      .eq('conversa_id', conversa.id).eq('direcao', 'saida')
+      .order('criado_em', { ascending: false }).limit(1)
+    ultimaDoSalaoEhConfirmacao = tipoDaMensagemDoSalao((ultSaida || [])[0]?.texto) === 'confirmacao'
+  }
+  if (daCliente && (conversa?.estado === 'confirmacao' || ultimaDoSalaoEhConfirmacao) && texto.trim()) {
     try {
       const conf = await cfgConfirmacao(salaoId)
       if (conf.ligada && ehConfirmacao(texto, conf.palavras)) {
