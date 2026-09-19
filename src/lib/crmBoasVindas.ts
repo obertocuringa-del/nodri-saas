@@ -57,6 +57,19 @@ export async function linkPadraoDoSalao(salaoId: string): Promise<string> {
   return ''
 }
 
+// Saudação pura ("oi", "olá, bom dia", "boa tarde, tudo bem?") é abertura de
+// conversa. O que sobra depois de tirar a saudação decide: nada = abertura;
+// só cortesia ("obrigada", "sim") = resposta; qualquer outra coisa = assunto.
+const SAUDACAO = new Set(['oi', 'oii', 'oiii', 'ola', 'olaa', 'bom', 'boa', 'dia', 'tarde', 'noite', 'tudo', 'bem', 'e', 'ai', 'td', 'blz', 'beleza'])
+function ehSoResposta(texto: string): boolean {
+  const palavras = String(texto || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean)
+  const semSaudacao = palavras.filter(p => !SAUDACAO.has(p))
+  if (semSaudacao.length === 0) return false
+  return ehSoAgradecimento(semSaudacao.join(' '))
+}
+
 export function montarMensagem(cfg: ConfigBoasVindas, nomeSalao: string): string {
   let t = cfg.texto.replace(/\{salao\}/gi, nomeSalao || 'salão')
   if (/\{link\}/i.test(t)) t = t.replace(/\{link\}/gi, cfg.link)
@@ -87,7 +100,9 @@ export async function boasVindasSePrimeiroContato(args: {
   if (!cfg.ligada || !cfg.link) return false
 
   // "Obrigada", "Sim", "Confirmado" não é entrar em contato -- é responder.
-  if (tipo === 'texto' && ehSoAgradecimento(texto)) return false
+  // Mas "Oi", "Olá", "Bom dia" É entrar em contato (teste do dono, 19/09/2026:
+  // o "Oi" caía na lista de cortesia e não disparava).
+  if (tipo === 'texto' && ehSoResposta(texto)) return false
 
   // A mensagem anterior nesta conversa (a da cliente já está gravada).
   const { data: antes } = await supabaseAdmin
