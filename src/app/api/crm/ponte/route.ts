@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO, ESTADOS_DECIDIDOS, estadoPelaUltimaMensagem } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, tipoDaMensagemDoSalao, ESTADO_DO_TIPO, PASSIVAS_DO_DISPARO, ESTADOS_DECIDIDOS, estadoPelaUltimaMensagem, ehSoAgradecimento, estadoPor } from '@/lib/crm'
 import { baterRelogio } from '@/lib/crmRelogio'
 import { nomeNaMensagem } from '@/lib/crmNomes'
 import { paginar } from '@/lib/paginar'
@@ -420,12 +420,45 @@ export async function POST(req: NextRequest) {
     const emoji = String(body?.emoji || '').trim()
     const idReacao = String(body?.id_whatsapp || '') || null
     if (!alvoId) return NextResponse.json({ ok: false })
-    if (body?.direcao === 'saida') return NextResponse.json({ ok: true, ignorada: 'do salão' })
 
     const { data: alvo } = await supabaseAdmin
-      .from('crm_mensagens').select('id, conversa_id, texto, direcao')
+      .from('crm_mensagens').select('id, conversa_id, texto, direcao, criado_em')
       .eq('salao_id', salaoId).eq('id_whatsapp', alvoId).maybeSingle()
     if (!alvo) return NextResponse.json({ ok: false, motivo: 'mensagem curtida não encontrada' })
+
+    // ── O coração do salão em cima da mensagem da cliente = tratada ────────
+    //
+    // Conferência de 19/09/2026: em 12 das 17 conversas de "Preciso agir" a
+    // recepção já tinha respondido -- com um ❤️ no celular, em cima do
+    // "obrigada" da cliente. O CRM não via a reação do salão e a conversa
+    // ficava presa na fila. Agora vale como resposta digitada no celular: a
+    // bola passa para a cliente ("Aguardando"). Só quando a curtida é na
+    // ÚLTIMA fala dela -- coração numa mensagem antiga não apaga o pedido
+    // que veio depois. Tirar a curtida não mexe em nada.
+    if (body?.direcao === 'saida') {
+      if (!emoji || alvo.direcao !== 'entrada') return NextResponse.json({ ok: true, ignorada: 'do salão' })
+      const { data: cv } = await supabaseAdmin
+        .from('crm_conversas').select('id, estado, aguardando_desde').eq('id', alvo.conversa_id).maybeSingle()
+      if (!cv || cv.estado !== 'acao_necessaria') return NextResponse.json({ ok: true, ignorada: 'do salão' })
+      const { data: depois } = await supabaseAdmin
+        .from('crm_mensagens').select('id')
+        .eq('conversa_id', cv.id).eq('direcao', 'entrada').gt('criado_em', alvo.criado_em).limit(1)
+      if (depois?.length) return NextResponse.json({ ok: true, ignorada: 'curtiu mensagem antiga' })
+      await supabaseAdmin.from('crm_conversas').update({
+        estado: 'aguardando',
+        proxima_acao: proximaAcaoPadrao('aguardando'),
+        aguardando_desde: null,
+        nao_lidas: 0,
+        atualizado_em: agora,
+      }).eq('id', cv.id)
+      await supabaseAdmin.from('crm_eventos').insert({
+        salao_id: salaoId, conversa_id: cv.id, tipo: 'mudou_estado',
+        de_estado: 'acao_necessaria', para_estado: 'aguardando',
+        autor_nome: 'Salão (pelo celular)',
+        detalhe: `Reagiu com ${emoji} à última mensagem da cliente`,
+      })
+      return NextResponse.json({ ok: true, tratada: true })
+    }
 
     // Tirou a curtida: some a linha que a registrava.
     if (!emoji) {
@@ -915,6 +948,7 @@ export async function POST(req: NextRequest) {
   // "Agendou" e uma "Confirmou". Medido em 12/09/2026: 14 conversas assim.
   const DIAS_MESMA_CONVERSA = 7
   let fechadaHaPouco = false
+  let reaberta = false
   if (!conversa) {
     const limite = new Date(Date.now() - DIAS_MESMA_CONVERSA * 864e5).toISOString()
     const { data: fechadas } = await supabaseAdmin
@@ -1079,6 +1113,27 @@ export async function POST(req: NextRequest) {
       nao_lidas: daCliente ? 1 : 0,
     }).select().maybeSingle()
     conversa = nova
+  } else if (fechadaHaPouco && daCliente && !(String(body?.tipo || 'texto') === 'texto' && ehSoAgradecimento(texto))) {
+    // ── Assunto novo numa conversa decidida: volta para a fila ─────────────
+    //
+    // Caso real, Camila, 19/09/2026: agendada, e no dia seguinte escreveu
+    // "queria acrescentar a mão também". A conversa continuava em "Agendadas"
+    // e só aparecia na fila até alguém abrir -- abriu sem responder, sumiu.
+    // Agora: se o que ela escreveu tem assunto (qualquer palavra fora da
+    // cortesia, áudio, foto, documento), a conversa volta para "Preciso agir"
+    // com o relógio ligado, como qualquer pedido. "Ok, obrigada, até terça"
+    // continua sem reabrir (bloco abaixo).
+    reaberta = true
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'acao_necessaria',
+      proxima_acao: `Responder: ela escreveu depois de "${estadoPor(conversa.estado).rotulo}"`,
+      aguardando_desde: agora,
+      ultima_em: agora,
+      ultima_de: 'cliente',
+      ultima_previa: texto.slice(0, 120),
+      nao_lidas: (conversa.nao_lidas || 0) + 1,
+      atualizado_em: agora,
+    }).eq('id', conversa.id)
   } else if (fechadaHaPouco) {
     // Conversa decidida há menos de 48h: a mensagem entra nela e a decisão
     // fica. Da cliente, sobe com não lida (a tela põe em "Preciso agir" até
@@ -1271,8 +1326,10 @@ export async function POST(req: NextRequest) {
     // escreveu depois da decisão, sem fingir que voltou para a fila.
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
-      para_estado: fechadaHaPouco ? conversa.estado : 'acao_necessaria',
+      de_estado: reaberta ? conversa.estado : null,
+      para_estado: (fechadaHaPouco && !reaberta) ? conversa.estado : 'acao_necessaria',
       autor_nome: contato.nome || 'Cliente',
+      detalhe: reaberta ? 'Escreveu com assunto numa conversa já decidida: voltou para a fila' : null,
     })
   }
 

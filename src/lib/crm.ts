@@ -323,6 +323,39 @@ const ASSINATURAS: [TipoSaida, RegExp[]][] = [
 ]
 
 /** Reconhece o tipo pela frase. `null` é mensagem comum, escrita para a pessoa. */
+// ── "Ok, obrigada" não é pedido ───────────────────────────────────────────
+//
+// Conferência de 19/09/2026: a cliente que escreve numa conversa já decidida
+// ("Agendou") pode estar agradecendo ("Perfeito, muito obrigada, até terça")
+// ou pedindo algo ("queria acrescentar a mão também"). A primeira não precisa
+// de ninguém; a segunda ficava invisível. Esta função separa as duas: só é
+// agradecimento se TODAS as palavras forem de cortesia (ou se não sobrar
+// palavra nenhuma -- emoji, figurinha). Qualquer palavra fora da lista é
+// assunto, e assunto volta para a fila.
+const PALAVRAS_DE_CORTESIA = new Set([
+  'ok', 'okk', 'okkk', 'oi', 'oii', 'ola', 'obrigada', 'obrigado', 'obrigadaa', 'obg', 'brigada', 'brigado',
+  'valeu', 'blz', 'beleza', 'certo', 'combinado', 'perfeito', 'perfeita', 'otimo', 'otima', 'maravilha',
+  'show', 'top', 'amem', 'sim', 'simm', 'confirmado', 'confirmada', 'confirmo', 'pode', 'ser', 'ate', 'la',
+  'amanha', 'logo', 'mais', 'breve', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo',
+  'feira', 'de', 'nada', 'por', 'gratidao', 'grata', 'grato', 'muito', 'muita', 'entao', 'entendi', 'ciente',
+  'isso', 'e', 'a', 'o', 'tambem', 'tb', 'vc', 'voce', 'voces', 'td', 'tudo', 'bem', 'bom', 'boa', 'dia',
+  'tarde', 'noite', 'ta', 'tah', 'estou', 'to', 'chegando', 'chego', 'ja', 'estarei', 'ai', 'agradeco',
+  'agradecida', 'agradecido', 'vou', 'estar', 'presente', 'nos', 'vemos', 'ok!', 'kk', 'kkk', 'rs', 'rsrs',
+  'querida', 'querido', 'linda', 'lindo', 'amor', 'flor', 'bjs', 'beijos', 'beijo', 'abraco', 'abracos',
+  // "Não, obrigada" / "Só isso mesmo" / "Por enquanto são esses" -- resposta ao
+  // "deseja acrescentar mais algum serviço?", não é pedido.
+  'nao', 'n', 'so', 'mesmo', 'seria', 'apenas', 'enquanto', 'sao', 'esses', 'essas', 'os', 'as', 'servico', 'servicos', 'hoje',
+])
+export function ehSoAgradecimento(texto: string | null | undefined): boolean {
+  const limpo = String(texto || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')          // emoji, pontuação, símbolos -> espaço
+    .replace(/\s+/g, ' ').trim()
+  if (!limpo) return true                   // só emoji / figurinha
+  return limpo.split(' ').every(p => PALAVRAS_DE_CORTESIA.has(p))
+}
+
 export function tipoDaMensagemDoSalao(texto: string | null | undefined): TipoSaida | null {
   const t = String(texto || '')
   if (t.trim().length < 12) return null
