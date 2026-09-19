@@ -40,6 +40,19 @@ type Mensagem = any
 // informacao diferente de "cliente antiga e esta sem resposta", e a primeira
 // e a que se perde para sempre se ninguem responder.
 const ETIQUETA_NOVA = 'cliente nova'
+// ── O botão e a aba têm o MESMO nome ─────────────────────────────────────────
+//
+// Pedido do dono (19/09/2026): "o que eu tenho embaixo tem que ter em cima".
+// Marcava "Pausar 7 dias" e não sabia em que aba procurar; "Profissionais"
+// nem aba tinha. Agora o nome da pasta sai daqui, e serve para a aba do topo
+// e para o botão de "Marcar esta conversa como". O prazo (amanhã, 7 dias) vai
+// como sufixo do botão, em cinza, sem mudar o nome.
+const NOME_PASTA_FABRICA: Record<string, string> = {
+  acao_necessaria: 'Preciso agir', aguardando: 'Aguardando', aguardando_promo: 'Listas',
+  feedback: 'Feedback', confirmacao: 'Confirmação', follow_up: 'Follow-up', pausada: 'Pausadas',
+  agendado: 'Agendadas', confirmado: 'Confirmadas', desmarcou: 'Desmarcou', sem_conversao: 'Não fechou',
+}
+const SUFIXO_DO_BOTAO: Record<string, string> = { follow_up: ' · amanhã', pausada: ' · 7 dias' }
 // Conversas ja decididas. Mensagem nova numa delas nao reabre; so avisa.
 const FECHADOS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
 const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
@@ -421,7 +434,22 @@ export default function CrmPage() {
   }, [comTempo])
 
   // O nome da aba em que a pessoa está, para caber no botão que abre a faixa.
-  const botoesDeEstado = useMemo(() => estadosVisiveis(estadosCfg), [estadosCfg])
+  const nomePasta = (chave: string): string => {
+    const aj = (estadosCfg.ajustes || []).find(a => a.chave === chave)
+    if (aj?.rotulo) return aj.rotulo
+    const ex = (estadosCfg.extras || []).find(e => e.chave === chave)
+    if (ex) return ex.rotulo
+    return NOME_PASTA_FABRICA[chave] || estadoPor(chave).rotulo
+  }
+  const botoesDeEstado = useMemo(() => estadosVisiveis(estadosCfg).map(e => ({
+    ...e, acao: nomePasta(e.chave) + (SUFIXO_DO_BOTAO[e.chave] || ''),
+  })), [estadosCfg])   // eslint-disable-line react-hooks/exhaustive-deps
+  // Contagem das pastas que o salão criou (Profissionais etc.), para a aba.
+  const contagemExtras = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const ex of estadosCfg.extras || []) m[ex.chave] = comTempo.filter(c => c.estado === ex.chave).length
+    return m
+  }, [estadosCfg, comTempo])
 
   const rotuloDoFiltro = useMemo(() => {
     const n = (x: number) => (x ? ` (${x})` : '')
@@ -429,19 +457,22 @@ export default function CrmPage() {
       case 'fila':        return `Preciso agir${n(contagem.fila)}`
       case 'novas':       return `Clientes novas${n(contagem.novas)}`
       case 'antigas':     return `Sem resposta${n(contagem.antigas)}`
-      case 'aguardando':  return `Aguardando${n(contagem.aguardando)}`
-      case 'aguardando_promo': return `Listas${n(contagem.promo)}`
-      case 'feedback':    return `Feedback${n(contagem.feedback)}`
-      case 'confirmacao': return `Confirmação${n(contagem.confirmacao)}`
-      case 'follow_up':   return `Follow-up${n(contagem.followUp)}`
-      case 'pausada':     return `Pausadas${n(contagem.pausadas)}`
-      case 'agendado':    return `Agendadas${n(contagem.agendadas)}`
-      case 'confirmado':  return `Confirmadas${n(contagem.confirmadas)}`
-      case 'desmarcou':   return `Desmarcou${n(contagem.desmarcadas)}`
-      case 'sem_conversao': return `Não fechou${n(contagem.perdidas)}`
-      default:            return 'Todas'
+      case 'aguardando':  return `${nomePasta('aguardando')}${n(contagem.aguardando)}`
+      case 'aguardando_promo': return `${nomePasta('aguardando_promo')}${n(contagem.promo)}`
+      case 'feedback':    return `${nomePasta('feedback')}${n(contagem.feedback)}`
+      case 'confirmacao': return `${nomePasta('confirmacao')}${n(contagem.confirmacao)}`
+      case 'follow_up':   return `${nomePasta('follow_up')}${n(contagem.followUp)}`
+      case 'pausada':     return `${nomePasta('pausada')}${n(contagem.pausadas)}`
+      case 'agendado':    return `${nomePasta('agendado')}${n(contagem.agendadas)}`
+      case 'confirmado':  return `${nomePasta('confirmado')}${n(contagem.confirmadas)}`
+      case 'desmarcou':   return `${nomePasta('desmarcou')}${n(contagem.desmarcadas)}`
+      case 'sem_conversao': return `${nomePasta('sem_conversao')}${n(contagem.perdidas)}`
+      default: {
+        const ex = (estadosCfg.extras || []).find(e => e.chave === filtro)
+        return ex ? `${ex.rotulo}${n(contagemExtras[ex.chave] || 0)}` : 'Todas'
+      }
     }
-  }, [filtro, contagem])
+  }, [filtro, contagem, contagemExtras, estadosCfg])   // eslint-disable-line react-hooks/exhaustive-deps
 
   // Por que se perdeu, com quantas. É este quadro que vira ação comercial:
   // quem caiu por preço recebe promoção, quem caiu por horário recebe encaixe.
@@ -975,43 +1006,50 @@ export default function CrmPage() {
                 texto={`Sem resposta (${contagem.antigas})`} />
             )}
             <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
-              texto={`Aguardando (${contagem.aguardando})`} />
+              texto={`${nomePasta('aguardando')} (${contagem.aguardando})`} />
             {contagem.promo > 0 && (
               <Aba ativo={filtro === 'aguardando_promo'} onClick={() => setFiltro('aguardando_promo')}
-                texto={`Listas (${contagem.promo})`} />
+                texto={`${nomePasta('aguardando_promo')} (${contagem.promo})`} />
             )}
             {contagem.feedback > 0 && (
               <Aba ativo={filtro === 'feedback'} onClick={() => setFiltro('feedback')}
-                texto={`Feedback (${contagem.feedback})`} />
+                texto={`${nomePasta('feedback')} (${contagem.feedback})`} />
             )}
             {contagem.confirmacao > 0 && (
               <Aba ativo={filtro === 'confirmacao'} onClick={() => setFiltro('confirmacao')}
-                texto={`Confirmação (${contagem.confirmacao})`} />
+                texto={`${nomePasta('confirmacao')} (${contagem.confirmacao})`} />
             )}
             {contagem.followUp > 0 && (
               <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
-                texto={`Follow-up (${contagem.followUp})`} />
+                texto={`${nomePasta('follow_up')} (${contagem.followUp})`} />
             )}
             {contagem.pausadas > 0 && (
               <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
-                texto={`Pausadas (${contagem.pausadas})`} />
+                texto={`${nomePasta('pausada')} (${contagem.pausadas})`} />
             )}
             {contagem.agendadas > 0 && (
               <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
-                texto={`Agendadas (${contagem.agendadas})`} />
+                texto={`${nomePasta('agendado')} (${contagem.agendadas})`} />
             )}
             {contagem.confirmadas > 0 && (
               <Aba ativo={filtro === 'confirmado'} onClick={() => setFiltro('confirmado')}
-                texto={`Confirmadas (${contagem.confirmadas})`} />
+                texto={`${nomePasta('confirmado')} (${contagem.confirmadas})`} />
             )}
             {contagem.desmarcadas > 0 && (
               <Aba ativo={filtro === 'desmarcou'} onClick={() => setFiltro('desmarcou')}
-                texto={`Desmarcou (${contagem.desmarcadas})`} />
+                texto={`${nomePasta('desmarcou')} (${contagem.desmarcadas})`} />
             )}
             {contagem.perdidas > 0 && (
               <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
-                texto={`Não fechou (${contagem.perdidas})`} />
+                texto={`${nomePasta('sem_conversao')} (${contagem.perdidas})`} />
             )}
+            {/* As pastas que o salão criou em Configurar (Profissionais, ...)
+                têm aba igual às de fábrica -- o botão de marcar já existia,
+                a aba para achar depois é que faltava. */}
+            {(estadosCfg.extras || []).map(ex => (contagemExtras[ex.chave] || 0) > 0 && (
+              <Aba key={ex.chave} ativo={filtro === ex.chave} onClick={() => setFiltro(ex.chave)}
+                texto={`${ex.rotulo} (${contagemExtras[ex.chave]})`} />
+            ))}
             <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
           </div>
         )}
