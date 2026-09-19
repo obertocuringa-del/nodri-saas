@@ -8,6 +8,7 @@ import { ehEstadoDoSalao } from '@/lib/crmEstados'
 import { carregarConfig as cfgConfirmacao, ehConfirmacao, enfileirar } from '@/lib/crmConfirmacao'
 import { datasDoSalao } from '@/lib/crmCampanhas'
 import { acharOuCriarContato } from '@/lib/crmContatos'
+import { boasVindasSePrimeiroContato } from '@/lib/crmBoasVindas'
 
 export const dynamic = 'force-dynamic'
 
@@ -1371,6 +1372,19 @@ export async function POST(req: NextRequest) {
       autor_nome: contato.nome || 'Cliente',
       detalhe: reaberta ? 'Escreveu com assunto numa conversa já decidida: voltou para a fila' : null,
     })
+  }
+
+  // ── Boas-vindas com o link de agendamento ─────────────────────────────────
+  // Só para quem ENTRA em contato (12 h de silêncio ou contato novo), e sem
+  // mexer no estado: a conversa fica em "Preciso agir" para a recepção.
+  if (daCliente && !replay) {
+    try {
+      const { data: sal } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
+      await boasVindasSePrimeiroContato({
+        salaoId, conversaId: conversa.id, estado: String(conversa.estado || ''),
+        texto, tipo: String(body?.tipo || 'texto'), quando, nomeSalao: String((sal as any)?.nome || ''),
+      })
+    } catch { /* boas-vindas é bônus; a entrada da mensagem já está feita */ }
   }
 
   return NextResponse.json({ ok: true, conversa_id: conversa.id, em_massa: emMassa })

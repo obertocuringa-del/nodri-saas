@@ -19,6 +19,7 @@ import {
 } from '@/lib/crmEstados'
 import AutomacaoFeedback from './AutomacaoFeedback'
 import Campanhas from './Campanhas'
+import BoasVindas from './BoasVindas'
 
 type Item = { id?: string; nome: string; texto?: string; atalho?: string; ativo?: boolean }
 
@@ -468,6 +469,8 @@ export default function ConfigCrmPage() {
           </section>
 
           {/* ── Automação de feedback (Avec → WhatsApp) ── */}
+          <BoasVindas />
+
           <AutomacaoFeedback />
 
           {/* ── Automações do Avec: confirmação, aviso ao profissional ── */}

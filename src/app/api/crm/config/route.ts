@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
 import { CHAVE_ESTADOS, lerConfigEstados, ESTADOS_VAZIO } from '@/lib/crmEstados'
+import { CHAVE_BOAS_VINDAS, carregarBoasVindas, linkPadraoDoSalao, TEXTO_PADRAO } from '@/lib/crmBoasVindas'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,9 +53,15 @@ export async function GET() {
     .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
   const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
 
+  // Boas-vindas automáticas: como está, e o link da página do salão para
+  // preencher quando ainda não há nenhum.
+  const boasVindas = await carregarBoasVindas(sess!.salaoId)
+  const linkPadrao = await linkPadraoDoSalao(sess!.salaoId)
+
   return NextResponse.json({
     modelos: modelos || [], motivos: motivos || [],
     origens: origens || [], desmarques: desmarques || [], estados,
+    boas_vindas: { ...boasVindas, link: boasVindas.link || linkPadrao, texto_padrao: TEXTO_PADRAO },
   })
 }
 
@@ -81,6 +88,26 @@ export async function POST(req: NextRequest) {
       atualizado_em: new Date().toISOString(),
     }, { onConflict: 'salao_id,chave' })
     return NextResponse.json({ ok: true, estados: cfg })
+  }
+
+  // ── Boas-vindas automáticas ──────────────────────────────────────────────
+  if (body?.lista === 'boas_vindas') {
+    const cfg = {
+      ligada: body?.ligada === true,
+      texto: String(body?.texto || '').trim().slice(0, 1500),
+      link: String(body?.link || '').trim().slice(0, 300),
+    }
+    if (cfg.ligada && !cfg.link) {
+      return NextResponse.json({ error: 'Para ligar, informe o link de agendamento.' }, { status: 400 })
+    }
+    if (cfg.link && !/^https?:\/\//i.test(cfg.link)) {
+      return NextResponse.json({ error: 'O link precisa começar com https://' }, { status: 400 })
+    }
+    await supabaseAdmin.from('salao_config').upsert({
+      salao_id: sess!.salaoId, chave: CHAVE_BOAS_VINDAS, valor: cfg,
+      atualizado_em: new Date().toISOString(),
+    }, { onConflict: 'salao_id,chave' })
+    return NextResponse.json({ ok: true, boas_vindas: cfg })
   }
 
   const lista = String(body?.lista || '') as Lista
