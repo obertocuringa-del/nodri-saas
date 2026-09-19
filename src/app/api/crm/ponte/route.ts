@@ -284,6 +284,20 @@ export async function POST(req: NextRequest) {
         }).eq('id', ct.id)
         ligados++
       }
+
+      // ── E o caminho inverso: o contato que só tinha telefone ganha o LID ──
+      //
+      // DANIEL, 19/09/2026: cadastro com telefone, conta do WhatsApp por LID.
+      // A ponte descobriu o LID na hora de enviar; guardando aqui, a próxima
+      // mensagem já sai pelo LID sem perguntar de novo. Só quando nenhum
+      // outro contato tem esse LID -- se tem, é caso de fusão, não daqui.
+      const jaComLid = new Set((contatos || []).map((c: any) => c.lid))
+      for (const par of comLid) {
+        if (jaComLid.has(par.lid)) continue
+        await supabaseAdmin.from('crm_contatos')
+          .update({ lid: par.lid })
+          .eq('salao_id', salaoId).eq('telefone', par.telefone).is('lid', null)
+      }
     }
     return NextResponse.json({ ok: true, ligados })
   }
