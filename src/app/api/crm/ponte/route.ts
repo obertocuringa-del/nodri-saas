@@ -877,6 +877,18 @@ export async function POST(req: NextRequest) {
   const telefone = String(body?.telefone || '')
   const texto = String(body?.texto || '')
   const daCliente = body?.direcao !== 'saida'
+  // ── A hora da mensagem é a do WhatsApp, não a da chegada ─────────────────
+  //
+  // Depois de uma queda a ponte entrega centenas de mensagens de uma vez
+  // (772 em 18/09/2026 às 09:19). Todas ficavam com a hora da chegada: a
+  // ordem embaralhava, a prévia da conversa mostrava a mensagem errada e o
+  // volume de "saída em quinze minutos" marcava tudo como disparo. A ponte
+  // manda `em` (segundos, hora do aparelho); sem ele, vale agora.
+  const emOriginal = Number(body?.em || 0) > 0 ? new Date(Number(body.em) * 1000) : null
+  const quando = (emOriginal && emOriginal.getTime() < Date.now() + 120e3) ? emOriginal.toISOString() : agora
+  // Mensagem com mais de meia hora é reentrega de histórico: as regras de
+  // disparo olham o ritmo de AGORA e não têm o que dizer sobre ela.
+  const replay = Date.now() - Date.parse(quando) > 30 * 60e3
   if (!telefone && !body?.lid) {
     return NextResponse.json({ error: 'telefone ou lid é obrigatório' }, { status: 400 })
   }
@@ -1007,7 +1019,7 @@ export async function POST(req: NextRequest) {
     falouRecente = (count || 0) > 0
   }
 
-  if (!daCliente && !emMassa && !falouRecente && texto.trim().length > 0) {
+  if (!daCliente && !emMassa && !falouRecente && !replay && texto.trim().length > 0) {
     const desde = new Date(Date.now() - JANELA_DISPARO_MIN * 60000).toISOString()
     // Traz TUDO que saiu na janela, não só o texto igual: o disparo do salão é
     // personalizado ("Olá *LUCIANA*, tudo bem?" / "Olá *Thatiana*, tudo bem?")
@@ -1075,7 +1087,20 @@ export async function POST(req: NextRequest) {
     // quem está em Preciso agir, só o TEXTO decide: mesma frase ou mesmo molde
     // saindo para outras pessoas é disparo; qualquer outra coisa é resposta, e
     // resposta tira a conversa da fila.
-    if (!emMassa) {
+    //
+    // ── Mas só para texto de molde ─────────────────────────────────────────
+    //
+    // Caso real, 19/09/2026 16:42: a recepção digitou "podemos agendar para
+    // amanhã ?" para uma cliente que tinha escrito "Oi" cinco dias antes. Na
+    // mesma tarde saíam avisos "seu cliente chegou" para quatro profissionais
+    // e respostas para outras clientes -- quatro conversas em quinze minutos
+    // é qualquer tarde de salão. A frase foi marcada como disparo e a cliente
+    // foi parar em "Listas". Campanha é texto de molde, longo; frase curta
+    // digitada na hora nunca é campanha só por causa do movimento da tarde.
+    // Texto repetido (as duas regras acima) continua valendo em qualquer
+    // tamanho.
+    const TAMANHO_DE_MOLDE = 80
+    if (!emMassa && texto.trim().length >= TAMANHO_DE_MOLDE) {
       const pessoas = new Set(outras.map((m: any) => m.conversa_id))
       if (pessoas.size >= 4) emMassa = true
     }
@@ -1106,8 +1131,8 @@ export async function POST(req: NextRequest) {
       estado,
       importada: disparo,
       proxima_acao: proximaAcaoPadrao(estado as any),
-      aguardando_desde: daCliente ? agora : null,
-      ultima_em: agora,
+      aguardando_desde: daCliente ? quando : null,
+      ultima_em: quando,
       ultima_de: daCliente ? 'cliente' : 'salao',
       ultima_previa: texto.slice(0, 120),
       nao_lidas: daCliente ? 1 : 0,
@@ -1127,8 +1152,8 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('crm_conversas').update({
       estado: 'acao_necessaria',
       proxima_acao: `Responder: ela escreveu depois de "${estadoPor(conversa.estado).rotulo}"`,
-      aguardando_desde: agora,
-      ultima_em: agora,
+      aguardando_desde: quando,
+      ultima_em: quando,
       ultima_de: 'cliente',
       ultima_previa: texto.slice(0, 120),
       nao_lidas: (conversa.nao_lidas || 0) + 1,
@@ -1141,7 +1166,7 @@ export async function POST(req: NextRequest) {
     // nada, como em qualquer outra pasta fechada.
     if (daCliente || !disparo) {
       await supabaseAdmin.from('crm_conversas').update({
-        ultima_em: agora,
+        ultima_em: quando,
         ultima_de: daCliente ? 'cliente' : 'salao',
         ultima_previa: texto.slice(0, 120),
         nao_lidas: daCliente ? (conversa.nao_lidas || 0) + 1 : 0,
@@ -1155,8 +1180,8 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('crm_conversas').update({
       estado: 'acao_necessaria',
       proxima_acao: proximaAcaoPadrao('acao_necessaria'),
-      aguardando_desde: conversa.aguardando_desde || agora,
-      ultima_em: agora,
+      aguardando_desde: conversa.aguardando_desde || quando,
+      ultima_em: quando,
       ultima_de: 'cliente',
       ultima_previa: texto.slice(0, 120),
       nao_lidas: (conversa.nao_lidas || 0) + 1,
@@ -1169,7 +1194,7 @@ export async function POST(req: NextRequest) {
       estado: 'aguardando',
       proxima_acao: proximaAcaoPadrao('aguardando'),
       aguardando_desde: null,
-      ultima_em: agora,
+      ultima_em: quando,
       ultima_de: 'salao',
       ultima_previa: texto.slice(0, 120),
       nao_lidas: 0,
@@ -1199,7 +1224,7 @@ export async function POST(req: NextRequest) {
       estado: destino,
       proxima_acao: proximaAcaoPadrao(destino),
       aguardando_desde: null,
-      ultima_em: agora,
+      ultima_em: quando,
       ultima_de: 'salao',
       ultima_previa: texto.slice(0, 120),
       atualizado_em: agora,
@@ -1220,7 +1245,8 @@ export async function POST(req: NextRequest) {
     em_massa: emMassa,
     autor_nome: daCliente ? null : 'Celular do salão',
     id_whatsapp: idWpp,
-    enviado_em: daCliente ? null : agora,
+    enviado_em: daCliente ? null : quando,
+    criado_em: quando,
   })
   if (erroMsg && !String(erroMsg.message).includes('duplicate')) {
     return NextResponse.json({ error: erroMsg.message }, { status: 500 })

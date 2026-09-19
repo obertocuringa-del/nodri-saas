@@ -939,6 +939,9 @@ async function abrirDeVerdade(salaoId, registroSessao) {
           // disparo apagar a pergunta da cliente que ainda está sem
           // resposta — quem decide é lá, a ponte só conta o que viu.
           em_massa: !!m.broadcast,
+          // Hora do aparelho (segundos). Depois de uma queda chegam centenas
+          // de uma vez; sem isto o NODRI datava tudo com a hora da chegada.
+          em: segundos(m) || null,
         })
         // A marca de lista de transmissão fica dita no log. O campo existe no
         // protocolo, mas se ele vem preenchido de verdade neste fluxo só se

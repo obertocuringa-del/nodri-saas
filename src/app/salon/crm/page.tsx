@@ -2041,7 +2041,8 @@ function PainelCliente({ c }: { c: Conversa }) {
                   <div key={i} className="mb-1.5">
                     <p className="text-[11.5px] leading-snug break-words" style={{ color: '#3a3733' }}>{s.nome}</p>
                     <p className="text-[10.5px]" style={{ color: '#8f877f' }}>
-                      {s.vezes}x{s.ultima ? ` · última ${String(s.ultima).slice(0, 5)}` : ''}
+                      {/* Data inteira: "última 17/12" não dizia de que ano era (19/09/2026). */}
+                      {s.vezes}x{s.ultima ? ` · última ${String(s.ultima)}` : ''}
                     </p>
                   </div>
                 ))}
