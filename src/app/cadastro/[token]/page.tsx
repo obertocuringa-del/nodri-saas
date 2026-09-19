@@ -49,6 +49,7 @@ export default function CadastroPublicoPage() {
   const [dataNasc, setDataNasc] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [instagram, setInstagram] = useState('')
   const [vinculo, setVinculo] = useState('')
   const [cep, setCep] = useState('')
   const [bairro, setBairro] = useState('')
@@ -142,6 +143,7 @@ export default function CadastroPublicoPage() {
       data_aniversario: dataNasc || null,
       email,
       telefone,
+      instagram,
       vinculo,
       endereco: [bairro, cidade && uf ? `${cidade}-${uf}` : cidade || uf, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', '),
       contato_responsavel: JSON.stringify({ nome: nomeResp, tel: telResp }),
@@ -292,6 +294,7 @@ export default function CadastroPublicoPage() {
               {(bairro || cidade) && <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>{[bairro, cidade && uf ? `${cidade}-${uf}` : cidade, cep ? `CEP: ${cep}` : ''].filter(Boolean).join(', ')}</p>}
             </div>
             {inp('Telefone (WhatsApp)', telefone, setTelefone, { placeholder: '(00) 00000-0000' })}
+            {inp('Instagram', instagram, setInstagram, { placeholder: '@seuperfil' })}
             <div>
               <label style={{ fontSize: '12px', fontWeight: 600, color: '#555', display: 'block', marginBottom: '4px' }}>Vínculo Trabalhista</label>
               <select value={vinculo} onChange={e => setVinculo(e.target.value)}

@@ -16,6 +16,7 @@ interface Servico {
   preco_min: number | null
   comissao_valor: number | null
   observacao: string | null
+  descricao: string | null
   ciclo_retorno_dias: number | null
   ativo: boolean
 }
@@ -43,7 +44,7 @@ export default function ServicosPage() {
   const [categoriasAbertas, setCategoriasAbertas] = useState<Record<string, boolean>>({})
   const [editando, setEditando] = useState<Servico | null>(null)
   const [novo, setNovo] = useState(false)
-  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
+  const [form, setForm] = useState({ categoria: '', nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', descricao: '', ciclo_retorno_dias: '' })
   // O tempo do procedimento mora em salao_config, não na linha do serviço --
   // por isso é um mapa por id, carregado à parte.
   const [tempos, setTempos] = useState<MapaTempos>({})
@@ -96,7 +97,7 @@ export default function ServicosPage() {
   }
 
   function iniciarNovo() {
-    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', ciclo_retorno_dias: '' })
+    setForm({ categoria: CATEGORIAS[0], nome: '', preco_tipo: 'fixo', preco: '', comissao_valor: '', observacao: '', descricao: '', ciclo_retorno_dias: '' })
     setTempoForm({ trabalha1: '', pausa: '', trabalha2: '' })
     setEditando(null)
     setNovo(true)
@@ -124,7 +125,7 @@ export default function ServicosPage() {
   function iniciarNovoPreenchido(d: PreenchimentoServico) {
     setForm({
       categoria: d.categoria || CATEGORIAS[0], nome: d.nome, preco_tipo: 'fixo', preco: d.preco,
-      comissao_valor: '', observacao: '', ciclo_retorno_dias: '',
+      comissao_valor: '', observacao: '', descricao: '', ciclo_retorno_dias: '',
     })
     setTempoForm({ trabalha1: '', pausa: '', trabalha2: '' })
     setEditando(null)
@@ -144,6 +145,7 @@ export default function ServicosPage() {
       preco: String(s.preco_fixo || s.preco_min || ''),
       comissao_valor: String(s.comissao_valor || ''),
       observacao: s.observacao || '',
+      descricao: s.descricao || '',
       ciclo_retorno_dias: String(s.ciclo_retorno_dias || '')
     })
     const t = tempos[s.id]
@@ -329,6 +331,18 @@ export default function ServicosPage() {
               <input value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} className={inputCls} placeholder="Ex: variações disponíveis" />
             </div>
 
+            {/* ── Descrição do procedimento ──
+                A observação é a ressalva que vai junto com o PREÇO ("varia
+                conforme o produto"). Isto aqui é outra coisa: o que É o
+                procedimento, para a recepção mandar pelo CRM quando a cliente
+                pergunta "o que é realinhamento?". Botão "Serviços" da conversa. */}
+            <div>
+              <label className={labelCls}>Descrição do procedimento (o que é — a recepção manda pelo CRM)</label>
+              <textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} rows={4}
+                className={inputCls + ' resize-y'} placeholder="Ex: O realinhamento capilar alinha os fios sem alisar totalmente, reduz o volume e o frizz e dura de 3 a 4 meses. Indicado para..." />
+              <p className="text-[10px] text-nodri-t3 mt-1">Aparece no botão Serviços da conversa do CRM. Sem descrição, o serviço fica cinza lá.</p>
+            </div>
+
             <div>
               <label className={labelCls}>Ciclo de retorno (dias)</label>
               <input type="number" min="1" value={form.ciclo_retorno_dias} onChange={e => setForm(f => ({ ...f, ciclo_retorno_dias: e.target.value }))} className={inputCls} placeholder="Ex: 7 para manicure, 90 para realinhamento" />
@@ -431,6 +445,7 @@ export default function ServicosPage() {
                                 </span>
                               )}
                               {s.observacao && <p className="text-[10px] text-nodri-t3 w-full truncate">{s.observacao}</p>}
+                              {s.descricao && <p className="text-[10px] text-nodri-t3 w-full truncate" title={s.descricao}>Descrição: {s.descricao}</p>}
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">

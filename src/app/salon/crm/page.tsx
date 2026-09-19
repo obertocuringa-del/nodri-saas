@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, Pencil, Trash2, SmilePlus, Forward } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
@@ -91,6 +91,9 @@ export default function CrmPage() {
   // para o item SUMIR da lista: quem monta "corte + escova + hidratação" no
   // clique perde a conta de onde parou, e manda o mesmo serviço duas vezes.
   const [inseridos, setInseridos] = useState<string[]>([])
+  // Os painéis de Preços, Serviços e Mídias sociais abrem em cima da
+  // fileira de mensagens prontas -- um de cada vez. Trocar de conversa fecha.
+  const [painel, setPainel] = useState<null | 'precos' | 'servicos' | 'midias'>(null)
   const [emojisAberto, setEmojisAberto] = useState(false)
   // A faixa de abas nasce fechada: a tela tem informacao demais, e a conversa
   // e a caixa de escrever valem mais altura que uma linha de botoes.
@@ -205,7 +208,7 @@ export default function CrmPage() {
   }
 
   async function abrirConversa(c: Conversa) {
-    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null); setInseridos([]); setEmojisAberto(false); setEditando(null); setReagindoA(null); setEncaminhando(null)
+    setAberta(c); setMensagens([]); setFecharAberto(false); setDesmarqueAberto(false); setCitando(null); setInseridos([]); setPainel(null); setEmojisAberto(false); setEditando(null); setReagindoA(null); setEncaminhando(null)
     try {
       // Assumir primeiro: a trava vale desde o instante em que a pessoa abre,
       // não depois que as mensagens carregam.
@@ -1191,18 +1194,41 @@ export default function CrmPage() {
                         className="p-0.5" style={{ color: '#8f877f' }}><X size={13} /></button>
                     </div>
                   )}
-                  <PainelPrecos onInserir={inserirNoTexto} inseridos={inseridos} />
-                  {modelos.length > 0 && (
-                    <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
-                      {modelos.map(m => (
-                        <button key={m.id} onClick={() => usarModelo(m)} title={m.texto}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94] transition duration-100 hover:brightness-95 active:scale-[.94]"
-                          style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
-                          {m.nome}
-                        </button>
-                      ))}
-                    </div>
+                  {/* ── Painéis que abrem em cima da fileira ───────────────
+                      Preços e Serviços são a mesma árvore (categoria → serviço)
+                      da tabela de preços; um insere o valor, o outro insere a
+                      descrição do procedimento. Mídias sociais lista o
+                      Instagram de quem atende. Nada sai daqui sem Enter. */}
+                  {painel === 'precos' && (
+                    <PainelPrecos modo="precos" onInserir={inserirNoTexto} inseridos={inseridos} onFechar={() => setPainel(null)} />
                   )}
+                  {painel === 'servicos' && (
+                    <PainelPrecos modo="descricoes" onInserir={inserirNoTexto} inseridos={inseridos} onFechar={() => setPainel(null)} />
+                  )}
+                  {painel === 'midias' && (
+                    <PainelMidias profissionais={profissionais} onInserir={inserirNoTexto} onFechar={() => setPainel(null)} />
+                  )}
+
+                  {/* ── Uma fileira só ──────────────────────────────────────
+                      Preços, Serviços e Mídias sociais moram junto com as
+                      mensagens prontas. O Preços ficava numa linha própria em
+                      cima desta (19/09/2026): era uma linha de tela a menos
+                      para a caixa de texto o dia inteiro. */}
+                  <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
+                    <ChipPainel ativo={painel === 'precos'} onClick={() => setPainel(v => v === 'precos' ? null : 'precos')}
+                      icone={<Tag size={12} />} texto="Preços" />
+                    <ChipPainel ativo={painel === 'servicos'} onClick={() => setPainel(v => v === 'servicos' ? null : 'servicos')}
+                      icone={<Scissors size={12} />} texto="Serviços" />
+                    <ChipPainel ativo={painel === 'midias'} onClick={() => setPainel(v => v === 'midias' ? null : 'midias')}
+                      icone={<Instagram size={12} />} texto="Mídias sociais" />
+                    {modelos.map(m => (
+                      <button key={m.id} onClick={() => usarModelo(m)} title={m.texto}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94]"
+                        style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
+                        {m.nome}
+                      </button>
+                    ))}
+                  </div>
                   {/* ── Quem está assinando ────────────────────────────────
                       Isto era uma linha fixa com todos os nomes, e linha fixa
                       custa altura de tela o dia inteiro para servir em dois
@@ -1305,7 +1331,7 @@ export default function CrmPage() {
                         : { background: '#faf9f7', border: '1px solid #e8e6e0', color: '#6b6860' }}>
                       {gravando ? <Square size={15} /> : <Mic size={15} />}
                     </button>
-                    <textarea ref={areaTexto} value={texto} onChange={e => setTexto(e.target.value)} rows={3}
+                    <textarea ref={areaTexto} value={texto} onChange={e => setTexto(e.target.value)} rows={5}
                       onKeyDown={e => {
                         if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
                           e.preventDefault(); envolver('*'); return
@@ -1327,7 +1353,7 @@ export default function CrmPage() {
                       }}
                       placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
                       className="flex-1 px-3.5 py-3 rounded-xl text-[13.5px] resize-none focus:outline-none leading-relaxed"
-                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a', minHeight: 78, maxHeight: 320 }} />
+                      style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a', minHeight: 120, maxHeight: 320 }} />
                     <button onClick={() => enviar()} disabled={!texto.trim() || anexando}
                       className="px-4 py-3 rounded-xl font-bold text-[13px] flex items-center gap-1.5 disabled:opacity-40"
                       style={{ background: '#5b4fcf', color: '#fff' }}>
@@ -1611,7 +1637,28 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
             <User size={12} /> Ficha
           </button>
         )}
+        {/* Próxima ação e origem na MESMA linha do nome (19/09/2026): a
+            segunda linha do cabeçalho custava altura que a caixa de texto
+            precisava mais. O texto da próxima ação corta com reticências e o
+            inteiro fica no título (passar o mouse). */}
+        {c.proxima_acao && (
+          <p className="text-[11px] min-w-0 truncate" style={{ color: '#6b6860', maxWidth: 360 }} title={c.proxima_acao}>
+            <strong>Próxima ação:</strong> {c.proxima_acao}
+          </p>
+        )}
         <div className="flex-1" />
+        {/* Origem na conversa, nao no contato: a mesma cliente pode voltar por
+            um anuncio hoje e por indicacao daqui a um ano, e sao duas
+            oportunidades com origens diferentes. */}
+        <label className="text-[11px] flex items-center gap-1.5 flex-shrink-0" style={{ color: '#8f877f' }}>
+          Veio de
+          <select value={c.origem || ''} onChange={e => onOrigem(e.target.value)}
+            className="px-2 py-1 rounded-lg text-[11px] font-bold focus:outline-none"
+            style={{ background: c.origem ? '#f1eefc' : '#faf9f7', color: c.origem ? '#5b4fcf' : '#8f877f', border: '1px solid #e8e6e0' }}>
+            <option value="">não informado</option>
+            {(origens || []).map((o: any) => <option key={o.id} value={o.nome}>{o.nome}</option>)}
+          </select>
+        </label>
         <button onClick={() => { setStatusAberto(v => !v); setFecharAberto(false); setDesmarqueAberto(false) }}
           className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-1.5 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
           style={statusAberto
@@ -1666,27 +1713,6 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           </div>
         </div>
       )}
-
-      <div className="flex items-center gap-3 mt-2 flex-wrap">
-        {c.proxima_acao && (
-          <p className="text-[11.5px]" style={{ color: '#6b6860' }}>
-            <strong>Próxima ação:</strong> {c.proxima_acao}
-          </p>
-        )}
-        <div className="flex-1" />
-        {/* Origem na conversa, nao no contato: a mesma cliente pode voltar por
-            um anuncio hoje e por indicacao daqui a um ano, e sao duas
-            oportunidades com origens diferentes. */}
-        <label className="text-[11px] flex items-center gap-1.5" style={{ color: '#8f877f' }}>
-          Veio de
-          <select value={c.origem || ''} onChange={e => onOrigem(e.target.value)}
-            className="px-2 py-1 rounded-lg text-[11px] font-bold focus:outline-none"
-            style={{ background: c.origem ? '#f1eefc' : '#faf9f7', color: c.origem ? '#5b4fcf' : '#8f877f', border: '1px solid #e8e6e0' }}>
-            <option value="">não informado</option>
-            {(origens || []).map((o: any) => <option key={o.id} value={o.nome}>{o.nome}</option>)}
-          </select>
-        </label>
-      </div>
 
       {/* Desmarque sem motivo é um horário perdido sem explicação: some do
           relatório e não vira decisão nenhuma. */}
@@ -2061,24 +2087,37 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: any }) {
 //
 // Os valores vêm do catálogo do próprio NODRI. Mexeu lá, mudou aqui no mesmo
 // instante — não existe segunda lista para alguém esquecer de atualizar.
-function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, chave?: string) => void; inseridos: string[] }) {
-  const [aberto, setAberto] = useState(false)
+// Dois modos, uma árvore:
+//   precos      → categoria → serviço/produto, clicou insere "Nome — R$ x"
+//   descricoes  → só serviços, clicou insere "*Nome*" + a descrição do
+//                 procedimento (cadastrada em Serviços). É o botão "Serviços"
+//                 da conversa: "o que é realinhamento?" respondido em um clique.
+// Quem abre e fecha é o pai (a fileira de chips); aqui só o conteúdo.
+function PainelPrecos({ modo, onInserir, inseridos, onFechar }: {
+  modo: 'precos' | 'descricoes'
+  onInserir: (linha: string, chave?: string) => void
+  inseridos: string[]
+  onFechar: () => void
+}) {
+  const descrever = modo === 'descricoes'
   const [dados, setDados] = useState<any>(null)
   const [lado, setLado] = useState<'servicos' | 'produtos'>('servicos')
   const [grupo, setGrupo] = useState<string>('')
   const [busca, setBusca] = useState('')
 
   useEffect(() => {
-    if (!aberto || dados) return
+    if (dados) return
     fetch('/api/crm/precos').then(r => r.ok ? r.json() : null)
       .then(d => setDados(d || { servicos: [], produtos: [] })).catch(() => {})
-  }, [aberto, dados])
+  }, [dados])
 
   // O que já foi clicado sai da lista. Montando "corte + escova + hidratação"
   // no clique, a pessoa perde a conta de onde parou e manda o mesmo serviço
   // duas vezes -- e quem recebe a conta repetida é a cliente.
   const jaFoi = useMemo(() => new Set(inseridos), [inseridos])
-  const chaveDe = (grupoNome: string, it: any) => grupoNome + '|' + it.nome
+  // Preço e descrição do mesmo serviço são inserções diferentes: mandar o
+  // valor não impede mandar depois o que é o procedimento.
+  const chaveDe = (grupoNome: string, it: any) => (descrever ? 'desc|' : '') + grupoNome + '|' + it.nome
 
   const grupos: any[] = useMemo(() => (dados?.[lado] || [])
     .map((g: any) => ({ ...g, itens: g.itens.filter((it: any) => !jaFoi.has(chaveDe(g.grupo, it))) }))
@@ -2104,45 +2143,58 @@ function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, cha
   // link -- mas não dá para clicar: inserir "Corte — R$ 0,00" na conversa é
   // pior do que não ter o botão. Quem vê sabe que o serviço existe e que o
   // preço ainda não foi cadastrado.
-  const rotulo = (it: any) =>
-    it.preco
+  const rotulo = (it: any) => {
+    if (descrever) {
+      const valor = it.preco ? ` · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}` : ''
+      return it.descricao ? `${it.nome}${valor}` : `${it.nome} · sem descrição`
+    }
+    return it.preco
       ? `${it.nome}${it.unidade ? ` ${it.unidade}` : ''} · ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toFixed(2).replace('.', ',')}`
       : `${it.nome} · sem preço na tabela`
+  }
 
   const linha = (it: any) => {
+    if (descrever) return `*${it.nome}*\n${it.descricao}`
     const nome = it.unidade ? `${it.nome} (${it.unidade})` : it.nome
     const base = `${nome} — ${it.apartir ? 'a partir de ' : ''}R$ ${Number(it.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
     return it.observacao ? base + '\n' + it.observacao : base
   }
-
-  if (!aberto) {
-    return (
-      <button onClick={() => setAberto(true)}
-        className="mb-2 px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1"
-        style={{ background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
-        <Tag size={12} /> Preços
-      </button>
-    )
-  }
+  // No modo descrição o que desabilita o botão é faltar a descrição; no de
+  // preços, faltar o preço.
+  const semNada = (it: any) => (descrever ? !it.descricao : !it.preco)
+  const dica = descrever ? 'Escreva a descrição do procedimento em Serviços para poder inserir' : 'Cadastre o preço em Serviços para poder inserir'
+  // No modo descrição a ressalva do preço não entra no botão: o que se vê é
+  // o começo da descrição, para saber o que vai antes de clicar.
+  const obsDe = (it: any) => descrever
+    ? (it.descricao ? String(it.descricao).replace(/\s+/g, ' ').slice(0, 90) + (String(it.descricao).length > 90 ? '…' : '') : null)
+    : it.observacao
 
   return (
     <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fdfcfa', borderColor: '#e8e6e0' }}>
       <div className="flex items-center gap-1.5 mb-2">
-        <button onClick={() => { setLado('servicos'); setGrupo('') }}
-          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-          style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
-          Serviço
-        </button>
-        <button onClick={() => { setLado('produtos'); setGrupo('') }}
-          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-          style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
-          Produto
-        </button>
+        {descrever ? (
+          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold" style={{ background: '#2f6b4f', color: '#fff' }}>
+            O que é o serviço
+          </span>
+        ) : (
+          <>
+            <button onClick={() => { setLado('servicos'); setGrupo('') }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+              style={lado === 'servicos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
+              Serviço
+            </button>
+            <button onClick={() => { setLado('produtos'); setGrupo('') }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+              style={lado === 'produtos' ? { background: '#2f6b4f', color: '#fff' } : { background: '#fff', color: '#6b6860', border: '1px solid #e8e6e0' }}>
+              Produto
+            </button>
+          </>
+        )}
         <input value={busca} onChange={e => setBusca(e.target.value)}
           placeholder={lado === 'servicos' ? 'Buscar serviço...' : 'Buscar produto...'}
           className="flex-1 min-w-0 px-2.5 py-1 rounded-lg text-[11.5px] focus:outline-none"
           style={{ background: '#fff', border: '1px solid #e8e6e0', color: '#1a1a1a' }} />
-        <button onClick={() => { setAberto(false); setBusca(''); setGrupo('') }} title="Fechar"
+        <button onClick={() => { setBusca(''); setGrupo(''); onFechar() }} title="Fechar"
           className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
       </div>
 
@@ -2150,9 +2202,11 @@ function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, cha
 
       {dados && grupos.length === 0 && (
         <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
-          {lado === 'servicos'
-            ? 'Nenhum serviço com preço no catálogo. Cadastre em Serviços.'
-            : 'Nenhum produto com preço no catálogo. Cadastre em Produtos.'}
+          {descrever
+            ? 'Nenhum serviço no catálogo. Cadastre em Serviços e escreva a descrição do procedimento.'
+            : lado === 'servicos'
+              ? 'Nenhum serviço com preço no catálogo. Cadastre em Serviços.'
+              : 'Nenhum produto com preço no catálogo. Cadastre em Produtos.'}
         </p>
       )}
 
@@ -2161,9 +2215,9 @@ function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, cha
         <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
           {achados.length === 0 && <p className="text-[11.5px]" style={{ color: '#8f877f' }}>Nada com esse nome.</p>}
           {achados.map((it, i) => (
-            <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
+            <BotaoPreco key={i} obs={obsDe(it)} semPreco={semNada(it)} dica={dica}
               texto={rotulo(it)}
-              onClick={() => onInserir(linha(it), (it.grupo || atual?.grupo || '') + '|' + it.nome)} />
+              onClick={() => onInserir(linha(it), chaveDe(it.grupo || atual?.grupo || '', it))} />
           ))}
         </div>
       )}
@@ -2188,21 +2242,126 @@ function PainelPrecos({ onInserir, inseridos }: { onInserir: (linha: string, cha
           </button>
           <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
             {atual.itens.map((it: any, i: number) => (
-                <BotaoPreco key={i} obs={it.observacao} semPreco={!it.preco}
+                <BotaoPreco key={i} obs={obsDe(it)} semPreco={semNada(it)} dica={dica}
                 texto={rotulo(it)}
-                onClick={() => onInserir(linha(it), (it.grupo || atual?.grupo || '') + '|' + it.nome)} />
+                onClick={() => onInserir(linha(it), chaveDe(it.grupo || atual?.grupo || '', it))} />
             ))}
           </div>
         </>
       )}
 
       <p className="text-[10px] mt-2" style={{ color: '#8f877f' }}>
-        {lado === 'servicos'
+        {descrever
+          ? 'A descrição de cada procedimento é escrita em Serviços, no cadastro do serviço.'
+          : lado === 'servicos'
           ? 'Serviço é a mesma lista da tabela de preços do link de promoções, com a observação junto — o que você oculta lá não aparece aqui.'
           : dados?.fonteProdutos === 'catalogo'
             ? 'Produto vindo do catálogo da calculadora: importe o relatório de produtos vendidos para usar o preço de venda.'
             : 'Produto vem do relatório de produtos vendidos, pelo maior valor já cobrado — sem desconto.'}
         {' '}Clicar acrescenta uma linha na resposta. Nada sai daqui sem você clicar em Enviar.
+      </p>
+    </div>
+  )
+}
+
+// O chip verde da fileira que abre um painel (Preços, Serviços, Mídias
+// sociais). Aceso enquanto o painel está aberto; clicar de novo fecha.
+function ChipPainel({ ativo, onClick, icone, texto }: { ativo: boolean; onClick: () => void; icone: React.ReactNode; texto: string }) {
+  return (
+    <button onClick={onClick} type="button"
+      className="px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94]"
+      style={ativo
+        ? { background: '#2f6b4f', color: '#fff', border: '1px solid #2f6b4f' }
+        : { background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
+      {icone} {texto}
+    </button>
+  )
+}
+
+// ── Mídias sociais ──────────────────────────────────────────────────────────
+//
+// "Me passa o Instagram da Vanessa?" -- a recepção ia procurar no celular.
+// O Instagram fica no cadastro do profissional (ficha e link público) e aqui
+// vira uma lista com marcação: Enviar todos ou Enviar marcados. Os dois
+// escrevem na caixa de texto; sai com Enter, como tudo nesta tela.
+//
+// O perfil vai como link (instagram.com/perfil), que o WhatsApp deixa
+// clicável -- "@perfil" solto a cliente tem que digitar.
+function perfilInstagram(bruto: string) {
+  let v = String(bruto || '').trim()
+  v = v.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '').trim()
+  return v
+}
+
+function PainelMidias({ profissionais, onInserir, onFechar }: {
+  profissionais: any[]
+  onInserir: (linha: string) => void
+  onFechar: () => void
+}) {
+  const lista = useMemo(() => (profissionais || [])
+    .map((p: any) => ({ id: p.id, nome: p.nome, perfil: perfilInstagram(p.instagram) }))
+    .filter((p: any) => p.perfil), [profissionais])
+  const [marcados, setMarcados] = useState<string[]>([])
+  const alternar = (id: string) => setMarcados(m => (m.includes(id) ? m.filter(x => x !== id) : [...m, id]))
+
+  const montar = (quais: any[]) => {
+    if (!quais.length) return
+    const linhas = quais.map(p => `${p.nome}: instagram.com/${p.perfil}`)
+    onInserir((quais.length > 1 ? 'Nossos profissionais no Instagram:\n' : '') + linhas.join('\n'))
+    setMarcados([])
+    onFechar()
+  }
+
+  return (
+    <div className="mb-2 rounded-xl border p-2.5" style={{ background: '#fdfcfa', borderColor: '#e8e6e0' }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1" style={{ background: '#2f6b4f', color: '#fff' }}>
+          <Instagram size={12} /> Instagram dos profissionais
+        </span>
+        <div className="flex-1" />
+        <button onClick={() => montar(lista)} disabled={lista.length === 0}
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] disabled:opacity-40"
+          style={{ background: '#5b4fcf', color: '#fff' }}>
+          Enviar todos
+        </button>
+        <button onClick={() => montar(lista.filter(p => marcados.includes(p.id)))} disabled={marcados.length === 0}
+          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] disabled:opacity-40"
+          style={{ background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf25' }}>
+          Enviar marcados{marcados.length ? ` (${marcados.length})` : ''}
+        </button>
+        <button onClick={onFechar} title="Fechar" className="p-1 rounded-lg" style={{ color: '#8f877f' }}><X size={13} /></button>
+      </div>
+
+      {lista.length === 0 && (
+        <p className="text-[11.5px]" style={{ color: '#8f877f' }}>
+          Nenhum profissional com Instagram cadastrado. Preencha o campo Instagram na ficha de cada um, em Profissionais.
+        </p>
+      )}
+
+      {lista.length > 0 && (
+        <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+          {lista.map(p => {
+            const on = marcados.includes(p.id)
+            return (
+              <button key={p.id} onClick={() => alternar(p.id)} type="button"
+                className="px-2.5 py-1 rounded-lg text-[11px] text-left flex items-center gap-1.5 transition duration-100 active:scale-[.94]"
+                style={on
+                  ? { background: '#f1eefc', color: '#5b4fcf', border: '1px solid #5b4fcf' }
+                  : { background: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e0' }}>
+                <span className="w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0"
+                  style={{ border: '1px solid ' + (on ? '#5b4fcf' : '#c9c4bc'), background: on ? '#5b4fcf' : '#fff' }}>
+                  {on && <Check size={10} style={{ color: '#fff' }} />}
+                </span>
+                <span className="font-bold">{p.nome}</span>
+                <span style={{ color: '#8f877f' }}>@{p.perfil}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <p className="text-[10px] mt-2" style={{ color: '#8f877f' }}>
+        Marque quem quiser e clique em Enviar marcados, ou Enviar todos. O texto vai para a caixa de resposta e sai com Enter.
       </p>
     </div>
   )
@@ -2223,10 +2382,10 @@ function BotaoFormato({ titulo, ativo, onClick, children }: { titulo: string; at
   )
 }
 
-function BotaoPreco({ texto, obs, semPreco, onClick }: { texto: string; obs?: string | null; semPreco?: boolean; onClick: () => void }) {
+function BotaoPreco({ texto, obs, semPreco, dica, onClick }: { texto: string; obs?: string | null; semPreco?: boolean; dica?: string; onClick: () => void }) {
   return (
     <button onClick={onClick} disabled={semPreco}
-      title={semPreco ? 'Cadastre o preço em Serviços para poder inserir' : undefined}
+      title={semPreco ? (dica || 'Cadastre o preço em Serviços para poder inserir') : undefined}
       className="px-2.5 py-1 rounded-lg text-[11px] text-left transition duration-100 enabled:hover:border-[#5b4fcf] enabled:hover:bg-[#f7f5ff] enabled:active:scale-[.94] disabled:cursor-not-allowed"
       style={{
         background: semPreco ? '#faf9f7' : '#fff',

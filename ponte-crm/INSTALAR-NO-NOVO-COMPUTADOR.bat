@@ -26,7 +26,7 @@ echo.
 echo === 1/5  Node.js ===
 where node >nul 2>&1
 if errorlevel 1 (
-  echo   Node.js NAO encontrado. Instale em https://nodejs.org (versao LTS)
+  echo   Node.js NAO encontrado. Instale em https://nodejs.org - versao LTS -
   echo   e rode este arquivo de novo.
   pause
   exit /b 1
@@ -70,9 +70,12 @@ echo   nunca dormir, tampa nao faz nada, Wi-Fi em desempenho maximo
 
 echo.
 echo === 5/5  Iniciar junto com o Windows ===
-set ATALHO=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\Ponte CRM NODRI.lnk
-powershell -NoProfile -Command "$w = New-Object -ComObject WScript.Shell; $a = $w.CreateShortcut('%ATALHO%'); $a.TargetPath = '%~dp0INICIAR-PONTE.bat'; $a.WorkingDirectory = '%~dp0'; $a.WindowStyle = 7; $a.Save()"
-if exist "%ATALHO%" (echo   atalho criado no Inicializar) else (echo   nao consegui criar o atalho -- crie na mao: Win+R, shell:startup)
+REM -- Um .cmd, e nao um atalho .lnk: criar o .lnk exige WScript.Shell e o
+REM -- antivirus RAV do computador do salao barrou isso em 18/09/2026.
+set ATALHO=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\Ponte CRM NODRI.cmd
+> "%ATALHO%" echo @echo off
+>> "%ATALHO%" echo start "" /min "%~dp0INICIAR-PONTE.bat"
+if exist "%ATALHO%" (echo   Ponte CRM NODRI.cmd criado no Inicializar) else (echo   nao consegui criar o .cmd -- crie na mao: Win+R, shell:startup)
 
 echo.
 echo === Pronto. Ligando a ponte... ===

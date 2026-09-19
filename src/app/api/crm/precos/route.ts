@@ -58,7 +58,7 @@ export async function GET() {
       // `ativo !== false`, que deixa passar quem está com o campo em branco.
       // Um `.eq('ativo', true)` cortava esses -- e as duas telas mostrariam
       // listas diferentes sem ninguém entender por quê.
-      .select('id, nome, categoria, preco_fixo, preco_min, observacao, ativo')
+      .select('id, nome, categoria, preco_fixo, preco_min, observacao, descricao, ativo')
       .eq('salao_id', sess.salaoId)
       .order('categoria').order('nome').limit(1000),
     // Doze folhas mensais bastam: produto que não vende há um ano não é preço
@@ -104,6 +104,9 @@ export async function GET() {
       // que o salão não vai cobrar.
       apartir: !dinheiro(s.preco_fixo) && !!dinheiro(s.preco_min),
       observacao: String(s.observacao || '').replace(/\s+/g, ' ').trim() || null,
+      // O que E o procedimento, para o botao "Servicos" da conversa. Aqui as
+      // quebras de linha ficam: descricao e texto corrido que a cliente le.
+      descricao: String(s.descricao || '').trim() || null,
     })
   }
 

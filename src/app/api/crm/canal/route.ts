@@ -101,7 +101,7 @@ export async function GET() {
   // profissionais, cargo "Recepcionista" -- lista que o salao ja mantem, em
   // vez de uma segunda lista para alguem esquecer de atualizar.
   const { data: profs } = await supabaseAdmin
-    .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento, vinculo')
+    .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento, vinculo, instagram')
     .eq('salao_id', sess!.salaoId).limit(500)
   // Quem atende na cadeira -- para a mensagem dizer "com a Val" sem ninguem
   // digitar o nome. Mesmo filtro da vitrine: setor nao atende, e CLT e
@@ -109,7 +109,8 @@ export async function GET() {
   const profissionais = (profs || [])
     .filter((x: any) => x.ativo !== false && !x.is_departamento
       && String(x.vinculo || '').toUpperCase() !== 'CLT')
-    .map((x: any) => ({ id: x.id, nome: x.apelido || x.nome_completo || '' }))
+    // O Instagram vai junto para o botao "Midias sociais" da conversa.
+    .map((x: any) => ({ id: x.id, nome: x.apelido || x.nome_completo || '', instagram: String(x.instagram || '').trim() || null }))
     .filter((x: any) => x.nome)
     .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR'))
 
