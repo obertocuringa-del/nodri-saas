@@ -1379,10 +1379,15 @@ export async function POST(req: NextRequest) {
   // mexer no estado: a conversa fica em "Preciso agir" para a recepção.
   if (daCliente && !replay) {
     try {
+      // {salao} = o nome do WhatsApp do salão ("Rouge Hair"), não a razão
+      // social do cadastro ("OLIVEIRA E SCHNEIDER ... LTDA" saiu numa
+      // mensagem de teste em 19/09/2026).
+      const { data: canalNome } = await supabaseAdmin.from('crm_canais').select('nome_exibicao').eq('salao_id', salaoId).maybeSingle()
       const { data: sal } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
       await boasVindasSePrimeiroContato({
         salaoId, conversaId: conversa.id, estado: String(conversa.estado || ''),
-        texto, tipo: String(body?.tipo || 'texto'), quando, nomeSalao: String((sal as any)?.nome || ''),
+        texto, tipo: String(body?.tipo || 'texto'), quando,
+        nomeSalao: String((canalNome as any)?.nome_exibicao || (sal as any)?.nome || ''),
       })
     } catch { /* boas-vindas é bônus; a entrada da mensagem já está feita */ }
   }
