@@ -24,6 +24,8 @@ export const AUTOR_BOAS_VINDAS = 'Boas-vindas automáticas'
 const HORAS_DE_SILENCIO = 12
 /** Uma por cliente por dia, no máximo. */
 const HORAS_ENTRE_ENVIOS = 24
+/** Até quanto tempo depois de uma automação a fala da cliente ainda é resposta a ela. */
+const HORAS_RESPOSTA_A_AUTOMACAO = 24
 
 export interface ConfigBoasVindas {
   ligada: boolean
@@ -106,7 +108,7 @@ export async function boasVindasSePrimeiroContato(args: {
 
   // A mensagem anterior nesta conversa (a da cliente já está gravada).
   const { data: antes } = await supabaseAdmin
-    .from('crm_mensagens').select('direcao, texto, criado_em, autor_nome')
+    .from('crm_mensagens').select('direcao, texto, criado_em, autor_nome, em_massa')
     .eq('conversa_id', conversaId).lt('criado_em', quando)
     .order('criado_em', { ascending: false }).limit(1)
   const anterior = (antes || [])[0]
@@ -114,8 +116,11 @@ export async function boasVindasSePrimeiroContato(args: {
     const horas = (Date.parse(quando) - Date.parse(anterior.criado_em)) / 3600e3
     if (horas < HORAS_DE_SILENCIO) return false
     // Ela está respondendo a uma automação do salão (confirmação, lembrete,
-    // feedback), não entrando em contato.
-    if (anterior.direcao === 'saida' && tipoDaMensagemDoSalao(anterior.texto)) return false
+    // feedback, lista) -- mas só se a automação é recente. MARIA JOSÉ,
+    // 19/09/2026: feedback 34 h antes e ela escreveu "gostaria de marcar uma
+    // modelagem"; isso é entrar em contato, e a exceção sem prazo engolia.
+    const automacao = anterior.direcao === 'saida' && (!!anterior.em_massa || !!tipoDaMensagemDoSalao(anterior.texto))
+    if (automacao && horas < HORAS_RESPOSTA_A_AUTOMACAO) return false
   }
 
   // Uma por dia por conversa.
