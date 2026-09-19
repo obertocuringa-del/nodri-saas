@@ -1131,8 +1131,22 @@ async function despacharFila(salaoId) {
       // com ela pelo telefone monta a sessão com a identidade errada e o
       // aparelho não consegue decifrar. O telefone continua aqui para o
       // contato que só tem número e nunca escreveu -- aí não há LID para usar.
-      const jid = msg.lid || (msg.telefone ? `${msg.telefone}@s.whatsapp.net` : null)
+      let jid = msg.lid || (msg.telefone ? `${msg.telefone}@s.whatsapp.net` : null)
       if (!jid) { registro(salaoId, 'mensagem sem endereço de destino — pulada'); continue }
+
+      // ── Sem LID, pergunta ao WhatsApp qual é o endereço certo ─────────────
+      //
+      // Caso real, DANIEL, 19/09/2026: o cadastro tinha 61 99699-7744 e o
+      // WhatsApp dele é o mesmo número SEM o nono dígito (conta antiga,
+      // 61 9699-7744). Cinco avisos "seu cliente chegou" saíram com um tique
+      // só e nunca chegaram -- o endereço 5561996997744 não existe. A CLEIDE
+      // estava na mesma situação. Com telefone e sem LID, o onWhatsApp diz
+      // qual dos dois formatos existe e, se a conta for das novas, devolve
+      // o LID -- que é o endereço que não pede reenvio.
+      if (!msg.lid && msg.telefone) {
+        const certo = await enderecoDoTelefone(s, salaoId, msg.telefone)
+        if (certo && certo !== jid) { registro(salaoId, 'endereço de', msg.telefone, 'é', certo); jid = certo }
+      }
 
       // ── Editar, apagar, reagir ────────────────────────────────────────────
       //
@@ -1466,6 +1480,43 @@ setInterval(() => {
   volta().catch(e => registro('erro na volta:', e.message))
   baterRelogio().catch(() => {})
 }, CICLO)
+
+// ── Telefone → endereço que existe no WhatsApp ──────────────────────────────
+//
+// Guarda o que já perguntou (por sessão) para não consultar o WhatsApp a cada
+// mensagem. Erro ou demora (5 s) devolve nulo e o envio segue pelo telefone
+// como antes -- isto nunca pode travar a fila.
+async function enderecoDoTelefone(s, salaoId, telefone) {
+  const cache = s.enderecos || (s.enderecos = new Map())
+  if (cache.has(telefone)) return cache.get(telefone)
+  const candidatos = [telefone]
+  // 55 + DDD + 9 + 8 dígitos: conta antiga pode ser o mesmo número sem o 9
+  if (telefone.length === 13 && telefone.startsWith('55') && telefone[4] === '9') {
+    candidatos.push(telefone.slice(0, 4) + telefone.slice(5))
+  }
+  let achado = null
+  try {
+    const res = await Promise.race([
+      s.sock.onWhatsApp(...candidatos.map(t => `${t}@s.whatsapp.net`)),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('onWhatsApp demorou')), 5000)),
+    ])
+    const existe = (res || []).find(r => r && r.exists)
+    if (existe) {
+      achado = existe.lid || existe.jid || null
+      if (existe.lid) {
+        // O NODRI guarda o LID e da próxima vez já vem na fila.
+        nodri('?acao=guardar-lids', {
+          method: 'POST', body: JSON.stringify({ salao_id: salaoId, pares: [{ telefone, lid: existe.lid }] }),
+        }).catch(() => {})
+      }
+    }
+  } catch (e) {
+    registro(salaoId, 'não consegui conferir o endereço de', telefone + ':', e.message)
+    return null                                    // sem cache: tenta de novo na próxima
+  }
+  cache.set(telefone, achado)
+  return achado
+}
 
 // ── A fila de saida, no seu proprio ritmo ───────────────────────────────────
 // `despachando` impede duas voltas ao mesmo tempo: sem isso, um envio lento
