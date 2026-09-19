@@ -52,7 +52,8 @@ const NOME_PASTA_FABRICA: Record<string, string> = {
   feedback: 'Feedback', confirmacao: 'Confirmação', follow_up: 'Follow-up', pausada: 'Pausadas',
   agendado: 'Agendadas', confirmado: 'Confirmadas', desmarcou: 'Desmarcou', sem_conversao: 'Não fechou',
 }
-const SUFIXO_DO_BOTAO: Record<string, string> = { follow_up: ' · amanhã', pausada: ' · 7 dias' }
+// O prazo não entra no nome (o nome é o da aba): vai como nota miúda no botão.
+const NOTA_DO_BOTAO: Record<string, string> = { follow_up: 'volta amanhã', pausada: 'volta em 7 dias' }
 // Conversas ja decididas. Mensagem nova numa delas nao reabre; so avisa.
 const FECHADOS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
 const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
@@ -442,7 +443,7 @@ export default function CrmPage() {
     return NOME_PASTA_FABRICA[chave] || estadoPor(chave).rotulo
   }
   const botoesDeEstado = useMemo(() => estadosVisiveis(estadosCfg).map(e => ({
-    ...e, acao: nomePasta(e.chave) + (SUFIXO_DO_BOTAO[e.chave] || ''),
+    ...e, acao: nomePasta(e.chave), nota: NOTA_DO_BOTAO[e.chave] || null,
   })), [estadosCfg])   // eslint-disable-line react-hooks/exhaustive-deps
   // Contagem das pastas que o salão criou (Profissionais etc.), para a aba.
   const contagemExtras = useMemo(() => {
@@ -1745,7 +1746,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
                   : undefined
               return (
                 <BotaoAcao key={e.chave} onClick={() => escolher(e.chave, extra)}
-                  cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} />
+                  cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} nota={e.nota} />
               )
             })}
           </div>
@@ -1788,12 +1789,13 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
   )
 }
 
-function BotaoAcao({ onClick, cor, fundo, texto, icone }: any) {
+function BotaoAcao({ onClick, cor, fundo, texto, icone, nota }: any) {
   return (
     <button onClick={onClick}
       className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
       style={{ background: fundo, color: cor }}>
       {icone}{texto}
+      {nota && <span className="font-normal text-[9.5px] opacity-70">({nota})</span>}
     </button>
   )
 }
