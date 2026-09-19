@@ -118,8 +118,8 @@ export default function ConfigCrmPage() {
 
   function excluirBotao(chave: string) {
     if (!confirm(
-      'Excluir este botão?\n\nAs conversas que estiverem nessa pasta NÃO se perdem — ' +
-      'elas continuam lá e voltam a aparecer se você criar o botão de novo.'
+      'Excluir esta pasta?\n\nAs conversas que estiverem nela NÃO se perdem — ' +
+      'continuam em Todas e voltam a aparecer se você criar a pasta de novo com o mesmo nome.'
     )) return
     salvarEstados({ ...estados, extras: estados.extras.filter(e => e.chave !== chave) })
   }
@@ -161,16 +161,18 @@ export default function ConfigCrmPage() {
           {/* ── Os botões da faixa ── */}
           <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Botões da conversa</h2>
+              <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Pastas e botões da conversa</h2>
               <div className="flex-1" />
               <button onClick={criarBotao} disabled={salvandoEstados}
                 className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1 disabled:opacity-40"
                 style={{ background: '#f1eefc', color: '#5b4fcf' }}>
-                <Plus size={13} /> Novo botão
+                <Plus size={13} /> Nova pasta
               </button>
             </div>
             <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
-              São os botões que aparecem em cima da conversa. Salva sozinho a cada mudança.
+              Cada item aqui é uma pasta: aparece como aba no topo do CRM e como botão em
+              &ldquo;Marcar esta conversa como&rdquo;, com o mesmo nome nos dois lugares. Renomeou,
+              muda nos dois. Salva sozinho a cada mudança.
             </p>
 
             {/* A diferença entre os dois grupos precisa estar dita, senão o
@@ -220,7 +222,7 @@ export default function ConfigCrmPage() {
             <p className="text-[11px] font-bold mb-2" style={{ color: '#8f877f' }}>OS SEUS</p>
             {estados.extras.length === 0 ? (
               <p className="text-[12.5px]" style={{ color: '#8f877f' }}>
-                Nenhum ainda. Clique em “Novo botão”.
+                Nenhuma ainda. Clique em “Nova pasta”.
               </p>
             ) : (
               <div className="space-y-2">
@@ -249,7 +251,7 @@ export default function ConfigCrmPage() {
                       style={{ background: '#faf9f7', border: '1px solid #e8e6e0', color: '#1a1a1a' }}>
                       {CORES_ESTADO.map(c => <option key={c.cor} value={c.cor}>{c.nome}</option>)}
                     </select>
-                    <button onClick={() => excluirBotao(e.chave)} title="Excluir este botão"
+                    <button onClick={() => excluirBotao(e.chave)} title="Excluir esta pasta"
                       className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#b4322a' }}>
                       <Trash2 size={15} />
                     </button>
