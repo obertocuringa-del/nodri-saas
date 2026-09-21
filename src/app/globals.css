@@ -80,6 +80,14 @@ html, body {
   100% { transform: scale(1);   box-shadow: 0 0 0 9px rgba(43,35,32,0); }
 }
 .nodri-pulso { animation: nodriPulsoClique .38s ease-out; }
+/* Variante para LINHA de lista (largura toda): encolhe pouco e acende o fundo
+   em vez do anel, que ficaria escondido atrás das linhas vizinhas. */
+@keyframes nodriPulsoLinha {
+  0%   { transform: scale(1);    background-color: rgba(168,98,79,.16); }
+  40%  { transform: scale(.975); background-color: rgba(168,98,79,.16); }
+  100% { transform: scale(1); }
+}
+.nodri-pulso-linha { animation: nodriPulsoLinha .36s ease-out; }
 
 /* O balão do WhatsApp é fixo com z-index 9999 — o mesmo do modal de
    lançamento, então ele flutuava EM CIMA do botão Lançar. Enquanto o modal

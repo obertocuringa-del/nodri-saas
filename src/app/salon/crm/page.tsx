@@ -1647,12 +1647,12 @@ function SeloNova({ onTirar }: { onTirar?: () => void }) {
 // Um pulso curto no clique (classe global .nodri-pulso): o botão encolhe e
 // volta, para a pessoa ver que pegou mesmo quando o resultado acontece longe
 // dali. Reinicia se clicar duas vezes seguidas.
-function pulsar(e: React.MouseEvent<HTMLElement>) {
+function pulsar(e: React.MouseEvent<HTMLElement>, classe = 'nodri-pulso') {
   const el = e.currentTarget
-  el.classList.remove('nodri-pulso')
+  el.classList.remove(classe)
   void el.offsetWidth
-  el.classList.add('nodri-pulso')
-  el.addEventListener('animationend', () => el.classList.remove('nodri-pulso'), { once: true })
+  el.classList.add(classe)
+  el.addEventListener('animationend', () => el.classList.remove(classe), { once: true })
 }
 
 // Pastas do topo. Passar o mouse escurece, segurar encolhe, clicar pulsa:
@@ -1678,11 +1678,14 @@ function ItemFila({ c, ativo, onClick }: any) {
   const dono = donoAtivo(c.dono_ate) ? c.dono_nome : null
   const nova = ehNova(c)
   return (
-    <button onClick={onClick}
-      className="w-full text-left px-4 py-3 flex gap-3 transition relative"
+    <button onClick={e => { pulsar(e, 'nodri-pulso-linha'); onClick?.() }} type="button"
+      // Mesmo retorno das pastas do topo (pedido do dono em 21/09/2026):
+      // passar o mouse tinge a linha, clicar pulsa. A linha ocupa a largura
+      // toda, então o pulso dela é mais suave que o dos botões pequenos.
+      className={`w-full text-left px-4 py-3 flex gap-3 transition duration-100 relative active:scale-[.985] ${ativo ? '' : 'hover:bg-[#f8efeb]'}`}
       style={{
-        background: ativo ? '#f3e3dc' : 'transparent',
-        borderBottom: '1px solid #f2f2f5',
+        background: ativo ? '#f3e3dc' : undefined,
+        borderBottom: '1px solid #f0e8e3',
       }}>
       {/* Faixa de urgencia na borda. A cor mora na lateral e nao no fundo: um
           fundo vermelho numa lista de cem linhas cansa a vista em dez minutos
