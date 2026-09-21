@@ -16,6 +16,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { ehSoAgradecimento, tipoDaMensagemDoSalao } from '@/lib/crm'
 import { getConfig as configVitrine } from '@/lib/vitrineConfig'
+import { lerSaudacao, preencherBoasVindas, primeiroNomeSeguro, saudacaoDoMomento, type SaudacaoCfg } from '@/lib/crmBoasVindasTexto'
 
 export const CHAVE_BOAS_VINDAS = 'crm_boas_vindas'
 export const AUTOR_BOAS_VINDAS = 'Boas-vindas automáticas'
@@ -31,10 +32,15 @@ export interface ConfigBoasVindas {
   ligada: boolean
   texto: string
   link: string
+  /** "bom dia" / "boa tarde" / "boa noite" e as horas de corte (ver crmBoasVindasTexto). */
+  saudacao: SaudacaoCfg
 }
 
+// {cliente} e {saudacao} entram no padrão de fábrica: quem nunca mexeu no
+// texto ganha o nome e o "bom dia" de graça. Texto já salvo pelo salão não
+// muda -- os campos só valem quando a pessoa os escreve no texto dela.
 export const TEXTO_PADRAO =
-  'Olá! Aqui é do {salao}. Para agilizar: se você quer agendar, pode fazer o pedido direto pelo link abaixo, que é mais rápido.\n' +
+  'Olá {cliente}, {saudacao}! Aqui é do {salao}. Para agilizar: se você quer agendar, pode fazer o pedido direto pelo link abaixo, que é mais rápido.\n' +
   '{link}\n' +
   'Se preferir, é só aguardar um instante que já te atendemos por aqui.'
 
@@ -47,6 +53,7 @@ export async function carregarBoasVindas(salaoId: string): Promise<ConfigBoasVin
     ligada: v.ligada === true,
     texto: String(v.texto || '').trim() || TEXTO_PADRAO,
     link: String(v.link || '').trim(),
+    saudacao: lerSaudacao(v.saudacao),
   }
 }
 
@@ -72,11 +79,18 @@ function ehSoResposta(texto: string): boolean {
   return ehSoAgradecimento(semSaudacao.join(' '))
 }
 
-export function montarMensagem(cfg: ConfigBoasVindas, nomeSalao: string): string {
-  let t = cfg.texto.replace(/\{salao\}/gi, nomeSalao || 'salão')
-  if (/\{link\}/i.test(t)) t = t.replace(/\{link\}/gi, cfg.link)
-  else if (cfg.link) t = t.replace(/\s+$/, '') + '\n' + cfg.link
-  return t.trim()
+/**
+ * O texto pronto para esta cliente, agora. `nomes` são os candidatos a nome
+ * (cadastro do salão primeiro, WhatsApp depois); sem nome que preste, o
+ * {cliente} some e a frase se acerta ("Olá, bom dia!").
+ */
+export function montarMensagem(cfg: ConfigBoasVindas, nomeSalao: string, nomes: (string | null | undefined)[] = [], agora: Date = new Date()): string {
+  return preencherBoasVindas(cfg.texto, {
+    salao: nomeSalao || 'salão',
+    link: cfg.link,
+    cliente: primeiroNomeSeguro(...nomes),
+    saudacao: saudacaoDoMomento(cfg.saudacao, agora),
+  })
 }
 
 /**
@@ -92,8 +106,10 @@ export async function boasVindasSePrimeiroContato(args: {
   tipo: string
   quando: string          // hora da mensagem da cliente (ISO)
   nomeSalao: string
+  /** nome do cadastro do salão e nome do WhatsApp, nesta ordem (qualquer um pode faltar) */
+  nomesCliente?: (string | null | undefined)[]
 }): Promise<boolean> {
-  const { salaoId, conversaId, estado, texto, tipo, quando, nomeSalao } = args
+  const { salaoId, conversaId, estado, texto, tipo, quando, nomeSalao, nomesCliente } = args
   if (!conversaId) return false
   // Pasta que o salão criou (Profissionais etc.): não é cliente entrando em contato.
   if (String(estado || '').startsWith('extra_')) return false
@@ -131,7 +147,7 @@ export async function boasVindasSePrimeiroContato(args: {
     .gte('criado_em', desde).limit(1)
   if (recente?.length) return false
 
-  const mensagem = montarMensagem(cfg, nomeSalao)
+  const mensagem = montarMensagem(cfg, nomeSalao, nomesCliente || [])
   if (!mensagem) return false
 
   const { error } = await supabaseAdmin.from('crm_mensagens').insert({

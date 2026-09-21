@@ -1388,6 +1388,8 @@ export async function POST(req: NextRequest) {
         salaoId, conversaId: conversa.id, estado: String(conversa.estado || ''),
         texto, tipo: String(body?.tipo || 'texto'), quando,
         nomeSalao: String((canalNome as any)?.nome_exibicao || (sal as any)?.nome || ''),
+        // Para o "Olá Bruna": cadastro do salão primeiro, nome do WhatsApp depois.
+        nomesCliente: [contato.cliente_nome, contato.nome],
       })
     } catch { /* boas-vindas é bônus; a entrada da mensagem já está feita */ }
   }

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
 import { CHAVE_ESTADOS, lerConfigEstados, ESTADOS_VAZIO } from '@/lib/crmEstados'
 import { CHAVE_BOAS_VINDAS, carregarBoasVindas, linkPadraoDoSalao, TEXTO_PADRAO } from '@/lib/crmBoasVindas'
+import { lerSaudacao } from '@/lib/crmBoasVindasTexto'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,6 +97,9 @@ export async function POST(req: NextRequest) {
       ligada: body?.ligada === true,
       texto: String(body?.texto || '').trim().slice(0, 1500),
       link: String(body?.link || '').trim().slice(0, 300),
+      // "bom dia" / "boa tarde" / "boa noite" e os cortes de hora, do jeito
+      // que a tela mandou; o que vier errado volta ao padrao em lerSaudacao.
+      saudacao: lerSaudacao(body?.saudacao),
     }
     if (cfg.ligada && !cfg.link) {
       return NextResponse.json({ error: 'Para ligar, informe o link de agendamento.' }, { status: 400 })
