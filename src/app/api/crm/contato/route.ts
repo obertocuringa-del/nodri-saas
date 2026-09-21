@@ -58,15 +58,24 @@ export async function PATCH(req: NextRequest) {
   // fica cheia de gente marcada como cliente nova que não é cliente nenhuma.
   //
   // O relógio não tem como saber disso sozinho. Quem sabe é quem lê a
-  // conversa. Então dá para tirar -- e uma vez tirada, ela não volta: o
-  // `conferido_em` fica marcado como conferido e o relógio respeita a decisão
-  // de quem estava olhando.
+  // conversa. Então dá para tirar -- e uma vez tirada, ela não volta.
+  //
+  // Antes isto só marcava `conferido_em`, e o relógio reconferia 12 h depois
+  // e punha a etiqueta de volta (Rebecca, 21/09/2026, tirada três vezes).
+  // Agora a recusa fica gravada em `nova_recusada_em`, e o relógio a respeita
+  // para sempre. Pôr a etiqueta de volta à mão limpa a recusa.
   if (Array.isArray(body?.etiquetas)) {
     patch.etiquetas = body.etiquetas
       .map((e: any) => String(e || '').trim())
       .filter(Boolean)
       .slice(0, 20)
     patch.conferido_em = new Date().toISOString()
+    const { data: atual } = await supabaseAdmin
+      .from('crm_contatos').select('etiquetas').eq('id', id).eq('salao_id', sess.salaoId).maybeSingle()
+    const tinha = Array.isArray(atual?.etiquetas) && atual.etiquetas.includes('cliente nova')
+    const vaiTer = patch.etiquetas.includes('cliente nova')
+    if (tinha && !vaiTer) patch.nova_recusada_em = new Date().toISOString()
+    if (!tinha && vaiTer) patch.nova_recusada_em = null
   }
 
   const { error } = await supabaseAdmin

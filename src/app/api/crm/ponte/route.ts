@@ -1153,6 +1153,21 @@ export async function POST(req: NextRequest) {
       nao_lidas: daCliente ? 1 : 0,
     }).select().maybeSingle()
     conversa = nova
+  } else if (daCliente && String(conversa.estado || '').startsWith('extra_')) {
+    // ── Pasta criada pelo salão: a mensagem entra e a conversa FICA ─────────
+    //
+    // Profissionais, fornecedores, parceiros: o salão criou a pasta justamente
+    // para tirar essa gente do funil de cliente. Cada mensagem deles puxava a
+    // conversa para "Preciso agir" e o dono devolvia à mão (Rebecca: 18/09,
+    // 19/09, 21/09). Decisão dele em 21/09/2026: fica na pasta, com o
+    // contador de não lida subindo -- quem abre a pasta vê que há novidade.
+    await supabaseAdmin.from('crm_conversas').update({
+      ultima_em: quando,
+      ultima_de: 'cliente',
+      ultima_previa: texto.slice(0, 120),
+      nao_lidas: (conversa.nao_lidas || 0) + 1,
+      atualizado_em: agora,
+    }).eq('id', conversa.id)
   } else if (fechadaHaPouco && daCliente && !(String(body?.tipo || 'texto') === 'texto' && ehSoAgradecimento(texto))) {
     // ── Assunto novo numa conversa decidida: volta para a fila ─────────────
     //
@@ -1368,7 +1383,7 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
       de_estado: reaberta ? conversa.estado : null,
-      para_estado: (fechadaHaPouco && !reaberta) ? conversa.estado : 'acao_necessaria',
+      para_estado: ((fechadaHaPouco && !reaberta) || String(conversa.estado || '').startsWith('extra_')) ? conversa.estado : 'acao_necessaria',
       autor_nome: contato.nome || 'Cliente',
       detalhe: reaberta ? 'Escreveu com assunto numa conversa já decidida: voltou para a fila' : null,
     })

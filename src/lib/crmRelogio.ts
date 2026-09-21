@@ -137,7 +137,7 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
   // depois se aquela conversa virou atendimento de verdade.
   const limite = new Date(Date.now() - HORAS_RECONFERIR * 3600e3).toISOString()
   const { data: contatos } = await supabaseAdmin
-    .from('crm_contatos').select('id, telefone, nome, cliente_nome, etiquetas, conferido_em')
+    .from('crm_contatos').select('id, telefone, nome, cliente_nome, etiquetas, conferido_em, nova_recusada_em')
     .eq('salao_id', salaoId)
     .or(`conferido_em.is.null,conferido_em.lt.${limite}`)
     .limit(TETO_CONTATOS)
@@ -180,6 +180,22 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
     if (erroResumo) {
       console.error('[crmRelogio] conferir celulares falhou:', erroResumo.message)
       return r
+    }
+
+    // ── Quem está numa pasta criada pelo salão não é lead ──────────────────
+    //
+    // "Profissionais", "Conversa finalizada"... são pastas que o salão criou
+    // para gente que saiu do funil. Marcar essa gente como "cliente nova"
+    // enche a pasta Clientes novas com quem não é cliente nenhuma (Rebecca,
+    // 21/09/2026: profissional, posta em Profissionais três vezes e sempre
+    // de volta em Clientes novas). Só impede de PÔR; tirar é decisão de gente.
+    const emPastaDoSalao = new Set<string>()
+    {
+      const { data: cvs } = await supabaseAdmin
+        .from('crm_conversas').select('contato_id')
+        .eq('salao_id', salaoId).like('estado', 'extra_%')
+        .in('contato_id', contatos.map(c => c.id))
+      for (const cv of cvs || []) if (cv?.contato_id) emPastaDoSalao.add(cv.contato_id)
     }
 
     // Agrupa por chave de telefone, que é o que ignora o nono dígito.
@@ -244,7 +260,12 @@ export async function baterRelogio(salaoId: string): Promise<ResumoRelogio> {
         // foram para clientes que, por definição, JÁ fizeram procedimento, e o
         // CRM marcou todas como novas. Uma etiqueta que erra desse jeito não é
         // só inútil: ela faz a recepção tratar cliente de casa como estranha.
-        if (!etiquetas.includes('cliente nova')) {
+        //
+        // Duas exceções, as duas vindas de gente: quem tirou a etiqueta à mão
+        // (nova_recusada_em) disse que não é nova, e o relógio não discute --
+        // antes ele só esperava 12 h e punha de volta. E quem está numa pasta
+        // criada pelo salão saiu do funil (bloco acima).
+        if (!etiquetas.includes('cliente nova') && !ct.nova_recusada_em && !emPastaDoSalao.has(ct.id)) {
           etiquetas.push('cliente nova')
           patch.etiquetas = etiquetas
           r.clientes_novas++

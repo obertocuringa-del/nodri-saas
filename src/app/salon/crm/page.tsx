@@ -1246,7 +1246,7 @@ export default function CrmPage() {
                 </p>
               )}
               {visiveis.map(c => (
-                <ItemFila key={c.id} c={c} ativo={aberta?.id === c.id} onClick={() => abrirConversa(c)} />
+                <ItemFila key={c.id} c={c} ativo={aberta?.id === c.id} onClick={() => abrirConversa(c)} estadosCfg={estadosCfg} />
               ))}
             </div>
           </aside>
@@ -1286,7 +1286,7 @@ export default function CrmPage() {
               </div>
             ) : (
               <>
-                <CabecalhoConversa c={aberta} onEstado={mudarEstado} onOrigem={mudarOrigem}
+                <CabecalhoConversa c={aberta} onEstado={mudarEstado} onOrigem={mudarOrigem} estadosCfg={estadosCfg}
                   onNaoLida={marcarNaoLida}
                   noCelular={noCelular}
                   onVoltar={() => setAberta(null)}
@@ -1662,8 +1662,10 @@ function Aba({ ativo, onClick, texto, destaque }: any) {
   )
 }
 
-function ItemFila({ c, ativo, onClick }: any) {
-  const est = estadoPor(c.estado)
+function ItemFila({ c, ativo, onClick, estadosCfg }: any) {
+  // Com as pastas do salão: sem elas, quem está em "Profissionais" aparecia
+  // como "Ação necessária" (primeiro nome da lista de fábrica).
+  const est = estadoPorComExtras(c.estado, estadosCfg || ESTADOS_VAZIO)
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
   const urg = CORES_URGENCIA[c._urg as keyof typeof CORES_URGENCIA]
@@ -1714,7 +1716,7 @@ function ItemFila({ c, ativo, onClick }: any) {
               "Todas" e ver de relance que nao sobrou conversa sem direcao. */}
           <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
             style={{ color: est.cor, background: est.fundo }}>
-            {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
+            {est.rotulo}{c.motivo_perda && (c.estado === 'sem_conversao' || c.estado === 'desmarcou') ? ` · ${c.motivo_perda}` : ''}
           </span>
           {nova && <SeloNova />}
           {dono && (
@@ -1766,10 +1768,10 @@ function Avatar({ nome, nova, tamanho = 34 }: { nome: string; nova?: boolean; ta
   )
 }
 
-function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques, botoesDeEstado, onTirarNova }: any) {
+function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha, noCelular, fecharAberto, setFecharAberto, desmarqueAberto, setDesmarqueAberto, motivos, origens, desmarques, botoesDeEstado, onTirarNova, estadosCfg }: any) {
   const ct = c.contato || {}
   const nome = nomeDoContato(ct)
-  const est = estadoPor(c.estado)
+  const est = estadoPorComExtras(c.estado, estadosCfg || ESTADOS_VAZIO)
   // ── Os onze botões de estado moram atrás de "Definir status" ──────────────
   //
   // Ficavam sempre à vista, na mesma altura em que a recepção procurava as
@@ -1801,7 +1803,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
             e era justamente o motivo que a pessoa acabou de escolher. */}
         <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold"
           style={{ background: est.fundo, color: est.cor }}>
-          {est.rotulo}{c.motivo_perda ? ` · ${c.motivo_perda}` : ''}
+          {est.rotulo}{c.motivo_perda && (c.estado === 'sem_conversao' || c.estado === 'desmarcou') ? ` · ${c.motivo_perda}` : ''}
         </span>
         {ehNova(c) && <SeloNova onTirar={onTirarNova} />}
         {noCelular && (
