@@ -69,6 +69,18 @@ html, body {
 }
 .nodri-pisca-card { animation: nodriPiscaCard 1.5s ease-in-out infinite; }
 
+/* Pulso de CLIQUE: o botão encolhe e volta com um anel que se dissipa. É para
+   a pessoa ver que o clique pegou mesmo quando o efeito acontece longe dali
+   (a conversa muda de pasta, some da lista). Pedido do dono em 21/09/2026
+   para as pastas e etiquetas do CRM; a classe é global para qualquer botão
+   poder usar. O anel é neutro para servir em botão de qualquer cor. */
+@keyframes nodriPulsoClique {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(43,35,32,.28); }
+  35%  { transform: scale(.9);  box-shadow: 0 0 0 4px rgba(43,35,32,.16); }
+  100% { transform: scale(1);   box-shadow: 0 0 0 9px rgba(43,35,32,0); }
+}
+.nodri-pulso { animation: nodriPulsoClique .38s ease-out; }
+
 /* O balão do WhatsApp é fixo com z-index 9999 — o mesmo do modal de
    lançamento, então ele flutuava EM CIMA do botão Lançar. Enquanto o modal
    estiver aberto, ele some (volta sozinho ao fechar). */

@@ -1637,10 +1637,24 @@ function SeloNova({ onTirar }: { onTirar?: () => void }) {
   )
 }
 
+// Um pulso curto no clique (classe global .nodri-pulso): o botão encolhe e
+// volta, para a pessoa ver que pegou mesmo quando o resultado acontece longe
+// dali. Reinicia se clicar duas vezes seguidas.
+function pulsar(e: React.MouseEvent<HTMLElement>) {
+  const el = e.currentTarget
+  el.classList.remove('nodri-pulso')
+  void el.offsetWidth
+  el.classList.add('nodri-pulso')
+  el.addEventListener('animationend', () => el.classList.remove('nodri-pulso'), { once: true })
+}
+
+// Pastas do topo. Passar o mouse escurece, segurar encolhe, clicar pulsa:
+// o dono pediu (21/09/2026) o mesmo retorno dos botões Preços/Serviços,
+// para saber que acertou o botão antes de soltar.
 function Aba({ ativo, onClick, texto, destaque }: any) {
   return (
-    <button onClick={onClick}
-      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition flex-shrink-0 whitespace-nowrap"
+    <button onClick={e => { pulsar(e); onClick?.() }} type="button"
+      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex-shrink-0 whitespace-nowrap"
       style={ativo
         ? { background: '#a8624f', color: '#fff' }
         : { background: destaque ? '#fbebe9' : '#f6f1ee', color: destaque ? '#b4322a' : '#6e625c' }}>
@@ -1908,10 +1922,11 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
   )
 }
 
+// Etiquetas de "Marcar esta conversa como" -- mesmo retorno das pastas.
 function BotaoAcao({ onClick, cor, fundo, texto, icone, nota }: any) {
   return (
-    <button onClick={onClick}
-      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
+    <button onClick={e => { pulsar(e); onClick?.() }} type="button"
+      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
       style={{ background: fundo, color: cor }}>
       {icone}{texto}
       {nota && <span className="font-normal text-[9.5px] opacity-70">({nota})</span>}
