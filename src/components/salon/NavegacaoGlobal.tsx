@@ -446,8 +446,11 @@ export default function NavegacaoGlobal() {
 
       {/* PC: conjunto flutuante na mesma linha da barra do topo de cada página
           (canto direito) — o CSS global reserva o espaço nos <nav>. */}
+      {/* data-nodri-flutuante: o CRM esconde este conjunto enquanto a faixa
+          dele está recolhida (body[data-crm-compacto]); sem isso os três
+          botões ficariam soltos em cima da ficha da cliente. */}
       {!naHome && !isMobile && (
-      <div style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6 }}>
+      <div data-nodri-flutuante style={{ position: 'fixed', top: 8, right: 10, zIndex: 45, display: 'flex', gap: 6, transition: 'opacity .15s' }}>
         <button onClick={() => navegarComGuarda(() => voltar(router))} aria-label="Voltar" title="Voltar à página anterior" style={pillSt}
           onMouseEnter={e => (e.currentTarget.style.background = '#f0eefb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
           <ArrowLeft size={15} />

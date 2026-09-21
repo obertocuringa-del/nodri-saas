@@ -55,6 +55,12 @@ export const CATALOGO: Record<string, Ferramenta> = {
   // saíram da Escala e passaram a ser tratados no Financeiro.
   pagamento_va_vt:     { id: 'pagamento_va_vt',     label: 'PAGAMENTO VA E VT',      perm: 'adm_escala' },
   feriados:            { id: 'feriados',            label: 'ESCALA DE FERIADOS',     perm: 'adm_feriados' },
+  // As MESMAS escalas, espelhadas na Recepcao em modo consulta: o balcao ve
+  // quem esta escalado no domingo e no feriado sem pedir ao Administrativo,
+  // e sem poder mudar nada (pedido do dono em 21/09/2026). Mesma chave no
+  // banco, entao nao existe segunda copia para desatualizar.
+  escala_consulta:     { id: 'escala_consulta',     label: 'ESCALA DE TRABALHO',     perm: 'adm_escala' },
+  feriados_consulta:   { id: 'feriados_consulta',   label: 'ESCALA DE FERIADOS',     perm: 'adm_feriados' },
   ata:                 { id: 'ata',                 label: 'ATA DE REUNIÃO',         perm: 'adm_ata' },
   senhas:              { id: 'senhas',              label: 'SENHAS',                 perm: 'adm_senhas' },
   telefones:           { id: 'telefones',           label: 'TELEFONES IMPORTANTES',  perm: 'adm_telefones' },
@@ -125,12 +131,14 @@ export const CATALOGO: Record<string, Ferramenta> = {
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // "Arquivos para Envio" saiu da sidebar da Recepção. Segue no catálogo/banco.
-  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
+  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'escala_consulta', 'feriados_consulta', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais', 'produtos_vencidos'] },
   // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
   // Etiquetas saiu daqui: virou sub-botão de "Organização das pastas" (SUBDEMANDAS).
-  { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'ata', 'senhas', 'telefones', 'calendario', 'pontos_ebulicao', 'msgs_listas', 'auditoria'] },
+  // Horarios e Folgas e a mesma tela da Coordenacao (so consulta; quem muda e
+  // a ficha do profissional) -- o Administrativo tambem precisa dela a mao.
+  { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'pr_horarios', 'ata', 'senhas', 'telefones', 'calendario', 'pontos_ebulicao', 'msgs_listas', 'auditoria'] },
   // O Financeiro era o unico setor sem check list de tarefas — e sem ele nao
   // dava para receber nem enviar demanda dos outros setores.
   { chave: ['FINANCEIRO', 'CONTABIL'], itens: ['ck_financeiro', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },

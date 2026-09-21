@@ -550,3 +550,14 @@ p { text-wrap: pretty; }
 [style*="background:#1a1a1a"] :focus-visible {
   outline-color: #ffffff !important;
 }
+
+/* ── CRM com a faixa recolhida ─────────────────────────────────────────────
+   O CRM marca o <body> com data-crm-compacto enquanto o cabeçalho dele está
+   escondido (só aparece com o mouse no topo). Nesse estado o conjunto
+   flutuante Voltar/Início/Busca da barra global some junto: ele mora na
+   mesma linha do cabeçalho e, sem cabeçalho, ficaria solto em cima da ficha
+   da cliente. Ctrl+K continua funcionando. */
+body[data-crm-compacto="1"] [data-nodri-flutuante] {
+  opacity: 0;
+  pointer-events: none;
+}

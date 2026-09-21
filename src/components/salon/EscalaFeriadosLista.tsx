@@ -54,7 +54,11 @@ function textoCompartilhar(f: FeriadoItem): string {
   return linhas.join('\n')
 }
 
-export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: string }) {
+// soLeitura: a mesma lista, sem nada que grave. É a Escala de Feriados
+// espelhada na sidebar da Recepção (pedido do dono em 21/09/2026): nome,
+// data, horário e escalados viram texto; somem Salvar, Remover e Adicionar.
+// Ficam a impressão e o compartilhar por WhatsApp/e-mail.
+export default function EscalaFeriadosLista({ chave = 'feriados', soLeitura = false }: { chave?: string; soLeitura?: boolean }) {
   const [profissionais, setProfissionais] = useState<Profissional[]>([])
   const [feriados, setFeriados] = useState<FeriadoItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,19 +134,22 @@ export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: st
 
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}><PartyPopper size={16} color={COR} /> Escala de Feriados</h2>
+        {soLeitura && <span style={{ fontSize: 11.5, color: '#8f877f' }}>Somente consulta — quem edita é o Administrativo.</span>}
         <div style={{ flex: 1 }} />
         {dirty && !salvando && <span style={{ fontSize: 12, color: '#b45309', fontWeight: 700 }}>Alterações não salvas</span>}
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
-        <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
+        {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>}
       </div>
 
-      <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 16px' }}>Os feriados marcados aqui aparecem automaticamente no card "Feriados" da Escala de Trabalho, no mês correspondente. Marque "Fechado" quando o salão não abrir, e use os botões de WhatsApp/E-mail pra avisar a equipe sobre um feriado específico.</p>
+      <p style={{ fontSize: 11.5, color: '#9ca3af', margin: '0 0 16px' }}>{soLeitura
+        ? 'Os feriados do ano, com horário e quem está escalado. Use os botões de WhatsApp/E-mail pra avisar a equipe sobre um feriado específico.'
+        : 'Os feriados marcados aqui aparecem automaticamente no card "Feriados" da Escala de Trabalho, no mês correspondente. Marque "Fechado" quando o salão não abrir, e use os botões de WhatsApp/E-mail pra avisar a equipe sobre um feriado específico.'}</p>
 
       {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" style={{ color: COR }} /></div> : (
         <>
           {feriados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 14, background: '#fff', border: '1px dashed #d0cdc7', borderRadius: 12 }}>
-              Nenhum feriado cadastrado ainda. Clique em <strong style={{ color: COR }}>+ Adicionar feriado</strong> para começar.
+              {soLeitura ? 'Nenhum feriado cadastrado ainda.' : <>Nenhum feriado cadastrado ainda. Clique em <strong style={{ color: COR }}>+ Adicionar feriado</strong> para começar.</>}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -150,16 +157,20 @@ export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: st
                 <div key={f.id} className="fer-card">
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 200px', minWidth: 160 }}>
-                      <input value={f.nome} onChange={e => editar(f.id, { nome: e.target.value })} className="fer-input" style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', padding: '4px 6px' }} placeholder="Nome do feriado" />
+                      {soLeitura
+                        ? <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: '#1a1a1a', padding: '4px 6px' }}>{f.nome || '—'}</p>
+                        : <input value={f.nome} onChange={e => editar(f.id, { nome: e.target.value })} className="fer-input" style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a', padding: '4px 6px' }} placeholder="Nome do feriado" />}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: '#9ca3af' }}>
                         <CalendarDays size={13} />
-                        <input value={f.data} onChange={e => editar(f.id, { data: e.target.value })} className="fer-input" style={{ fontSize: 12.5, padding: '2px 4px' }} placeholder="dd/mm/aaaa" />
+                        {soLeitura
+                          ? <span style={{ fontSize: 12.5, padding: '2px 4px', color: '#6b6860' }}>{f.data || '—'}</span>
+                          : <input value={f.data} onChange={e => editar(f.id, { data: e.target.value })} className="fer-input" style={{ fontSize: 12.5, padding: '2px 4px' }} placeholder="dd/mm/aaaa" />}
                       </div>
                     </div>
 
                     <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>Fechado?</label>
-                      <input type="checkbox" checked={f.fechado} onChange={e => editar(f.id, { fechado: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                      <input type="checkbox" checked={f.fechado} disabled={soLeitura} onChange={e => editar(f.id, { fechado: e.target.checked })} style={{ width: 18, height: 18, cursor: soLeitura ? 'default' : 'pointer' }} />
                     </div>
 
                     {f.fechado ? (
@@ -167,30 +178,34 @@ export default function EscalaFeriadosLista({ chave = 'feriados' }: { chave?: st
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto' }}>
                         <Clock size={13} color="#9ca3af" />
-                        <input value={f.horario} onChange={e => editar(f.id, { horario: e.target.value })} className="fer-input" style={{ width: 140, fontSize: 12.5 }} placeholder="10:00 às 18:00" />
+                        {soLeitura
+                          ? <span style={{ fontSize: 12.5, color: '#1a1a1a', fontWeight: 600 }}>{f.horario || '—'}</span>
+                          : <input value={f.horario} onChange={e => editar(f.id, { horario: e.target.value })} className="fer-input" style={{ width: 140, fontSize: 12.5 }} placeholder="10:00 às 18:00" />}
                       </div>
                     )}
 
                     <div style={{ flex: '1 1 260px', minWidth: 200 }}>
                       <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>Profissionais escalados</label>
-                      {f.fechado ? <span style={{ fontSize: 12.5, color: '#9ca3af' }}>—</span> : <SeletorNomes value={f.profissionais} onChange={v => editar(f.id, { profissionais: v })} opcoes={nomesProfissionais} />}
+                      {f.fechado ? <span style={{ fontSize: 12.5, color: '#9ca3af' }}>—</span> : <SeletorNomes value={f.profissionais} onChange={v => editar(f.id, { profissionais: v })} opcoes={nomesProfissionais} soLeitura={soLeitura} />}
                     </div>
 
                     <div style={{ display: 'flex', gap: 4, flex: '0 0 auto', marginLeft: 'auto' }}>
                       <button onClick={() => compartilharWhats(f)} title="Compartilhar no WhatsApp" className="fer-iconbtn" style={{ background: '#e9f9ee', color: '#16a34a' }}><MessageCircle size={15} /></button>
                       <button onClick={() => compartilharEmail(f)} title="Compartilhar por e-mail" className="fer-iconbtn" style={{ background: '#eef2ff', color: '#4f46e5' }}><Mail size={15} /></button>
-                      <button onClick={() => remover(f.id)} title="Remover" className="fer-iconbtn" style={{ background: '#fef2f2', color: '#dc2626' }}><Trash2 size={15} /></button>
+                      {!soLeitura && <button onClick={() => remover(f.id)} title="Remover" className="fer-iconbtn" style={{ background: '#fef2f2', color: '#dc2626' }}><Trash2 size={15} /></button>}
                     </div>
                   </div>
 
                   <div style={{ marginTop: 10 }}>
-                    <input value={f.obs} onChange={e => editar(f.id, { obs: e.target.value })} className="fer-input" style={{ fontSize: 12.5, color: '#6b6860' }} placeholder="Observação (opcional)" />
+                    {soLeitura
+                      ? (f.obs ? <p style={{ margin: 0, fontSize: 12.5, color: '#6b6860', padding: '6px 7px' }}>{f.obs}</p> : null)
+                      : <input value={f.obs} onChange={e => editar(f.id, { obs: e.target.value })} className="fer-input" style={{ fontSize: 12.5, color: '#6b6860' }} placeholder="Observação (opcional)" />}
                   </div>
                 </div>
               ))}
             </div>
           )}
-          <button onClick={adicionar} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 14, padding: '9px 14px', borderRadius: 10, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar feriado</button>
+          {!soLeitura && <button onClick={adicionar} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 14, padding: '9px 14px', borderRadius: 10, border: `1.5px dashed ${COR}`, background: '#f8f7ff', color: COR, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Plus size={14} /> Adicionar feriado</button>}
         </>
       )}
     </div>

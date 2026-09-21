@@ -103,6 +103,9 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: st
     case 'escala':              return <EscalaTrabalhoLista key="escala" chave="escala" blocos="escala" />
     case 'pagamento_va_vt':     return <EscalaTrabalhoLista key="va_vt" chave="escala" blocos="vavt" />
     case 'feriados':            return <EscalaFeriadosLista key="feriados" chave="feriados" />
+    // Recepcao: as mesmas escalas, so para consultar (ver ferramentasCatalogo).
+    case 'escala_consulta':     return <EscalaTrabalhoLista key="escala_consulta" chave="escala" blocos="escala" soLeitura />
+    case 'feriados_consulta':   return <EscalaFeriadosLista key="feriados_consulta" chave="feriados" soLeitura />
     case 'ata':                 return <AtaReuniaoLista key="ata" chave="ata" profsSalao={profsSalao} />
     case 'produtos_vencidos':   return <ProdutosVencidos key="prod_venc" chave="produtos_vencidos" />
     case 'senhas':              return <SenhasLista key="senhas" chave="senhas" />

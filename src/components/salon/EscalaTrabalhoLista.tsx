@@ -180,8 +180,14 @@ function migrarFormatoAntigo(doc: any): { domingos: DomingoRow[]; clt: CltRow[];
  *   'tudo'   → domingos, feriados e VA/VT
  *   'escala' → só domingos e feriados
  *   'vavt'   → só Vale Transporte/Alimentação e Ajuda de Custo
+ *
+ * soLeitura: a mesma tela, os mesmos dados, sem nada que grave. É a Escala
+ * espelhada na sidebar da Recepção (pedido do dono em 21/09/2026): quem está
+ * no balcão precisa saber quem está escalado no domingo sem ter que pedir ao
+ * Administrativo — e sem poder mudar. Some o Salvar, a engrenagem, os
+ * seletores viram só os nomes; fica o mês, a impressão e o compartilhar.
  */
-export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' }: { chave?: string; blocos?: 'tudo' | 'escala' | 'vavt' }) {
+export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo', soLeitura = false }: { chave?: string; blocos?: 'tudo' | 'escala' | 'vavt'; soLeitura?: boolean }) {
   const verEscala = blocos !== 'vavt'
   const verVaVt = blocos !== 'escala'
   const [mes, setMes] = useState(mesAtual())
@@ -398,11 +404,12 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '10px 12px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Mês:</label>
         <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid #d0cdc7', fontSize: 13 }} />
+        {soLeitura && <span style={{ fontSize: 11.5, color: '#8f877f' }}>Somente consulta — quem edita é o Administrativo.</span>}
         <div style={{ flex: 1 }} />
         {dirty && !salvando && <span style={{ fontSize: 12, color: '#b45309', fontWeight: 700 }}>Alterações não salvas</span>}
-        <button onClick={() => setConfigAberta(true)} title="Configurações de cálculo automático" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 10px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Settings size={14} /></button>
+        {!soLeitura && <button onClick={() => setConfigAberta(true)} title="Configurações de cálculo automático" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 10px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Settings size={14} /></button>}
         <button onClick={imprimir} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Printer size={14} /> Imprimir A4</button>
-        <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>
+        {!soLeitura && <button onClick={salvar} disabled={salvando} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 8, border: 'none', background: dirty ? '#16a34a' : '#a3b3a3', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{salvando ? '...' : <><Save size={14} /> Salvar</>}</button>}
       </div>
 
       {configAberta && (
@@ -473,17 +480,21 @@ export default function EscalaTrabalhoLista({ chave = 'escala', blocos = 'tudo' 
                     {domingos.map(d => (
                       <tr key={d.dia}>
                         <td style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' }}>{d.data}</td>
-                        <td><input type="checkbox" checked={d.fechado} onChange={e => editDomingo(d.dia, { fechado: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} /></td>
+                        <td>{soLeitura
+                          ? (d.fechado ? <span style={{ color: '#dc2626', fontWeight: 800, fontSize: 12 }}>FECHADO</span> : <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>)
+                          : <input type="checkbox" checked={d.fechado} onChange={e => editDomingo(d.dia, { fechado: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} />}</td>
                         {d.fechado ? (
                           <td colSpan={4}>
-                            <input value={d.motivo} onChange={e => editDomingo(d.dia, { motivo: e.target.value })} placeholder="Motivo (ex: Fechado — Jogo)" className="esc-input" style={{ fontWeight: 700, color: '#0891b2', textAlign: 'center' }} />
+                            {soLeitura
+                              ? <p style={{ margin: 0, fontWeight: 700, color: '#0891b2', textAlign: 'center', fontSize: 13 }}>{d.motivo || 'Fechado'}</p>
+                              : <input value={d.motivo} onChange={e => editDomingo(d.dia, { motivo: e.target.value })} placeholder="Motivo (ex: Fechado — Jogo)" className="esc-input" style={{ fontWeight: 700, color: '#0891b2', textAlign: 'center' }} />}
                           </td>
                         ) : (
                           <>
-                            <td><SeletorNomes value={d.cabeleireiro} onChange={v => editDomingo(d.dia, { cabeleireiro: v })} opcoes={nomesProfissionais} /></td>
-                            <td><SeletorNomes value={d.assistente} onChange={v => editDomingo(d.dia, { assistente: v })} opcoes={nomesProfissionais} /></td>
-                            <td><SeletorNomes value={d.manicure} onChange={v => editDomingo(d.dia, { manicure: v })} opcoes={nomesProfissionais} /></td>
-                            <td><SeletorNomes value={d.recepcao} onChange={v => editDomingo(d.dia, { recepcao: v })} opcoes={nomesProfissionais} /></td>
+                            <td><SeletorNomes value={d.cabeleireiro} onChange={v => editDomingo(d.dia, { cabeleireiro: v })} opcoes={nomesProfissionais} soLeitura={soLeitura} /></td>
+                            <td><SeletorNomes value={d.assistente} onChange={v => editDomingo(d.dia, { assistente: v })} opcoes={nomesProfissionais} soLeitura={soLeitura} /></td>
+                            <td><SeletorNomes value={d.manicure} onChange={v => editDomingo(d.dia, { manicure: v })} opcoes={nomesProfissionais} soLeitura={soLeitura} /></td>
+                            <td><SeletorNomes value={d.recepcao} onChange={v => editDomingo(d.dia, { recepcao: v })} opcoes={nomesProfissionais} soLeitura={soLeitura} /></td>
                           </>
                         )}
                         <td>

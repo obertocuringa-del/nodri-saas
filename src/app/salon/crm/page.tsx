@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
@@ -131,6 +131,71 @@ export default function CrmPage() {
   // ficha da cliente vira um painel que se abre por cima.
   const noCelular = useIsMobile(860)
   const [fichaAberta, setFichaAberta] = useState(false)
+
+  // ── Faixa que se recolhe (só no PC) ──────────────────────────────────────
+  //
+  // Cabeçalho + pastas ocupam uns 90px que a conversa usaria melhor. Pedido
+  // do dono em 21/09/2026: a faixa vira uma tira fina com o nome da pasta
+  // atual; com o mouse no topo ela desce POR CIMA da conversa (a conversa
+  // não pula de lugar), a pessoa clica na pasta, e quando o mouse sai ela
+  // sobe de novo. Nada fica travado na tela.
+  //
+  // Em 18/09 ele tinha pedido as pastas fixas porque a faixa escondida
+  // confundia a recepção. Por isso a tira sempre diz em que pasta se está, e
+  // o alfinete ao lado de Atualizar deixa a faixa fixa para quem preferir --
+  // guardado por computador, não por salão.
+  //
+  // Com aviso na tela (conexão com problema, fora do ar, outro número) a
+  // faixa não recolhe: aviso escondido é aviso que ninguém lê.
+  const [faixaFixa, setFaixaFixa] = useState(false)
+  const [faixaAberta, setFaixaAberta] = useState(false)
+  const faixaRef = useRef<HTMLDivElement>(null)
+  const painelFaixaRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    try { setFaixaFixa(localStorage.getItem('nodri_crm_faixa_fixa') === '1') } catch {}
+  }, [])
+  const alternarFaixaFixa = () => {
+    setFaixaFixa(v => {
+      try { localStorage.setItem('nodri_crm_faixa_fixa', v ? '0' : '1') } catch {}
+      return !v
+    })
+  }
+  const conectadoAgora = canal.situacao === 'conectado'
+  const temAlerta = !!(
+    (conectadoAgora && canal.erro) || foraDoAr ||
+    (conectadoAgora && canal.numero && canal.numero_dados && canal.numero !== canal.numero_dados)
+  )
+  const faixaRecolhe = !noCelular && canalLido && conectadoAgora && !faixaFixa && !temAlerta
+
+  // Abre e fecha pela POSIÇÃO do mouse, não por entrar/sair do elemento: o
+  // conjunto Voltar/Início/Busca da barra global fica na mesma linha mas fora
+  // deste componente, e com mouseleave a faixa fechava debaixo do cursor.
+  useEffect(() => {
+    if (!faixaRecolhe) { setFaixaAberta(false); return }
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const cancelar = () => { if (timer) { clearTimeout(timer); timer = null } }
+    const fechar = () => { if (!timer) timer = setTimeout(() => { timer = null; setFaixaAberta(false) }, 220) }
+    const onMover = (e: MouseEvent) => {
+      const tira = faixaRef.current?.getBoundingClientRect().bottom ?? 0
+      const painel = painelFaixaRef.current?.getBoundingClientRect().bottom ?? 0
+      if (e.clientY <= Math.max(tira, painel)) { cancelar(); setFaixaAberta(true) }
+      else fechar()
+    }
+    document.addEventListener('mousemove', onMover)
+    document.documentElement.addEventListener('mouseleave', fechar)
+    return () => {
+      cancelar()
+      document.removeEventListener('mousemove', onMover)
+      document.documentElement.removeEventListener('mouseleave', fechar)
+    }
+  }, [faixaRecolhe])
+
+  // Avisa o CSS global (ver globals.css, "CRM com a faixa recolhida").
+  useEffect(() => {
+    if (faixaRecolhe && !faixaAberta) document.body.setAttribute('data-crm-compacto', '1')
+    else document.body.removeAttribute('data-crm-compacto')
+    return () => { document.body.removeAttribute('data-crm-compacto') }
+  }, [faixaRecolhe, faixaAberta])
 
   // ── Carregamento ──────────────────────────────────────────────────────────
   const horaCurta = (iso: string) => {
@@ -857,7 +922,24 @@ export default function CrmPage() {
     // dobra.
     <div className="h-screen flex flex-col" style={{ background: '#faf9f7' }}>
       {/* ── Barra ── */}
-      <div className="flex-shrink-0 z-20 border-b relative" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+      <div ref={faixaRef} className="flex-shrink-0 z-20 border-b relative" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
+        {/* A tira fina: tudo que fica à vista com a faixa recolhida. Diz a
+            pasta atual para ninguém se perder (ver "Faixa que se recolhe"). */}
+        {faixaRecolhe && (
+          <div onClick={() => setFaixaAberta(true)} data-crm-tira
+            className="h-[26px] px-4 flex items-center justify-center gap-2 select-none cursor-default">
+            <span className="text-[11px] font-bold" style={{ color: '#5b4fcf' }}>{rotuloDoFiltro}</span>
+            <ChevronDown size={12} style={{ color: '#5b4fcf' }} />
+            <span className="text-[11px]" style={{ color: '#8f877f' }}>pastas e menu: passe o mouse aqui em cima</span>
+          </div>
+        )}
+
+        {/* Recolhida, a faixa desce por cima da conversa (absolute) em vez de
+            empurrá-la: a lista e a conversa não pulam a cada passada do mouse. */}
+        {(!faixaRecolhe || faixaAberta) && (
+        <div ref={painelFaixaRef}
+          className={faixaRecolhe ? 'absolute left-0 right-0 top-0 z-30 border-b' : ''}
+          style={faixaRecolhe ? { background: '#fff', borderColor: '#e8e6e0', boxShadow: '0 14px 34px rgba(26,22,20,.16)' } : undefined}>
         {/* A barra global de busca flutua no canto direito, por cima de tudo
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
@@ -913,6 +995,18 @@ export default function CrmPage() {
             </a>
             <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
               className="p-1.5 rounded-lg" style={{ color: '#6b6860' }}><RefreshCw size={15} /></button>
+            {/* Alfinete: fixa a faixa (não recolhe) para quem preferir assim.
+                Só no PC; no celular a faixa nunca recolhe. */}
+            {!noCelular && (
+              <button onClick={alternarFaixaFixa}
+                title={faixaFixa
+                  ? 'Faixa fixa. Clique para ela se esconder quando o mouse sai'
+                  : 'A faixa se esconde quando o mouse sai. Clique para deixá-la fixa'}
+                className="p-1.5 rounded-lg transition duration-100 hover:brightness-95"
+                style={{ color: faixaFixa ? '#5b4fcf' : '#6b6860', background: faixaFixa ? '#f1eefc' : undefined }}>
+                {faixaFixa ? <Pin size={15} /> : <PinOff size={15} />}
+              </button>
+            )}
           </div>
         </div>
 
@@ -1053,6 +1147,8 @@ export default function CrmPage() {
             ))}
             <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
           </div>
+        )}
+        </div>
         )}
       </div>
 

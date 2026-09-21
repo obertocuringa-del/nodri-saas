@@ -20,9 +20,21 @@ export function nomeNaLista(nome: string, lista: string): boolean {
 // do cadastro pra escolher, em vez de digitar o nome na mão. O valor continua
 // sendo salvo como texto "Nome / Nome" pra manter compatibilidade com o que
 // já existia (mesmo formato que a impressão e o formato antigo usam).
-export function SeletorNomes({ value, onChange, opcoes }: { value: string; onChange: (v: string) => void; opcoes: string[] }) {
+// soLeitura: só os chips, sem o × e sem o "+". É o que a Recepção vê na
+// Escala espelhada — os mesmos nomes, sem como mexer neles.
+export function SeletorNomes({ value, onChange, opcoes, soLeitura = false }: { value: string; onChange: (v: string) => void; opcoes: string[]; soLeitura?: boolean }) {
   const [aberto, setAberto] = useState(false)
   const nomes = value ? value.split('/').map(s => s.trim()).filter(Boolean) : []
+  if (soLeitura) {
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', minHeight: 26 }}>
+        {nomes.length === 0 && <span style={{ fontSize: 12, color: '#9ca3af' }}>—</span>}
+        {nomes.map(n => (
+          <span key={n} style={{ display: 'inline-flex', alignItems: 'center', background: '#f0eefb', color: COR, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>{n}</span>
+        ))}
+      </div>
+    )
+  }
   function add(nome: string) {
     onChange([...nomes, nome].join(' / '))
     setAberto(false)
