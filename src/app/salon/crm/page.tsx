@@ -1452,9 +1452,6 @@ export default function CrmPage() {
                       onClick={() => escolherArquivo.current?.click()}>
                       <Paperclip size={14} />
                     </BotaoFormato>
-                    <span className="text-[10px] ml-1 truncate" style={{ color: '#a9a29a' }}>
-                      selecione o texto e clique · /atalho abre a mensagem pronta
-                    </span>
                   </div>
 
                   {emojisAberto && (
