@@ -108,8 +108,15 @@ export default function CrmPage() {
   useEffect(() => {
     const el = areaTexto.current
     if (!el) return
-    el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 320) + 'px'
+    // Vazia: UMA linha, sempre. O Chrome conta o texto de dica (placeholder)
+    // no scrollHeight, e quando ele quebrava em duas ou três linhas a caixa
+    // nascia com o dobro da altura (visto na tela do dono em 21/09/2026).
+    if (!texto) { el.style.height = ''; return }
+    el.style.height = '0px'
+    // box-sizing é border-box (Tailwind): a altura tem que incluir a borda,
+    // senão fica 2px curta e aparece barra de rolagem com três linhas.
+    const borda = el.offsetHeight - el.clientHeight
+    el.style.height = Math.min(el.scrollHeight + borda, 320) + 'px'
   }, [texto])
   // O que já foi clicado na tabela de preços e está escrito na resposta. Serve
   // para o item SUMIR da lista: quem monta "corte + escova + hidratação" no
@@ -1450,8 +1457,8 @@ export default function CrmPage() {
                       onClick={() => escolherArquivo.current?.click()}>
                       <Paperclip size={14} />
                     </BotaoFormato>
-                    <span className="text-[10px] ml-1" style={{ color: '#a9a29a' }}>
-                      selecione o texto e clique
+                    <span className="text-[10px] ml-1 truncate" style={{ color: '#a9a29a' }}>
+                      selecione o texto e clique · /atalho abre a mensagem pronta
                     </span>
                   </div>
 
@@ -1495,24 +1502,24 @@ export default function CrmPage() {
                         if (pronta) { usarModelo(pronta); return }
                         enviar()
                       }}
-                      placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha · /atalho abre a mensagem pronta)"
-                      className="w-full pl-3.5 pr-12 py-2.5 rounded-2xl text-[13.5px] resize-none focus:outline-none leading-relaxed block"
-                      style={{ background: '#fdfaf8', border: '1px solid #e9ddd6', color: '#2b2320', minHeight: 42, maxHeight: 320, overflowY: 'auto' }} />
+                      placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha)"
+                      className="w-full pl-3.5 pr-11 py-2 rounded-2xl text-[13.5px] resize-none focus:outline-none leading-normal block"
+                      style={{ background: '#fdfaf8', border: '1px solid #e9ddd6', color: '#2b2320', minHeight: 38, maxHeight: 320, overflowY: 'auto' }} />
                     {texto.trim() ? (
                       <button onClick={() => enviar()} disabled={anexando} type="button"
                         title={anexando ? 'Anexando...' : 'Enviar (Enter)'}
-                        className="absolute right-1.5 bottom-1.5 w-8 h-8 rounded-full flex items-center justify-center transition duration-100 hover:brightness-95 active:scale-90 disabled:opacity-40"
+                        className="absolute right-1 bottom-1 w-[30px] h-[30px] rounded-full flex items-center justify-center transition duration-100 hover:brightness-95 active:scale-90 disabled:opacity-40"
                         style={{ background: '#a8624f', color: '#fff' }}>
-                        <Send size={15} />
+                        <Send size={14} />
                       </button>
                     ) : (
                       <button onClick={gravarAudio} disabled={anexando} type="button"
                         title={gravando ? 'Parar e enviar o áudio' : 'Gravar um áudio'}
-                        className="absolute right-1.5 bottom-1.5 w-8 h-8 rounded-full flex items-center justify-center transition duration-100 active:scale-90 disabled:opacity-40"
+                        className="absolute right-1 bottom-1 w-[30px] h-[30px] rounded-full flex items-center justify-center transition duration-100 active:scale-90 disabled:opacity-40"
                         style={gravando
                           ? { background: '#b4322a', color: '#fff' }
                           : { background: 'transparent', color: '#9a8c85' }}>
-                        {gravando ? <Square size={15} /> : <Mic size={16} />}
+                        {gravando ? <Square size={14} /> : <Mic size={15} />}
                       </button>
                     )}
                   </div>
