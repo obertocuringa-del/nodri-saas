@@ -105,6 +105,11 @@ export default function CrmPage() {
   // conforme a pessoa escreve (ou cola uma mensagem pronta), até 320px.
   // Roda a cada mudança do texto, e não só no onChange, porque emoji, negrito
   // e mensagem pronta entram por fora do teclado.
+  //
+  // Havia um segundo ajuste, mais antigo, com mínimo de 78px (três linhas)
+  // que rodava ao abrir a conversa e passava por cima deste. Era ele que
+  // fazia a caixa "nascer com três linhas" mesmo vazia. Saiu; este é o único.
+  // `aberta` na lista de dependências para a altura zerar ao trocar de conversa.
   useEffect(() => {
     const el = areaTexto.current
     if (!el) return
@@ -117,7 +122,7 @@ export default function CrmPage() {
     // senão fica 2px curta e aparece barra de rolagem com três linhas.
     const borda = el.offsetHeight - el.clientHeight
     el.style.height = Math.min(el.scrollHeight + borda, 320) + 'px'
-  }, [texto])
+  }, [texto, aberta])
   // O que já foi clicado na tabela de preços e está escrito na resposta. Serve
   // para o item SUMIR da lista: quem monta "corte + escova + hidratação" no
   // clique perde a conta de onde parou, e manda o mesmo serviço duas vezes.
@@ -814,16 +819,6 @@ export default function CrmPage() {
       el.setSelectionRange(ini + marca.length, fim + marca.length)
     }, 0)
   }
-
-  // O campo cresce com o texto. Preso em duas linhas, a recepção escrevia uma
-  // resposta de seis linhas enxergando duas -- e só via o erro de digitação
-  // depois de a mensagem já estar no WhatsApp da cliente.
-  useEffect(() => {
-    const el = areaTexto.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = Math.min(Math.max(el.scrollHeight, 78), 320) + 'px'
-  }, [texto, aberta])
 
   function inserirEmoji(e: string) {
     const el = areaTexto.current
