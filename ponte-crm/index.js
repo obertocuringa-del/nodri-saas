@@ -40,13 +40,16 @@ import os from 'node:os'
 const NODRI   = (process.env.NODRI_URL || 'https://www.nodri.com.br').replace(/\/+$/, '')
 const CHAVE   = process.env.CRM_PONTE_CHAVE || ''
 const PASTA   = process.env.CRM_SESSOES_DIR || './sessoes'
-const CICLO   = Number(process.env.CRM_CICLO_MS || 4000)
+// 21/09/2026: a Vercel pausou o site por excesso de chamadas (2 milhoes no
+// mes). A ponte era a maior parte: fila a cada 1 s, canais a cada 4 s.
+// Agora 5 s e 30 s -- um envio pode demorar ate 5 s a mais para sair.
+const CICLO   = Number(process.env.CRM_CICLO_MS || 30000)
 // A fila de saida tem ritmo proprio, bem mais curto. Quem clica em Enviar
 // espera a mensagem sair AGORA: com o laco geral de 4 segundos a resposta
 // chegava na cliente com ate 4 segundos de atraso, e a recepcao ficava olhando
 // para a tela sem saber se tinha funcionado. O laco geral continua largo
 // porque o que ele faz -- conferir canais, bater relogio -- nao tem pressa.
-const CICLO_FILA = Number(process.env.CRM_CICLO_FILA_MS || 1000)
+const CICLO_FILA = Number(process.env.CRM_CICLO_FILA_MS || 5000)
 
 if (!CHAVE) {
   console.error('[ponte] CRM_PONTE_CHAVE não definida. Sem ela o NODRI recusa a conexão.')

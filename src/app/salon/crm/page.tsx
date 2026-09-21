@@ -356,7 +356,9 @@ export default function CrmPage() {
       await bater()
       if (parado) return
       const escondida = typeof document !== 'undefined' && document.hidden
-      const espera = esperandoQr ? 2500 : escondida ? 10000 : 2500
+      // 8 s, nao 2,5 s: em 21/09/2026 a Vercel pausou o site por excesso de
+      // chamadas (2 milhoes no mes); cada aba aberta o dia inteiro pesava.
+      const espera = esperandoQr ? 2500 : escondida ? 20000 : 8000
       timer = setTimeout(laco, espera)
     }
     laco()
@@ -394,7 +396,7 @@ export default function CrmPage() {
           return chegaram
         })
       } catch {}
-    }, 2500)
+    }, 8000)
     return () => clearInterval(t)
   }, [aberta?.id])
 
