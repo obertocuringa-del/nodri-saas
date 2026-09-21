@@ -40,16 +40,15 @@ import os from 'node:os'
 const NODRI   = (process.env.NODRI_URL || 'https://www.nodri.com.br').replace(/\/+$/, '')
 const CHAVE   = process.env.CRM_PONTE_CHAVE || ''
 const PASTA   = process.env.CRM_SESSOES_DIR || './sessoes'
-// 21/09/2026: a Vercel pausou o site por excesso de chamadas (2 milhoes no
-// mes). A ponte era a maior parte: fila a cada 1 s, canais a cada 4 s.
-// Agora 5 s e 30 s -- um envio pode demorar ate 5 s a mais para sair.
-const CICLO   = Number(process.env.CRM_CICLO_MS || 30000)
+// 21/09/2026: a Vercel pausou o site por excesso de chamadas no plano gratis;
+// no mesmo dia o dono foi para o Pro (sem teto) e pediu a frequencia de volta.
+const CICLO   = Number(process.env.CRM_CICLO_MS || 4000)
 // A fila de saida tem ritmo proprio, bem mais curto. Quem clica em Enviar
 // espera a mensagem sair AGORA: com o laco geral de 4 segundos a resposta
 // chegava na cliente com ate 4 segundos de atraso, e a recepcao ficava olhando
 // para a tela sem saber se tinha funcionado. O laco geral continua largo
 // porque o que ele faz -- conferir canais, bater relogio -- nao tem pressa.
-const CICLO_FILA = Number(process.env.CRM_CICLO_FILA_MS || 5000)
+const CICLO_FILA = Number(process.env.CRM_CICLO_FILA_MS || 1000)
 
 if (!CHAVE) {
   console.error('[ponte] CRM_PONTE_CHAVE não definida. Sem ela o NODRI recusa a conexão.')
@@ -223,9 +222,9 @@ async function entregarAoNodri(salaoId, corpo) {
     return true
   } catch (e) {
     const m = memoriaDe(salaoId)
-    // Erro do próprio NODRI (400, 500 com resposta) não melhora tentando de
-    // novo; só rede fora ("fetch failed") vale a fila.
-    if (!/fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|socket hang up|network/i.test(e.message)) throw e
+    // Erro do proprio pedido (400, 401, 404) nao melhora tentando de novo;
+    // rede fora e servidor com erro passageiro (402, 5xx...) valem a fila.
+    if (!VALE_REENTREGA(e)) throw e
     if (m.pendentes.length >= TETO_PENDENTES) m.pendentes.shift()
     m.pendentes.push(corpo)
     salvarMemoria(salaoId)
@@ -233,6 +232,15 @@ async function entregarAoNodri(salaoId, corpo) {
     return false
   }
 }
+
+// O que vale guardar para reentrega: rede fora, OU o servidor respondendo
+// com erro passageiro. Em 21/09/2026 a Vercel pausou o site por cobranca e
+// respondia 402 a tudo; como 402 nao era "rede fora", a ponte descartou tres
+// horas de mensagens de cliente -- ficaram so no celular. Agora 402, 408,
+// 429 e 5xx entram na fila; 400/401/403/404 (erro do proprio pedido) nao.
+const VALE_REENTREGA = e =>
+  /fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|socket hang up|network/i.test(e.message)
+  || /^(402|408|425|429|5\d\d)\b/.test(e.message)
 
 /** A fila de reentrega, na ordem em que chegou. Para na primeira falha. */
 async function reentregarPendentes(salaoId) {
@@ -242,9 +250,11 @@ async function reentregarPendentes(salaoId) {
   while (m.pendentes.length) {
     const corpo = m.pendentes[0]
     try {
-      await nodri('?acao=entrada', { method: 'POST', body: JSON.stringify(corpo) })
+      // `reentregue`: o NODRI conta e mostra na tela "N mensagens chegaram
+      // enquanto o CRM estava fora do ar e foram entregues agora".
+      await nodri('?acao=entrada', { method: 'POST', body: JSON.stringify({ ...corpo, reentregue: true }) })
     } catch (e) {
-      if (/fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|socket hang up|network/i.test(e.message)) break
+      if (VALE_REENTREGA(e)) break
       registro(salaoId, 'reentrega recusada pelo NODRI, descartando:', e.message)
     }
     m.pendentes.shift()

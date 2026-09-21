@@ -1264,6 +1264,32 @@ export async function POST(req: NextRequest) {
 
   if (!conversa) return NextResponse.json({ error: 'falha ao abrir a conversa' }, { status: 500 })
 
+  // ── Mensagem que a ponte guardou enquanto o NODRI estava fora ───────────
+  //
+  // Chegou atrasada, mas chegou -- com a hora original. O aviso "CRM fora do
+  // ar" passa a dizer quantas foram entregues assim, em vez de mandar a
+  // recepcao conferir o celular. Uma janela por vez: se a ultima ja foi
+  // vista (ou tem mais de 12 h), abre outra.
+  if (daCliente && body?.reentregue === true) {
+    try {
+      const { data: reg } = await supabaseAdmin.from('salao_config').select('valor')
+        .eq('salao_id', salaoId).eq('chave', 'crm_fora_do_ar').maybeSingle()
+      const v: any = (reg as any)?.valor || null
+      const recente = v && v.visto === false && v.ate && (Date.now() - Date.parse(v.ate)) < 12 * 3600e3
+      const de = recente ? (Date.parse(quando) < Date.parse(v.de) ? quando : v.de) : quando
+      const ate = agora
+      const valor = {
+        de, ate,
+        minutos: Math.max(1, Math.round((Date.parse(ate) - Date.parse(de)) / 60000)),
+        reentregues: (recente ? Number(v.reentregues || 0) : 0) + 1,
+        visto: false,
+      }
+      await supabaseAdmin.from('salao_config').upsert({
+        salao_id: salaoId, chave: 'crm_fora_do_ar', valor, atualizado_em: agora,
+      }, { onConflict: 'salao_id,chave' })
+    } catch { /* aviso e bonus; a mensagem entra do mesmo jeito */ }
+  }
+
   const { error: erroMsg } = await supabaseAdmin.from('crm_mensagens').insert({
     salao_id: salaoId,
     conversa_id: conversa.id,

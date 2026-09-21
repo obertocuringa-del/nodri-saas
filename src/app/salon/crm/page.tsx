@@ -356,9 +356,7 @@ export default function CrmPage() {
       await bater()
       if (parado) return
       const escondida = typeof document !== 'undefined' && document.hidden
-      // 8 s, nao 2,5 s: em 21/09/2026 a Vercel pausou o site por excesso de
-      // chamadas (2 milhoes no mes); cada aba aberta o dia inteiro pesava.
-      const espera = esperandoQr ? 2500 : escondida ? 20000 : 8000
+      const espera = esperandoQr ? 2500 : escondida ? 10000 : 2500
       timer = setTimeout(laco, espera)
     }
     laco()
@@ -396,7 +394,7 @@ export default function CrmPage() {
           return chegaram
         })
       } catch {}
-    }, 8000)
+    }, 2500)
     return () => clearInterval(t)
   }, [aberta?.id])
 
@@ -1058,9 +1056,13 @@ export default function CrmPage() {
                 O CRM ficou fora do ar das {horaCurta(foraDoAr.de)} às {horaCurta(foraDoAr.ate)}
                 {foraDoAr.minutos >= 60 ? ` (${Math.floor(foraDoAr.minutos / 60)}h${String(foraDoAr.minutos % 60).padStart(2, '0')})` : ` (${foraDoAr.minutos} min)`}.
               </strong>{' '}
-              Mensagem que chegou nesse período está só no celular — o WhatsApp não
-              entrega depois o que passou enquanto o aparelho estava desconectado.
-              Vale conferir a conversa por lá.
+              {Number(foraDoAr.reentregues) > 0
+                ? <>{foraDoAr.reentregues === 1 ? '1 mensagem chegou' : `${foraDoAr.reentregues} mensagens chegaram`} nesse
+                  período e {foraDoAr.reentregues === 1 ? 'foi entregue' : 'foram entregues'} agora, com a hora
+                  original — {foraDoAr.reentregues === 1 ? 'está' : 'estão'} nas conversas, em Preciso agir.</>
+                : <>Mensagem que chegou nesse período está só no celular — o WhatsApp não
+                  entrega depois o que passou enquanto o aparelho estava desconectado.
+                  Vale conferir a conversa por lá.</>}
             </p>
             <button onClick={jaConferi}
               className="px-3 py-2 rounded-lg text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.96]"
