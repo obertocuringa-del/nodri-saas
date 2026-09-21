@@ -2032,11 +2032,12 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
               // O balão do salão era roxo cheio com texto branco -- a cor da
               // marca, forte demais para uma tela olhada o dia inteiro, e
               // texto branco em fundo saturado cansa mais do que texto escuro
-              // em fundo claro. Um tom claro do mesmo roxo mantém o lado de
-              // quem falou reconhecível e deixa a conversa legível por horas.
-              background: meu ? '#f6e6df' : '#fff',
+              // em fundo claro. Depois virou rosê, e sumia no fundo creme
+              // (pedido do dono, 21/09/2026): agora é um verde claro, como no
+              // WhatsApp, que separa na hora quem falou sem gritar.
+              background: meu ? '#dff0e2' : '#fff',
               color: '#2b2320',
-              boxShadow: meu ? '0 1px 2px rgba(168,98,79,.14)' : '0 1px 2px rgba(26,22,20,.09)',
+              boxShadow: meu ? '0 1px 2px rgba(47,107,79,.16)' : '0 1px 2px rgba(26,22,20,.09)',
               // Canto "mordido" do lado de quem falou, como todo mensageiro
               // faz: diz de quem é a fala antes de a pessoa ler a cor.
               borderRadius: meu ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
@@ -2049,8 +2050,8 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
         {citada && (
           <div className="mb-1.5 px-2 py-1 rounded text-[11.5px] truncate"
             style={{
-              background: meu ? 'rgba(168,98,79,.10)' : '#f3e3dc',
-              borderLeft: '3px solid #a8624f',
+              background: meu ? 'rgba(47,107,79,.10)' : '#f3e3dc',
+              borderLeft: meu ? '3px solid #2f6b4f' : '3px solid #a8624f',
               opacity: 0.92,
             }}>
             {citada.texto || `[${citada.tipo}]`}
