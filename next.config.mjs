@@ -18,6 +18,11 @@ const csp = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
+  // Áudio e vídeo das conversas do CRM moram no storage do Supabase. Sem esta
+  // linha valia o default-src 'self' e o Chrome recusava carregar o arquivo:
+  // o player aparecia com 0:00 / 0:00 e não tocava (21/09/2026). blob: é a
+  // prévia do áudio gravado na própria tela.
+  "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   // Supabase (banco/storage) e as APIs de IA usadas pelo servidor.
   //
