@@ -2652,8 +2652,8 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
   const [busca, setBusca] = useState('')
   const [todos, setTodos] = useState(false)
   const [quem, setQuem] = useState<any>(null)
-  const [servico, setServico] = useState<string | null>(null)
-  const [precos, setPrecos] = useState<any[]>([])
+  const [servico, setServico] = useState<any>(null)
+  const [precos, setPrecos] = useState<Record<string, any>>({})
   const [roteiros, setRoteiros] = useState<Record<string, string>>({})
   // Marcação de atenção: chave -> observação. Existir aqui já deixa o serviço
   // vermelho na lista. Ex.: "só atende como assistente, não agendar sozinho".
@@ -2665,8 +2665,10 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    fetch('/api/salon/tabela-precos').then(r => r.ok ? r.json() : null)
-      .then(d => setPrecos(Array.isArray(d?.itens) ? d.itens : [])).catch(() => {})
+    // Os tempos vêm da página Serviços (trabalha / pausa / finaliza), a mesma
+    // configuração que o dono preenche lá -- não da tabela de preços.
+    fetch('/api/servicos/tempos').then(r => r.ok ? r.json() : null)
+      .then(d => setPrecos(d?.tempos && typeof d.tempos === 'object' ? d.tempos : {})).catch(() => {})
     fetch('/api/salon/grid?chave=crm_roteiro_agenda').then(r => r.ok ? r.json() : null)
       .then(d => {
         setRoteiros((d && typeof d === 'object' && d.roteiros) || {})
@@ -2679,18 +2681,24 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
     ? comServico.filter(p => semAcento(p.nome).includes(semAcento(busca)))
     : (todos ? comServico : [])
 
-  const minutosPadrao = (nomeServico: string): number | null => {
-    const alvo = semAcento(nomeServico)
-    const achou = precos.find((it: any) => semAcento(String(it.servico || '')) === alvo)
-    const n = Number(achou?.duracao || 0)
-    return n > 0 ? n : null
+  // "30 min", ou "30 min + 30 de pausa + 60 para finalizar" quando o serviço
+  // tem parada no meio (é assim que a página Serviços guarda).
+  const tempoDe = (s: any): { curto: string; frase: string } | null => {
+    const t = precos[String(s?.id || '')]
+    const t1 = Number(t?.trabalha1 || 0), pa = Number(t?.pausa || 0), t2 = Number(t?.trabalha2 || 0)
+    if (!t1 && !t2) return null
+    if (!pa && !t2) return { curto: `${t1} min`, frase: `Agendar ${t1} min.` }
+    return {
+      curto: `${t1 + pa + t2} min`,
+      frase: `Agendar ${t1} min, pausa de ${pa} min e mais ${t2} min para finalizar (${t1 + pa + t2} min no total).`,
+    }
   }
-  const chaveRoteiro = (p: any, s: string) => `${p?.id || p?.nome}|${semAcento(s)}`
-  const roteiroDe = (p: any, s: string): string => {
+  const chaveRoteiro = (p: any, s: any) => `${p?.id || p?.nome}|${semAcento(s?.nome || s)}`
+  const roteiroDe = (p: any, s: any): string => {
     const salvo = roteiros[chaveRoteiro(p, s)]
     if (salvo) return salvo
-    const min = minutosPadrao(s)
-    return min ? `Agendar ${min} min.` : 'Sem tempo cadastrado — escreva aqui como agendar.'
+    const t = tempoDe(s)
+    return t ? t.frase : 'Sem tempo cadastrado na página Serviços — escreva aqui como agendar.'
   }
 
   async function gravar(doc: { roteiros: Record<string, string>; alertas: Record<string, string> }) {
@@ -2726,7 +2734,7 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
       <div className="flex items-center gap-2 mb-2">
         <Sparkles size={13} style={{ color: '#a8624f' }} />
         <p className="text-[11.5px] font-bold flex-1" style={{ color: '#2b2320' }}>
-          {quem ? `${quem.nome}${servico ? ` · ${servico}` : ''}` : 'Quem faz o quê'}
+          {quem ? `${quem.nome}${servico ? ` · ${servico.nome}` : ''}` : 'Quem faz o quê'}
         </p>
         {quem && (
           <button onClick={() => { if (servico) { setServico(null); setEditando(false) } else setQuem(null) }}
@@ -2772,15 +2780,15 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
       {/* Serviços da profissional */}
       {quem && !servico && (
         <div className="flex gap-1 flex-wrap max-h-44 overflow-y-auto">
-          {[...quem.servicos].sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')).map((s: string) => (
-            <button key={s} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(quem, s)] || '') }}
+          {(quem.servicos as any[]).map((s: any) => (
+            <button key={s.id} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(quem, s)] || '') }}
               title={alertas[chaveRoteiro(quem, s)] || undefined}
               className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex items-center gap-1"
               style={alertas[chaveRoteiro(quem, s)]
                 ? { background: '#fbebe9', color: '#b4322a', border: '1px solid #b4322a40' }
                 : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
               {alertas[chaveRoteiro(quem, s)] && <AlertTriangle size={11} />}
-              {s}{minutosPadrao(s) ? <span className="font-normal opacity-70"> · {minutosPadrao(s)} min</span> : null}
+              {s.nome}{tempoDe(s) ? <span className="font-normal opacity-70"> · {tempoDe(s)!.curto}</span> : null}
             </button>
           ))}
         </div>

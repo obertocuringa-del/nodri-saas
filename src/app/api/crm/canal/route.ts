@@ -128,9 +128,11 @@ export async function GET() {
       id: x.id, nome: x.apelido || x.nome_completo || '',
       instagram: String(x.instagram || '').trim() || null,
       servicos: (Array.isArray(x.servicos_habilitados) ? x.servicos_habilitados : [])
-        .map((idServ: string) => nomeDoServico.get(String(idServ)) || '')
-        .filter(Boolean)
-        .sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')),
+        // id junto: o tempo de cada serviço (trabalha/pausa/finaliza) mora em
+        // salao_config.servicos_tempos, mapeado pelo ID.
+        .map((idServ: string) => ({ id: String(idServ), nome: nomeDoServico.get(String(idServ)) || '' }))
+        .filter((s: any) => s.nome)
+        .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR')),
     }))
     .filter((x: any) => x.nome)
     .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR'))
