@@ -1374,7 +1374,7 @@ export default function CrmPage() {
                     <PainelPrecos modo="descricoes" onInserir={inserirNoTexto} inseridos={inseridos} onFechar={() => setPainel(null)} />
                   )}
                   {painel === 'habilidades' && (
-                    <PainelHabilidades profissionais={profissionais} onInserir={inserirNoTexto} onFechar={() => setPainel(null)} />
+                    <PainelHabilidades profissionais={profissionais} onFechar={() => setPainel(null)} />
                   )}
                   {painel === 'midias' && (
                     <PainelMidias profissionais={profissionais} onInserir={inserirNoTexto} onFechar={() => setPainel(null)} />
@@ -2648,13 +2648,18 @@ function ChipPainel({ ativo, onClick, icone, texto }: { ativo: boolean; onClick:
 // 22/09/2026.
 const semAcento = (t: string) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
-function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissionais: any[]; onInserir: (t: string) => void; onFechar: () => void }) {
+function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; onFechar: () => void }) {
   const [busca, setBusca] = useState('')
   const [todos, setTodos] = useState(false)
   const [quem, setQuem] = useState<any>(null)
   const [servico, setServico] = useState<string | null>(null)
   const [precos, setPrecos] = useState<any[]>([])
   const [roteiros, setRoteiros] = useState<Record<string, string>>({})
+  // Marcação de atenção: chave -> observação. Existir aqui já deixa o serviço
+  // vermelho na lista. Ex.: "só atende como assistente, não agendar sozinho".
+  const [alertas, setAlertas] = useState<Record<string, string>>({})
+  const [marcando, setMarcando] = useState(false)
+  const [obs, setObs] = useState('')
   const [editando, setEditando] = useState(false)
   const [rascunho, setRascunho] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -2663,7 +2668,10 @@ function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissiona
     fetch('/api/salon/tabela-precos').then(r => r.ok ? r.json() : null)
       .then(d => setPrecos(Array.isArray(d?.itens) ? d.itens : [])).catch(() => {})
     fetch('/api/salon/grid?chave=crm_roteiro_agenda').then(r => r.ok ? r.json() : null)
-      .then(d => setRoteiros((d && typeof d === 'object' && d.roteiros) || {})).catch(() => {})
+      .then(d => {
+        setRoteiros((d && typeof d === 'object' && d.roteiros) || {})
+        setAlertas((d && typeof d === 'object' && d.alertas) || {})
+      }).catch(() => {})
   }, [])
 
   const comServico = (profissionais || []).filter(p => Array.isArray(p.servicos) && p.servicos.length)
@@ -2685,17 +2693,32 @@ function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissiona
     return min ? `Agendar ${min} min.` : 'Sem tempo cadastrado — escreva aqui como agendar.'
   }
 
-  async function salvarRoteiro() {
-    if (!quem || !servico) return
-    const novo = { ...roteiros, [chaveRoteiro(quem, servico)]: rascunho.trim() }
+  async function gravar(doc: { roteiros: Record<string, string>; alertas: Record<string, string> }) {
     setSalvando(true)
     try {
       const r = await fetch('/api/salon/grid', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chave: 'crm_roteiro_agenda', doc: { roteiros: novo } }),
+        body: JSON.stringify({ chave: 'crm_roteiro_agenda', doc }),
       })
-      if (r.ok) { setRoteiros(novo); setEditando(false) }
+      if (!r.ok) return false
+      setRoteiros(doc.roteiros); setAlertas(doc.alertas)
+      return true
     } finally { setSalvando(false) }
+  }
+  async function salvarRoteiro() {
+    if (!quem || !servico) return
+    const novo = { ...roteiros, [chaveRoteiro(quem, servico)]: rascunho.trim() }
+    if (await gravar({ roteiros: novo, alertas })) setEditando(false)
+  }
+  // Marcar/desmarcar o serviço como "atenção". A observação é obrigatória:
+  // vermelho sem motivo não ajuda ninguém na recepção.
+  async function salvarAlerta(texto: string | null) {
+    if (!quem || !servico) return
+    const k = chaveRoteiro(quem, servico)
+    const novos = { ...alertas }
+    if (texto && texto.trim()) novos[k] = texto.trim()
+    else delete novos[k]
+    if (await gravar({ roteiros, alertas: novos })) { setMarcando(false); setObs('') }
   }
 
   return (
@@ -2750,9 +2773,13 @@ function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissiona
       {quem && !servico && (
         <div className="flex gap-1 flex-wrap max-h-44 overflow-y-auto">
           {[...quem.servicos].sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')).map((s: string) => (
-            <button key={s} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false) }}
-              className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-              style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+            <button key={s} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(quem, s)] || '') }}
+              title={alertas[chaveRoteiro(quem, s)] || undefined}
+              className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex items-center gap-1"
+              style={alertas[chaveRoteiro(quem, s)]
+                ? { background: '#fbebe9', color: '#b4322a', border: '1px solid #b4322a40' }
+                : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+              {alertas[chaveRoteiro(quem, s)] && <AlertTriangle size={11} />}
               {s}{minutosPadrao(s) ? <span className="font-normal opacity-70"> · {minutosPadrao(s)} min</span> : null}
             </button>
           ))}
@@ -2782,13 +2809,51 @@ function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissiona
                 style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }}>
                 {roteiroDe(quem, servico)}
               </p>
+              {/* A marcação vermelha: quem está habilitado no cadastro mas não
+                  atende sozinho (só como assistente, por exemplo). Fica só para
+                  a recepção ver -- esta informação não vai para a cliente. */}
+              {alertas[chaveRoteiro(quem, servico)] && !marcando && (
+                <p className="text-[12px] mt-1.5 rounded-lg px-2.5 py-2 flex items-start gap-1.5"
+                  style={{ background: '#fbebe9', border: '1px solid #e8c5be', color: '#b4322a' }}>
+                  <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span className="font-bold">{alertas[chaveRoteiro(quem, servico)]}</span>
+                </p>
+              )}
+              {marcando && (
+                <div className="mt-1.5">
+                  <input value={obs} onChange={e => setObs(e.target.value)} autoFocus
+                    placeholder="Ex.: só atende como assistente, não agendar sozinha."
+                    className="w-full px-2.5 py-2 rounded-lg text-[12px] focus:outline-none"
+                    style={{ background: '#fff', border: '1px solid #e8c5be', color: '#2b2320' }} />
+                  <div className="flex gap-1.5 mt-1.5">
+                    <button onClick={() => salvarAlerta(obs)} disabled={salvando || !obs.trim()}
+                      className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold disabled:opacity-40"
+                      style={{ background: '#b4322a', color: '#fff' }}>{salvando ? 'Salvando...' : 'Marcar'}</button>
+                    <button onClick={() => { setMarcando(false); setObs(alertas[chaveRoteiro(quem, servico)] || '') }}
+                      className="px-3 py-1.5 rounded-lg text-[11.5px]" style={{ background: '#f6f1ee', color: '#6e625c' }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-1.5 mt-1.5 flex-wrap">
                 <button onClick={() => { setRascunho(roteiroDe(quem, servico)); setEditando(true) }}
                   className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
-                  style={{ background: '#f3e3dc', color: '#a8624f' }}><Pencil size={11} /> Editar</button>
-                <button onClick={() => onInserir(`${servico} com ${quem.nome}: ${roteiroDe(quem, servico)}`)}
-                  className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold"
-                  style={{ background: '#f6f1ee', color: '#6e625c' }}>Usar na resposta</button>
+                  style={{ background: '#f3e3dc', color: '#a8624f' }}><Pencil size={11} /> Editar tempo</button>
+                {!marcando && (alertas[chaveRoteiro(quem, servico)]
+                  ? (
+                    <>
+                      <button onClick={() => { setObs(alertas[chaveRoteiro(quem, servico)]); setMarcando(true) }}
+                        className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
+                        style={{ background: '#fbebe9', color: '#b4322a' }}><AlertTriangle size={11} /> Editar aviso</button>
+                      <button onClick={() => salvarAlerta(null)} disabled={salvando}
+                        className="px-3 py-1.5 rounded-lg text-[11.5px] disabled:opacity-40"
+                        style={{ background: '#f6f1ee', color: '#6e625c' }}>Tirar marcação</button>
+                    </>
+                  )
+                  : (
+                    <button onClick={() => { setObs(''); setMarcando(true) }}
+                      className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
+                      style={{ background: '#fbebe9', color: '#b4322a' }}><AlertTriangle size={11} /> Marcar atenção</button>
+                  ))}
               </div>
             </>
           )}

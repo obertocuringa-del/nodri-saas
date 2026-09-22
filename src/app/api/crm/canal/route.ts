@@ -100,6 +100,15 @@ export async function GET() {
   // Quem da recepcao pode assinar a mensagem. Sai do cadastro de
   // profissionais, cargo "Recepcionista" -- lista que o salao ja mantem, em
   // vez de uma segunda lista para alguem esquecer de atualizar.
+  // Nome de cada servico do salao, para traduzir os IDs do cadastro.
+  const { data: servs } = await supabaseAdmin
+    .from('salao_servicos').select('id, nome, ativo')
+    .eq('salao_id', sess!.salaoId).limit(1000)
+  const nomeDoServico = new Map<string, string>()
+  for (const s of servs || []) {
+    if ((s as any).ativo !== false) nomeDoServico.set(String((s as any).id), String((s as any).nome || ''))
+  }
+
   const { data: profs } = await supabaseAdmin
     .from('profissionais').select('id, nome_completo, apelido, cargo, ativo, is_departamento, vinculo, instagram, servicos_habilitados')
     .eq('salao_id', sess!.salaoId).limit(500)
@@ -112,10 +121,16 @@ export async function GET() {
     // O Instagram vai junto para o botao "Midias sociais" da conversa.
     // `servicos` alimenta o botao Habilidades da conversa: o que cada uma faz,
     // direto do cadastro, sem segunda lista para alguem manter.
+    //
+    // servicos_habilitados guarda o ID do servico, nao o nome -- a tela
+    // mostrava uma parede de codigo (22/09/2026). O nome vem de salao_servicos.
     .map((x: any) => ({
       id: x.id, nome: x.apelido || x.nome_completo || '',
       instagram: String(x.instagram || '').trim() || null,
-      servicos: Array.isArray(x.servicos_habilitados) ? x.servicos_habilitados : [],
+      servicos: (Array.isArray(x.servicos_habilitados) ? x.servicos_habilitados : [])
+        .map((idServ: string) => nomeDoServico.get(String(idServ)) || '')
+        .filter(Boolean)
+        .sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')),
     }))
     .filter((x: any) => x.nome)
     .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR'))
