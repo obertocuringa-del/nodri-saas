@@ -539,6 +539,20 @@ export default function CrmPage() {
     return m
   }, [estadosCfg, comTempo])
 
+  // ── Quantas estão ESPERANDO resposta dentro de cada pasta do salão ────────
+  //
+  // Conversa em pasta do salão (Profissionais, ...) não vai mais para Preciso
+  // agir quando a pessoa escreve -- fica na pasta. Sem este número, só quem
+  // abrisse a pasta saberia que a Suelen avisou que ia atrasar; a mensagem
+  // ficava lá, sem resposta, e ninguém percebia (pedido do dono, 22/09/2026).
+  const naoLidasExtras = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const ex of estadosCfg.extras || []) {
+      m[ex.chave] = comTempo.filter(c => c.estado === ex.chave && (c.nao_lidas || 0) > 0).length
+    }
+    return m
+  }, [estadosCfg, comTempo])
+
   const rotuloDoFiltro = useMemo(() => {
     const n = (x: number) => (x ? ` (${x})` : '')
     switch (filtro) {
@@ -1118,6 +1132,16 @@ export default function CrmPage() {
             )}
             <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
               texto={`${nomePasta('aguardando')} (${contagem.aguardando})`} />
+            {/* As pastas que o salão criou (Profissionais, ...) vêm logo aqui,
+                e não no fim da fileira: quem escreve delas é gente da casa, e
+                a resposta não pode esperar a recepção rolar a barra até o fim.
+                Ordem pedida pelo dono em 22/09/2026. Com mensagem esperando,
+                a aba fica vermelha e piscando até a última ser lida. */}
+            {(estadosCfg.extras || []).map(ex => (contagemExtras[ex.chave] || 0) > 0 && (
+              <Aba key={ex.chave} ativo={filtro === ex.chave} onClick={() => setFiltro(ex.chave)}
+                texto={`${ex.rotulo} (${contagemExtras[ex.chave]})`}
+                esperando={naoLidasExtras[ex.chave] || 0} />
+            ))}
             {contagem.promo > 0 && (
               <Aba ativo={filtro === 'aguardando_promo'} onClick={() => setFiltro('aguardando_promo')}
                 texto={`${nomePasta('aguardando_promo')} (${contagem.promo})`} />
@@ -1154,13 +1178,6 @@ export default function CrmPage() {
               <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
                 texto={`${nomePasta('sem_conversao')} (${contagem.perdidas})`} />
             )}
-            {/* As pastas que o salão criou em Configurar (Profissionais, ...)
-                têm aba igual às de fábrica -- o botão de marcar já existia,
-                a aba para achar depois é que faltava. */}
-            {(estadosCfg.extras || []).map(ex => (contagemExtras[ex.chave] || 0) > 0 && (
-              <Aba key={ex.chave} ativo={filtro === ex.chave} onClick={() => setFiltro(ex.chave)}
-                texto={`${ex.rotulo} (${contagemExtras[ex.chave]})`} />
-            ))}
             <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
           </div>
         )}
@@ -1654,14 +1671,25 @@ function pulsar(e: React.MouseEvent<HTMLElement>, classe = 'nodri-pulso') {
 // Pastas do topo. Passar o mouse escurece, segurar encolhe, clicar pulsa:
 // o dono pediu (21/09/2026) o mesmo retorno dos botões Preços/Serviços,
 // para saber que acertou o botão antes de soltar.
-function Aba({ ativo, onClick, texto, destaque }: any) {
+//
+// `esperando`: quantas conversas daquela pasta têm mensagem não lida. Acima
+// de zero a aba fica vermelha, mostra o número e PISCA até a última ser
+// aberta -- é o que faz alguém notar que a profissional escreveu, sem ter de
+// abrir pasta por pasta (pedido do dono, 22/09/2026).
+function Aba({ ativo, onClick, texto, destaque, esperando = 0 }: any) {
+  const pisca = !ativo && esperando > 0
   return (
     <button onClick={e => { pulsar(e); onClick?.() }} type="button"
-      className="px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex-shrink-0 whitespace-nowrap"
+      title={pisca ? `${esperando} conversa(s) esperando resposta nesta pasta` : undefined}
+      className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex-shrink-0 whitespace-nowrap ${pisca ? 'nodri-alerta-pisca' : ''}`}
       style={ativo
         ? { background: '#a8624f', color: '#fff' }
         : { background: destaque ? '#fbebe9' : '#f6f1ee', color: destaque ? '#b4322a' : '#6e625c' }}>
       {texto}
+      {pisca && (
+        <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]"
+          style={{ background: '#b4322a', color: '#fff' }}>{esperando}</span>
+      )}
     </button>
   )
 }
