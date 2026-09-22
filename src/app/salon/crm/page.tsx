@@ -129,7 +129,7 @@ export default function CrmPage() {
   const [inseridos, setInseridos] = useState<string[]>([])
   // Os painéis de Preços, Serviços e Mídias sociais abrem em cima da
   // fileira de mensagens prontas -- um de cada vez. Trocar de conversa fecha.
-  const [painel, setPainel] = useState<null | 'precos' | 'servicos' | 'midias'>(null)
+  const [painel, setPainel] = useState<null | 'precos' | 'servicos' | 'midias' | 'habilidades'>(null)
   const [emojisAberto, setEmojisAberto] = useState(false)
   // A faixa de abas nasce fechada: a tela tem informacao demais, e a conversa
   // e a caixa de escrever valem mais altura que uma linha de botoes.
@@ -1373,6 +1373,9 @@ export default function CrmPage() {
                   {painel === 'servicos' && (
                     <PainelPrecos modo="descricoes" onInserir={inserirNoTexto} inseridos={inseridos} onFechar={() => setPainel(null)} />
                   )}
+                  {painel === 'habilidades' && (
+                    <PainelHabilidades profissionais={profissionais} onInserir={inserirNoTexto} onFechar={() => setPainel(null)} />
+                  )}
                   {painel === 'midias' && (
                     <PainelMidias profissionais={profissionais} onInserir={inserirNoTexto} onFechar={() => setPainel(null)} />
                   )}
@@ -1389,6 +1392,8 @@ export default function CrmPage() {
                       icone={<Scissors size={12} />} texto="Serviços" />
                     <ChipPainel ativo={painel === 'midias'} onClick={() => setPainel(v => v === 'midias' ? null : 'midias')}
                       icone={<Instagram size={12} />} texto="Mídias sociais" />
+                    <ChipPainel ativo={painel === 'habilidades'} onClick={() => setPainel(v => v === 'habilidades' ? null : 'habilidades')}
+                      icone={<Sparkles size={12} />} texto="Habilidades" />
                     {modelos.map(m => (
                       <button key={m.id} onClick={() => usarModelo(m)} title={m.texto}
                         className="px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94]"
@@ -2621,10 +2626,175 @@ function ChipPainel({ ativo, onClick, icone, texto }: { ativo: boolean; onClick:
     <button onClick={onClick} type="button"
       className="px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.94]"
       style={ativo
-        ? { background: '#2f6b4f', color: '#fff', border: '1px solid #2f6b4f' }
-        : { background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
+        ? { background: '#a8624f', color: '#fff', border: '1px solid #a8624f' }
+        : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
       {icone} {texto}
     </button>
+  )
+}
+
+// ── Habilidades: quem faz o quê, e como agendar ─────────────────────────────
+//
+// "A Vera faz mechas? e quanto tempo reservo?" -- a recepção perguntava no
+// salão ou chutava na agenda. Aqui: busca pelo nome (ou Ver todos), clica na
+// profissional, vê o que ela faz (do cadastro, campo servicos_habilitados) e,
+// no serviço, o ROTEIRO de agendamento.
+//
+// O roteiro nasce do tempo da tabela de preços e é editável POR PROFISSIONAL,
+// porque o mesmo serviço leva tempos diferentes em mãos diferentes -- e há
+// serviço que agenda em duas partes ("60 min, pausa de 60, mais 60 para
+// finalizar"). O que for escrito aqui fica guardado no salão (salao_config,
+// chave crm_roteiro_agenda) e vale para quem abrir depois. Pedido do dono em
+// 22/09/2026.
+const semAcento = (t: string) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
+function PainelHabilidades({ profissionais, onInserir, onFechar }: { profissionais: any[]; onInserir: (t: string) => void; onFechar: () => void }) {
+  const [busca, setBusca] = useState('')
+  const [todos, setTodos] = useState(false)
+  const [quem, setQuem] = useState<any>(null)
+  const [servico, setServico] = useState<string | null>(null)
+  const [precos, setPrecos] = useState<any[]>([])
+  const [roteiros, setRoteiros] = useState<Record<string, string>>({})
+  const [editando, setEditando] = useState(false)
+  const [rascunho, setRascunho] = useState('')
+  const [salvando, setSalvando] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/salon/tabela-precos').then(r => r.ok ? r.json() : null)
+      .then(d => setPrecos(Array.isArray(d?.itens) ? d.itens : [])).catch(() => {})
+    fetch('/api/salon/grid?chave=crm_roteiro_agenda').then(r => r.ok ? r.json() : null)
+      .then(d => setRoteiros((d && typeof d === 'object' && d.roteiros) || {})).catch(() => {})
+  }, [])
+
+  const comServico = (profissionais || []).filter(p => Array.isArray(p.servicos) && p.servicos.length)
+  const achados = busca.trim()
+    ? comServico.filter(p => semAcento(p.nome).includes(semAcento(busca)))
+    : (todos ? comServico : [])
+
+  const minutosPadrao = (nomeServico: string): number | null => {
+    const alvo = semAcento(nomeServico)
+    const achou = precos.find((it: any) => semAcento(String(it.servico || '')) === alvo)
+    const n = Number(achou?.duracao || 0)
+    return n > 0 ? n : null
+  }
+  const chaveRoteiro = (p: any, s: string) => `${p?.id || p?.nome}|${semAcento(s)}`
+  const roteiroDe = (p: any, s: string): string => {
+    const salvo = roteiros[chaveRoteiro(p, s)]
+    if (salvo) return salvo
+    const min = minutosPadrao(s)
+    return min ? `Agendar ${min} min.` : 'Sem tempo cadastrado — escreva aqui como agendar.'
+  }
+
+  async function salvarRoteiro() {
+    if (!quem || !servico) return
+    const novo = { ...roteiros, [chaveRoteiro(quem, servico)]: rascunho.trim() }
+    setSalvando(true)
+    try {
+      const r = await fetch('/api/salon/grid', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chave: 'crm_roteiro_agenda', doc: { roteiros: novo } }),
+      })
+      if (r.ok) { setRoteiros(novo); setEditando(false) }
+    } finally { setSalvando(false) }
+  }
+
+  return (
+    <div className="mb-2 p-2.5 rounded-xl" style={{ background: '#fdfaf8', border: '1px solid #e9ddd6' }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles size={13} style={{ color: '#a8624f' }} />
+        <p className="text-[11.5px] font-bold flex-1" style={{ color: '#2b2320' }}>
+          {quem ? `${quem.nome}${servico ? ` · ${servico}` : ''}` : 'Quem faz o quê'}
+        </p>
+        {quem && (
+          <button onClick={() => { if (servico) { setServico(null); setEditando(false) } else setQuem(null) }}
+            className="text-[11px] font-bold px-2 py-1 rounded-lg" style={{ background: '#f3e3dc', color: '#a8624f' }}>
+            Voltar
+          </button>
+        )}
+        <button onClick={onFechar} className="p-1 rounded-lg" style={{ color: '#9a8c85' }}><X size={13} /></button>
+      </div>
+
+      {/* Lista de profissionais */}
+      {!quem && (
+        <>
+          <div className="flex gap-1.5 mb-2">
+            <input autoFocus value={busca} onChange={e => setBusca(e.target.value)}
+              placeholder="Digite o nome da profissional..."
+              className="flex-1 px-2.5 py-1.5 rounded-lg text-[12px] focus:outline-none"
+              style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }} />
+            <button onClick={() => { setTodos(v => !v); setBusca('') }}
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap"
+              style={{ background: todos ? '#a8624f' : '#f3e3dc', color: todos ? '#fff' : '#a8624f' }}>
+              {todos ? 'Esconder' : 'Ver todos'}
+            </button>
+          </div>
+          <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+            {achados.map(p => (
+              <button key={p.id || p.nome} onClick={() => { setQuem(p); setBusca('') }}
+                className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+                {p.nome} <span className="font-normal opacity-70">({p.servicos.length})</span>
+              </button>
+            ))}
+            {!achados.length && (
+              <p className="text-[11.5px] px-1 py-2" style={{ color: '#9a8c85' }}>
+                {busca.trim() ? 'Ninguém com esse nome que tenha serviço no cadastro.'
+                  : 'Digite o nome ou clique em "Ver todos".'}
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Serviços da profissional */}
+      {quem && !servico && (
+        <div className="flex gap-1 flex-wrap max-h-44 overflow-y-auto">
+          {[...quem.servicos].sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')).map((s: string) => (
+            <button key={s} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false) }}
+              className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+              style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+              {s}{minutosPadrao(s) ? <span className="font-normal opacity-70"> · {minutosPadrao(s)} min</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Roteiro de agendamento */}
+      {quem && servico && (
+        <div>
+          {editando ? (
+            <>
+              <textarea value={rascunho} onChange={e => setRascunho(e.target.value)} rows={3} autoFocus
+                placeholder="Ex.: Agendar 60 min, pausa de 60 min, agendar mais 60 min para finalizar."
+                className="w-full px-2.5 py-2 rounded-lg text-[12px] resize-y focus:outline-none"
+                style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }} />
+              <div className="flex gap-1.5 mt-1.5">
+                <button onClick={salvarRoteiro} disabled={salvando}
+                  className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold disabled:opacity-40"
+                  style={{ background: '#a8624f', color: '#fff' }}>{salvando ? 'Salvando...' : 'Salvar'}</button>
+                <button onClick={() => { setEditando(false); setRascunho(roteiroDe(quem, servico)) }}
+                  className="px-3 py-1.5 rounded-lg text-[11.5px]" style={{ background: '#f6f1ee', color: '#6e625c' }}>Cancelar</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-[12.5px] whitespace-pre-wrap rounded-lg px-2.5 py-2 leading-relaxed"
+                style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }}>
+                {roteiroDe(quem, servico)}
+              </p>
+              <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                <button onClick={() => { setRascunho(roteiroDe(quem, servico)); setEditando(true) }}
+                  className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold flex items-center gap-1"
+                  style={{ background: '#f3e3dc', color: '#a8624f' }}><Pencil size={11} /> Editar</button>
+                <button onClick={() => onInserir(`${servico} com ${quem.nome}: ${roteiroDe(quem, servico)}`)}
+                  className="px-3 py-1.5 rounded-lg text-[11.5px] font-bold"
+                  style={{ background: '#f6f1ee', color: '#6e625c' }}>Usar na resposta</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
