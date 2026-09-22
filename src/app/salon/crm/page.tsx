@@ -2659,6 +2659,10 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
   // vermelho na lista. Ex.: "só atende como assistente, não agendar sozinho".
   const [alertas, setAlertas] = useState<Record<string, string>>({})
   const [buscaServ, setBuscaServ] = useState('')
+  // Lado direito: pelo SERVIÇO. "Quem faz corte?" -- categoria, serviço, e a
+  // lista de quem está habilitado. Pedido do dono em 22/09/2026.
+  const [catServ, setCatServ] = useState<string | null>(null)
+  const [servSel, setServSel] = useState<any>(null)
   const [categoria, setCategoria] = useState<string | null>(null)
   const [marcando, setMarcando] = useState(false)
   const [obs, setObs] = useState('')
@@ -2679,6 +2683,22 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
   }, [])
 
   const comServico = (profissionais || []).filter(p => Array.isArray(p.servicos) && p.servicos.length)
+
+  // Catálogo do salão a partir de quem está habilitado: serviço -> quem faz.
+  const catalogo = useMemo(() => {
+    const m = new Map<string, { id: string; nome: string; categoria: string; profs: any[] }>()
+    for (const p of comServico) {
+      for (const s of (p.servicos as any[])) {
+        const at = m.get(s.id) || { id: s.id, nome: s.nome, categoria: s.categoria || 'Outros', profs: [] as any[] }
+        at.profs.push(p)
+        m.set(s.id, at)
+      }
+    }
+    return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  }, [profissionais])   // eslint-disable-line react-hooks/exhaustive-deps
+  const categoriasSalao = useMemo(
+    () => [...new Set(catalogo.map(s => s.categoria))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [catalogo])
   const achados = busca.trim()
     ? comServico.filter(p => semAcento(p.nome).includes(semAcento(busca)))
     : (todos ? comServico : [])
@@ -2739,7 +2759,7 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
           {quem ? `${quem.nome}${servico ? ` · ${servico.nome}` : ''}` : 'Quem faz o quê'}
         </p>
         {quem && (
-          <button onClick={() => { if (servico) { setServico(null); setEditando(false) } else { setQuem(null); setBuscaServ(''); setCategoria(null) } }}
+          <button onClick={() => { if (servico) { setServico(null); setEditando(false); if (servSel) setQuem(null) } else { setQuem(null); setBuscaServ(''); setCategoria(null) } }}
             className="text-[11px] font-bold px-2 py-1 rounded-lg" style={{ background: '#f3e3dc', color: '#a8624f' }}>
             Voltar
           </button>
@@ -2747,36 +2767,99 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
         <button onClick={onFechar} className="p-1 rounded-lg" style={{ color: '#9a8c85' }}><X size={13} /></button>
       </div>
 
-      {/* Lista de profissionais */}
+      {/* Duas entradas: pela PROFISSIONAL (esquerda) ou pelo SERVIÇO (direita) */}
       {!quem && (
-        <>
-          <div className="flex gap-1.5 mb-2">
-            <input autoFocus value={busca} onChange={e => setBusca(e.target.value)}
-              placeholder="Digite o nome da profissional..."
-              className="flex-1 px-2.5 py-1.5 rounded-lg text-[12px] focus:outline-none"
-              style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }} />
-            <button onClick={() => { setTodos(v => !v); setBusca('') }}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap"
-              style={{ background: todos ? '#a8624f' : '#f3e3dc', color: todos ? '#fff' : '#a8624f' }}>
-              {todos ? 'Esconder' : 'Ver todos'}
-            </button>
-          </div>
-          <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
-            {achados.map(p => (
-              <button key={p.id || p.nome} onClick={() => { setQuem(p); setBusca(''); setBuscaServ(''); setCategoria(null) }}
-                className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
-                style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
-                {p.nome} <span className="font-normal opacity-70">({p.servicos.length})</span>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          {/* ── Pela profissional ── */}
+          <div>
+            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: '#9a8c85' }}>PELA PROFISSIONAL</p>
+            <div className="flex gap-1.5 mb-2">
+              <input autoFocus value={busca} onChange={e => setBusca(e.target.value)}
+                placeholder="Digite o nome da profissional..."
+                className="flex-1 px-2.5 py-1.5 rounded-lg text-[12px] focus:outline-none"
+                style={{ background: '#fff', border: '1px solid #e9ddd6', color: '#2b2320' }} />
+              <button onClick={() => { setTodos(v => !v); setBusca('') }}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap"
+                style={{ background: todos ? '#a8624f' : '#f3e3dc', color: todos ? '#fff' : '#a8624f' }}>
+                {todos ? 'Esconder' : 'Ver todos'}
               </button>
-            ))}
-            {!achados.length && (
-              <p className="text-[11.5px] px-1 py-2" style={{ color: '#9a8c85' }}>
-                {busca.trim() ? 'Ninguém com esse nome que tenha serviço no cadastro.'
-                  : 'Digite o nome ou clique em "Ver todos".'}
-              </p>
+            </div>
+            <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+              {achados.map(p => (
+                <button key={p.id || p.nome} onClick={() => { setQuem(p); setBusca(''); setBuscaServ(''); setCategoria(null) }}
+                  className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                  style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+                  {p.nome} <span className="font-normal opacity-70">({p.servicos.length})</span>
+                </button>
+              ))}
+              {!achados.length && (
+                <p className="text-[11.5px] px-1 py-2" style={{ color: '#9a8c85' }}>
+                  {busca.trim() ? 'Ninguém com esse nome que tenha serviço no cadastro.'
+                    : 'Digite o nome ou clique em "Ver todos".'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Pelo serviço: "quem faz corte?" ── */}
+          <div style={{ borderLeft: '1px solid #e9ddd6', paddingLeft: 12 }}>
+            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: '#9a8c85' }}>
+              PELO SERVIÇO {servSel ? `· ${servSel.nome}` : catServ ? `· ${catServ}` : ''}
+            </p>
+            {servSel ? (
+              <>
+                <div className="flex gap-1 flex-wrap max-h-40 overflow-y-auto">
+                  {servSel.profs.map((p: any) => (
+                    <button key={p.id || p.nome}
+                      onClick={() => { const serv = (p.servicos as any[]).find((x: any) => x.id === servSel.id); setQuem(p); setServico(serv); setRascunho(roteiroDe(p, serv)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(p, serv)] || '') }}
+                      title={alertas[chaveRoteiro(p, { nome: servSel.nome })] || undefined}
+                      className="px-2.5 py-1 rounded-full text-[11.5px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
+                      style={alertas[chaveRoteiro(p, { nome: servSel.nome })]
+                        ? { background: '#fde8e5', color: '#a1281f', border: '1.5px solid #b4322a' }
+                        : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+                      {alertas[chaveRoteiro(p, { nome: servSel.nome })] && <AlertTriangle size={11} />}
+                      {p.nome}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setServSel(null)}
+                  className="mt-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                  style={{ background: '#f6f1ee', color: '#6e625c' }}>Voltar aos serviços</button>
+              </>
+            ) : (
+              <>
+                <div className="flex gap-1 flex-wrap mb-1.5">
+                  {categoriasSalao.map(cat => (
+                    <button key={cat} onClick={() => setCatServ(c => c === cat ? null : cat)}
+                      className="px-2.5 py-1 rounded-lg text-[11.5px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
+                      style={catServ === cat
+                        ? { background: '#a8624f', color: '#fff' }
+                        : { background: '#f6f1ee', color: '#6e625c', border: '1px solid #e9ddd6' }}>
+                      {cat} <span className="font-normal opacity-70">({catalogo.filter(x => x.categoria === cat).length})</span>
+                      <ChevronDown size={11} style={{ transform: catServ === cat ? 'rotate(180deg)' : undefined }} />
+                    </button>
+                  ))}
+                </div>
+                {catServ && (
+                  <div className="flex gap-1 flex-wrap max-h-36 overflow-y-auto">
+                    {catalogo.filter(x => x.categoria === catServ).map(x => (
+                      <button key={x.id} onClick={() => setServSel(x)}
+                        className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94]"
+                        style={{ background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
+                        {x.nome} <span className="font-normal opacity-70">({x.profs.length})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!catServ && (
+                  <p className="text-[11.5px] px-1 py-1" style={{ color: '#9a8c85' }}>
+                    Clique numa categoria para ver os serviços e quem faz cada um.
+                  </p>
+                )}
+              </>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Serviços da profissional */}
@@ -2821,9 +2904,11 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
               className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex items-center gap-1"
               // Serviço comum em cinza quente, para o vermelho da atenção
               // saltar. Os dois eram rosé e ficavam quase iguais (22/09/2026).
+              // Serviço habilitado em verde; marcado com aviso, vermelho. A
+              // categoria (acima) fica neutra, então dá para separar de relance.
               style={alertas[chaveRoteiro(quem, s)]
                 ? { background: '#fde8e5', color: '#a1281f', border: '1.5px solid #b4322a' }
-                : { background: '#f6f1ee', color: '#6e625c', border: '1px solid #e9ddd6' }}>
+                : { background: '#e6f1eb', color: '#2f6b4f', border: '1px solid #2f6b4f25' }}>
               {alertas[chaveRoteiro(quem, s)] && <AlertTriangle size={11} />}
               {s.nome}{tempoDe(s) ? <span className="font-normal opacity-70"> · {tempoDe(s)!.curto}</span> : null}
             </button>
