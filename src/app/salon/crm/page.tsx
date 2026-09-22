@@ -10,7 +10,7 @@
 // Três colunas: a fila, a conversa, e o que o NODRI já sabe sobre a cliente.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, ChevronRight, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff, Star, UserRound, Wallet, Repeat, CalendarDays, Hand, Eye, Sparkles, Palette, Brush } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, ChevronRight, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff, Star, UserRound, Wallet, Repeat, CalendarDays, Hand, Eye, Sparkles, Palette, Brush, Copy } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
@@ -27,7 +27,7 @@ const EMOJIS = [
 
 import { useIsMobile } from '@/lib/useIsMobile'
 import {
-  ESTADOS, estadoPor, telefoneBonito, minutosUteis, tempoCurto,
+  ESTADOS, estadoPor, telefoneBonito, telefoneParaCopiar, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, preencherMensagem, type EstadoConversa,
 } from '@/lib/crm'
 
@@ -2232,7 +2232,7 @@ function PainelCliente({ c }: { c: Conversa }) {
           <Avatar nome={nome} nova={ehNova(c)} tamanho={46} />
           <div className="min-w-0">
             <p className="font-bold text-[14px] leading-tight truncate" style={{ color: '#2b2320' }}>{nome}</p>
-            {fone && <p className="text-[12px] mt-0.5" style={{ color: '#9a8c85' }}>{fone}</p>}
+            {fone && <BotaoTelefone bruto={ct.telefone} bonito={fone} />}
             {selo && (
               <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold"
                 style={{ background: selo.bg, color: selo.cor }}>{selo.t}</span>
@@ -2345,6 +2345,43 @@ function PainelCliente({ c }: { c: Conversa }) {
         )}
       </div>
     </aside>
+  )
+}
+
+// ── O telefone, com botão de copiar ────────────────────────────────────────
+//
+// Copia só os dígitos, com DDD e com o nono dígito (ver telefoneParaCopiar):
+// é o formato que o Avec usa, então dá para colar lá direto. Pedido do dono
+// em 22/09/2026 -- antes era selecionar com o mouse e acrescentar o 9 na mão.
+function BotaoTelefone({ bruto, bonito }: { bruto: string; bonito: string }) {
+  const [copiado, setCopiado] = useState(false)
+  const paraCopiar = telefoneParaCopiar(bruto)
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(paraCopiar)
+    } catch {
+      // Navegador antigo ou permissão negada: o caminho velho ainda funciona.
+      const t = document.createElement('textarea')
+      t.value = paraCopiar
+      t.style.position = 'fixed'; t.style.opacity = '0'
+      document.body.appendChild(t); t.select()
+      try { document.execCommand('copy') } catch {}
+      document.body.removeChild(t)
+    }
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 1600)
+  }
+  return (
+    <p className="text-[12px] mt-0.5 flex items-center gap-1.5" style={{ color: '#9a8c85' }}>
+      {bonito}
+      <button onClick={copiar} type="button"
+        title={copiado ? 'Copiado' : `Copiar ${paraCopiar}`}
+        className="p-1 rounded-md transition duration-100 hover:brightness-95 active:scale-90"
+        style={{ background: copiado ? '#e6f1eb' : '#f3e3dc', color: copiado ? '#2f6b4f' : '#a8624f' }}>
+        {copiado ? <Check size={12} /> : <Copy size={12} />}
+      </button>
+      {copiado && <span className="text-[10.5px] font-bold" style={{ color: '#2f6b4f' }}>copiado</span>}
+    </p>
   )
 }
 

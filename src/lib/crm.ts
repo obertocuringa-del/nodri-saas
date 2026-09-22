@@ -130,6 +130,24 @@ export function chaveTelefone(bruto: string | null | undefined): string {
   return d
 }
 
+/**
+ * 61999998888 — só os dígitos, como o Avec guarda: DDD + 9 dígitos, sem o 55.
+ *
+ * Telefone antigo chega com 8 dígitos ("(61) 8223-8600"); o Avec cadastra com
+ * o nono dígito. Quem copiava daqui e colava lá tinha de acrescentar o 9 na
+ * mão toda vez. Aqui o 9 entra sozinho quando falta -- e quando já existe,
+ * nada muda. Pedido do dono em 22/09/2026.
+ *
+ * O 9 só vale para celular: fixo (2 a 5 no primeiro dígito) fica como está.
+ */
+export function telefoneParaCopiar(bruto: string | null | undefined): string {
+  const d = normalizarTelefone(bruto)
+  const s = d.startsWith('55') && d.length > 11 ? d.slice(2) : d
+  if (s.length === 11) return s
+  if (s.length === 10 && /[6-9]/.test(s[2])) return s.slice(0, 2) + '9' + s.slice(2)
+  return s
+}
+
 /** (61) 99999-8888 — para mostrar na tela. */
 export function telefoneBonito(bruto: string | null | undefined): string {
   const d = normalizarTelefone(bruto)
