@@ -461,16 +461,39 @@ export async function POST(req: NextRequest) {
         .from('crm_mensagens').select('id')
         .eq('conversa_id', cv.id).eq('direcao', 'entrada').gt('criado_em', alvo.criado_em).limit(1)
       if (depois?.length) return NextResponse.json({ ok: true, ignorada: 'curtiu mensagem antiga' })
+      // ── Para ONDE ela vai ────────────────────────────────────────────────
+      //
+      // Ia para "Aguardando cliente", e isso mentia: ninguém está esperando
+      // resposta de quem mandou "obrigada". A pasta virava depósito (40 delas
+      // em 22/09/2026) e deixava de servir para cobrar quem sumiu.
+      //
+      // Agora vai para a pasta de conversa encerrada que o salão criou (a
+      // primeira com "finaliz"/"encerr" no nome). Salão que não tem essa
+      // pasta continua indo para "Aguardando", como antes.
+      //
+      // Não é caminho sem volta: se a cliente escrever de novo com assunto, a
+      // conversa reabre em "Preciso agir" (fechada_em + regra da última
+      // mensagem), e curtida em mensagem antiga já era ignorada acima.
+      let destino = 'aguardando'
+      try {
+        const { data: cfg } = await supabaseAdmin.from('salao_config').select('valor')
+          .eq('salao_id', salaoId).eq('chave', 'crm_estados').maybeSingle()
+        const extras = ((cfg as any)?.valor?.extras || []) as any[]
+        const fim = extras.find(e => /finaliz|encerr|conclu/i.test(String(e?.rotulo || '')))
+        if (fim?.chave) destino = String(fim.chave)
+      } catch { /* sem config, segue para Aguardando */ }
+
       await supabaseAdmin.from('crm_conversas').update({
-        estado: 'aguardando',
-        proxima_acao: proximaAcaoPadrao('aguardando'),
+        estado: destino,
+        proxima_acao: destino === 'aguardando' ? proximaAcaoPadrao('aguardando') : 'Nenhuma — encerrada com a reação',
         aguardando_desde: null,
         nao_lidas: 0,
+        fechada_em: destino === 'aguardando' ? null : agora,
         atualizado_em: agora,
       }).eq('id', cv.id)
       await supabaseAdmin.from('crm_eventos').insert({
         salao_id: salaoId, conversa_id: cv.id, tipo: 'mudou_estado',
-        de_estado: 'acao_necessaria', para_estado: 'aguardando',
+        de_estado: 'acao_necessaria', para_estado: destino,
         autor_nome: 'Salão (pelo celular)',
         detalhe: `Reagiu com ${emoji} à última mensagem da cliente`,
       })
