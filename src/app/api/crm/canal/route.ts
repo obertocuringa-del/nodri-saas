@@ -102,11 +102,16 @@ export async function GET() {
   // vez de uma segunda lista para alguem esquecer de atualizar.
   // Nome de cada servico do salao, para traduzir os IDs do cadastro.
   const { data: servs } = await supabaseAdmin
-    .from('salao_servicos').select('id, nome, ativo')
+    .from('salao_servicos').select('id, nome, ativo, categoria')
     .eq('salao_id', sess!.salaoId).limit(1000)
-  const nomeDoServico = new Map<string, string>()
+  const nomeDoServico = new Map<string, { nome: string; categoria: string }>()
   for (const s of servs || []) {
-    if ((s as any).ativo !== false) nomeDoServico.set(String((s as any).id), String((s as any).nome || ''))
+    if ((s as any).ativo !== false) {
+      nomeDoServico.set(String((s as any).id), {
+        nome: String((s as any).nome || ''),
+        categoria: String((s as any).categoria || '').trim() || 'Outros',
+      })
+    }
   }
 
   const { data: profs } = await supabaseAdmin
@@ -130,7 +135,7 @@ export async function GET() {
       servicos: (Array.isArray(x.servicos_habilitados) ? x.servicos_habilitados : [])
         // id junto: o tempo de cada serviço (trabalha/pausa/finaliza) mora em
         // salao_config.servicos_tempos, mapeado pelo ID.
-        .map((idServ: string) => ({ id: String(idServ), nome: nomeDoServico.get(String(idServ)) || '' }))
+        .map((idServ: string) => ({ id: String(idServ), ...(nomeDoServico.get(String(idServ)) || { nome: '', categoria: '' }) }))
         .filter((s: any) => s.nome)
         .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR')),
     }))
