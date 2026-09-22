@@ -2812,7 +2812,13 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
                   {servSel.profs.map((p: any) => (
                     <button key={p.id || p.nome}
                       onClick={() => { const serv = (p.servicos as any[]).find((x: any) => x.id === servSel.id); setQuem(p); setServico(serv); setRascunho(roteiroDe(p, serv)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(p, serv)] || '') }}
-                      title={alertas[chaveRoteiro(p, { nome: servSel.nome })] || undefined}
+                      // Passar o mouse já diz tudo: o roteiro de agendamento
+                      // (o editado para ELA, se existir; senão o tempo do
+                      // cadastro) e o aviso, quando houver. Pedido do dono em
+                      // 22/09/2026 -- sem precisar clicar em cada uma.
+                      title={`${roteiroDe(p, servSel)}${alertas[chaveRoteiro(p, servSel)] ? `
+
+ATENÇÃO: ${alertas[chaveRoteiro(p, servSel)]}` : ''}`}
                       className="px-2.5 py-1 rounded-full text-[11.5px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
                       style={alertas[chaveRoteiro(p, { nome: servSel.nome })]
                         ? { background: '#fde8e5', color: '#a1281f', border: '1.5px solid #b4322a' }
