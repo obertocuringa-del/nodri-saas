@@ -412,7 +412,9 @@ export async function POST(req: NextRequest) {
       .from('crm_mensagens').select('id, conversa_id, texto')
       .eq('salao_id', salaoId).eq('id_whatsapp', id).maybeSingle()
     if (!msg) return NextResponse.json({ ok: false, motivo: 'mensagem não encontrada' })
-    await supabaseAdmin.from('crm_mensagens').update({ texto }).eq('id', msg.id)
+    // `editada_em` faz a tela escrever "editada" ao lado da hora: a recepção
+    // precisa saber que aquele texto mudou depois de enviado.
+    await supabaseAdmin.from('crm_mensagens').update({ texto, editada_em: agora }).eq('id', msg.id)
     const { data: cv } = await supabaseAdmin
       .from('crm_conversas').select('id, ultima_previa').eq('id', msg.conversa_id).maybeSingle()
     if (cv && String(cv.ultima_previa || '') === String(msg.texto || '').slice(0, 120)) {

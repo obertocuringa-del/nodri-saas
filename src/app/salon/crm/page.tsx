@@ -2103,6 +2103,9 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
         )}
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}
+          {/* Texto trocado depois de enviado (a cliente corrigiu no WhatsApp).
+              Sem esta palavra, ninguém sabe que a frase mudou. */}
+          {(m as any).editada_em && ' · editada'}
           {meu && m.situacao === 'na_fila' && ' · na fila'}
           {meu && m.situacao === 'falhou' && ' · falhou'}
           {meu && m.autor_nome ? ` · ${m.autor_nome}` : ''}

@@ -929,6 +929,28 @@ async function abrirDeVerdade(salaoId, registroSessao) {
         const lid = ehLid(bruto) ? bruto : null
         if (!tel && !lid) continue
 
+        // ── Edição que chega como MENSAGEM, não como atualização ──────────
+        //
+        // O WhatsApp entrega edição de dois jeitos: em messages.update (já
+        // tratado abaixo) e, mais comum hoje, como uma mensagem nova cujo
+        // conteúdo é um protocolMessage tipo 14 apontando para a original.
+        // Esse caminho caía no "evento vazio" e era descartado em silêncio:
+        // a cliente corrigiu "deilcao" para "depilação" às 10:02 e o CRM
+        // seguiu mostrando o errado (22/09/2026, caso ANA).
+        const pm = m.message?.protocolMessage || m.message?.editedMessage?.message?.protocolMessage
+        if (pm?.editedMessage) {
+          const idOriginal = pm.key?.id
+          const novo = textoDaMensagem({ message: pm.editedMessage })
+          if (idOriginal && novo) {
+            nodri('?acao=edicao', {
+              method: 'POST',
+              body: JSON.stringify({ salao_id: salaoId, id_whatsapp: idOriginal, texto: novo }),
+            }).then(r => registro(salaoId, r?.ok ? 'mensagem editada (upsert)' : 'edição sem mensagem correspondente', idOriginal, '—', novo.slice(0, 40)))
+              .catch(e => registro(salaoId, 'falha ao repassar edição:', e.message))
+          }
+          continue
+        }
+
         const texto = textoDaMensagem(m)
         const tipo = tipoDaMensagem(m)
         if (!texto && tipo === 'texto') continue       // evento vazio
