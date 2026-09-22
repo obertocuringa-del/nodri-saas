@@ -2819,9 +2819,11 @@ function PainelHabilidades({ profissionais, onFechar }: { profissionais: any[]; 
             <button key={s.id} onClick={() => { setServico(s); setRascunho(roteiroDe(quem, s)); setEditando(false); setMarcando(false); setObs(alertas[chaveRoteiro(quem, s)] || '') }}
               title={alertas[chaveRoteiro(quem, s)] || undefined}
               className="px-2.5 py-1 rounded-full text-[11.5px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex items-center gap-1"
+              // Serviço comum em cinza quente, para o vermelho da atenção
+              // saltar. Os dois eram rosé e ficavam quase iguais (22/09/2026).
               style={alertas[chaveRoteiro(quem, s)]
-                ? { background: '#fbebe9', color: '#b4322a', border: '1px solid #b4322a40' }
-                : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+                ? { background: '#fde8e5', color: '#a1281f', border: '1.5px solid #b4322a' }
+                : { background: '#f6f1ee', color: '#6e625c', border: '1px solid #e9ddd6' }}>
               {alertas[chaveRoteiro(quem, s)] && <AlertTriangle size={11} />}
               {s.nome}{tempoDe(s) ? <span className="font-normal opacity-70"> · {tempoDe(s)!.curto}</span> : null}
             </button>
