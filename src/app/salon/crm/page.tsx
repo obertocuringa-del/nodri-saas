@@ -94,6 +94,8 @@ export default function CrmPage() {
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [anexando, setAnexando] = useState(false)
+  // Arquivo sendo arrastado por cima da conversa (para mostrar o alvo).
+  const [arrastando, setArrastando] = useState(false)
   const [citando, setCitando] = useState<Mensagem | null>(null)
   // ── Editar, encaminhar, reagir (o que o WhatsApp tem, o CRM tem) ─────────
   const [editando, setEditando] = useState<Mensagem | null>(null)
@@ -388,9 +390,16 @@ export default function CrmPage() {
         // cinco segundos faria a conversa piscar e perder a rolagem. Mas se
         // ainda ha balao provisorio na tela, troca mesmo com o mesmo tamanho
         // -- senao o provisorio ficaria para sempre no lugar do gravado.
+        // Assinatura, não só o tamanho: o id do WhatsApp, a situação (na fila
+        // -> enviada -> lida) e a marca de editada chegam DEPOIS, sem mudar a
+        // quantidade. Comparando só o tamanho, a tela ficava com a versão
+        // velha e o lápis de editar só aparecia na mensagem anterior
+        // (22/09/2026, relato do dono).
+        const assina = (l: any[]) => l.map((m: any) =>
+          `${m.id}|${m.situacao || ''}|${m.id_whatsapp ? 1 : 0}|${m.editada_em || ''}|${(m.texto || '').length}`).join(';')
         setMensagens(atual => {
           const temProvisorio = atual.some((m: any) => m._local)
-          if (!temProvisorio && atual.length === chegaram.length) return atual
+          if (!temProvisorio && assina(atual) === assina(chegaram)) return atual
           return chegaram
         })
       } catch {}
@@ -1317,7 +1326,24 @@ export default function CrmPage() {
                   motivos={motivos} origens={origens} desmarques={desmarques}
                   botoesDeEstado={botoesDeEstado} onTirarNova={tirarEtiquetaNova} />
 
-                <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f0e8e3' }}>
+                {/* Arrastar o arquivo da área de trabalho para cá envia, igual
+                    ao clipe. Pedido do dono em 22/09/2026. */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 relative"
+                  onDragOver={e => { if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); setArrastando(true) } }}
+                  onDragLeave={e => { if (e.currentTarget === e.target) setArrastando(false) }}
+                  onDrop={e => {
+                    const f = e.dataTransfer?.files?.[0]
+                    if (!f) return
+                    e.preventDefault(); setArrastando(false); anexar(f)
+                  }}
+                  style={{ background: '#f0e8e3' }}>
+                  {arrastando && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+                      style={{ background: 'rgba(168,98,79,.10)', border: '2px dashed #a8624f', borderRadius: 12 }}>
+                      <p className="px-4 py-2 rounded-xl text-[13px] font-bold"
+                        style={{ background: '#fff', color: '#a8624f' }}>Solte para enviar</p>
+                    </div>
+                  )}
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
                   {mensagens.filter(m => !String(m.tipo || '').startsWith('acao_') || m.situacao === 'falhou').map((m, i, lista) => (
                     <div key={m.id}>
@@ -1975,6 +2001,46 @@ function BotaoAcao({ onClick, cor, fundo, texto, icone, nota }: any) {
   )
 }
 
+// ── *negrito*, _itálico_, ~riscado~ desenhados na tela ──────────────────────
+//
+// O WhatsApp mostra formatado; o CRM mostrava os asteriscos crus, e quem
+// escrevia não via como a mensagem ia chegar (pedido do dono, 22/09/2026).
+// As marcas continuam no texto enviado -- só a TELA passa a desenhá-las.
+function comFormato(texto: string): React.ReactNode {
+  const linhas = String(texto || '').split('\n')
+  return linhas.map((linha, iLinha) => (
+    <span key={iLinha}>
+      {iLinha > 0 && '\n'}
+      {pedacosFormatados(linha)}
+    </span>
+  ))
+}
+
+function pedacosFormatados(linha: string): React.ReactNode[] {
+  // Uma marca de cada vez, da esquerda para a direita, aninhando o resto.
+  const marcas: [string, (n: React.ReactNode, k: number) => React.ReactNode][] = [
+    ['*', (n, k) => <strong key={k}>{n}</strong>],
+    ['_', (n, k) => <em key={k}>{n}</em>],
+    ['~', (n, k) => <s key={k}>{n}</s>],
+  ]
+  for (const [marca, envolver] of marcas) {
+    // Fechada, com conteúdo, e sem espaço logo depois da marca de abertura.
+    // Montada por concatenação: dentro de crase, `\\${marca}` não interpola
+    // (o `$` fica escapado) e a expressão saía literal, sem casar nada.
+    const re = new RegExp('\\' + marca + '([^\\s' + marca + '][^' + marca + ']*?)\\' + marca)
+    const achou = re.exec(linha)
+    if (!achou) continue
+    const antes = linha.slice(0, achou.index)
+    const depois = linha.slice(achou.index + achou[0].length)
+    return [
+      ...pedacosFormatados(antes),
+      envolver(pedacosFormatados(achou[1]), achou.index),
+      ...pedacosFormatados(depois),
+    ]
+  }
+  return [linha]
+}
+
 const DIA = (d: any) => d ? new Date(d).toDateString() : ''
 const diaMudou = (antes: any, agora: any) => DIA(antes?.criado_em) !== DIA(agora?.criado_em)
 
@@ -2099,7 +2165,7 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
         <Anexo m={m} />
         {m.texto && !(m.midia_url && /^\[(imagem|audio|video|figurinha|documento)\]$/.test(m.texto)) && (
           <p className="text-[14px] leading-[1.45] whitespace-pre-wrap break-words"
-            style={m.tipo === 'apagada' ? { fontStyle: 'italic', opacity: 0.6 } : undefined}>{m.texto}</p>
+            style={m.tipo === 'apagada' ? { fontStyle: 'italic', opacity: 0.6 } : undefined}>{comFormato(m.texto)}</p>
         )}
         <p className="text-[9.5px] mt-1 text-right" style={{ opacity: 0.65 }}>
           {hora}
