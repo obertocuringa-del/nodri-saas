@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { escritaBloqueadaSub, crmBloqueado } from '@/lib/apiAuth'
 
 // Upload genérico de arquivos (qualquer formato) para o bucket 'uploads'.
 export async function POST(req: NextRequest) {
@@ -10,7 +10,13 @@ export async function POST(req: NextRequest) {
   if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const payload = await verifyJWT(token)
   if (!payload?.salaoId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (await escritaBloqueadaSub()) return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  // Quem trabalha no CRM manda arquivo. A recepção em Modo Caixa caía no
+  // "Somente leitura" e não conseguia enviar foto nem documento para a
+  // cliente -- pelo clipe ou arrastando (23/09/2026). Responder cliente é
+  // execução, e Modo Caixa sempre pôde executar; profissional continua fora.
+  if (await escritaBloqueadaSub() && await crmBloqueado()) {
+    return NextResponse.json({ error: 'Somente leitura' }, { status: 403 })
+  }
 
   const formData = await req.formData()
   const file = formData.get('arquivo') as File | null
