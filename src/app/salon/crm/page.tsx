@@ -1282,7 +1282,31 @@ export default function CrmPage() {
           </aside>
 
           {/* ── Conversa ── */}
-          <main className={`${noCelular && !aberta ? 'hidden' : 'flex-1'} flex flex-col min-w-0`} style={{ background: '#f0e8e3' }}>
+          {/* ── Arrastar o arquivo para dentro da conversa ────────────────────
+              Vale a área inteira (mensagens e caixa de escrever). Antes só o
+              quadro das mensagens ouvia, e o `types.includes` nem sempre
+              existe -- sem o preventDefault no dragover, o navegador ficava
+              com o arquivo e o soltar nunca chegava aqui (23/09/2026). */}
+          <main className={`${noCelular && !aberta ? 'hidden' : 'flex-1'} flex flex-col min-w-0 relative`}
+            onDragEnter={e => { if (aberta && temArquivo(e)) { e.preventDefault(); e.stopPropagation(); setArrastando(true) } }}
+            onDragOver={e => { if (aberta && temArquivo(e)) { e.preventDefault(); e.stopPropagation(); setArrastando(true) } }}
+            onDragLeave={e => { if (e.currentTarget === e.target) setArrastando(false) }}
+            onDrop={e => {
+              if (!aberta) return
+              e.preventDefault(); e.stopPropagation(); setArrastando(false)
+              const f = e.dataTransfer?.files?.[0]
+              if (f) anexar(f)
+            }}
+            style={{ background: '#f0e8e3' }}>
+            {arrastando && aberta && (
+              <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+                style={{ background: 'rgba(168,98,79,.12)', border: '2px dashed #a8624f' }}>
+                <p className="px-4 py-2 rounded-xl text-[13px] font-bold"
+                  style={{ background: '#fff', color: '#a8624f', boxShadow: '0 6px 20px rgba(26,22,20,.18)' }}>
+                  {anexando ? 'Enviando...' : 'Solte para enviar'}
+                </p>
+              </div>
+            )}
             {!aberta ? (
               // A única tela do CRM com atenção sobrando: aqui ninguém está
               // no meio de um atendimento. Por isso é onde cabe o respiro --
@@ -1326,24 +1350,7 @@ export default function CrmPage() {
                   motivos={motivos} origens={origens} desmarques={desmarques}
                   botoesDeEstado={botoesDeEstado} onTirarNova={tirarEtiquetaNova} />
 
-                {/* Arrastar o arquivo da área de trabalho para cá envia, igual
-                    ao clipe. Pedido do dono em 22/09/2026. */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 relative"
-                  onDragOver={e => { if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); setArrastando(true) } }}
-                  onDragLeave={e => { if (e.currentTarget === e.target) setArrastando(false) }}
-                  onDrop={e => {
-                    const f = e.dataTransfer?.files?.[0]
-                    if (!f) return
-                    e.preventDefault(); setArrastando(false); anexar(f)
-                  }}
-                  style={{ background: '#f0e8e3' }}>
-                  {arrastando && (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
-                      style={{ background: 'rgba(168,98,79,.10)', border: '2px dashed #a8624f', borderRadius: 12 }}>
-                      <p className="px-4 py-2 rounded-xl text-[13px] font-bold"
-                        style={{ background: '#fff', color: '#a8624f' }}>Solte para enviar</p>
-                    </div>
-                  )}
+                <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f0e8e3' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
                   {mensagens.filter(m => !String(m.tipo || '').startsWith('acao_') || m.situacao === 'falhou').map((m, i, lista) => (
                     <div key={m.id}>
@@ -2039,6 +2046,13 @@ function pedacosFormatados(linha: string): React.ReactNode[] {
     ]
   }
   return [linha]
+}
+
+/** O que está sendo arrastado é arquivo? (types nem sempre tem .includes) */
+function temArquivo(e: React.DragEvent): boolean {
+  const t = e.dataTransfer?.types
+  if (!t) return false
+  return Array.from(t as any).some((x: any) => String(x) === 'Files')
 }
 
 const DIA = (d: any) => d ? new Date(d).toDateString() : ''
