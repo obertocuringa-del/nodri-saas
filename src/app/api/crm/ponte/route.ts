@@ -1527,26 +1527,62 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ canais: meus })
   }
 
+  // ── A fila de TODOS os salões numa consulta só ────────────────────────────
+  //
+  // 24/09/2026: a ponte perguntava a fila de cada salão separadamente, uma vez
+  // por segundo. Com 2 salões isso passa despercebido; com 50 viram 50
+  // consultas por segundo -- mais de 4 milhões por dia, quase todas devolvendo
+  // lista vazia. Foi o que, somado à mídia, estourou a cota do Supabase.
+  //
+  // Aqui a ponte manda os ids de quem ela atende e leva tudo de uma vez. O
+  // trabalho do banco vira UMA consulta por segundo, independente de serem 2
+  // ou 50 salões. O formato de cada mensagem é idêntico ao do caminho antigo,
+  // que segue existindo para ponte que ainda não foi atualizada.
+  const listaSaloes = String(params.get('saloes') || '')
+    .split(',').map(s => s.trim()).filter(Boolean).slice(0, 200)
+
+  if (listaSaloes.length) {
+    const fila = await montarFila(listaSaloes)
+    const porSalao: Record<string, any[]> = {}
+    for (const id of listaSaloes) porSalao[id] = []
+    for (const m of fila) {
+      if (!porSalao[m.salao_id]) porSalao[m.salao_id] = []
+      porSalao[m.salao_id].push(m)
+    }
+    return NextResponse.json({ filas: porSalao })
+  }
+
   const salaoId = params.get('salao') || ''
   if (!salaoId) return NextResponse.json({ error: 'salao é obrigatório' }, { status: 400 })
 
-  // ── A hora marcada de cada mensagem ───────────────────────────────────────
-  //
-  // `criado_em` no futuro quer dizer "só manda a partir daí". É assim que o
-  // espaçamento das campanhas funciona de verdade: sem este filtro, a ponte
-  // pegava as 60 confirmações de uma vez e mandava a 50 por minuto -- que é
-  // exatamente o que o espaçamento existe para evitar.
+  return NextResponse.json({ fila: await montarFila([salaoId]) })
+}
+
+/**
+ * O que está esperando para sair, para um salão ou para muitos.
+ *
+ * `criado_em` no futuro quer dizer "só manda a partir daí". É assim que o
+ * espaçamento das campanhas funciona de verdade: sem este filtro, a ponte
+ * pegava as 60 confirmações de uma vez e mandava a 50 por minuto -- que é
+ * exatamente o que o espaçamento existe para evitar.
+ */
+async function montarFila(saloes: string[]) {
+  // 20 por salão continua sendo o teto, para um salão movimentado não tomar a
+  // volta inteira dos outros.
+  const teto = Math.min(20 * saloes.length, 200)
   const { data } = await supabaseAdmin
     .from('crm_mensagens')
-    .select('id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone, lid))')
-    .eq('salao_id', salaoId).eq('situacao', 'na_fila')
+    .select('id, salao_id, texto, tipo, midia_url, responde_a, conversa:crm_conversas(contato:crm_contatos(telefone, lid))')
+    .in('salao_id', saloes).eq('situacao', 'na_fila')
     .lte('criado_em', new Date().toISOString())
-    .order('criado_em', { ascending: true }).limit(20)
+    .order('criado_em', { ascending: true }).limit(teto)
+
+  if (!data?.length) return []
 
   // A mensagem citada vai junto. A ponte precisa do id do WhatsApp e de quem
   // falou para montar a citacao; ela nao guarda historico nenhum.
   const citadas = new Map<string, any>()
-  const idsCitados = (data || []).map((m: any) => m.responde_a).filter(Boolean)
+  const idsCitados = data.map((m: any) => m.responde_a).filter(Boolean)
   if (idsCitados.length) {
     const { data: orig } = await supabaseAdmin
       .from('crm_mensagens').select('id, id_whatsapp, texto, direcao')
@@ -1554,10 +1590,11 @@ export async function GET(req: NextRequest) {
     for (const o of orig || []) citadas.set(o.id, o)
   }
 
-  const fila = (data || []).map((m: any) => {
+  const fila = data.map((m: any) => {
     const cit = m.responde_a ? citadas.get(m.responde_a) : null
     return {
       id: m.id,
+      salao_id: m.salao_id,
       texto: m.texto,
       tipo: m.tipo || 'texto',
       midia_url: m.midia_url || null,
@@ -1581,5 +1618,5 @@ export async function GET(req: NextRequest) {
       .in('id', fila.map(m => m.id))
   }
 
-  return NextResponse.json({ fila })
+  return fila
 }

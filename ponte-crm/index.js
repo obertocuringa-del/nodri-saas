@@ -32,6 +32,7 @@ import makeWASocket, {
   BufferJSON,
 } from '@whiskeysockets/baileys'
 import QRCode from 'qrcode'
+import sharp from 'sharp'
 import pino from 'pino'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -461,6 +462,41 @@ const EXTENSAO = {
   imagem: 'jpg', audio: 'ogg', video: 'mp4', figurinha: 'webp', documento: 'bin',
 }
 
+// ── Foto da cliente entra comprimida ────────────────────────────────────────
+//
+// 24/09/2026: o Supabase cortou o projeto inteiro por estourar a cota de
+// EGRESS (download), e o CRM ficou fora do ar em pleno expediente. Eram 36 MB
+// de arquivo guardado gerando GIGABYTES baixados: a foto original sai do
+// storage de novo a cada vez que alguem abre a conversa.
+//
+// Foto de celular chega com 2 a 5 MB e 4000 px de largura para ser vista num
+// balao de 400 px. Reduzir na entrada corta o download proporcionalmente,
+// TODAS as vezes que aquela foto for aberta dali para a frente.
+//
+// Só imagem: audio e video passam intactos (recomprimir audio de voz estraga,
+// e video exigiria ffmpeg no computador do salao).
+const LARGURA_MAX = 1600
+const QUALIDADE = 80
+
+async function comprimirSeForImagem(salaoId, buffer, tipo, mime) {
+  if (tipo !== 'imagem') return { buffer, mime }
+  try {
+    const menor = await sharp(buffer)
+      .rotate()                                            // respeita o EXIF do celular
+      .resize({ width: LARGURA_MAX, withoutEnlargement: true })
+      .jpeg({ quality: QUALIDADE, mozjpeg: true })
+      .toBuffer()
+    // Só troca se valeu a pena: imagem ja pequena pode sair maior em JPEG.
+    if (menor.length < buffer.length) {
+      registro(salaoId, `foto comprimida: ${Math.round(buffer.length / 1024)} kB -> ${Math.round(menor.length / 1024)} kB`)
+      return { buffer: menor, mime: 'image/jpeg' }
+    }
+  } catch (e) {
+    registro(salaoId, 'não consegui comprimir a foto, subindo original:', e.message)
+  }
+  return { buffer, mime }
+}
+
 async function guardarMidia(salaoId, m, tipo) {
   try {
     const buffer = await downloadMediaMessage(m, 'buffer', {}, { logger: log, reuploadRequest: undefined })
@@ -478,14 +514,25 @@ async function guardarMidia(salaoId, m, tipo) {
       || m.message?.videoMessage?.mimetype
       || 'application/octet-stream'
 
+    const pronto = await comprimirSeForImagem(salaoId, buffer, tipo, mime)
+
     const { signedUrl, publicUrl } = await nodri('?acao=midia-url', {
       method: 'POST',
       body: JSON.stringify({ salao_id: salaoId, nome }),
     })
+    // `cache-control` de um ano: o caminho do arquivo carrega a hora em que ele
+    // nasceu (`${Date.now()}_${nome}`), entao aquele endereco NUNCA muda de
+    // conteudo. Sem este cabecalho o Supabase serve com uma hora de validade e
+    // o navegador rebaixa a mesma foto a tarde inteira -- foi isso que estourou
+    // a cota de egress em 24/09/2026.
     const r = await fetch(signedUrl, {
       method: 'PUT',
-      headers: { 'content-type': mime, 'x-upsert': 'true' },
-      body: buffer,
+      headers: {
+        'content-type': pronto.mime,
+        'x-upsert': 'true',
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+      body: pronto.buffer,
     })
     if (!r.ok) { registro(salaoId, 'falha ao guardar mídia:', r.status); return null }
     return publicUrl
@@ -1138,17 +1185,31 @@ function corpoDoEnvio(msg) {
   }
 }
 
-async function despacharFila(salaoId) {
+// ── A fila de todos os salões numa pergunta só ──────────────────────────────
+//
+// Antes cada salão conectado tinha a própria pergunta ao NODRI, uma por
+// segundo. Com dois salões ninguém nota; com cinquenta são cinquenta consultas
+// por segundo ao banco -- quatro milhões por dia, quase todas para ouvir "não
+// tem nada". Somado à mídia, foi o que estourou a cota do Supabase em
+// 24/09/2026 e derrubou o CRM inteiro.
+//
+// Agora a ponte pergunta UMA vez e distribui. O custo no banco para de crescer
+// junto com o número de salões.
+async function buscarFilasDeTodos(ids) {
+  if (!ids.length) return {}
+  try {
+    const r = await nodri(`?saloes=${encodeURIComponent(ids.join(','))}`)
+    if (r?.filas) return r.filas
+  } catch (e) {
+    registro('falha ao buscar as filas:', e.message)
+  }
+  return {}
+}
+
+async function despacharFila(salaoId, fila) {
   const s = sessoes.get(salaoId)
   if (!s?.conectado || !s.sock) return
-
-  let fila = []
-  try {
-    fila = (await nodri(`?salao=${salaoId}`)).fila || []
-  } catch (e) {
-    registro(salaoId, 'falha ao buscar a fila:', e.message)
-    return
-  }
+  if (!fila?.length) return
 
   for (const msg of fila) {
     try {
@@ -1561,10 +1622,19 @@ setInterval(async () => {
   if (despachando) return
   despachando = true
   try {
+    const conectados = []
     for (const [salaoId, s] of sessoes) {
       if (!s.conectado) continue
       soltarBufferPreso(salaoId, s)
-      await despacharFila(salaoId)
+      conectados.push(salaoId)
+    }
+    if (!conectados.length) return
+
+    // UMA pergunta para todos, em vez de uma por salão. Ver buscarFilasDeTodos.
+    const filas = await buscarFilasDeTodos(conectados)
+    for (const salaoId of conectados) {
+      const fila = filas[salaoId]
+      if (fila?.length) await despacharFila(salaoId, fila)
     }
   } catch (e) {
     registro('erro ao despachar:', e.message)
