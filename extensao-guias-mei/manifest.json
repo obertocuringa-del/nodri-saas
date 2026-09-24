@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NODRI — Emissão de Guias do MEI",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Preenche o PGMEI da Receita com os CNPJs dos profissionais do NODRI e baixa as guias DAS já renomeadas.",
   "permissions": [
     "downloads",

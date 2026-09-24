@@ -36,6 +36,7 @@ interface Config {
   anos: number            // 1 = só o ano atual, 2 = atual + anterior, 3 = atual + 2 anteriores
   pagamentoModo: 'dia_fixo' | 'hoje'
   pagamentoDia: number
+  pagamentoData?: string  // 'aaaa-mm-dd' escolhido no calendário; vale só para a emissão do momento
   guia: 'consolidada' | 'mensal'
   incluir: 'vencidos_e_mes' | 'so_vencidos' | 'todos'
   nomeArquivo: string
@@ -86,6 +87,47 @@ export function linkDeDownload(u: string): string {
   return s
 }
 
+// ── Data de pagamento do DAS ────────────────────────────────────────────────
+//
+// A Receita recusa data no passado. Até a v1.2 a extensão calculava sozinha
+// "dia fixo do mês atual", então a partir do dia seguinte ao dia fixo ela
+// mandava uma data já vencida e a emissão travava — todo mês, sem dizer o
+// motivo na tela. A regra abaixo é a MESMA que a extensão aplica, para o que
+// aparece no calendário ser exatamente o que vai ser digitado no PGMEI.
+export function iso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+export function dataSugerida(cfg: Pick<Config, 'pagamentoModo' | 'pagamentoDia'>, agora = new Date()): string {
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate())
+  if (cfg.pagamentoModo === 'hoje') return iso(hoje)
+  const ultimo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()
+  const dia = Math.min(Math.max(1, Math.min(31, Number(cfg.pagamentoDia) || 20)), ultimo)
+  const alvo = new Date(hoje.getFullYear(), hoje.getMonth(), dia)
+  return iso(alvo >= hoje ? alvo : hoje)
+}
+
+export function brDeIso(s: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''))
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
+}
+
+// A data escolhida só chega ao PGMEI a partir desta versão da extensão. Quem
+// estiver com a anterior instalada continua caindo na conta antiga, então vale
+// avisar na tela em vez de deixar a pessoa achando que escolheu e não valeu.
+const VERSAO_COM_CALENDARIO = '1.3.0'
+
+export function versaoAntiga(v: string, minima = VERSAO_COM_CALENDARIO): boolean {
+  if (!v) return false                       // sem versão informada: não acusa nada
+  const a = String(v).split('.').map(n => Number(n) || 0)
+  const b = minima.split('.').map(n => Number(n) || 0)
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) < (b[i] || 0)
+  }
+  return false
+}
+
 type EtapaFila = 'espera' | 'andando' | 'captcha' | 'ok' | 'erro' | 'pulado'
 
 interface ItemFila {
@@ -114,7 +156,9 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
   const [extStatus, setExtStatus] = useState<'checando' | 'ok' | 'ausente'>('checando')
   const [extVersao, setExtVersao] = useState('')
   const [linkExtensao, setLinkExtensao] = useState('')
+  const [dataPag, setDataPag] = useState('')
   const filaRef = useRef<ItemFila[]>([])
+  const hojeIso = iso(new Date())
 
   const dirty = JSON.stringify(cfg) !== JSON.stringify(cfgSalva)
   useGuardaSalvar(dirty && painel, 'Configuração da emissão de guias')
@@ -269,6 +313,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
       etapa: 'espera',
     }))
     setFila(nova); filaRef.current = nova
+    setDataPag(dataSugerida(cfg))
     setFilaAberta(true)
     pingar()
   }
@@ -276,12 +321,18 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
   function iniciar() {
     if (extStatus !== 'ok') { toast.error('Extensão do Chrome não encontrada.'); return }
     if (dirty) { toast.error('Salve a configuração antes de emitir.'); return }
+    if (dataPag && dataPag < hojeIso) {
+      toast.error('A data de pagamento não pode ser anterior a hoje — a Receita recusa.')
+      return
+    }
     setRodando(true)
     const zerada = filaRef.current.map(i => ({ ...i, etapa: 'espera' as EtapaFila, msg: '' }))
     setFila(zerada); filaRef.current = zerada
+    // A data escolhida viaja junto com a configuração, mas não é salva: ela
+    // vale só para esta emissão. Em branco, a extensão volta a calcular sozinha.
     window.postMessage({
       fonte: 'nodri-guias', tipo: 'iniciar',
-      config: cfg,
+      config: { ...cfg, pagamentoData: dataPag || '' },
       fila: zerada.map(i => ({ id: i.id, nome: i.nome, cnpj: soDigitos(i.cnpj) })),
     }, window.location.origin)
   }
@@ -349,11 +400,14 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div>
-              <label style={lbl}>Data de pagamento do DAS</label>
+              <label style={lbl}>Data de pagamento sugerida</label>
               <select value={cfg.pagamentoModo} onChange={e => setCfg({ ...cfg, pagamentoModo: e.target.value as Config['pagamentoModo'] })} style={inp}>
                 <option value="dia_fixo">Dia fixo do mês</option>
                 <option value="hoje">Sempre a data de hoje</option>
               </select>
+              <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 3, lineHeight: 1.4 }}>
+                Só preenche o calendário na hora de emitir — lá dá para trocar.
+              </div>
             </div>
             {cfg.pagamentoModo === 'dia_fixo' && (
               <div>
@@ -456,6 +510,38 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
               </div>
             </div>
 
+            {/* ── Data de pagamento ──
+                Fica aqui, e não no painel de configuração, porque muda a cada
+                emissão: é a data que a extensão digita no PGMEI. Já vem
+                preenchida pela regra do painel, corrigida para nunca cair no
+                passado — que era o motivo de a automação parar depois do dia
+                fixo do mês. */}
+            <div style={{
+              padding: '12px 18px', borderBottom: '1px solid #ece9e2', background: '#faf9f6',
+              display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap',
+            }}>
+              <div>
+                <label style={lbl} htmlFor="nodri-data-das">Data de pagamento do DAS</label>
+                <input
+                  id="nodri-data-das"
+                  type="date"
+                  value={dataPag}
+                  min={hojeIso}
+                  disabled={rodando}
+                  onChange={e => setDataPag(e.target.value)}
+                  style={{ ...inp, width: 'auto', minWidth: 170, background: '#fff' }}
+                />
+              </div>
+              <div style={{ flex: '1 1 260px', fontSize: 11, color: '#6b6860', lineHeight: 1.6 }}>
+                {dataPag
+                  ? <>É <strong>{brDeIso(dataPag)}</strong> que vai ser digitada no PGMEI, para todos da fila.</>
+                  : <>Em branco, a extensão calcula pelo dia fixo do painel de configuração.</>}
+                {dataPag === hojeIso && cfg.pagamentoModo === 'dia_fixo' && cfg.pagamentoDia < new Date().getDate() && (
+                  <><br />O dia {cfg.pagamentoDia} já passou neste mês, então veio como hoje — a Receita não aceita data vencida.</>
+                )}
+              </div>
+            </div>
+
             <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
             {extStatus === 'ausente' && (
               <div style={{ margin: '0 0 14px', padding: 14, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12, color: '#78350f' }}>
@@ -531,9 +617,32 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                 </p>
               </div>
             )}
-            {extStatus === 'ok' && (
+            {extStatus === 'ok' && !versaoAntiga(extVersao) && (
               <div style={{ margin: '0 0 10px', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
                 Extensão detectada{extVersao ? ` (v${extVersao})` : ''}
+              </div>
+            )}
+            {/* A extensão é carregada por pasta e não se atualiza sozinha. Sem
+                este aviso a pessoa escolheria a data no calendário e a versão
+                velha continuaria calculando sozinha, sem nada na tela dizendo
+                por quê. */}
+            {extStatus === 'ok' && versaoAntiga(extVersao) && (
+              <div style={{ margin: '0 0 12px', padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>
+                  Sua extensão está na v{extVersao} — a data escolhida aqui ainda não vale
+                </div>
+                Até a v{VERSAO_COM_CALENDARIO} a extensão calcula a data sozinha e trava quando o dia fixo
+                do mês já passou. Baixe o arquivo de novo, substitua a pasta e clique em
+                atualizar (a setinha circular) no cartão da extensão em <code>chrome://extensions</code>.
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {linkExtensao && (
+                    <a href={linkExtensao} download target="_blank" rel="noopener noreferrer"
+                      style={{ ...btn('#f59e0b'), textDecoration: 'none' }}>Baixar versão nova (.zip)</a>
+                  )}
+                  <button onClick={pingar} style={{ ...btn('#fff'), color: '#92400e', border: '1px solid #fbbf24' }}>
+                    Verificar de novo
+                  </button>
+                </div>
               </div>
             )}
               {fila.map((it, i) => (

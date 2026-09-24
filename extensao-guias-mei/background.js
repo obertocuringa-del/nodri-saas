@@ -40,12 +40,28 @@ function fmtData(d) {
   const p = n => String(n).padStart(2, '0')
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`
 }
+// A data que vai no campo "Data para pagamento" do PGMEI.
+//
+// A Receita recusa data no passado. A conta antiga era só "dia fixo do mês
+// atual", então a partir do dia 21 (com dia fixo 20) ela mandava uma data que
+// já tinha passado e a emissão travava ali, todo mês, sem explicação na tela.
+// Agora: vale a data escolhida no calendário do NODRI e, em qualquer caminho,
+// data vencida vira hoje.
 function dataPagamento(config) {
-  const hoje = new Date()
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(config?.pagamentoData || ''))
+  if (m) {
+    const escolhida = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    return fmtData(escolhida >= hoje ? escolhida : hoje)
+  }
+
   if (config?.pagamentoModo === 'hoje') return fmtData(hoje)
+
   const dia = Math.max(1, Math.min(31, Number(config?.pagamentoDia) || 20))
   const ultimo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()
-  return fmtData(new Date(hoje.getFullYear(), hoje.getMonth(), Math.min(dia, ultimo)))
+  const alvo = new Date(hoje.getFullYear(), hoje.getMonth(), Math.min(dia, ultimo))
+  return fmtData(alvo >= hoje ? alvo : hoje)
 }
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
