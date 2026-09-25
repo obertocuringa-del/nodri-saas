@@ -502,7 +502,15 @@ export async function processarCampanha(
       // conversa nova ia -- a não ser que tenha mensagem dela sem ler: aí fica
       // onde está, e a tela continua mostrando em "Preciso agir".
       const reabre = reaberta && !((conversa.nao_lidas || 0) > 0)
-      if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
+      // Pasta "Conversa Finalizada" do salão (pedido do dono, 25/09/2026):
+      // envio para CLIENTE tira de lá e leva para a pasta do disparo. Pasta do
+      // salão segura a conversa, então a resposta que não era confirmação
+      // ficava piscando lá dentro em vez de ir para "Preciso agir". A chave
+      // nasce do nome (no Rouge, extra_cinversa_finalizada_6py). Profissionais
+      // e as demais pastas do salão continuam intocadas.
+      const daFinalizada = c.destinatario !== 'profissional'
+        && /^extra_.*finaliz/.test(String(conversa.estado || ''))
+      if (reabre || daFinalizada || PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
         patch.estado = destino
         patch.proxima_acao = proximaAcaoPadrao(destino as any)
         patch.aguardando_desde = null
