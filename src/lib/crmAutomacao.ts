@@ -225,6 +225,27 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
       .order('ultima_em', { ascending: false }).limit(1)
     let conversa: any = (abertas || [])[0] || null
 
+    // Uma conversa por cliente: sem aberta, reusa a ÚLTIMA, mesmo encerrada,
+    // em vez de criar outra (mesma regra e mesmo motivo de crmCampanhas.ts,
+    // 25/09/2026). O feedback sai logo depois do atendimento -- quando a
+    // conversa quase sempre está em Agendado/Confirmado --, então era aqui que
+    // nascia a maior parte das duplicadas.
+    // Janela de 7 dias, igual à da entrada de mensagem: mais antiga que isso,
+    // nasce conversa nova (conta de cliente que voltou).
+    let reaberta = false
+    if (!conversa) {
+      const { data: ultimas } = await supabaseAdmin
+        .from('crm_conversas').select('id, estado, nao_lidas, fechada_em, ultima_em')
+        .eq('salao_id', salaoId).eq('contato_id', contato.id)
+        .order('ultima_em', { ascending: false }).limit(1)
+      const f: any = (ultimas || [])[0]
+      const quando = f?.fechada_em || f?.ultima_em
+      if (f && quando && new Date(quando).getTime() >= Date.now() - 7 * 864e5) {
+        conversa = f
+        reaberta = true
+      }
+    }
+
     const m1 = preencherAutomacao(cfg.msg1, primeiro, nomeSalao)
     const m2 = preencherAutomacao(cfg.msg2, primeiro, nomeSalao)
     const previa = (m2 || m1).slice(0, 120)
@@ -242,10 +263,14 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
       // Mesma regra do disparo: só sai de pasta passiva. Quem está em Preciso
       // agir ou Follow-up continua lá -- o feedback vai, mas a pergunta dela
       // não é enterrada.
-      if (PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
+      // A encerrada reaproveitada vai para Feedback, como a conversa nova ia --
+      // a não ser que tenha mensagem dela sem ler: aí fica onde está.
+      const reabre = reaberta && !((conversa.nao_lidas || 0) > 0)
+      if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
         patch.estado = 'feedback'
         patch.proxima_acao = proximaAcaoPadrao('feedback')
         patch.aguardando_desde = null
+        if (reabre) patch.fechada_em = null
       }
       await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conversa.id)
     }

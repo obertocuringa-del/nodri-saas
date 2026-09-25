@@ -453,11 +453,36 @@ export async function processarCampanha(
     const previa = (textos[textos.length - 1] || '').slice(0, 120)
 
     const { data: abertas } = await supabaseAdmin
-      .from('crm_conversas').select('id, estado')
+      .from('crm_conversas').select('id, estado, nao_lidas')
       .eq('salao_id', salaoId).eq('contato_id', contato.id)
       .not('estado', 'in', '("agendado","confirmado","sem_conversao","desmarcou")')
       .order('ultima_em', { ascending: false }).limit(1)
     let conversa: any = (abertas || [])[0] || null
+
+    // ── Uma conversa por cliente ────────────────────────────────────────────
+    //
+    // Sem conversa aberta, reusa a ÚLTIMA da cliente, mesmo encerrada, em vez
+    // de criar outra. Antes nascia uma segunda conversa toda vez que a
+    // recepção tinha marcado Agendado/Confirmado pouco antes do disparo (Ana,
+    // 24/09/2026: confirmada às 18:57, a confirmação das 20:50 abriu outra).
+    // Em 25/09/2026 eram 172 clientes com conversa repetida, até 6 cada.
+    //
+    // A janela é a MESMA da entrada de mensagem (DIAS_MESMA_CONVERSA em
+    // api/crm/ponte): encerrada há até 7 dias é a mesma conversa; mais antiga
+    // que isso, nasce outra -- é assim que o painel conta cliente que voltou.
+    let reaberta = false
+    if (!conversa) {
+      const { data: ultimas } = await supabaseAdmin
+        .from('crm_conversas').select('id, estado, nao_lidas, fechada_em, ultima_em')
+        .eq('salao_id', salaoId).eq('contato_id', contato.id)
+        .order('ultima_em', { ascending: false }).limit(1)
+      const f: any = (ultimas || [])[0]
+      const quando = f?.fechada_em || f?.ultima_em
+      if (f && quando && new Date(quando).getTime() >= Date.now() - 7 * 864e5) {
+        conversa = f
+        reaberta = true
+      }
+    }
 
     const destino = c.pasta || (c.destinatario === 'profissional' ? 'aguardando' : 'confirmacao')
 
@@ -473,10 +498,15 @@ export async function processarCampanha(
       const patch: any = { ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: previa, atualizado_em: agoraIso }
       // Mesma regra do disparo: só mexe em pasta passiva. Quem está em "Preciso
       // agir" ou Follow-up continua lá -- a pergunta dela não é enterrada.
-      if (PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
+      // A encerrada que foi reaproveitada vai para a pasta do disparo, como a
+      // conversa nova ia -- a não ser que tenha mensagem dela sem ler: aí fica
+      // onde está, e a tela continua mostrando em "Preciso agir".
+      const reabre = reaberta && !((conversa.nao_lidas || 0) > 0)
+      if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
         patch.estado = destino
         patch.proxima_acao = proximaAcaoPadrao(destino as any)
         patch.aguardando_desde = null
+        if (reabre) patch.fechada_em = null
       }
       await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conversa.id)
     }
