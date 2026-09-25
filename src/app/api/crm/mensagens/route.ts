@@ -94,8 +94,19 @@ export async function POST(req: NextRequest) {
   // que saiu foi o feedback, a confirmação ou uma lista, a conversa vai para
   // a pasta do tipo -- quem mandou estava olhando para ela, então aqui não
   // há pasta protegida.
+  //
+  // EXCEÇÃO -- pasta de PROFISSIONAIS (pedido do dono, 25/09/2026): conversa
+  // com profissional não é atendimento de cliente; responder não "passa a
+  // bola". Antes ela ia para Aguardando, e a mensagem seguinte do profissional
+  // caía em "Preciso agir" em vez de voltar para a pasta dele. Agora fica.
+  // Só essa pasta: Conversa Finalizada e as demais seguem a regra de sempre.
+  // A chave nasce do nome ("Profissionais" -> extra_profissionais_xxx), então
+  // o começo vale para qualquer salão que tenha criado essa pasta.
+  const pastaDeProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
   const tipoSaida = tipoDaMensagemDoSalao(texto)
-  const novoEstado = tipoSaida ? ESTADO_DO_TIPO[tipoSaida] : 'aguardando'
+  const novoEstado = pastaDeProfissional
+    ? conversa.estado
+    : (tipoSaida ? ESTADO_DO_TIPO[tipoSaida] : 'aguardando')
   await supabaseAdmin.from('crm_conversas').update({
     estado: novoEstado,
     proxima_acao: proximaAcaoPadrao(novoEstado),
