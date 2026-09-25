@@ -161,6 +161,22 @@ export function horaNoTexto(texto: string): string {
   return pega(/hor[aá]rio\s*:?\s*(\d{1,2})\s*(?::|h)\s*(\d{2})?/i) || pega(/\b(\d{1,2}):(\d{2})\b/)
 }
 
+/**
+ * A data escrita na mensagem de confirmação ("*Data:* 25/09/2026"), no
+ * formato dd/mm/aaaa. Mesmo motivo de horaNoTexto: o "Combinado" repete o
+ * que a cliente leu, e não o agendamento que a extensão achou no Avec
+ * (que pode ser o de outro dia). Procura depois de "Data"; senão, a primeira
+ * data completa do texto. Devolve "" quando não acha.
+ */
+export function dataNoTexto(texto: string): string {
+  const t = String(texto || '').replace(/[*_~]/g, '')
+  const m = /data\s*:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i.exec(t) || /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/.exec(t)
+  if (!m) return ''
+  const d = Number(m[1]), mes = Number(m[2])
+  if (!(d >= 1 && d <= 31 && mes >= 1 && mes <= 12)) return ''
+  return `${String(d).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${m[3]}`
+}
+
 /** Põe um pedido na fila, sem repetir a mesma conversa. */
 export async function enfileirar(salaoId: string, p: Omit<PedidoConfirmacao, 'id' | 'criado_em' | 'tentativas'>) {
   const fila = await carregarFila(salaoId)

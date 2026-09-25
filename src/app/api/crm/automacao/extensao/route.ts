@@ -220,22 +220,26 @@ async function concluirConfirmacao(
   // dia recebia a hora do outro serviço (Ana, 24/09/2026: pediu-se 14:00,
   // voltou "confirmado às 15:00"). A do Avec só entra se a mensagem não trouxer
   // hora nenhuma.
+  // A data segue a mesma regra: a que estava escrita, depois a do Avec.
   let horaEnviada = ''
+  let dataEnviada = ''
   try {
-    const { horaNoTexto } = await import('@/lib/crmConfirmacao')
+    const { horaNoTexto, dataNoTexto } = await import('@/lib/crmConfirmacao')
     const { data: enviadas } = await supabaseAdmin
       .from('crm_mensagens').select('texto')
       .eq('conversa_id', p.conversa_id).eq('direcao', 'saida').neq('autor_nome', 'Confirmação automática')
       .order('criado_em', { ascending: false }).limit(5)
+    // Data e hora saem da MESMA mensagem -- a primeira, de trás para frente,
+    // que tenha hora escrita (a própria mensagem de confirmação).
     for (const m of enviadas || []) {
       horaEnviada = horaNoTexto(m.texto)
-      if (horaEnviada) break
+      if (horaEnviada) { dataEnviada = dataNoTexto(m.texto); break }
     }
-  } catch { /* sem a mensagem, fica a hora do Avec, como antes */ }
+  } catch { /* sem a mensagem, ficam data e hora do Avec, como antes */ }
 
   const texto = String(conf.resposta || '')
     .replace(/\{cliente\}/g, primeiro)
-    .replace(/\{data\}/g, String(body?.data || p.data || ''))
+    .replace(/\{data\}/g, dataEnviada || String(body?.data || p.data || ''))
     .replace(/\{hora\}/g, horaEnviada || String(body?.hora || ''))
     .replace(/\{profissional\}/g, String(body?.profissional || ''))
     .trim()
