@@ -214,10 +214,29 @@ async function concluirConfirmacao(
   await gravarFila(salaoId, fila.filter(x => x.id !== pedidoId))
   const conf = await cfgConfirmacao(salaoId)
   const primeiro = String(p.nome || '').trim().split(/\s+/)[0] || ''
+
+  // A hora do "Combinado" é a que estava ESCRITA na mensagem que ela confirmou,
+  // não a do agendamento que a extensão marcou: cliente com dois horários no
+  // dia recebia a hora do outro serviço (Ana, 24/09/2026: pediu-se 14:00,
+  // voltou "confirmado às 15:00"). A do Avec só entra se a mensagem não trouxer
+  // hora nenhuma.
+  let horaEnviada = ''
+  try {
+    const { horaNoTexto } = await import('@/lib/crmConfirmacao')
+    const { data: enviadas } = await supabaseAdmin
+      .from('crm_mensagens').select('texto')
+      .eq('conversa_id', p.conversa_id).eq('direcao', 'saida').neq('autor_nome', 'Confirmação automática')
+      .order('criado_em', { ascending: false }).limit(5)
+    for (const m of enviadas || []) {
+      horaEnviada = horaNoTexto(m.texto)
+      if (horaEnviada) break
+    }
+  } catch { /* sem a mensagem, fica a hora do Avec, como antes */ }
+
   const texto = String(conf.resposta || '')
     .replace(/\{cliente\}/g, primeiro)
     .replace(/\{data\}/g, String(body?.data || p.data || ''))
-    .replace(/\{hora\}/g, String(body?.hora || ''))
+    .replace(/\{hora\}/g, horaEnviada || String(body?.hora || ''))
     .replace(/\{profissional\}/g, String(body?.profissional || ''))
     .trim()
 

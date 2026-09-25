@@ -138,6 +138,29 @@ export function ehConfirmacao(texto: string, palavras: string[]): boolean {
   })
 }
 
+/**
+ * O horário escrito numa mensagem de confirmação ("*Horário:* 14:00.").
+ *
+ * O "Combinado" tem que repetir a hora que a cliente LEU e confirmou. Até
+ * 25/09/2026 ele usava a hora do agendamento que a extensão marcou no Avec --
+ * e cliente com dois horários no dia (Ana: manicure 14h, pedicure 15h)
+ * recebia "confirmado às 15:00" depois de confirmar 14:00, e respondia
+ * "Ué, mudou?". Procura primeiro depois de "Horário"; se não houver, o
+ * primeiro hh:mm do texto. Devolve "" quando não acha nada.
+ */
+export function horaNoTexto(texto: string): string {
+  const t = String(texto || '').replace(/[*_~]/g, '')
+  const pega = (re: RegExp) => {
+    const m = re.exec(t)
+    if (!m) return ''
+    const h = Number(m[1])
+    const mi = m[2] ? Number(m[2]) : 0
+    if (!(h >= 0 && h <= 23 && mi >= 0 && mi <= 59)) return ''
+    return `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`
+  }
+  return pega(/hor[aá]rio\s*:?\s*(\d{1,2})\s*(?::|h)\s*(\d{2})?/i) || pega(/\b(\d{1,2}):(\d{2})\b/)
+}
+
 /** Põe um pedido na fila, sem repetir a mesma conversa. */
 export async function enfileirar(salaoId: string, p: Omit<PedidoConfirmacao, 'id' | 'criado_em' | 'tentativas'>) {
   const fila = await carregarFila(salaoId)
