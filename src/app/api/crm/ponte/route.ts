@@ -1387,13 +1387,24 @@ export async function POST(req: NextRequest) {
   // confirmação? Então "sim" é resposta a ele, esteja a conversa na pasta
   // que estiver. A trava contra o "ok" solto continua: fora de um pedido de
   // confirmação, nada aqui acontece.
+  //
+  // "Última" é o último ENVIO, não a última linha: a campanha de confirmação
+  // pode ter mais de uma mensagem (25/09/2026: o pedido de confirmação +
+  // "Beleza que Transforma" um segundo depois). Olhando só a última linha, o
+  // "confirmado" da REBECA, da LUANA e da Adriana não contou -- a última era a
+  // promoção. Vale qualquer mensagem do salão até 10 min antes da mais
+  // recente dele: é o mesmo envio.
   let ultimaDoSalaoEhConfirmacao = false
   if (daCliente && conversa?.id && texto.trim() && conversa.estado !== 'confirmacao') {
-    const { data: ultSaida } = await supabaseAdmin
-      .from('crm_mensagens').select('texto')
+    const { data: ultSaidas } = await supabaseAdmin
+      .from('crm_mensagens').select('texto, criado_em')
       .eq('conversa_id', conversa.id).eq('direcao', 'saida')
-      .order('criado_em', { ascending: false }).limit(1)
-    ultimaDoSalaoEhConfirmacao = tipoDaMensagemDoSalao((ultSaida || [])[0]?.texto) === 'confirmacao'
+      .order('criado_em', { ascending: false }).limit(5)
+    const maisRecente = (ultSaidas || [])[0]?.criado_em
+    const corte = maisRecente ? new Date(maisRecente).getTime() - 10 * 60000 : 0
+    ultimaDoSalaoEhConfirmacao = (ultSaidas || [])
+      .filter((m: any) => new Date(m.criado_em).getTime() >= corte)
+      .some((m: any) => tipoDaMensagemDoSalao(m.texto) === 'confirmacao')
   }
   if (daCliente && (conversa?.estado === 'confirmacao' || ultimaDoSalaoEhConfirmacao) && texto.trim()) {
     try {
