@@ -2018,12 +2018,21 @@ function comFormato(texto: string): React.ReactNode {
   return linhas.map((linha, iLinha) => (
     <span key={iLinha}>
       {iLinha > 0 && '\n'}
-      {pedacosFormatados(linha)}
+      {pedacosFormatados(linha, { n: 0 })}
     </span>
   ))
 }
 
-function pedacosFormatados(linha: string): React.ReactNode[] {
+// `seq` conta as chaves de toda a LINHA (não zera a cada chamada recursiva).
+// Usar achou.index como key (versão antiga) repetia o mesmo número em nós
+// IRMÃOS vindos de recursões diferentes -- ex.: "**Aline**. (...) **hoje**"
+// gerava dois <strong> key={0}, um de cada metade da frase. React tolera na
+// primeira pintura, mas o balão se redesenha a cada evento do WhatsApp
+// (entrega, edição, reconexão), e ficou reproduzido no CRM (25/09/2026) a
+// mensagem de uma cliente saindo com trechos inteiros repetidos dezenas de
+// vezes -- sintoma clássico de reconciliação do React confundida por key
+// duplicada num nó sem estado próprio.
+function pedacosFormatados(linha: string, seq: { n: number }): React.ReactNode[] {
   // Uma marca de cada vez, da esquerda para a direita, aninhando o resto.
   const marcas: [string, (n: React.ReactNode, k: number) => React.ReactNode][] = [
     ['*', (n, k) => <strong key={k}>{n}</strong>],
@@ -2031,18 +2040,21 @@ function pedacosFormatados(linha: string): React.ReactNode[] {
     ['~', (n, k) => <s key={k}>{n}</s>],
   ]
   for (const [marca, envolver] of marcas) {
-    // Fechada, com conteúdo, e sem espaço logo depois da marca de abertura.
-    // Montada por concatenação: dentro de crase, `\\${marca}` não interpola
-    // (o `$` fica escapado) e a expressão saía literal, sem casar nada.
-    const re = new RegExp('\\' + marca + '([^\\s' + marca + '][^' + marca + ']*?)\\' + marca)
+    // Uma OU MAIS marcas seguidas contam como um delimitador só (\*+, não
+    // \*). O teclado do iPhone autocorrige para "**negrito**" com frequência
+    // -- com \* sozinho, o par certo era o do MEIO (o 2º e o 3º asterisco de
+    // "**X**"), sobrava um asterisco solto de cada lado, e esse sobra virava
+    // a ABERTURA de um negrito seguinte, fundindo duas frases inteiras num
+    // <strong> só. Foi isso que criou o balão quebrado de 25/09/2026.
+    const re = new RegExp('\\' + marca + '+([^\\s' + marca + '][^' + marca + ']*?)\\' + marca + '+')
     const achou = re.exec(linha)
     if (!achou) continue
     const antes = linha.slice(0, achou.index)
     const depois = linha.slice(achou.index + achou[0].length)
     return [
-      ...pedacosFormatados(antes),
-      envolver(pedacosFormatados(achou[1]), achou.index),
-      ...pedacosFormatados(depois),
+      ...pedacosFormatados(antes, seq),
+      envolver(pedacosFormatados(achou[1], seq), seq.n++),
+      ...pedacosFormatados(depois, seq),
     ]
   }
   return [linha]
