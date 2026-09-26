@@ -54,6 +54,8 @@ export interface EstadoAutomacao {
   abas_avec?: number | null
   /** versão da extensão instalada no salão */
   versao_ext?: string | null
+  /** quem falou por último: 'servidor' (robô NODRI) ou 'salao' (Chrome do salão) */
+  origem?: 'servidor' | 'salao' | null
 }
 
 // Padrão genérico: nada de dado de salão aqui (regra do NODRI). O dono troca
@@ -122,6 +124,7 @@ export async function carregarEstado(salaoId: string): Promise<EstadoAutomacao> 
     ultima_tarefa: v.ultima_tarefa || null,
     abas_avec: Number.isFinite(v.abas_avec) ? v.abas_avec : null,
     versao_ext: v.versao_ext || null,
+    origem: v.origem || null,
   }
 }
 

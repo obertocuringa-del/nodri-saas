@@ -31,7 +31,9 @@ type Estado = {
   abas_avec?: number | null
   versao_ext?: string | null
   limpar_pedido_em?: string | null
+  origem?: 'servidor' | 'salao' | null
 }
+type Robo = { no_servidor: boolean; email: string; tem_senha: boolean }
 
 function haQuanto(iso: string | null): string {
   if (!iso) return 'nunca'
@@ -52,6 +54,11 @@ export default function AutomacaoFeedback() {
   const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [statusTexto, setStatusTexto] = useState('')
+  const [robo, setRobo] = useState<Robo | null>(null)
+  const [roboEmail, setRoboEmail] = useState('')
+  const [roboSenha, setRoboSenha] = useState('')
+  const [roboAviso, setRoboAviso] = useState('')
+  const [roboSalvando, setRoboSalvando] = useState(false)
 
   const mudou = !!cfg && !!salvo && JSON.stringify({ ...cfg, ligada: false }) !== JSON.stringify({ ...salvo, ligada: false })
   useGuardaSalvar(mudou, 'Automação de feedback')
@@ -61,8 +68,25 @@ export default function AutomacaoFeedback() {
     if (!d?.config) return
     setCfg(d.config); setSalvo(d.config); setEstado(d.estado); setHoje(d.hoje || ''); setDono(!!d.dono)
     setStatusTexto((d.config.statuses || []).join(', '))
+    if (d.robo) { setRobo(d.robo); setRoboEmail(d.robo.email || '') }
   }
   useEffect(() => { carregar() }, [])
+
+  async function gravarRobo(parcial: { email?: string; senha?: string; no_servidor?: boolean }) {
+    setRoboSalvando(true); setRoboAviso('')
+    try {
+      const r = await fetch('/api/crm/automacao', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'robo', ...parcial }),
+      })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) { setRoboAviso(j.error || 'Não consegui salvar.'); return }
+      setRobo(j.robo); setRoboSenha('')
+      setRoboAviso(parcial.no_servidor === undefined ? 'Login do Avec salvo.'
+        : j.robo.no_servidor ? 'Ligado no servidor: o Chrome deste salão é criado em até 1 minuto.'
+        : 'Voltou para o computador do salão.')
+    } finally { setRoboSalvando(false) }
+  }
   // A saúde da extensão muda sozinha; a tela acompanha sem recarregar.
   useEffect(() => {
     const t = setInterval(async () => {
@@ -140,6 +164,9 @@ export default function AutomacaoFeedback() {
         <span><strong>Extensão vista:</strong> {vista}</span>
         <span><strong>Feedbacks hoje ({hoje}):</strong> {estado?.enviados_hoje ?? 0}</span>
         <span><strong>Versão da extensão:</strong> {estado?.versao_ext || 'antiga (sem contagem)'}</span>
+        {estado?.origem && (
+          <span><strong>Rodando em:</strong> {estado.origem === 'servidor' ? 'servidor NODRI' : 'computador do salão'}</span>
+        )}
         {estado?.abas_avec != null && (
           <span style={estado.abas_avec > 3 ? { color: '#b4322a' } : undefined}>
             <strong>Abas do Avec abertas:</strong> {estado.abas_avec}
@@ -200,6 +227,49 @@ export default function AutomacaoFeedback() {
         {aviso && <span className="text-[12px]" style={{ color: '#2f6b4f' }}>{aviso}</span>}
         {!dono && <span className="text-[12px]" style={{ color: '#9a6b12' }}>Só o dono do salão altera esta parte.</span>}
       </div>
+
+      {/* ── Robô no servidor ── */}
+      {dono && robo && (
+        <div className="mt-5 pt-4" style={{ borderTop: '1px solid #f0ece7' }}>
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="font-bold text-[13px]" style={{ color: '#1a1a1a' }}>Robô no servidor NODRI</h3>
+            <div className="flex-1" />
+            <button onClick={() => gravarRobo({ no_servidor: !robo.no_servidor })} disabled={roboSalvando}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-bold disabled:opacity-40"
+              style={robo.no_servidor ? { background: '#2f6b4f', color: '#fff' } : { background: '#f0ece7', color: '#6b6860' }}>
+              {robo.no_servidor ? 'RODANDO NO SERVIDOR — clique para voltar ao salão' : 'No computador do salão — clique para passar ao servidor'}
+            </button>
+          </div>
+          <p className="text-[12px] mb-3" style={{ color: '#8f877f' }}>
+            Com o servidor ligado, o NODRI abre um Chrome só deste salão, já com a extensão e a chave configuradas,
+            e entra no Avec com o login abaixo. A extensão do computador do salão fica parada sozinha. A senha é
+            guardada cifrada e não volta para esta tela.
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>E-mail do Avec</label>
+              <input className={campo} style={estiloCampo} value={roboEmail} autoComplete="off"
+                onChange={e => setRoboEmail(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>
+                Senha do Avec {robo.tem_senha && <span className="font-normal">(já salva — deixe em branco para manter)</span>}
+              </label>
+              <input className={campo} style={estiloCampo} type="password" value={roboSenha} autoComplete="new-password"
+                onChange={e => setRoboSenha(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mt-3">
+            <button onClick={() => gravarRobo({ email: roboEmail, ...(roboSenha ? { senha: roboSenha } : {}) })}
+              disabled={roboSalvando || !roboEmail.trim() || (!roboSenha && !robo.tem_senha)}
+              className="px-4 py-2 rounded-lg text-[12.5px] font-bold flex items-center gap-1.5 disabled:opacity-40"
+              style={{ background: '#1a1a1a', color: '#fff' }}>
+              <Save size={13} /> {roboSalvando ? 'Salvando...' : 'Salvar login do Avec'}
+            </button>
+            {roboAviso && <span className="text-[12px]" style={{ color: '#2f6b4f' }}>{roboAviso}</span>}
+          </div>
+        </div>
+      )}
 
       {/* ── Chave da extensão ── */}
       <div className="mt-5 pt-4" style={{ borderTop: '1px solid #f0ece7' }}>

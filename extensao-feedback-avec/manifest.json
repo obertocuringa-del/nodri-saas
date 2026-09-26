@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NODRI — Feedback Avec",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Lê o relatório de agendamentos do Avec de tempos em tempos e entrega ao NODRI quem pagou hoje, para o pedido de feedback sair sozinho pelo CRM.",
   "permissions": ["storage", "tabs", "alarms", "tabGroups"],
   "host_permissions": [

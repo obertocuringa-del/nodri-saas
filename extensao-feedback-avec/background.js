@@ -28,7 +28,9 @@ const ALARME = 'nodri-feedback'
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 async function guardado() {
-  return chrome.storage.local.get(['chave', 'email', 'senha', 'abaId', 'ocupado_desde'])
+  // `origem` só é gravada pelo robô do servidor ('servidor'); no computador do
+  // salão ela não existe e vale 'salao'.
+  return chrome.storage.local.get(['chave', 'email', 'senha', 'abaId', 'ocupado_desde', 'origem'])
 }
 
 async function saude(patch) {
@@ -360,8 +362,10 @@ async function ciclo() {
       headers: {
         'x-nodri-abas': String(await contarAbasAvec()),
         'x-nodri-versao': chrome.runtime.getManifest().version,
+        'x-nodri-origem': dados.origem === 'servidor' ? 'servidor' : 'salao',
       },
     }, dados.chave)
+    if (cfg.parada) { await saude({ texto: cfg.parada, erro: null }); return }
     if (cfg.limpar_abas) await fecharAbasExtrasDoAvec()
     await reagendar(cfg.intervalo_seg)
 

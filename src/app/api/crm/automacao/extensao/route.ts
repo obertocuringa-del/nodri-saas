@@ -6,6 +6,7 @@ import {
   consumirLimpezaDeAbas,
   type LinhaRelatorio,
 } from '@/lib/crmAutomacao'
+import { carregarRobo } from '@/lib/crmRoboAvec'
 import {
   carregarCampanhas, carregarEstados, estaNaHora, datasDoSalao, processarCampanha,
   type LinhaRel,
@@ -31,8 +32,29 @@ async function salaoDaRequisicao(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const salaoId = await salaoDaRequisicao(req)
   if (!salaoId) return NextResponse.json({ error: 'Chave inválida' }, { status: 401 })
+
+  // ── A virada servidor x salão ─────────────────────────────────────────────
+  //
+  // Só UM Chrome lê o Avec de cada salão. Com "rodar no servidor" ligado, a
+  // extensão do computador do salão recebe "nada a fazer" (e não mexe no
+  // Avec); desligado, quem recebe "nada a fazer" é o robô do servidor. A
+  // extensão do servidor se apresenta com x-nodri-origem: servidor (o robô
+  // grava isso nela ao abrir o Chrome).
+  const origem = req.headers.get('x-nodri-origem') === 'servidor' ? 'servidor' : 'salao'
+  const robo = await carregarRobo(salaoId)
+  const vez = robo.no_servidor ? 'servidor' : 'salao'
+  if (origem !== vez) {
+    return NextResponse.json({
+      ligada: false, tarefa: null, limpar_abas: false, intervalo_seg: 60,
+      parada: vez === 'servidor'
+        ? 'Este salão roda no servidor NODRI: esta extensão fica parada.'
+        : 'Este salão roda no computador do salão: o robô do servidor fica parado.',
+    })
+  }
+
   const cfg = await carregarConfig(salaoId)
   const est = await carregarEstado(salaoId)
+  est.origem = origem
   // "Vista há X" na tela do dono: é o único jeito de saber que a extensão
   // continua viva no computador da recepção.
   est.visto_em = new Date().toISOString()
