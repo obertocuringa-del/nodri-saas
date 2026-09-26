@@ -1395,18 +1395,31 @@ export async function POST(req: NextRequest) {
   // promoção. Vale qualquer mensagem do salão até 10 min antes da mais
   // recente dele: é o mesmo envio.
   let ultimaDoSalaoEhConfirmacao = false
-  if (daCliente && conversa?.id && texto.trim() && conversa.estado !== 'confirmacao') {
+  // ── Já foi combinado? ──────────────────────────────────────────────────────
+  //
+  // 26/09/2026, MARINA: "Sim" -> Combinado (18:07:06); "Ok, muito obrigada"
+  // -> OUTRO Combinado (18:07:50). A janela de 10 min acima ainda enxergava o
+  // pedido de confirmação e tratava o agradecimento como nova confirmação.
+  // Se depois do pedido já saiu a "Confirmação automática", está resolvido:
+  // o que a cliente escrever a seguir é conversa, não confirmação.
+  let jaCombinado = false
+  if (daCliente && conversa?.id && texto.trim()) {
     const { data: ultSaidas } = await supabaseAdmin
-      .from('crm_mensagens').select('texto, criado_em')
+      .from('crm_mensagens').select('texto, criado_em, autor_nome')
       .eq('conversa_id', conversa.id).eq('direcao', 'saida')
-      .order('criado_em', { ascending: false }).limit(5)
-    const maisRecente = (ultSaidas || [])[0]?.criado_em
-    const corte = maisRecente ? new Date(maisRecente).getTime() - 10 * 60000 : 0
-    ultimaDoSalaoEhConfirmacao = (ultSaidas || [])
-      .filter((m: any) => new Date(m.criado_em).getTime() >= corte)
-      .some((m: any) => tipoDaMensagemDoSalao(m.texto) === 'confirmacao')
+      .order('criado_em', { ascending: false }).limit(8)
+    const saidas = ultSaidas || []
+    const iPedido = saidas.findIndex((m: any) => tipoDaMensagemDoSalao(m.texto) === 'confirmacao')
+    jaCombinado = iPedido > 0 && saidas.slice(0, iPedido).some((m: any) => m.autor_nome === 'Confirmação automática')
+    if (conversa.estado !== 'confirmacao') {
+      const maisRecente = saidas[0]?.criado_em
+      const corte = maisRecente ? new Date(maisRecente).getTime() - 10 * 60000 : 0
+      ultimaDoSalaoEhConfirmacao = saidas.slice(0, 5)
+        .filter((m: any) => new Date(m.criado_em).getTime() >= corte)
+        .some((m: any) => tipoDaMensagemDoSalao(m.texto) === 'confirmacao')
+    }
   }
-  if (daCliente && (conversa?.estado === 'confirmacao' || ultimaDoSalaoEhConfirmacao) && texto.trim()) {
+  if (daCliente && !jaCombinado && (conversa?.estado === 'confirmacao' || ultimaDoSalaoEhConfirmacao) && texto.trim()) {
     try {
       const conf = await cfgConfirmacao(salaoId)
       if (conf.ligada && ehConfirmacao(texto, conf.palavras)) {
