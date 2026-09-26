@@ -22,6 +22,7 @@ export type Sanitizador =
   | 'gradeVazia'   // mantém títulos e cabeçalhos, zera as linhas
   | 'listaCompra'  // mantém o que comprar e o mínimo; zera estoque e pedidos
   | 'semIdentidade' // mantém o texto padrão; tira token, slug e link do grupo
+  | 'crmDesligado'  // CRM: vai o molde (textos, horários, palavras) DESLIGADO e sem chave/login/link
 
 export interface ChaveModelo {
   chave: string           // nome exato, ou prefixo quando `prefixo: true`
@@ -118,6 +119,16 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   // padrão da mensagem, que é modelo de verdade.
   { chave: 'lojistas_config', como: 'semIdentidade', rotulo: 'Configuração de lojistas' },
   { chave: 'lojistas_segmentos', como: 'inteiro', rotulo: 'Segmentos de lojistas' },
+  // ── CRM (26/09/2026: salão novo nasce com o CRM do jeito que o Rouge ajustou)
+  // Pastas do salão vão inteiras. Os envios automáticos vão com os textos, os
+  // horários e as palavras de confirmação, mas DESLIGADOS e sem nada que
+  // aponte para outro salão (chave do conector, login do sistema de agenda,
+  // link de agendamento): o dono do salão novo revisa e liga.
+  { chave: 'crm_estados', como: 'inteiro', rotulo: 'CRM — pastas do salão' },
+  { chave: 'crm_campanhas', como: 'crmDesligado', rotulo: 'CRM — envios pela agenda' },
+  { chave: 'crm_confirmacao', como: 'crmDesligado', rotulo: 'CRM — confirmação e palavras' },
+  { chave: 'crm_boas_vindas', como: 'crmDesligado', rotulo: 'CRM — boas-vindas' },
+  { chave: 'crm_automacao_feedback', como: 'crmDesligado', rotulo: 'CRM — envio de feedback' },
   { chave: 'lojistas_servicos', como: 'inteiro', rotulo: 'Serviços para lojistas' },
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
 
@@ -180,6 +191,15 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   // Resultado calculado em cima da planilha de UM salão. Cairia na regra 4 e
   // viajaria; num salão novo seria a foto da conferência de outro.
   { chave: 'servicos_conferencia_cache', motivo: 'conferência calculada de cada salão' },
+  // CRM: login do sistema de agenda (senha cifrada) e o que é operação de UM
+  // salão. Pela regra 4 viajariam — e o robô do salão novo entraria na agenda
+  // do salão de origem com o login dele.
+  { chave: 'crm_robo_avec', motivo: 'login do sistema de agenda é de cada salão' },
+  { chave: 'crm_automacao_feedback_estado', motivo: 'telefones que já receberam feedback' },
+  { chave: 'crm_campanhas_estado', motivo: 'histórico de envios de cada salão' },
+  { chave: 'crm_confirmacao_fila', motivo: 'fila de confirmações de clientes' },
+  { chave: 'crm_automacao_limpar_abas', motivo: 'pedido de operação de cada salão' },
+  { chave: 'crm_fora_do_ar', motivo: 'registro de queda de cada salão' },
 ]
 const NUNCA_CONTEM: string[] = ['senhas']
 
@@ -342,10 +362,33 @@ function limparIdentidade(v: any): any {
   return resto
 }
 
+/**
+ * CRM: o molde vai (textos, horários, palavras, status), desligado. Sai tudo
+ * que liga a configuração a UM salão: a chave do conector, o login e o
+ * endereço de login do sistema de agenda, o link de agendamento/avaliação.
+ */
+function limparCrm(v: any): any {
+  if (!v || typeof v !== 'object') return v
+  const tira = (o: any) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return o
+    const { chave, url_login, link, token, slug, email, senha, senha_cifra, ...resto } = o
+    if ('ligada' in resto) resto.ligada = false
+    return resto
+  }
+  const out = tira(v)
+  if (Array.isArray(out.campanhas)) out.campanhas = out.campanhas.map(tira)
+  // Link de avaliação/agendamento escrito no meio do texto também é identidade.
+  for (const k of ['msg1', 'msg2', 'texto', 'resposta']) {
+    if (typeof out[k] === 'string') out[k] = out[k].replace(/https?:\/\/\S+/g, '').replace(/\n{3,}/g, '\n\n').trim()
+  }
+  return out
+}
+
 export function sanitizar(chave: string, valor: any): any {
   const r = regraDaChave(chave)
   if (!r) return null
   const copia = JSON.parse(JSON.stringify(valor ?? null))
+  if (r.como === 'crmDesligado') return limparCrm(copia)
   if (r.como === 'checklist') return limparChecklist(copia)
   if (r.como === 'listaCompra') return limparListaCompra(copia)
   if (r.como === 'gradeVazia') return limparGrade(copia)
