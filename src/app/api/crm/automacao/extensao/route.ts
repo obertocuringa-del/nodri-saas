@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { proximaAcaoPadrao } from '@/lib/crm'
 import {
   salaoPelaChave, carregarConfig, carregarEstado, gravarEstado, processarRelatorio, hojeNoFuso,
+  consumirLimpezaDeAbas,
   type LinhaRelatorio,
 } from '@/lib/crmAutomacao'
 import {
@@ -120,7 +121,13 @@ export async function GET(req: NextRequest) {
   if (conf.ligada) ritmos.push(30)
   const batimento = ritmos.length ? Math.max(30, Math.min(...ritmos)) : 60
 
+  // "Fechar abas extras" clicado na tela: só a 1.4.0+ sabe fazer. Versão
+  // antiga não consome o pedido, que fica esperando a atualização.
+  const sabeLimpar = !!versao && versao.localeCompare('1.4.0', undefined, { numeric: true }) >= 0
+  const limpar_abas = sabeLimpar ? !!(await consumirLimpezaDeAbas(salaoId)) : false
+
   return NextResponse.json({
+    limpar_abas,
     ligada: cfg.ligada,
     intervalo_seg: batimento,
     // O intervalo do feedback em si, para a tela não se confundir com o ritmo.

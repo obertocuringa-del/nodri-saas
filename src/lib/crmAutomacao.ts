@@ -137,6 +137,35 @@ export async function gravarEstado(salaoId: string, est: EstadoAutomacao) {
   }, { onConflict: 'salao_id,chave' })
 }
 
+// ── "Fechar abas extras" pedido na tela ──────────────────────────────────────
+//
+// Chave própria (e não dentro do estado) porque a extensão regrava o estado
+// inteiro a cada volta e apagaria o pedido feito no meio. O dono clica, a
+// extensão lê na volta seguinte, fecha as sobras e o pedido é apagado.
+const CHAVE_LIMPAR = 'crm_automacao_limpar_abas'
+
+export async function pedirLimpezaDeAbas(salaoId: string) {
+  const agora = new Date().toISOString()
+  await supabaseAdmin.from('salao_config').upsert({
+    salao_id: salaoId, chave: CHAVE_LIMPAR, valor: { pedido_em: agora }, atualizado_em: agora,
+  }, { onConflict: 'salao_id,chave' })
+}
+
+/** Lê e consome o pedido: devolve a data se havia um, e apaga. */
+export async function consumirLimpezaDeAbas(salaoId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin.from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', CHAVE_LIMPAR).maybeSingle()
+  const em = (data?.valor as any)?.pedido_em || null
+  if (em) await supabaseAdmin.from('salao_config').delete().eq('salao_id', salaoId).eq('chave', CHAVE_LIMPAR)
+  return em
+}
+
+export async function limpezaPendente(salaoId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin.from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', CHAVE_LIMPAR).maybeSingle()
+  return (data?.valor as any)?.pedido_em || null
+}
+
 /** A extensão se apresenta com a chave; daqui sai o salão dono dela. */
 export async function salaoPelaChave(chave: string): Promise<string | null> {
   const c = String(chave || '').trim()

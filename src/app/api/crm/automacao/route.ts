@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 import {
   carregarConfig, gravarConfig, carregarEstado, lerConfig, gerarChave, hojeNoFuso,
+  pedirLimpezaDeAbas, limpezaPendente,
 } from '@/lib/crmAutomacao'
 
 export const dynamic = 'force-dynamic'
@@ -18,13 +19,16 @@ export async function GET() {
   if (sess.role === 'profissional' || await crmBloqueado()) {
     return NextResponse.json({ error: 'O CRM é do salão.' }, { status: 403 })
   }
-  const [cfg, est] = await Promise.all([carregarConfig(sess.salaoId), carregarEstado(sess.salaoId)])
+  const [cfg, est, limpar] = await Promise.all([
+    carregarConfig(sess.salaoId), carregarEstado(sess.salaoId), limpezaPendente(sess.salaoId),
+  ])
   const hoje = hojeNoFuso(cfg.fuso)
   return NextResponse.json({
     config: cfg,
     estado: {
       visto_em: est.visto_em, ultimo: est.ultimo, enviados_hoje: (est.enviados[hoje.iso] || []).length,
       abas_avec: est.abas_avec ?? null, versao_ext: est.versao_ext || null,
+      limpar_pedido_em: limpar,
     },
     hoje: hoje.br,
     dono: sess.role === 'salon',
@@ -39,6 +43,11 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const atual = await carregarConfig(sess.salaoId)
+
+  if (body?.acao === 'limpar_abas') {
+    await pedirLimpezaDeAbas(sess.salaoId)
+    return NextResponse.json({ ok: true })
+  }
 
   if (body?.acao === 'nova_chave') {
     const cfg = { ...atual, chave: gerarChave() }

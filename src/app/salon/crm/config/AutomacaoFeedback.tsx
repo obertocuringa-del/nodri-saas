@@ -30,6 +30,7 @@ type Estado = {
   enviados_hoje: number
   abas_avec?: number | null
   versao_ext?: string | null
+  limpar_pedido_em?: string | null
 }
 
 function haQuanto(iso: string | null): string {
@@ -87,6 +88,18 @@ export default function AutomacaoFeedback() {
     } finally { setSalvando(false) }
   }
 
+  async function limparAbas() {
+    if (!confirm('Fechar as abas do Avec que sobraram no Chrome do salão? Fica a aba do robô e a que estiver aberta na frente da recepção.')) return
+    const r = await fetch('/api/crm/automacao', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'limpar_abas' }),
+    })
+    if (r.ok) {
+      setAviso('Pedido enviado: a extensão fecha as abas na próxima volta (até 1 min).')
+      setEstado(e => e ? { ...e, limpar_pedido_em: new Date().toISOString() } : e)
+    }
+  }
+
   async function novaChave() {
     if (!confirm('Gerar uma chave nova invalida a atual: a extensão instalada para de funcionar até receber a nova. Continuar?')) return
     const r = await fetch('/api/crm/automacao', {
@@ -132,6 +145,11 @@ export default function AutomacaoFeedback() {
             <strong>Abas do Avec abertas:</strong> {estado.abas_avec}
             {estado.abas_avec > 3 ? ' — Chrome acumulando abas' : ''}
           </span>
+        )}
+        {dono && (
+          estado?.limpar_pedido_em
+            ? <span><strong>Fechando abas extras…</strong> (na próxima volta da extensão)</span>
+            : <button onClick={limparAbas} className="underline font-bold">Fechar abas extras do Avec</button>
         )}
         {estado?.ultimo && (
           <span><strong>Último ciclo:</strong> {estado.ultimo.lidas} linhas, {estado.ultimo.elegiveis} pagas,{' '}

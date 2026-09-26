@@ -189,6 +189,21 @@ async function abaDeTrabalho(url) {
   return nova.id
 }
 
+/**
+ * "Fechar abas extras" clicado no NODRI: fecha TODA aba do Avec, menos a de
+ * trabalho e a que está na frente da recepção (aba ativa de cada janela) --
+ * essa pode ter um agendamento pela metade. Fixadas também ficam.
+ */
+async function fecharAbasExtrasDoAvec() {
+  try {
+    const { abaId } = await guardado()
+    const abas = await chrome.tabs.query({ url: ['https://admin.avec.beauty/*', 'https://www.avec.app/*', 'https://avec.app/*'] })
+    const fechar = abas.filter(t => t.id !== abaId && !t.active && !t.pinned).map(t => t.id)
+    if (fechar.length) await chrome.tabs.remove(fechar)
+    await saude({ limpeza: { em: new Date().toISOString(), fechadas: fechar.length } })
+  } catch { /* segue */ }
+}
+
 /** Quantas abas do Avec o Chrome tem abertas (vai para o painel do NODRI). */
 async function contarAbasAvec() {
   try {
@@ -306,6 +321,7 @@ async function ciclo() {
         'x-nodri-versao': chrome.runtime.getManifest().version,
       },
     }, dados.chave)
+    if (cfg.limpar_abas) await fecharAbasExtrasDoAvec()
     await reagendar(cfg.intervalo_seg)
 
     // ── A tarefa da vez ─────────────────────────────────────────────────────
