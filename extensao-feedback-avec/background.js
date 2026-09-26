@@ -239,20 +239,29 @@ async function infoDaAba(abaId) {
  * -- aí é senha errada, código por SMS ou captcha, e o aviso que o próprio
  * Avec escreveu na tela vai junto no erro.
  */
-async function esperarSairDoLogin(abaId, ms = 40000) {
+async function esperarSairDoLogin(abaId, ms = 60000) {
   const fim = Date.now() + ms
   let ultimo = null
+  // 26/09/2026: "saiu do login" numa única olhada podia ser a página no meio
+  // da troca (sem campo de senha ainda desenhado). Agora precisa de DUAS
+  // olhadas seguidas, com a página carregada, fora da tela de login.
+  let seguidas = 0
   while (Date.now() < fim) {
     await sleep(1000)
     const aba = await infoDaAba(abaId)
     if (!aba) throw new Error('A aba do Avec foi fechada no meio do login')
-    if (aba.status !== 'complete') continue
+    if (aba.status !== 'complete') { seguidas = 0; continue }
     const onde = await perguntar(abaId, { tipo: 'onde-estou' })
     if (onde) {
       ultimo = onde
-      if (!onde.login) return onde
+      if (!onde.login) {
+        seguidas++
+        if (seguidas >= 2) return onde
+        await sleep(1500)
+      } else seguidas = 0
       continue
     }
+    seguidas = 0
     // Sem resposta do content script: ou a página está trocando (normal), ou
     // o Avec mandou para fora do admin (site público) -- aí não entrou.
     const url = String(aba.url || '')
@@ -262,7 +271,39 @@ async function esperarSairDoLogin(abaId, ms = 40000) {
   }
   throw new Error(ultimo?.erro
     ? 'O Avec não aceitou o login: ' + ultimo.erro
-    : 'A tela de login não saiu do lugar em 40 s (senha errada, código por SMS ou captcha?)')
+    : 'A tela de login não saiu do lugar em 60 s (senha errada, código por SMS ou captcha?)')
+}
+
+/**
+ * Entra no Avec (se precisar) e chega na página pedida, com paciência.
+ *
+ * 26/09/2026, pedido do dono: com o Avec instável, depois de "Acessar conta"
+ * o sistema ainda está abrindo quando a extensão já pula para o relatório --
+ * o Avec devolve a tela de login e o ciclo morria em "Continuou na tela de
+ * login depois de entrar". Agora, depois de entrar:
+ *   1) espera o painel do Avec assentar (5 s além do carregamento);
+ *   2) vai à página pedida e pergunta com mais paciência;
+ *   3) se o Avec ainda devolver o login, espera mais (5, 10, 15 s) e tenta a
+ *      página de novo -- é a sessão terminando de se firmar, não senha errada;
+ *   4) só depois de três voltas faz o login inteiro mais uma vez, e só então
+ *      desiste com o erro.
+ */
+async function chegarLogado(abaId, cfg, dados, url) {
+  for (let login = 1; login <= 2; login++) {
+    await saude({ texto: login === 1 ? 'Avec deslogado — entrando de novo…' : 'Avec ainda na tela de login — entrando mais uma vez…' })
+    await entrarNoAvec(abaId, cfg, dados)
+    await sleep(5000)
+    for (let volta = 1; volta <= 3; volta++) {
+      await navegar(abaId, url)
+      await esperarCarregar(abaId)
+      let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' }, 15)
+      if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
+      if (onde && !onde.login) return onde
+      await saude({ texto: `Entrou, mas o Avec ainda não abriu a página (tentativa ${volta} de 3)…` })
+      await sleep(5000 * volta)
+    }
+  }
+  throw new Error('Continuou na tela de login depois de entrar (duas vezes, com espera)')
 }
 
 async function entrarNoAvec(abaId, cfg, dados) {
@@ -341,13 +382,7 @@ async function ciclo() {
     let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
     if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
     if (!onde) throw new Error('A aba do Avec não respondeu (página não carregou?)')
-    if (onde.login) {
-      await saude({ texto: 'Avec deslogado — entrando de novo…' })
-      await entrarNoAvec(abaId, cfg, dados)
-      await navegar(abaId, urlRel)
-      onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
-      if (!onde || onde.login) throw new Error('Continuou na tela de login depois de entrar')
-    }
+    if (onde.login) onde = await chegarLogado(abaId, cfg, dados, urlRel)
 
     const lido = await lerComSegundaChance(abaId, cfg.hoje)
     if (!lido) throw new Error('O relatório não respondeu')
@@ -407,13 +442,7 @@ async function prepararAba(cfg, dados, url) {
   let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
   if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
   if (!onde) throw new Error('A aba do Avec não respondeu')
-  if (onde.login) {
-    await saude({ texto: 'Avec deslogado — entrando de novo…' })
-    await entrarNoAvec(abaId, cfg, dados)
-    await navegar(abaId, url)
-    onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
-    if (!onde || onde.login) throw new Error('Continuou na tela de login depois de entrar')
-  }
+  if (onde.login) await chegarLogado(abaId, cfg, dados, url)
   return abaId
 }
 

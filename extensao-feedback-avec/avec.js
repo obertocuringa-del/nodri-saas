@@ -72,7 +72,9 @@
     const botao = Array.from(document.querySelectorAll('button, input[type="submit"]'))
       .find(b => /acessar|entrar|login/i.test(b.textContent || b.value || ''))
     if (!botao) return { ok: false, erro: 'Não achei o botão de entrar' }
-    if (botao.disabled) await sleep(600)
+    // O Avec lento deixa o botão desabilitado enquanto valida os campos: era
+    // 0,6 s de espera e desistia. Agora espera até 10 s ele liberar.
+    if (botao.disabled) await esperarPor(() => !botao.disabled, 10000, 250)
     if (botao.disabled) return { ok: false, erro: 'O botão de entrar continuou desabilitado' }
     botao.click()
     return { ok: true }
