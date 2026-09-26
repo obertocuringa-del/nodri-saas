@@ -76,6 +76,9 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
         to,
         subject,
         html,
+        // Sai do domínio verificado (nodri.com.br), mas a resposta do cliente
+        // cai na caixa que o dono lê (EMAIL_RESPONDER_PARA, ex.: o Gmail).
+        ...(process.env.EMAIL_RESPONDER_PARA ? { reply_to: process.env.EMAIL_RESPONDER_PARA.trim() } : {}),
       }),
     })
     if (!res.ok) {
