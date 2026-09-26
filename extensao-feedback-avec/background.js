@@ -117,23 +117,84 @@ function navegar(abaId, url, ms = 45000) {
   })
 }
 
-/** A aba de trabalho: a mesma de sempre, ou uma nova se sumiu. */
+// ── O grupo "NODRI robô" ────────────────────────────────────────────────────
+//
+// 26/09/2026: o Chrome da recepção tinha ~20 abas do Avec abertas. A aba de
+// trabalho se perdia (Chrome reiniciado às 06:00 troca o número de todas as
+// abas; página de erro de rede sai do endereço do Avec) e a extensão abria
+// outra, sem nunca fechar a velha -- que o Chrome recarregava e deixava no
+// admin do Avec, onde a limpeza não olhava. Agora a aba de trabalho mora num
+// grupo de abas próprio, recolhido. O grupo sobrevive ao reinício do Chrome,
+// então a extensão sempre reconhece a SUA aba, reaproveita e fecha as sobras
+// -- sem encostar nas abas do Avec que a recepção usa, que ficam fora dele.
+const GRUPO = 'NODRI robô'
+
+async function gruposNodri() {
+  try { return (await chrome.tabGroups.query({ title: GRUPO })).map(g => g.id) } catch { return [] }
+}
+
+async function abasDoGrupo() {
+  const grupos = await gruposNodri()
+  if (!grupos.length) return []
+  const abas = await chrome.tabs.query({})
+  return abas.filter(t => grupos.includes(t.groupId))
+}
+
+/** Põe a aba no grupo (cria o grupo se não existir) e deixa recolhido. */
+async function guardarNoGrupo(abaId) {
+  try {
+    const aba = await infoDaAba(abaId)
+    if (!aba) return
+    const grupos = await gruposNodri()
+    if (grupos.includes(aba.groupId)) return
+    const alvo = grupos.length
+      ? (await chrome.tabGroups.get(grupos[0]))
+      : null
+    const gid = await chrome.tabs.group(alvo && alvo.windowId === aba.windowId
+      ? { tabIds: [abaId], groupId: alvo.id }
+      : { tabIds: [abaId] })
+    await chrome.tabGroups.update(gid, { title: GRUPO, color: 'grey', collapsed: true })
+  } catch { /* sem permissão de grupo (versão antiga): segue sem grupo */ }
+}
+
+/** A aba de trabalho: a mesma de sempre, a do grupo, ou uma nova se sumiu. */
 async function abaDeTrabalho(url) {
   const { abaId } = await guardado()
+  const grupos = await gruposNodri()
   if (abaId) {
-    const existe = await new Promise(res => chrome.tabs.get(abaId, t => res(chrome.runtime.lastError ? null : t)))
+    const existe = await infoDaAba(abaId)
     // A aba vale mesmo fora do admin: com a sessão vencida o Avec joga a aba
     // para www.avec.app, e exigir o endereço do admin aqui abria uma aba NOVA a
     // cada ciclo (uma a cada 30 s) enquanto a antiga ficava lá, parada.
-    if (existe && /avec\.(beauty|app)/.test(String(existe.url || ''))) {
+    // Dentro do grupo ela vale em qualquer endereço (página de erro de rede
+    // inclusive): o grupo prova que é nossa.
+    if (existe && (grupos.includes(existe.groupId) || /avec\.(beauty|app)/.test(String(existe.url || '')))) {
+      await guardarNoGrupo(abaId)
       await navegar(abaId, url)
       return abaId
     }
   }
+  // O número guardado não serve mais (Chrome reiniciou): adota a aba do grupo.
+  const doGrupo = (await abasDoGrupo())[0]
+  if (doGrupo) {
+    await chrome.storage.local.set({ abaId: doGrupo.id })
+    await navegar(doGrupo.id, url)
+    return doGrupo.id
+  }
   const nova = await chrome.tabs.create({ url, active: false })
   await chrome.storage.local.set({ abaId: nova.id })
+  await saude({ aba_nova: { em: new Date().toISOString(), antiga: abaId || null } })
+  await guardarNoGrupo(nova.id)
   await esperarCarregar(nova.id)
   return nova.id
+}
+
+/** Quantas abas do Avec o Chrome tem abertas (vai para o painel do NODRI). */
+async function contarAbasAvec() {
+  try {
+    const abas = await chrome.tabs.query({ url: ['https://admin.avec.beauty/*', 'https://www.avec.app/*', 'https://avec.app/*'] })
+    return abas.length
+  } catch { return -1 }
 }
 
 /**
@@ -219,6 +280,11 @@ async function fecharAbasSobrando() {
     const { abaId } = await guardado()
     const abas = await chrome.tabs.query({ url: ['https://www.avec.app/*', 'https://avec.app/*'] })
     const fechar = abas.filter(t => t.id !== abaId && !t.active && !t.pinned).map(t => t.id)
+    // Dentro do grupo "NODRI robô" só pode existir UMA aba: a de trabalho.
+    // Se o número guardado se perdeu, a primeira do grupo vira a de trabalho.
+    const grupo = await abasDoGrupo()
+    const manter = grupo.some(t => t.id === abaId) ? abaId : grupo[0]?.id
+    for (const t of grupo) if (t.id !== manter && !t.active && !fechar.includes(t.id)) fechar.push(t.id)
     if (fechar.length) await chrome.tabs.remove(fechar)
   } catch { /* sem permissão ou sem aba: segue */ }
 }
@@ -233,7 +299,13 @@ async function ciclo() {
     if (!dados.chave) { await saude({ texto: 'Sem chave: cole a chave do NODRI nas opções.' }); return }
     await fecharAbasSobrando()
 
-    const cfg = await nodri('/api/crm/automacao/extensao', { method: 'GET' }, dados.chave)
+    const cfg = await nodri('/api/crm/automacao/extensao', {
+      method: 'GET',
+      headers: {
+        'x-nodri-abas': String(await contarAbasAvec()),
+        'x-nodri-versao': chrome.runtime.getManifest().version,
+      },
+    }, dados.chave)
     await reagendar(cfg.intervalo_seg)
 
     // ── A tarefa da vez ─────────────────────────────────────────────────────

@@ -22,7 +22,10 @@ export async function GET() {
   const hoje = hojeNoFuso(cfg.fuso)
   return NextResponse.json({
     config: cfg,
-    estado: { visto_em: est.visto_em, ultimo: est.ultimo, enviados_hoje: (est.enviados[hoje.iso] || []).length },
+    estado: {
+      visto_em: est.visto_em, ultimo: est.ultimo, enviados_hoje: (est.enviados[hoje.iso] || []).length,
+      abas_avec: est.abas_avec ?? null, versao_ext: est.versao_ext || null,
+    },
     hoje: hoje.br,
     dono: sess.role === 'salon',
   })

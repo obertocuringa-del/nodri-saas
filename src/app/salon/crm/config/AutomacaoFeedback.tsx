@@ -28,6 +28,8 @@ type Estado = {
   visto_em: string | null
   ultimo: { em: string; lidas: number; elegiveis: number; enviadas: number; puladas: number; erro: string | null } | null
   enviados_hoje: number
+  abas_avec?: number | null
+  versao_ext?: string | null
 }
 
 function haQuanto(iso: string | null): string {
@@ -124,6 +126,13 @@ export default function AutomacaoFeedback() {
         style={{ background: vistaRecente ? '#e7f1e9' : '#fbf2e0', color: vistaRecente ? '#2f6b4f' : '#9a6b12' }}>
         <span><strong>Extensão vista:</strong> {vista}</span>
         <span><strong>Feedbacks hoje ({hoje}):</strong> {estado?.enviados_hoje ?? 0}</span>
+        <span><strong>Versão da extensão:</strong> {estado?.versao_ext || 'antiga (sem contagem)'}</span>
+        {estado?.abas_avec != null && (
+          <span style={estado.abas_avec > 3 ? { color: '#b4322a' } : undefined}>
+            <strong>Abas do Avec abertas:</strong> {estado.abas_avec}
+            {estado.abas_avec > 3 ? ' — Chrome acumulando abas' : ''}
+          </span>
+        )}
         {estado?.ultimo && (
           <span><strong>Último ciclo:</strong> {estado.ultimo.lidas} linhas, {estado.ultimo.elegiveis} pagas,{' '}
             {estado.ultimo.enviadas} enviadas{estado.ultimo.erro ? ` — ${estado.ultimo.erro}` : ''}</span>

@@ -35,6 +35,13 @@ export async function GET(req: NextRequest) {
   // "Vista há X" na tela do dono: é o único jeito de saber que a extensão
   // continua viva no computador da recepção.
   est.visto_em = new Date().toISOString()
+  // A partir da 1.4.0 a extensão conta as abas do Avec abertas e diz a versão:
+  // com vários salões, é daqui que se vê um Chrome acumulando abas sem
+  // precisar entrar no computador de cada um.
+  const abas = Number(req.headers.get('x-nodri-abas'))
+  if (req.headers.get('x-nodri-abas') !== null && Number.isFinite(abas) && abas >= 0) est.abas_avec = abas
+  const versao = String(req.headers.get('x-nodri-versao') || '').slice(0, 20)
+  if (versao) est.versao_ext = versao
   await gravarEstado(salaoId, est)
   // ── A tarefa da vez ───────────────────────────────────────────────────────
   //

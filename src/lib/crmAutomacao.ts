@@ -50,6 +50,10 @@ export interface EstadoAutomacao {
   enviados: Record<string, string[]>
   /** o que o último ciclo da extensão fez: revezamento entre campanha e feedback */
   ultima_tarefa?: 'campanha' | 'feedback' | null
+  /** quantas abas do Avec o Chrome do salão tem abertas (a extensão conta) */
+  abas_avec?: number | null
+  /** versão da extensão instalada no salão */
+  versao_ext?: string | null
 }
 
 // Padrão genérico: nada de dado de salão aqui (regra do NODRI). O dono troca
@@ -116,6 +120,8 @@ export async function carregarEstado(salaoId: string): Promise<EstadoAutomacao> 
     ultimo: v.ultimo || null,
     enviados: (v.enviados && typeof v.enviados === 'object') ? v.enviados : {},
     ultima_tarefa: v.ultima_tarefa || null,
+    abas_avec: Number.isFinite(v.abas_avec) ? v.abas_avec : null,
+    versao_ext: v.versao_ext || null,
   }
 }
 
