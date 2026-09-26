@@ -304,7 +304,12 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
       // A encerrada reaproveitada vai para Feedback, como a conversa nova ia --
       // a não ser que tenha mensagem dela sem ler: aí fica onde está.
       const reabre = reaberta && !((conversa.nao_lidas || 0) > 0)
-      if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
+      // Pasta Profissionais segura a conversa (dono, 26/09/2026): reabre,
+      // mas não sai da pasta.
+      const pastaDeProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
+      if (pastaDeProfissional) {
+        if (reaberta) patch.fechada_em = null
+      } else if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
         patch.estado = 'feedback'
         patch.proxima_acao = proximaAcaoPadrao('feedback')
         patch.aguardando_desde = null

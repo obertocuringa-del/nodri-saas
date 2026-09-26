@@ -510,7 +510,13 @@ export async function processarCampanha(
       // e as demais pastas do salão continuam intocadas.
       const daFinalizada = c.destinatario !== 'profissional'
         && /^extra_.*finaliz/.test(String(conversa.estado || ''))
-      if (reabre || daFinalizada || PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
+      // Pasta Profissionais SEGURA a conversa (pedido do dono, 26/09/2026):
+      // o aviso "seu cliente das 17:00" reabria a conversa encerrada da
+      // VANESSA e a levava para Aguardando. Reabre, mas dentro da pasta.
+      const pastaDeProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
+      if (pastaDeProfissional) {
+        if (reaberta) patch.fechada_em = null
+      } else if (reabre || daFinalizada || PASSIVAS_DO_DISPARO.includes(conversa.estado) || conversa.estado === destino) {
         patch.estado = destino
         patch.proxima_acao = proximaAcaoPadrao(destino as any)
         patch.aguardando_desde = null
