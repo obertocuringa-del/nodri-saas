@@ -186,8 +186,8 @@ export default function ConfigCrmPage() {
                 vence vira follow-up, cliente que sumiu vira follow-up, atendimento vira agendado.
                 <br />
                 <strong style={{ color: '#9a6b12' }}>Os que você criar</strong> são pastas que só se
-                mexem na mão. O sistema nunca põe nem tira ninguém delas — não prometo automação
-                que ninguém escreveu.
+                mexem na mão. O sistema nunca põe nem tira ninguém delas — não prometo movimento
+                que ninguém configurou.
               </p>
             </div>
 

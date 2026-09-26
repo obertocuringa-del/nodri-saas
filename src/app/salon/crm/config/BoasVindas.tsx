@@ -73,8 +73,8 @@ export default function BoasVindas() {
       <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
         Quando uma cliente <strong>entra em contato</strong> (primeira mensagem depois de 12 horas
         sem conversa, ou contato novo), o CRM responde na hora com este texto e o link. No meio de
-        uma conversa em andamento não manda; &ldquo;obrigada&rdquo;, &ldquo;sim&rdquo; e respostas às
-        automações também não. No máximo uma por cliente por dia. <strong>A conversa continua em
+        uma conversa em andamento não manda; &ldquo;obrigada&rdquo;, &ldquo;sim&rdquo; e respostas aos
+        envios também não. No máximo uma por cliente por dia. <strong>A conversa continua em
         Preciso agir</strong>: quem agenda é a recepção.
       </p>
 

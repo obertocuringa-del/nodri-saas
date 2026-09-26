@@ -61,7 +61,7 @@ export default function AutomacaoFeedback() {
   const [roboSalvando, setRoboSalvando] = useState(false)
 
   const mudou = !!cfg && !!salvo && JSON.stringify({ ...cfg, ligada: false }) !== JSON.stringify({ ...salvo, ligada: false })
-  useGuardaSalvar(mudou, 'Automação de feedback')
+  useGuardaSalvar(mudou, 'Envio de feedback')
 
   async function carregar() {
     const d = await fetch('/api/crm/automacao', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
@@ -82,8 +82,8 @@ export default function AutomacaoFeedback() {
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { setRoboAviso(j.error || 'Não consegui salvar.'); return }
       setRobo(j.robo); setRoboSenha('')
-      setRoboAviso(parcial.no_servidor === undefined ? 'Login do Avec salvo.'
-        : j.robo.no_servidor ? 'Ligado no servidor: o Chrome deste salão é criado em até 1 minuto.'
+      setRoboAviso(parcial.no_servidor === undefined ? 'Acesso salvo.'
+        : j.robo.no_servidor ? 'Conexão em nuvem ligada: fica pronta em até 1 minuto.'
         : 'Voltou para o computador do salão.')
     } finally { setRoboSalvando(false) }
   }
@@ -108,12 +108,12 @@ export default function AutomacaoFeedback() {
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { setAviso(j.error || 'Não consegui salvar.'); return }
       setCfg(j.config); setSalvo(j.config); setStatusTexto((j.config.statuses || []).join(', '))
-      setAviso(parcial.ligada === undefined ? 'Salvo.' : (j.config.ligada ? 'Automação LIGADA.' : 'Automação desligada.'))
+      setAviso(parcial.ligada === undefined ? 'Salvo.' : (j.config.ligada ? 'Envio LIGADO.' : 'Envio desligado.'))
     } finally { setSalvando(false) }
   }
 
   async function limparAbas() {
-    if (!confirm('Fechar as abas do Avec que sobraram no Chrome do salão? Fica a aba do robô e a que estiver aberta na frente da recepção.')) return
+    if (!confirm('Fechar as janelas extras da conexão? Fica a principal e a que estiver aberta na frente da recepção.')) return
     const r = await fetch('/api/crm/automacao', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ acao: 'limpar_abas' }),
@@ -144,7 +144,7 @@ export default function AutomacaoFeedback() {
   return (
     <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: cfg.ligada ? '#bfd9c8' : '#e8e6e0' }}>
       <div className="flex items-center gap-3 mb-1">
-        <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Automação de feedback</h2>
+        <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Envio de feedback</h2>
         <div className="flex-1" />
         <button onClick={() => gravar({ ligada: !cfg.ligada })} disabled={salvando || !dono}
           className="px-3 py-1.5 rounded-lg text-[12px] font-bold disabled:opacity-40"
@@ -153,8 +153,8 @@ export default function AutomacaoFeedback() {
         </button>
       </div>
       <p className="text-[12px] mb-3" style={{ color: '#8f877f' }}>
-        Quando a comanda da cliente fica como paga no Avec, ela recebe o pedido de feedback no WhatsApp,
-        uma vez por celular por dia. Quem lê o Avec é a extensão do Chrome no computador da recepção;
+        Quando a comanda da cliente fica como paga no seu sistema de agenda, ela recebe o pedido de feedback no WhatsApp,
+        uma vez por celular por dia. Quem consulta a agenda é o conector do NODRI;
         quem escolhe a quem mandar é o NODRI. Nasce desligada.
       </p>
 
@@ -165,18 +165,18 @@ export default function AutomacaoFeedback() {
         <span><strong>Feedbacks hoje ({hoje}):</strong> {estado?.enviados_hoje ?? 0}</span>
         <span><strong>Versão da extensão:</strong> {estado?.versao_ext || 'antiga (sem contagem)'}</span>
         {estado?.origem && (
-          <span><strong>Rodando em:</strong> {estado.origem === 'servidor' ? 'servidor NODRI' : 'computador do salão'}</span>
+          <span><strong>Rodando em:</strong> {estado.origem === 'servidor' ? 'nuvem NODRI' : 'computador do salão'}</span>
         )}
         {estado?.abas_avec != null && (
           <span style={estado.abas_avec > 3 ? { color: '#b4322a' } : undefined}>
-            <strong>Abas do Avec abertas:</strong> {estado.abas_avec}
-            {estado.abas_avec > 3 ? ' — Chrome acumulando abas' : ''}
+            <strong>Janelas abertas:</strong> {estado.abas_avec}
+            {estado.abas_avec > 3 ? ' — acumulando janelas' : ''}
           </span>
         )}
         {dono && (
           estado?.limpar_pedido_em
             ? <span><strong>Fechando abas extras…</strong> (na próxima volta da extensão)</span>
-            : <button onClick={limparAbas} className="underline font-bold">Fechar abas extras do Avec</button>
+            : <button onClick={limparAbas} className="underline font-bold">Fechar janelas extras</button>
         )}
         {estado?.ultimo && (
           <span><strong>Último ciclo:</strong> {estado.ultimo.lidas} linhas, {estado.ultimo.elegiveis} pagas,{' '}
@@ -186,13 +186,13 @@ export default function AutomacaoFeedback() {
 
       <div className="grid gap-3 md:grid-cols-2">
         <div>
-          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Endereço do relatório no Avec</label>
+          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Endereço do relatório no sistema de agenda</label>
           <input className={campo} style={estiloCampo} value={cfg.url_relatorio}
             onChange={e => setCfg({ ...cfg, url_relatorio: e.target.value })} />
         </div>
         <div>
-          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Endereço de login do Avec (se cair, a extensão entra por aqui)</label>
-          <input className={campo} style={estiloCampo} value={cfg.url_login} placeholder="https://admin.avec.beauty/seusalao/admin"
+          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Endereço de login do sistema de agenda (se a sessão cair, o conector entra por aqui)</label>
+          <input className={campo} style={estiloCampo} value={cfg.url_login} placeholder="https://..."
             onChange={e => setCfg({ ...cfg, url_login: e.target.value })} />
         </div>
         <div>
@@ -200,7 +200,7 @@ export default function AutomacaoFeedback() {
           <input className={campo} style={estiloCampo} value={statusTexto} onChange={e => setStatusTexto(e.target.value)} />
         </div>
         <div>
-          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Conferir o Avec a cada (segundos, mínimo 30)</label>
+          <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>Consultar a agenda a cada (segundos, mínimo 30)</label>
           <input className={campo} style={estiloCampo} type="number" min={30} max={3600} value={cfg.intervalo_seg}
             onChange={e => setCfg({ ...cfg, intervalo_seg: Number(e.target.value) || 60 })} />
         </div>
@@ -232,28 +232,28 @@ export default function AutomacaoFeedback() {
       {dono && robo && (
         <div className="mt-5 pt-4" style={{ borderTop: '1px solid #f0ece7' }}>
           <div className="flex items-center gap-3 mb-1">
-            <h3 className="font-bold text-[13px]" style={{ color: '#1a1a1a' }}>Robô no servidor NODRI</h3>
+            <h3 className="font-bold text-[13px]" style={{ color: '#1a1a1a' }}>Conexão em nuvem NODRI</h3>
             <div className="flex-1" />
             <button onClick={() => gravarRobo({ no_servidor: !robo.no_servidor })} disabled={roboSalvando}
               className="px-3 py-1.5 rounded-lg text-[12px] font-bold disabled:opacity-40"
               style={robo.no_servidor ? { background: '#2f6b4f', color: '#fff' } : { background: '#f0ece7', color: '#6b6860' }}>
-              {robo.no_servidor ? 'RODANDO NO SERVIDOR — clique para voltar ao salão' : 'No computador do salão — clique para passar ao servidor'}
+              {robo.no_servidor ? 'NA NUVEM — clique para voltar ao computador do salão' : 'No computador do salão — clique para passar para a nuvem'}
             </button>
           </div>
           <p className="text-[12px] mb-3" style={{ color: '#8f877f' }}>
-            Com o servidor ligado, o NODRI abre um Chrome só deste salão, já com a extensão e a chave configuradas,
-            e entra no Avec com o login abaixo. A extensão do computador do salão fica parada sozinha. A senha é
+            Com a nuvem ligada, o NODRI mantém uma conexão só deste salão, já configurada, e acessa o sistema
+            de agenda com o login abaixo. O conector do computador do salão fica parado sozinho. A senha é
             guardada cifrada e não volta para esta tela.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>E-mail do Avec</label>
+              <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>E-mail de acesso ao sistema de agenda</label>
               <input className={campo} style={estiloCampo} value={roboEmail} autoComplete="off"
                 onChange={e => setRoboEmail(e.target.value)} />
             </div>
             <div>
               <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>
-                Senha do Avec {robo.tem_senha && <span className="font-normal">(já salva — deixe em branco para manter)</span>}
+                Senha de acesso {robo.tem_senha && <span className="font-normal">(já salva — deixe em branco para manter)</span>}
               </label>
               <input className={campo} style={estiloCampo} type="password" value={roboSenha} autoComplete="new-password"
                 onChange={e => setRoboSenha(e.target.value)} />
@@ -264,7 +264,7 @@ export default function AutomacaoFeedback() {
               disabled={roboSalvando || !roboEmail.trim() || (!roboSenha && !robo.tem_senha)}
               className="px-4 py-2 rounded-lg text-[12.5px] font-bold flex items-center gap-1.5 disabled:opacity-40"
               style={{ background: '#1a1a1a', color: '#fff' }}>
-              <Save size={13} /> {roboSalvando ? 'Salvando...' : 'Salvar login do Avec'}
+              <Save size={13} /> {roboSalvando ? 'Salvando...' : 'Salvar acesso'}
             </button>
             {roboAviso && <span className="text-[12px]" style={{ color: '#2f6b4f' }}>{roboAviso}</span>}
           </div>
@@ -274,7 +274,7 @@ export default function AutomacaoFeedback() {
       {/* ── Chave da extensão ── */}
       <div className="mt-5 pt-4" style={{ borderTop: '1px solid #f0ece7' }}>
         <label className="block text-[11.5px] font-bold mb-1" style={{ color: '#6b6860' }}>
-          Chave da extensão — cole nas opções da extensão "NODRI — Feedback Avec" no Chrome da recepção
+          Chave do conector — cole nas opções do conector NODRI no computador da recepção
         </label>
         <div className="flex items-center gap-2">
           <code className="flex-1 px-2.5 py-1.5 rounded-lg text-[12px] break-all"
@@ -287,7 +287,7 @@ export default function AutomacaoFeedback() {
           )}
         </div>
         <p className="text-[11.5px] mt-2" style={{ color: '#8f877f' }}>
-          O e-mail e a senha do Avec são digitados nas opções da extensão, no computador do salão. Não passam pelo NODRI.
+          No computador do salão, o e-mail e a senha de acesso ficam nas opções do conector.
         </p>
       </div>
     </section>

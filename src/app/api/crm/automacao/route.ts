@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (typeof body.senha === 'string' && body.senha) robo.senha_cifra = cifrar(body.senha)
     if (typeof body.no_servidor === 'boolean') {
       if (body.no_servidor && (!robo.email || !robo.senha_cifra)) {
-        return NextResponse.json({ error: 'Salve o e-mail e a senha do Avec antes de ligar no servidor.' }, { status: 400 })
+        return NextResponse.json({ error: 'Salve o e-mail e a senha de acesso antes de ligar a nuvem.' }, { status: 400 })
       }
       robo.no_servidor = body.no_servidor
     }

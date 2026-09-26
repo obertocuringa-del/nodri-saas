@@ -46,7 +46,7 @@ export default function Campanhas() {
   const [aviso, setAviso] = useState('')
 
   const mudou = !!campanhas && JSON.stringify(campanhas) !== salvo
-  useGuardaSalvar(mudou, 'Automações do Avec')
+  useGuardaSalvar(mudou, 'Envios pela agenda')
 
   async function carregar() {
     const d = await fetch('/api/crm/campanhas', { cache: 'no-store' })
@@ -110,9 +110,9 @@ export default function Campanhas() {
 
   return (
     <section className="rounded-2xl border p-5" style={{ background: '#fff', borderColor: '#e8e6e0' }}>
-      <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Automações do Avec</h2>
+      <h2 className="font-bold text-[15px]" style={{ color: '#1a1a1a' }}>Envios pela agenda</h2>
       <p className="text-[12px] mb-4" style={{ color: '#8f877f' }}>
-        Cada uma lê o relatório do Avec e manda mensagem sozinha. Todas nascem desligadas,
+        Cada um consulta a agenda do salão e manda a mensagem na hora certa. Todas nascem desligadas,
         e cada uma liga separado. Hoje é {datas.hoje} · amanhã é {datas.amanha}.
       </p>
 
@@ -223,10 +223,10 @@ export default function Campanhas() {
         <button onClick={() => gravar(campanhas)} disabled={salvando || !mudou}
           className="px-4 py-2 rounded-lg text-[12.5px] font-bold flex items-center gap-1.5 disabled:opacity-40"
           style={{ background: '#1a1a1a', color: '#fff' }}>
-          <Save size={13} /> {salvando ? 'Salvando...' : 'Salvar automações'}
+          <Save size={13} /> {salvando ? 'Salvando...' : 'Salvar envios'}
         </button>
         <button onClick={() => setCampanhas(cs => [...(cs || []), {
-          id: 'c' + Date.now().toString(36), nome: 'Nova automação', ligada: false,
+          id: 'c' + Date.now().toString(36), nome: 'Novo envio', ligada: false,
           dia: 'hoje', statuses: [], quando: { tipo: 'intervalo', segundos: 60 },
           destinatario: 'cliente', mensagens: [''], espacamento_seg: 8, pasta: '',
         }])} className="px-3 py-2 rounded-lg text-[12px] font-bold flex items-center gap-1"
@@ -247,7 +247,7 @@ export default function Campanhas() {
             </button>
           </div>
           <p className="text-[12px] mb-3" style={{ color: '#8f877f' }}>
-            Se a resposta bater com a lista, a extensão marca <strong>Confirmado</strong> no Avec e só então
+            Se a resposta bater com a lista, o NODRI marca <strong>Confirmado</strong> na agenda e só então
             manda o retorno para a cliente. Se não bater — ou se a marcação falhar — a conversa vai para
             <strong> Preciso agir</strong> e ninguém recebe nada.
             {fila > 0 && <> Agora tem <strong>{fila}</strong> na fila.</>}
