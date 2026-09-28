@@ -10,6 +10,7 @@ atrasar, a próxima espera. Cada coleta é um processo separado
 """
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -25,6 +26,8 @@ CHAVE = os.environ["CRM_PONTE_CHAVE"]
 PERFIS = os.environ.get("ROBO_PERFIS", "/home/nodri/robo/perfis")
 CASAS = os.environ.get("ROBO_CASAS", "/home/nodri/robo/relatorio")
 TZ = ZoneInfo("America/Sao_Paulo")
+# Uma coleta normal do Rouge leva 15-25 min; 90 dá folga para salão maior.
+LIMITE_MIN = int(os.environ.get("ROBO_LIMITE_MIN", "90"))
 H = {"x-crm-chave": CHAVE}
 
 fila = []            # salões esperando a vez
@@ -67,17 +70,20 @@ def iniciar(s, origem):
     # "pipe" ele enche e a coleta trava no meio). A resposta é a última linha JSON.
     arq_log = os.path.join(casa, "ultima_coleta.log")
     saida = open(arq_log, "w")
+    # Sessão própria: se passar do tempo, derruba a coleta E o chromedriver dela
+    # juntos (o Chrome do salão não é filho dela e continua aberto).
     p = subprocess.Popen([PY, "-u", os.path.join(AQUI, "coleta_servidor.py")], env=env, cwd=casa,
-                         stdout=saida, stderr=subprocess.STDOUT, text=True)
+                         stdout=saida, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    p.comecou = time.time()
     rodando[s["salao_id"]] = (p, cid, s["nome"], arq_log)
     log(s["nome"], f": coleta iniciada ({origem}), porta {porta}")
 
 
-def terminar(salao_id):
+def terminar(salao_id, erro=None):
     p, cid, nome, arq_log = rodando.pop(salao_id)
     texto = open(arq_log, encoding="utf-8", errors="replace").read()
     linhas = [l for l in texto.splitlines() if l.strip().startswith('{"ok"')]
-    res = json.loads(linhas[-1]) if linhas else {"ok": False, "erro": f"a coleta saiu sem resposta (código {p.returncode})"}
+    res = json.loads(linhas[-1]) if linhas else {"ok": False, "erro": erro or f"a coleta saiu sem resposta (código {p.returncode})"}
     if not res.get("ok"):
         nodri_post({"acao": "erro", "id": cid, "motivo": res.get("erro")})
         log(nome, ": ERRO --", res.get("erro"))
@@ -109,6 +115,16 @@ def volta():
                     fila.append((s, "agenda"))
     for sid in [k for k, v in rodando.items() if v[0].poll() is not None]:
         terminar(sid)
+    # Coleta travada não pode segurar a fila dos outros salões para sempre.
+    for sid in [k for k, v in rodando.items() if time.time() - v[0].comecou > LIMITE_MIN * 60]:
+        p = rodando[sid][0]
+        try:
+            os.killpg(p.pid, signal.SIGKILL)
+        except Exception:
+            p.kill()
+        p.wait()
+        log(rodando[sid][2], f": passou de {LIMITE_MIN} min -- coleta encerrada, fila segue")
+        terminar(sid, f"A coleta passou de {LIMITE_MIN} minutos e foi encerrada para não segurar os outros salões.")
     while fila and len(rodando) < limite:
         s, origem = fila.pop(0)
         if s["salao_id"] not in rodando:
