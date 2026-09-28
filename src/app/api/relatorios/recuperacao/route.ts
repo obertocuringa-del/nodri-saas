@@ -150,7 +150,9 @@ export async function GET(req: NextRequest) {
         // dias ausente = entre a última visita ANTES do contato e o retorno
         const ultimaAntes = [...visitas].reverse().find(v => v.ts < tContato)
         const diasAusente = ultimaAntes ? Math.round((retorno.ts - ultimaAntes.ts) / 86400000) : null
-        const bonus = Math.round(retorno.valor * (BONUS_PCT / 100) * 100) / 100
+        // Retorno do Envio automático entra na conta, mas não paga bônus: não
+        // tem recepcionista por trás.
+        const bonus = c.origem === 'envio_automatico' ? 0 : Math.round(retorno.valor * (BONUS_PCT / 100) * 100) / 100
         recuperados.push({
           cliente_nome: nome,
           recepcionista_nome: c.recepcionista_nome || '—',

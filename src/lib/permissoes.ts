@@ -97,6 +97,7 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
       { chave: 'rel_frequencia', label: 'Frequência' },
       { chave: 'rel_diasemana', label: 'Dia da Semana' },
       { chave: 'rel_recuperados', label: 'Clientes Recuperados' },
+      { chave: 'rel_envio', label: 'Envio automático (mensagens em lista)' },
       { chave: 'rel_valores', label: 'Ver valores em R$ (LTV / dinheiro perdido)' },
     ]
   },

@@ -8,6 +8,7 @@ import { apelidoCasa } from '@/lib/matchProfissional'
 import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
+import EnvioAutomatico from '@/components/salon/EnvioAutomatico'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 import DetalheClienteRelatorio from '@/components/salon/DetalheClienteRelatorio'
 import { useIsMobile } from '@/lib/useIsMobile'
@@ -279,11 +280,11 @@ export default function RelatoriosPage() {
     }
     if (podePerm('rel_aba_mais') && !podePerm('rel_' + subAnalise)) {
       const s = SUBS_REL.find(x => podePerm('rel_' + x))
-      if (s) { setSubAnalise(s as any); if (s !== 'recuperados') carregarAnalise(s) }
+      if (s) { setSubAnalise(s as any); if (s !== 'recuperados' && s !== 'envio') carregarAnalise(s) }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permCarregado])
-  const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados'>('risco')
+  const [subAnalise, setSubAnalise] = useState<'risco' | 'perdidos' | 'vip' | 'regular' | 'novo' | 'crosssell' | 'frequencia' | 'diasemana' | 'recuperados' | 'envio'>('risco')
   // Linha aberta nos relatórios Em Risco / Perdidos (uma por vez).
   const [clienteAberto, setClienteAberto] = useState<string>('')
   const [freqModal, setFreqModal] = useState<{ label: string; min: number; max: number } | null>(null)
@@ -1105,7 +1106,7 @@ export default function RelatoriosPage() {
           <div style={{ padding: isMobile ? '10px 14px 0' : '12px 20px 0', display: 'flex', gap: 4, borderBottom: '1px solid #e8e6e0', flexWrap: 'wrap' }}>
             {isMobile && (
               <select value={aba === 'analise' ? `analise:${subAnalise}` : aba}
-                onChange={e => { const v = e.target.value; if (v.startsWith('analise:')) { const sub = v.slice(8); setAba('analise'); setSubAnalise(sub as any); if (sub !== 'recuperados') carregarAnalise(sub) } else { setAba(v as any) } }}
+                onChange={e => { const v = e.target.value; if (v.startsWith('analise:')) { const sub = v.slice(8); setAba('analise'); setSubAnalise(sub as any); if (sub !== 'recuperados' && sub !== 'envio') carregarAnalise(sub) } else { setAba(v as any) } }}
                 style={{ width: '100%', padding: '11px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, fontWeight: 700, color: '#1a1a1a', background: '#fff', margin: '2px 0 8px' }}>
                 {podePerm('rel_aba_geral') && <option value="geral">Geral</option>}
                 {podePerm('rel_aba_metas') && <option value="metas">Metas</option>}
@@ -1123,6 +1124,7 @@ export default function RelatoriosPage() {
                   {podePerm('rel_frequencia') && <option value="analise:frequencia">Frequência</option>}
                   {podePerm('rel_diasemana') && <option value="analise:diasemana">Dia da Semana</option>}
                   {podePerm('rel_recuperados') && <option value="analise:recuperados">Clientes Recuperados</option>}
+                  {podePerm('rel_envio') && <option value="analise:envio">Envio automático</option>}
                 </optgroup>
                 )}
               </select>
@@ -1154,13 +1156,14 @@ export default function RelatoriosPage() {
                     { id: 'frequencia', icon: <RefreshCw size={13} />, label: 'Frequência', desc: 'Com que frequência voltam' },
                     { id: 'diasemana', icon: <BarChart2 size={13} />, label: 'Dia da Semana', desc: 'Melhores dias do salão' },
                     { id: 'recuperados', icon: <RefreshCw size={13} />, label: 'Clientes Recuperados', desc: 'Voltaram após contato' },
+                    { id: 'envio', icon: <MessageCircle size={13} />, label: 'Envio automático', desc: 'Mensagens em lista pelo WhatsApp' },
                   ].filter(item => podePerm('rel_' + item.id)).map(item => (
                     <button key={item.id} onClick={() => {
                       setAba('analise')
                       setSubAnalise(item.id as any)
                       setDropdownAberto(false)
-                      if (item.id !== 'recuperados') carregarAnalise(item.id)
-                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#ffffff' : 'transparent', color: '#1a1a1a', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'recuperados' ? '0 0 10px 10px' : 0 }}>
+                      if (item.id !== 'recuperados' && item.id !== 'envio') carregarAnalise(item.id)
+                    }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', background: subAnalise === item.id && aba === 'analise' ? '#ffffff' : 'transparent', color: '#1a1a1a', cursor: 'pointer', textAlign: 'left', borderRadius: item.id === 'risco' ? '10px 10px 0 0' : item.id === 'envio' ? '0 0 10px 10px' : 0 }}>
                       <span style={{ color: '#b45309' }}>{item.icon}</span>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</div>
@@ -2491,8 +2494,9 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     { id: 'frequencia', label: 'Frequência' },
                     { id: 'diasemana', label: 'Dia da Semana' },
                     { id: 'recuperados', label: 'Recuperados' },
+                    { id: 'envio', label: 'Envio automático' },
                   ].filter(s => podePerm('rel_' + s.id)).map(s => (
-                    <button key={s.id} onClick={() => { setSubAnalise(s.id as any); if (s.id !== 'recuperados') carregarAnalise(s.id) }}
+                    <button key={s.id} onClick={() => { setSubAnalise(s.id as any); if (s.id !== 'recuperados' && s.id !== 'envio') carregarAnalise(s.id) }}
                       style={{ padding: '6px 14px', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: subAnalise === s.id ? '#f59e0b' : '#ffffff', color: subAnalise === s.id ? '#f5f4f0' : '#767069' }}>
                       {s.label}
                     </button>
@@ -2500,7 +2504,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                 </div>
                 )}
 
-                {subAnalise === 'recuperados' ? <RecuperadosReport /> : subAnalise === 'diasemana' ? <DiaSemanaReport /> : <>
+                {subAnalise === 'envio' ? <EnvioAutomatico /> : subAnalise === 'recuperados' ? <RecuperadosReport /> : subAnalise === 'diasemana' ? <DiaSemanaReport /> : <>
                 {/* Filtro de data + Imprimir — Mais Relatórios */}
                 <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: 10, background: '#f8f7f5', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: isMobile ? '12px 12px' : '10px 14px', margin: '12px 0' }}>
                   {/* No celular os atalhos vêm PRIMEIRO: é por eles que se

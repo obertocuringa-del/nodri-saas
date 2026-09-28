@@ -26,6 +26,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
   const [loadIA, setLoadIA] = useState(false)
   const [envios, setEnvios] = useState(0) // quantas vezes já foi contatada (observação 1x/2x...)
   const [ultimo, setUltimo] = useState('') // data do último envio, mesmo já destravado
+  const [quem, setQuem] = useState('')     // quem contatou (recepcionista ou "Envio automático")
   // Link de socorro quando o navegador bloqueia a aba nova (ver enviar()).
   const [linkWhats, setLinkWhats] = useState('')
   const janela = useRef(10)
@@ -45,6 +46,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       setUltimo(s.ultimo_contato?.[cliente.cliente_nome] || '')
       const t = s.travados?.[cliente.cliente_nome]
       if (t) {
+        setQuem(t.recepcionista || '')
         const serverAte = new Date(t.contato_em).getTime() + (s.janela_dias || 10) * 86400000
         setTravadoAte(prev => (prev && prev > serverAte ? prev : serverAte))
       }
@@ -95,6 +97,9 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
 
   async function enviar() {
     if (!recepSel) return
+    // A aba nasce AGORA, ainda dentro do clique: depois dos awaits o navegador
+    // do celular já não deixa abrir aba nova. O endereço entra no fim.
+    const aba = window.open('about:blank', '_blank')
     setEnviando(true)
     const recepObj = recep.find(r => r.nome === recepSel)
 
@@ -110,20 +115,24 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
       else erroReg = d?.error || ('HTTP ' + res.status)
     } catch { erroReg = 'falha de conexão' }
 
-    // 2) Abre o WhatsApp de qualquer jeito (a mensagem precisa sair)
+    // 2) Abre a conversa da cliente NO CRM, com a mensagem já na caixa (pedido
+    // do dono em 28/09/2026: o salão agora manda pelo CRM, não pelo WhatsApp
+    // Web). Sem CRM liberado ou sem telefone válido, cai no WhatsApp como antes.
     const fone = String(cliente.celular || '').replace(/\D/g, '')
     const numero = fone.startsWith('55') ? fone : '55' + fone
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`
-    // No celular, `window.open` depois de um await costuma ser barrado: o
-    // navegador só confia em aba nova aberta no toque, e o await já quebrou
-    // essa corrente. O contato fica gravado e a mensagem não sai — o pior dos
-    // dois mundos, e sem aviso nenhum na tela.
-    //
-    // Registrar primeiro continua certo (é o que garante a contagem). O que
-    // faltava era o plano B: quando a aba não abre, aparece um link de verdade
-    // para tocar, e aí o toque é do dedo e nenhum navegador bloqueia.
-    const aba = window.open(url, '_blank')
-    if (!aba) setLinkWhats(url)
+    let url = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`
+    try {
+      const r = await fetch('/api/crm/abrir', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: cliente.celular, nome: cliente.cliente_nome }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d?.conversa_id) url = `/salon/crm?conversa=${d.conversa_id}&texto=${encodeURIComponent(msg)}`
+    } catch { /* fica o WhatsApp */ }
+    // Registrar primeiro continua certo (é o que garante a contagem). Se o
+    // navegador barrou a aba, aparece um link de verdade para tocar.
+    if (aba) aba.location.href = url
+    else setLinkWhats(url)
 
     setEnviando(false)
 
@@ -164,7 +173,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     <>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {travado ? (
-        <span title={`Já contatada — destrava em ${diasRest} dia(s)`}
+        <span title={`Já contatada${quem ? ' por ' + quem : ''}${dataUltimo ? ' em ' + dataUltimo : ''} — destrava em ${diasRest} dia(s)`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, background: '#f1efe8', color: '#9ca3af', fontSize: 11, fontWeight: 600 }}>
           <Lock size={12} /> {diasRest}d
         </span>
@@ -214,25 +223,25 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
               style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13, color: '#1a1a1a', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
 
             <p style={{ fontSize: 10, color: '#9ca3af', margin: '8px 0 14px' }}>
-              Ao enviar, o WhatsApp abre com a mensagem já escrita. O botão trava por {janela.current} dias e o retorno dela é atribuído a quem contatou.
+              Abre a conversa dela no CRM com a mensagem já escrita. O botão trava por {janela.current} dias e o retorno dela é atribuído a quem contatou.
             </p>
 
             {linkWhats && (
               <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
                 <p style={{ fontSize: 12, color: '#166534', fontWeight: 700, margin: '0 0 8px' }}>
-                  Contato registrado. O navegador bloqueou a aba do WhatsApp — toque no botão abaixo para abrir.
+                  Contato registrado. O navegador bloqueou a aba nova — toque no botão abaixo para abrir a conversa.
                 </p>
                 <a href={linkWhats} target="_blank" rel="noopener noreferrer"
                   onClick={() => { setLinkWhats(''); setOpen(false) }}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                  <MessageCircle size={16} /> Abrir o WhatsApp
+                  <MessageCircle size={16} /> Abrir a conversa
                 </a>
               </div>
             )}
 
             <button onClick={enviar} disabled={enviando || !recepSel || recep.length === 0}
               style={{ width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: (enviando || !recepSel) ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {enviando ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />} Abrir WhatsApp e registrar
+              {enviando ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />} Abrir no CRM e registrar
             </button>
           </div>
         </div>

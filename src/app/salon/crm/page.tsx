@@ -328,6 +328,35 @@ export default function CrmPage() {
 
   useEffect(() => { puxarCanal(); puxarConversas() }, [])
 
+  // ── Chegou pelo botão verde das listas (Em Risco, Perdidos) ───────────────
+  //
+  // /salon/crm?conversa=<id>&texto=<mensagem>: abre aquela conversa e deixa a
+  // mensagem escrita na caixa -- quem manda ainda é a recepção, no Enviar.
+  // O endereço é limpo em seguida, para um F5 não reescrever a mensagem.
+  const pedidoDoLink = useRef<{ conversa: string; texto: string } | null>(null)
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search)
+      const conversa = q.get('conversa')
+      if (conversa) {
+        pedidoDoLink.current = { conversa, texto: q.get('texto') || '' }
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    } catch {}
+  }, [])
+  useEffect(() => {
+    const p = pedidoDoLink.current
+    if (!p) return
+    const c = conversas.find(x => x.id === p.conversa)
+    if (!c) return
+    pedidoDoLink.current = null
+    setFiltro('todas')
+    abrirConversa(c).then(() => {
+      if (p.texto) setTexto(p.texto)
+      setTimeout(() => areaTexto.current?.focus(), 50)
+    })
+  }, [conversas])
+
   // ── Sincronia entre os computadores ───────────────────────────────────────
   //
   // O CRM e usado em dois ou tres computadores ao mesmo tempo. Se a recepcao

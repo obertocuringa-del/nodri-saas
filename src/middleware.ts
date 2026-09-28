@@ -57,6 +57,8 @@ async function roteador(request: NextRequest) {
     // Limpeza da mídia do CRM: chamada pelo cron do servidor, sem cookie.
     // A rota confere o Bearer CRON_SECRET na primeira linha.
     pathname === '/api/cron/limpar-midia' ||
+    // Relógio do Envio automático (a cada minuto), mesmo Bearer na rota.
+    pathname === '/api/cron/disparos' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
