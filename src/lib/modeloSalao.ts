@@ -303,10 +303,15 @@ function limparChecklist(valor: any): any {
  *   molde — esvaziar uma carta modelo ou um processo entregaria papel em
  *   branco, que é o oposto do que se quer.
  */
-const LISTAS_QUE_ESVAZIAM = ['itens', 'registros', 'cards', 'linhas', 'lista', 'anexos', 'arquivos']
+// 'rows' e 'contatos' entraram em 28/09/2026: a grade de Telefones guarda em
+// `rows` e viajou CHEIA (nomes e telefones de gente do Rouge) para salões novos.
+const LISTAS_QUE_ESVAZIAM = ['itens', 'registros', 'cards', 'linhas', 'lista', 'anexos', 'arquivos', 'rows', 'contatos', 'pessoas']
 // Campos de identidade/arquivo: a página vai, o conteúdo não. Sem isso o
 // salão novo sairia imprimindo com a logo de outro salão.
-const CAMPOS_QUE_LIMPAM = ['logo', 'imagem', 'foto', 'arquivo', 'url']
+// Dados cadastrais também são identidade (28/09: a Carta de abertura de conta
+// levou o CNPJ e a razão social do Rouge para salões novos).
+const CAMPOS_QUE_LIMPAM = ['logo', 'imagem', 'foto', 'arquivo', 'url', 'cnpj', 'cpf', 'empresa', 'razao_social',
+  'banco', 'agencia', 'conta', 'cidade', 'endereco', 'telefone', 'celular', 'email', 'responsavel', 'pix']
 
 function limparGrade(valor: any): any {
   // Valor solto (string/número): não há molde a preservar — não viaja.
@@ -384,7 +389,35 @@ function limparCrm(v: any): any {
   return out
 }
 
+/**
+ * Identidade escrita no meio de um texto (28/09/2026: "visita aqui no *Rouge
+ * Hair*" viajou numa mensagem pronta; "COMBO ROUGE HAIR" numa regra). Vale
+ * para tudo que viaja, em qualquer profundidade: nome do salão de origem vira
+ * "nosso salão", CNPJ sai. O modelo nasceu do Rouge, então os nomes dele
+ * estão aqui; salão de origem novo -> acrescentar o nome na lista.
+ */
+const NOMES_DE_ORIGEM = [/rouge\s*hair/gi, /oliveira\s+e\s+schneider[^"\n]*/gi]
+function semIdentidadeNoTexto(v: any): any {
+  if (typeof v === 'string') {
+    let t = v
+    for (const r of NOMES_DE_ORIGEM) t = t.replace(r, 'nosso salão')
+    return t.replace(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g, '')
+  }
+  if (Array.isArray(v)) return v.map(semIdentidadeNoTexto)
+  if (v && typeof v === 'object') {
+    const o: any = {}
+    for (const [k, x] of Object.entries(v)) o[k] = semIdentidadeNoTexto(x)
+    return o
+  }
+  return v
+}
+
 export function sanitizar(chave: string, valor: any): any {
+  const limpo = sanitizarSemTexto(chave, valor)
+  return limpo === null || limpo === undefined ? limpo : semIdentidadeNoTexto(limpo)
+}
+
+function sanitizarSemTexto(chave: string, valor: any): any {
   const r = regraDaChave(chave)
   if (!r) return null
   const copia = JSON.parse(JSON.stringify(valor ?? null))

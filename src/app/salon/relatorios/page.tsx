@@ -447,6 +447,11 @@ export default function RelatoriosPage() {
             setDados(d)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(d))
             aplicarPeriodoMaisRecente(d)
+          } else {
+            // O servidor é a verdade: salão sem dados fica SEM dados na tela,
+            // nunca com o que o navegador guardou (28/09: Rouge na tela do Luan).
+            setDados(null as any)
+            localStorage.removeItem(STORAGE_KEY)
           }
         }
       } catch { }
