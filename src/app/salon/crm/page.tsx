@@ -647,6 +647,15 @@ export default function CrmPage() {
   }
   async function reagir(m: Mensagem, emoji: string) {
     setReagindoA(null)
+    // Aparece NA HORA (pedido do dono, 28/09/2026): antes a tela esperava a
+    // ponte confirmar e, se a recarga dos 2,5 s chegasse antes, a reação só
+    // surgia na atualização seguinte. A linha "acao_reagir" da fila já é
+    // desenhada como reação; quando a ponte confirma, ela vira "reacao".
+    setMensagens(atual => [...atual, {
+      id: 'tmp-reacao-' + Date.now(), conversa_id: m.conversa_id, direcao: 'saida',
+      tipo: 'acao_reagir', texto: emoji, responde_a: m.id, situacao: 'na_fila',
+      criado_em: new Date().toISOString(),
+    }])
     await acaoNaMensagem(m, 'reagir', { emoji })
   }
   async function encaminharPara(destino: Conversa) {
@@ -1352,7 +1361,7 @@ export default function CrmPage() {
 
                 <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: '#f0e8e3' }}>
                   <div className="mx-auto" style={{ maxWidth: 720 }}>
-                  {mensagens.filter(m => !String(m.tipo || '').startsWith('acao_') || m.situacao === 'falhou').map((m, i, lista) => (
+                  {mensagens.filter(m => !String(m.tipo || '').startsWith('acao_') || m.tipo === 'acao_reagir' || m.situacao === 'falhou').map((m, i, lista) => (
                     <div key={m.id}>
                       {/* Separador de dia. Sem ele, uma conversa de seis meses
                           vira um bloco unico e ninguem sabe se "amanha as 15h"
@@ -1361,11 +1370,11 @@ export default function CrmPage() {
                       <Balao m={m} onCitar={() => setCitando(m)}
                         citada={m.responde_a ? mensagens.find(x => x.id === m.responde_a) : null}
                         onEditar={m.direcao === 'saida' && m.tipo === 'texto' && m.id_whatsapp && (Date.now() - new Date(m.criado_em).getTime()) < 15 * 60000 ? () => comecarEdicao(m) : undefined}
-                        onApagar={m.direcao === 'saida' && m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' ? () => apagarMensagem(m) : undefined}
-                        onReagir={m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' ? () => setReagindoA(reagindoA === m.id ? null : m.id) : undefined}
+                        onApagar={m.direcao === 'saida' && m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' ? () => apagarMensagem(m) : undefined}
+                        onReagir={m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' ? () => setReagindoA(reagindoA === m.id ? null : m.id) : undefined}
                         reagindo={reagindoA === m.id}
                         onEscolherReacao={(e: string) => reagir(m, e)}
-                        onEncaminhar={m.tipo !== 'apagada' && m.tipo !== 'reacao' && (m.texto || m.midia_url) ? () => setEncaminhando(m) : undefined} />
+                        onEncaminhar={m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' && (m.texto || m.midia_url) ? () => setEncaminhando(m) : undefined} />
                     </div>
                   ))}
                   <div ref={fimDaConversa} />
@@ -2133,7 +2142,7 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
   // A cliente reagiu a uma mensagem em vez de responder. Aparece pequena, com
   // o trecho do que ela curtiu -- é isso que diz se foi um "confirmo" (em
   // cima do pedido de confirmação) ou só um "vi".
-  if ((m as any).tipo === 'reacao') {
+  if ((m as any).tipo === 'reacao' || (m as any).tipo === 'acao_reagir') {
     return (
       <div className={`flex mb-1.5 ${meu ? 'justify-end' : 'justify-start'}`}>
         <div className="max-w-[68%] px-3 py-1.5 rounded-full flex items-center gap-2"

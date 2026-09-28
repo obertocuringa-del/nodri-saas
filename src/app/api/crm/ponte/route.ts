@@ -1245,9 +1245,12 @@ export async function POST(req: NextRequest) {
   } else if (!disparo) {
     // Resposta de verdade, digitada no celular: vale como resposta e a bola
     // passa para a cliente, exatamente como se tivesse sido escrita aqui.
+    // Pasta Profissionais SEGURA a conversa (dono, 28/09/2026: EMANUEL saiu
+    // da pasta quando a recepção respondeu pelo celular; pelo CRM já ficava).
+    const deProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
     await supabaseAdmin.from('crm_conversas').update({
-      estado: 'aguardando',
-      proxima_acao: proximaAcaoPadrao('aguardando'),
+      estado: deProfissional ? conversa.estado : 'aguardando',
+      proxima_acao: deProfissional ? conversa.proxima_acao : proximaAcaoPadrao('aguardando'),
       aguardando_desde: null,
       ultima_em: quando,
       ultima_de: 'salao',
