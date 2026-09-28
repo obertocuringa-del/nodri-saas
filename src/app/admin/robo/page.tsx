@@ -21,7 +21,7 @@ export default async function AdminRoboPage() {
           <h1 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: '#1a1a2e' }}>Robô do relatório</h1>
         </div>
         <p style={{ fontSize: 13, color: '#6b6860', margin: '0 0 20px' }}>
-          Coleta do mês atual no Avec, no Chrome de cada salão no servidor. Cada coleta leva cerca de 15 minutos
+          Coleta do mês atual no sistema de agenda de cada salão, pela conexão em nuvem. Cada coleta leva cerca de 15 minutos
           e roda uma de cada vez. Antes de aplicar, o sistema confere com o que já existe; o que parecer errado fica
           aguardando a sua aprovação.
         </p>

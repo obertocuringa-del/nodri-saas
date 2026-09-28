@@ -20,6 +20,18 @@ async function master() {
 export async function GET(req: NextRequest) {
   if (!(await master())) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  // Histórico de UM salão num período (botão "Histórico" do painel).
+  const hist = req.nextUrl.searchParams.get('historico')
+  if (hist) {
+    const de = req.nextUrl.searchParams.get('de') || '2000-01-01'
+    const ate = req.nextUrl.searchParams.get('ate') || '2999-12-31'
+    const { data } = await supabaseAdmin.from('robo_coletas')
+      .select('id, salao_id, inicio, fim, situacao, motivo, linhas, faturamento, dias_com_dados, anterior, origem')
+      .eq('salao_id', hist).gte('inicio', `${de}T00:00:00-03:00`).lte('inicio', `${ate}T23:59:59-03:00`)
+      .order('inicio', { ascending: false }).limit(500)
+    return NextResponse.json({ coletas: data || [] })
+  }
+
   const baixar = req.nextUrl.searchParams.get('baixar')
   if (baixar) {
     const { data: c } = await supabaseAdmin.from('robo_coletas').select('arquivo, inicio').eq('id', baixar).maybeSingle()

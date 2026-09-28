@@ -194,7 +194,7 @@ def _vigiar(nome_metodo, codigo):
                 if linhas >= esperados:
                     R.logging.info(f"VIGIA {codigo}: ok na tentativa {tentativa} ({linhas} linhas, tela {esperados})")
                     return resultado
-                ultimo = f"{codigo}: a tela do Avec diz {esperados} registros e o arquivo trouxe {linhas}"
+                ultimo = f"{codigo}: a tela do sistema diz {esperados} registros e o arquivo trouxe {linhas}"
                 R.logging.warning(f"VIGIA {ultimo} -- tentativa {tentativa} de 3")
             except Exception as e:
                 R.logging.warning(f"VIGIA {codigo}: não consegui conferir ({e})")
@@ -255,7 +255,7 @@ def main():
         coleta.set_base_dados(base)
         coleta.iniciar_driver()
         if not garantir_login(coleta):
-            print(json.dumps({"ok": False, "erro": "Não consegui entrar no Avec (login recusado ou tela não saiu)."}))
+            print(json.dumps({"ok": False, "erro": "Não consegui entrar no sistema de agenda (login recusado ou tela não saiu)."}))
             return
         ano, mes, di, dfim = R._periodo_mes_atual()
         dados = coleta.coletar_mes_completo(ano, mes, di, dfim)

@@ -41,6 +41,15 @@ export default function RoboRelatorioPainel() {
   const [aviso, setAviso] = useState('')
   const [escolhendo, setEscolhendo] = useState<string | null>(null)
   const [pedido, setPedido] = useState<Record<string, number>>({})
+  // Histórico por período: sem isto a lista cresceria uma linha por coleta, todo dia.
+  const hoje = new Date().toISOString().slice(0, 10)
+  const [hist, setHist] = useState<{ salao: string; de: string; ate: string; coletas: Coleta[] | null } | null>(null)
+  async function buscarHistorico(salao: string, de: string, ate: string) {
+    setHist({ salao, de, ate, coletas: null })
+    const r = await fetch(`/api/admin/robo?historico=${salao}&de=${de}&ate=${ate}`, { cache: 'no-store' })
+    const j = r.ok ? await r.json() : { coletas: [] }
+    setHist({ salao, de, ate, coletas: j.coletas || [] })
+  }
 
   async function carregar() {
     const r = await fetch('/api/admin/robo', { cache: 'no-store' })
@@ -130,7 +139,7 @@ export default function RoboRelatorioPainel() {
                 </span>
                 {cor && <span className={ult.situacao === 'rodando' ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: cor.fundo, color: cor.cor }}>
                   {cor.nome} · {dataHora(ult.inicio)}</span>}
-                {!s.na_nuvem && <span style={{ fontSize: 11, color: '#b4322a' }}>sem acesso ao Avec na nuvem (CRM &gt; Configurar)</span>}
+                {!s.na_nuvem && <span style={{ fontSize: 11, color: '#b4322a' }}>sem acesso ao sistema de agenda na nuvem (CRM &gt; Configurar)</span>}
               </div>
 
               {aberto === s.id && (
@@ -202,12 +211,29 @@ export default function RoboRelatorioPainel() {
                     </div>
                   )}
 
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                    {hist?.salao === s.id ? (<>
+                      <strong>Histórico de</strong>
+                      <input type="date" value={hist.de} onChange={e => buscarHistorico(s.id, e.target.value, hist.ate)}
+                        style={{ padding: '3px 6px', border: '1px solid #e0ddd8', borderRadius: 6 }} />
+                      <span>até</span>
+                      <input type="date" value={hist.ate} onChange={e => buscarHistorico(s.id, hist.de, e.target.value)}
+                        style={{ padding: '3px 6px', border: '1px solid #e0ddd8', borderRadius: 6 }} />
+                      <span style={{ color: '#8f877f' }}>{hist.coletas ? `${hist.coletas.length} coleta(s)` : 'buscando...'}</span>
+                      <button onClick={() => setHist(null)} style={{ fontWeight: 800, color: '#5b4fcf' }}>Voltar às 3 últimas</button>
+                    </>) : (<>
+                      <span style={{ color: '#8f877f' }}>Últimas 3 coletas</span>
+                      <button onClick={() => buscarHistorico(s.id, new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10), hoje)}
+                        style={{ fontWeight: 800, color: '#5b4fcf' }}>Histórico por período</button>
+                    </>)}
+                  </div>
+
                   <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                     <thead><tr style={{ color: '#8f877f', textAlign: 'left' }}>
                       <th>Início</th><th>Situação</th><th>Atendimentos</th><th>Faturamento</th><th>Antes</th><th>Motivo</th><th></th>
                     </tr></thead>
                     <tbody>
-                      {s.coletas.map(c => {
+                      {(hist?.salao === s.id && hist.coletas ? hist.coletas : s.coletas.slice(0, 3)).map(c => {
                         const k = COR[c.situacao] || COR.erro
                         return (
                           <tr key={c.id} style={{ borderTop: '1px solid #f0ece7', verticalAlign: 'top' }}>
@@ -230,7 +256,7 @@ export default function RoboRelatorioPainel() {
                           </tr>
                         )
                       })}
-                      {!s.coletas.length && <tr><td colSpan={7} style={{ color: '#8f877f', padding: 6 }}>Nenhuma coleta ainda.</td></tr>}
+                      {!(hist?.salao === s.id && hist.coletas ? hist.coletas : s.coletas).length && <tr><td colSpan={7} style={{ color: '#8f877f', padding: 6 }}>Nenhuma coleta neste período.</td></tr>}
                     </tbody>
                   </table>
                 </div>
