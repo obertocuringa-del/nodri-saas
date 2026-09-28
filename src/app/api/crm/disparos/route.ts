@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, publicoDe, textoPara, conversaDoContato, cabemPorDia, AUTOR_DISPARO,
+  servicosDoSalao, perfisDoSalao, publicoDe, textoPara, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -56,6 +56,13 @@ export async function POST(req: NextRequest) {
         mensagem: textoPara(d, x, i),
       })),
     })
+  }
+
+  // Simulação: o caminho inteiro de uma volta, sem mandar nada.
+  if (b.acao === 'simular') {
+    const d = lerDisparo({ ...b.disparo, id: b.disparo?.id || 'simulacao' })
+    if (!d) return NextResponse.json({ error: 'Envio inválido' }, { status: 400 })
+    return NextResponse.json(await simularProximo(salaoId, d))
   }
 
   // Teste: manda a mensagem (com os dados da 1ª cliente da lista) para um

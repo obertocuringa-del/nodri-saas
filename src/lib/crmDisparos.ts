@@ -520,6 +520,39 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   return salvar('Ninguém disponível agora (em conversa ou contatada há pouco); tenta de novo em 15 min')
 }
 
+/**
+ * O mesmo caminho de uma volta, SEM mandar e sem gravar nada: diz se agora
+ * sairia mensagem, para quem, e por que as anteriores foram puladas. É o
+ * teste honesto de uma automação que fala com cliente.
+ */
+export async function simularProximo(salaoId: string, d: Disparo) {
+  const agora = agoraNoSalao()
+  const travas: string[] = []
+  if (!d.dias_semana.includes(agora.semana)) travas.push('hoje não é dia de envio')
+  if (agora.hora < d.janela_ini || agora.hora >= d.janela_fim) travas.push(`fora do horário (${d.janela_ini} às ${d.janela_fim})`)
+  const ocupada = await filaOcupada(salaoId)
+  if (ocupada) travas.push(ocupada)
+  const perfis = await perfisDoSalao(salaoId)
+  const { lista } = publicoDe(perfis, d.publico)
+  const [feitos, bloq, trava, profs] = await Promise.all([
+    chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId), travados(salaoId, d.trava_dias), telefonesDeProfissionais(salaoId),
+  ])
+  const puladas: { cliente: string; motivo: string }[] = []
+  let proxima: any = null
+  for (const x of lista) {
+    if (puladas.length > 25) break
+    if (feitos.has(x.chave)) continue
+    if (bloq.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'pediu para sair' }); continue }
+    if (profs.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'profissional do salão' }); continue }
+    if (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome)) { puladas.push({ cliente: x.cliente_nome, motivo: `contatada nos últimos ${d.trava_dias} dias` }); continue }
+    const c = await conferirConversa(salaoId, x)
+    if (c.bloquear || c.pular) { puladas.push({ cliente: x.cliente_nome, motivo: c.bloquear || c.pular! }); continue }
+    proxima = { cliente: x.cliente_nome, dias: x.dias, mensagem: textoPara(d, x, feitos.size) }
+    break
+  }
+  return { mandaria_agora: !travas.length && !!proxima, travas, proxima, puladas }
+}
+
 /** A volta do cron: todos os salões com envio ligado, um de cada vez. */
 let _rodando = false
 export async function rodarDisparos() {

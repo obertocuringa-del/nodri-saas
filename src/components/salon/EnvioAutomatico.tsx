@@ -24,7 +24,9 @@ const ROXO = '#5b4fcf'
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const INTERVALOS = [10, 15, 20, 30, 40, 45, 60, 90, 120, 180]
 
-const MSG_RECUPERAR = 'Oi *{cliente}*, tudo bem?\n\nFaz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar o seu {servico} essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
+// Sem {servico}: sem serviço escolhido no filtro, o campo pega um serviço
+// qualquer da cliente ("complemento keune"), e a frase sai estranha.
+const MSG_RECUPERAR = 'Oi *{cliente}*, tudo bem?\n\nFaz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
 const MSG_PROMO = 'Oi *{cliente}*, tudo bem?\n\nComo você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?'
 
 const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
@@ -232,6 +234,8 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
   const [telTeste, setTelTeste] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [testando, setTestando] = useState(false)
+  const [simulando, setSimulando] = useState(false)
+  const [simulacao, setSimulacao] = useState<any>(null)
   const pub = d.publico
   const set = (p: Partial<Disparo>) => setD({ ...d, ...p })
   const setPub = (p: Partial<Publico>) => setD({ ...d, publico: { ...pub, ...p } })
@@ -335,7 +339,8 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
       <div style={secao}>
         <div style={tituloSecao}>2. Mensagem</div>
         <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 10, lineHeight: 1.5 }}>
-          Campos que se preenchem sozinhos: <code>{'{cliente}'}</code> primeiro nome, <code>{'{servico}'}</code> o serviço que ela faz,
+          Campos que se preenchem sozinhos: <code>{'{cliente}'}</code> primeiro nome, <code>{'{servico}'}</code> o serviço escolhido
+          no filtro acima (use só quando escolher serviço),
           {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data. Escreva 2 ou 3 versões
           diferentes: o sistema alterna entre elas, e o WhatsApp desconfia menos de texto que não é idêntico.
         </div>
@@ -415,6 +420,28 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             {testando ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Enviar teste
           </button>
           <span style={{ fontSize: 11.5, color: '#a09a90' }}>Manda cada versão da mensagem para este número. Ninguém da lista recebe.</span>
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <button disabled={simulando} onClick={async () => {
+            setSimulando(true)
+            const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'simular', disparo: d }) })
+            setSimulacao(r.ok ? await r.json() : { erro: true })
+            setSimulando(false)
+          }} style={botao('#fff', '#1a1a1a', '#e0ddd8')}>
+            {simulando ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />} Simular: quem receberia agora?
+          </button>
+          {simulacao && !simulacao.erro && (
+            <div style={{ marginTop: 8, fontSize: 12.5, background: '#faf9f7', borderRadius: 10, padding: '10px 12px', lineHeight: 1.6 }}>
+              {simulacao.travas?.length ? <div style={{ color: '#9a6b12', fontWeight: 700 }}>Agora não sairia: {simulacao.travas.join('; ')}.</div>
+                : <div style={{ color: '#2f6b4f', fontWeight: 700 }}>Se estivesse ligado, sairia agora.</div>}
+              {simulacao.proxima
+                ? <div>Próxima da fila: <b>{simulacao.proxima.cliente}</b> ({simulacao.proxima.dias} dias sem vir).</div>
+                : <div>Ninguém disponível na lista agora.</div>}
+              {!!simulacao.puladas?.length && (
+                <div style={{ color: '#6b6860' }}>Puladas antes dela: {simulacao.puladas.map((p: any) => `${p.cliente} (${p.motivo})`).join(', ')}.</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
