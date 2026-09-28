@@ -158,6 +158,9 @@ class ColetaNoServidor(R.SistemaColetaNodri):
 # ("Mostrando 1 a N de M Registros") com as linhas do arquivo que chegou. Faltou
 # linha -> anota; no fim a coleta vai para "Aguardando aprovação" no painel.
 ALERTAS = []
+# O robô lê estes direto da tela (não baixa arquivo): 28/09, o vigia acusava
+# "arquivo trouxe 0" no 0083 (faturamento) e no 0017 (clientes novos).
+LIDOS_DA_TELA = {"0083", "0017"}
 
 
 def _linhas_do_arquivo(caminho):
@@ -184,8 +187,8 @@ def _vigiar(nome_metodo, codigo):
             try:
                 esperados = self._registros_da_listagem()
                 novos = [os.path.join(pasta, f) for f in (set(os.listdir(pasta)) - antes)] if os.path.isdir(pasta) else []
-                if not esperados:
-                    return resultado            # relatório de resumo: sem contagem na tela
+                if not esperados or codigo in LIDOS_DA_TELA:
+                    return resultado            # resumo, ou valor lido direto da tela: sem arquivo p/ conferir
                 linhas = max((_linhas_do_arquivo(f) or 0) for f in novos) if novos else 0
                 # o arquivo tem cabeçalho/total a mais; faltar é que é problema
                 if linhas >= esperados:
