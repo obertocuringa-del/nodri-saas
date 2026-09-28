@@ -1,0 +1,50 @@
+{
+  "email": "",
+  "senha": "",
+  "salvar_senha": false,
+  "profissionais_cadastrados": [],
+  "categorias": [],
+  "editaveis": {
+    "timeouts": {
+      "login": 60,
+      "pagina": 30,
+      "elemento": 15,
+      "download": 10,
+      "pausa_buscar": 15
+    },
+    "xpaths": {
+      "login": {
+        "email": "//*[@id='single-spa-application:@hyperlocal/auth']/div/div/div/div[2]/div[2]/div[1]/div[2]/div/input",
+        "senha": "//*[@id='single-spa-application:@hyperlocal/auth']/div/div/div/div[2]/div[2]/div[1]/div[3]/div/input",
+        "btn_acessar": "//*[@id='single-spa-application:@hyperlocal/auth']/div/div/div/div[2]/div[2]/div[2]/div/button[1]"
+      },
+      "relatorios": {
+        "data_inicio": "//*[@id='variaveis']/div[1]/span[1]/div/input",
+        "data_fim": "//*[@id='variaveis']/div[1]/span[2]/div/input",
+        "btn_buscar": "//*[@id='variaveis']/div[1]/span[3]/button",
+        "btn_buscar_0021": "//*[@id='variaveis']/div[1]/span[4]/button",
+        "btn_buscar_0126": "//*[@id='variaveis']/div[1]/span[4]/button",
+        "btn_excel": "//*[@id='tableFilter_wrapper']/div[3]/a[2]/span",
+        "btn_excel_0021": "//*[@id='tableFilter_wrapper']/div[3]/a[2]",
+        "btn_excel_0126": "//*[@id='tableFilter_wrapper']/div[3]/a[2]"
+      }
+    },
+    "urls": {
+      "login": "https://admin.avec.beauty/rougehair/admin/",
+      "relatorios": {
+        "0083": "https://admin.avec.beauty/admin/relatorio/0083",
+        "0017": "https://admin.avec.beauty/admin/relatorio/0017",
+        "0032": "https://admin.avec.beauty/admin/relatorio/0032",
+        "0042": "https://admin.avec.beauty/admin/relatorio/0042",
+        "0088": "https://admin.avec.beauty/admin/relatorio/0088",
+        "0123": "https://admin.avec.beauty/admin/relatorio/0123",
+        "0021": "https://admin.avec.beauty/admin/relatorio/0021",
+        "0326": "https://admin.avec.beauty/admin/relatorio/0326",
+        "0126": "https://admin.avec.beauty/admin/relatorio/0126",
+        "0031": "https://admin.avec.beauty/admin/relatorio/0031",
+        "0041": "https://admin.avec.beauty/admin/relatorio/0041",
+        "0051": "https://admin.avec.beauty/admin/relatorio/0051"
+      }
+    }
+  }
+}

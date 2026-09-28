@@ -32,6 +32,15 @@ AVEC_URL = os.environ.get("AVEC_URL", "").strip()
 PERFIS = os.environ.get("ROBO_PERFIS", "/home/nodri/robo/perfis")
 CHROMEDRIVER = os.environ.get("CHROMEDRIVER", "/home/nodri/robo/chromedriver-linux64/chromedriver")
 
+# Os MESMOS tempos/XPaths que o dono ajustou no robô do Windows (config_padrao.json,
+# tirado do config_nodri.json dele, SEM e-mail/senha). Precisa existir antes do
+# import, porque o robô lê a configuração ao criar o coletor.
+_CFG = os.path.join(os.path.expanduser("~"), "NodriSistema", "config_nodri.json")
+if not os.path.exists(_CFG):
+    os.makedirs(os.path.dirname(_CFG), exist_ok=True)
+    import shutil
+    shutil.copy(os.path.join(AQUI, "config_padrao.json"), _CFG)
+
 import relatorio_original_windows as R           # noqa: E402  (o robô de verdade)
 from selenium import webdriver                    # noqa: E402
 from selenium.webdriver.chrome.options import Options  # noqa: E402
