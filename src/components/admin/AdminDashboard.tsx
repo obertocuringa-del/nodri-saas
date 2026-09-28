@@ -1272,6 +1272,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'saloes', icon: <Building size={14} />, label: 'Salões', badge: saloes.length },
     // Página própria (não é aba): define o salão modelo e alimenta ele
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
+    // Página própria: horários e agenda do robô que coleta o relatório no servidor
+    { id: 'robo', icon: <Bot size={14} />, label: 'Robô do relatório', rota: '/admin/robo' },
     { id: 'contatos', icon: <Mail size={14} />, label: 'Contatos do site' },
     { id: 'funcionalidades', icon: <Zap size={14} />, label: 'Funcionalidades' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },

@@ -75,6 +75,20 @@ async function configurar(aberto, s) {
   }
 }
 
+/** Porta estável por salão (9300-9799), sem colidir com outro salão aberto. */
+function portaDoSalao(id) {
+  let h = 0
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  const usadas = new Set()
+  for (const d of fs.existsSync(PERFIS) ? fs.readdirSync(PERFIS) : []) {
+    if (d === id) continue
+    try { usadas.add(Number(fs.readFileSync(path.join(PERFIS, d, 'porta'), 'utf8'))) } catch { /* sem porta */ }
+  }
+  let p = 9300 + (h % 500)
+  while (usadas.has(p)) p = 9300 + ((p - 9300 + 1) % 500)
+  return p
+}
+
 async function abrir(s) {
   const dir = path.join(PERFIS, s.salao_id)
   fs.mkdirSync(dir, { recursive: true })
@@ -82,6 +96,11 @@ async function abrir(s) {
   for (const f of ['SingletonLock', 'SingletonSocket', 'SingletonCookie']) {
     try { fs.rmSync(path.join(dir, f), { force: true }) } catch { /* segue */ }
   }
+  // Porta fixa por salão: o robô do RELATÓRIO (robo-relatorio/) se conecta a
+  // ESTE Chrome, numa aba própria, aproveitando o login do Avec (28/09/2026).
+  // Só escuta em 127.0.0.1 -- de fora do servidor ninguém alcança.
+  const porta = portaDoSalao(s.salao_id)
+  fs.writeFileSync(path.join(dir, 'porta'), String(porta))
   const browser = await puppeteer.launch({
     headless: false,                 // tela virtual do xvfb-run: o Avec vê um Chrome normal
     userDataDir: dir,
@@ -91,6 +110,7 @@ async function abrir(s) {
       '--no-first-run', '--no-default-browser-check', '--disable-dev-shm-usage',
       '--lang=pt-BR', '--window-size=1366,900', '--disable-features=Translate',
       '--disable-session-crashed-bubble', '--hide-crash-restore-bubble',
+      `--remote-debugging-port=${porta}`, '--remote-debugging-address=127.0.0.1',
     ],
   })
   const extId = await idDaExtensao(browser)

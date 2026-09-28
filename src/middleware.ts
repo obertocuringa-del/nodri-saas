@@ -52,6 +52,8 @@ async function roteador(request: NextRequest) {
     pathname === '/api/crm/automacao/extensao' ||
     // O robô do Avec no servidor: serviço, x-crm-chave conferida na rota.
     pathname === '/api/crm/robo' ||
+    // Robô do relatório no servidor: serviço, x-crm-chave conferida na rota.
+    pathname === '/api/robo/relatorio' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
