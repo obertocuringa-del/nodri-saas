@@ -54,6 +54,9 @@ async function roteador(request: NextRequest) {
     pathname === '/api/crm/robo' ||
     // Robô do relatório no servidor: serviço, x-crm-chave conferida na rota.
     pathname === '/api/robo/relatorio' ||
+    // Limpeza da mídia do CRM: chamada pelo cron do servidor, sem cookie.
+    // A rota confere o Bearer CRON_SECRET na primeira linha.
+    pathname === '/api/cron/limpar-midia' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em

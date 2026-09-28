@@ -15,16 +15,16 @@ export const maxDuration = 60
 // inclui, e aí o problema deixa de ser custo -- o Supabase passa a recusar
 // upload novo e a foto da cliente simplesmente não chega.
 //
-// ── Por que 90 dias, e não 7 ────────────────────────────────────────────────
+// ── Por que 30 dias, e não 7 ────────────────────────────────────────────────
 //
 // O que some aqui é o ARQUIVO; a mensagem, a conversa e o histórico ficam.
-// Mas a cliente que mandou foto de referência e volta duas semanas depois
+// A cliente que mandou foto de referência e volta duas semanas depois
 // esperando que a recepção veja aquela foto de novo é caso REAL, e 7 dias
-// deixaria a recepção sem ela já na segunda visita. 90 dias cobre a temporada
-// inteira e ainda estabiliza o espaço em torno de 30 GB.
+// deixaria a recepção sem ela já na segunda visita. Era 90; o dono baixou
+// para 30 em 28/09/2026 (volume de clientes alto, não quer acumular).
 //
 // Ajustável por variável de ambiente, sem precisar de deploy.
-const DIAS = Number(process.env.CRM_MIDIA_DIAS || 90)
+const DIAS = Number(process.env.CRM_MIDIA_DIAS || 30)
 
 // Teto por volta: apagar em lote gigante estoura o tempo da função. O que
 // sobrar sai na volta de amanhã -- esta limpeza não precisa terminar hoje.
@@ -36,7 +36,12 @@ const POR_VOLTA = 400
 // schema `public` na API REST: uma consulta a `storage.objects` pelo
 // supabase-js falha. A API de Storage é o caminho que funciona -- ela lista
 // por pasta, então aqui se percorre `crm/<salao>/` uma a uma.
-export async function GET() {
+export async function GET(req: Request) {
+  // Chamada só pelo agendador do servidor (/etc/cron.d/nodri), com o segredo.
+  const segredo = process.env.CRON_SECRET
+  if (!segredo || req.headers.get('authorization') !== `Bearer ${segredo}`) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
   if (!Number.isFinite(DIAS) || DIAS < 7) {
     return NextResponse.json({ ok: false, erro: 'CRM_MIDIA_DIAS abaixo do mínimo de 7' })
   }
