@@ -105,6 +105,44 @@ class ColetaNoServidor(R.SistemaColetaNodri):
                                         {"behavior": "allow", "downloadPath": self.download_dir})
         return None
 
+    def coletar_comandas_finalizadas(self, data_inicio, data_fim):
+        """A tela de comandas do Avec exporta no máximo 500 linhas (no Windows
+        também: 18/09 "a tela diz 593 e o arquivo trouxe 500"). Aqui o período
+        é baixado EM PARTES pela MESMA rotina do robô: semana a semana, e a
+        parte que vier incompleta é dividida ao meio até caber. A trava
+        continua: se alguma parte não fechar, nada é enviado."""
+        from datetime import datetime as _dt, timedelta as _td
+        ini = _dt.strptime(data_inicio, "%d/%m/%Y")
+        fim = _dt.strptime(data_fim, "%d/%m/%Y")
+        hoje = _dt.now()
+        if fim > hoje:
+            fim = hoje.replace(hour=0, minute=0, second=0, microsecond=0)
+        sup = super(ColetaNoServidor, self).coletar_comandas_finalizadas
+        todas = []
+
+        def parte(a, b):
+            linhas = sup(a.strftime("%d/%m/%Y"), b.strftime("%d/%m/%Y"))
+            esperados = self._registros_da_listagem()
+            if not esperados or len(linhas) >= esperados:
+                return linhas
+            if a >= b:
+                raise RuntimeError(f"comandas de {a:%d/%m} não fecharam ({len(linhas)} de {esperados})")
+            meio = a + (b - a) / 2
+            meio = meio.replace(hour=0, minute=0, second=0, microsecond=0)
+            return parte(a, meio) + parte(meio + _td(days=1), b)
+
+        try:
+            a = ini
+            while a <= fim:
+                b = min(a + _td(days=6), fim)
+                todas += parte(a, b)
+                a = b + _td(days=1)
+        except Exception as e:
+            R.logging.error(f"Comandas em partes: {e}. Nada foi enviado.")
+            return []
+        R.logging.info(f"Comandas em partes: {len(todas)} comandas no total")
+        return todas
+
     def fechar_driver(self):
         """NÃO fecha o Chrome nem a aba (pedido do dono): só solta a conexão."""
         if self.driver:
