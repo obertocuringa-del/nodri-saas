@@ -102,8 +102,16 @@ def garantir_login(coleta) -> bool:
     fora = not d.current_url.startswith("https://admin.avec.beauty/")
     if not fora and not esta_no_login(d):
         return True
-    # Caiu: login com o cadastro do CRM, com a paciência do robô original
-    # (e mais uma tentativa, como a extensão faz).
+    # Caiu. Primeiro ESPERA a extensão relogar (ela confere a cada minuto, no
+    # mesmo Chrome) -- pedido do dono, 28/09: os dois nunca logam juntos.
+    for _ in range(6):
+        time.sleep(20)
+        d.get("https://admin.avec.beauty/admin/relatorio/0051")
+        time.sleep(6)
+        if d.current_url.startswith("https://admin.avec.beauty/") and not esta_no_login(d):
+            return True
+    # A extensão não resolveu em ~2,5 min: login com o cadastro do CRM, com a
+    # paciência do robô original (e mais uma tentativa, como a extensão faz).
     for tentativa in (1, 2):
         if AVEC_URL:
             coleta.configuracoes_editaveis["urls"]["login"] = AVEC_URL
