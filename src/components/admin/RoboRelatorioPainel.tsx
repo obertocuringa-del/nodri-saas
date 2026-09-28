@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Play, Download, Check, X, Plus, Trash2, Save } from 'lucide-react'
+import { Play, Download, Check, X, Save, Loader2, Clock } from 'lucide-react'
 
 type Coleta = {
   id: string; inicio: string; fim: string | null; situacao: string; motivo: string | null
@@ -39,12 +39,26 @@ export default function RoboRelatorioPainel() {
   const [aberto, setAberto] = useState<string | null>(null)
   const [editando, setEditando] = useState<Record<string, { ligado: boolean; horarios: string[] }>>({})
   const [aviso, setAviso] = useState('')
+  const [escolhendo, setEscolhendo] = useState<string | null>(null)
+  const [pedido, setPedido] = useState<Record<string, number>>({})
 
   async function carregar() {
     const r = await fetch('/api/admin/robo', { cache: 'no-store' })
     if (r.ok) setDados(await r.json())
   }
-  useEffect(() => { carregar(); const t = setInterval(carregar, 20000); return () => clearInterval(t) }, [])
+  const ocupado = !!dados?.saloes.some(s => s.agenda.rodar_agora_em || s.coletas[0]?.situacao === 'rodando') || Object.keys(pedido).length > 0
+  useEffect(() => { carregar() }, [])
+  // Atualiza sozinho: a cada 5 s enquanto tem coleta na fila ou rodando, senão a cada 20 s.
+  useEffect(() => { const t = setInterval(carregar, ocupado ? 5000 : 20000); return () => clearInterval(t) }, [ocupado])
+  // Some o "Na fila" do clique quando o servidor já mostra a coleta rodando.
+  useEffect(() => {
+    if (!dados) return
+    setPedido(p => {
+      const n = { ...p }
+      for (const s of dados.saloes) if (s.coletas[0]?.situacao === 'rodando' || (n[s.id] && Date.now() - n[s.id] > 120000)) delete n[s.id]
+      return n
+    })
+  }, [dados])
 
   async function acao(corpo: any, msg?: string) {
     setAviso('')
@@ -114,7 +128,7 @@ export default function RoboRelatorioPainel() {
                 <span style={{ fontSize: 11.5, color: s.agenda.ligado ? '#2f6b4f' : '#8f877f', fontWeight: 700 }}>
                   {s.agenda.ligado ? `Ligado · ${s.agenda.horarios.join(', ') || 'sem horário'}` : 'Desligado'}
                 </span>
-                {cor && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: cor.fundo, color: cor.cor }}>
+                {cor && <span className={ult.situacao === 'rodando' ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: cor.fundo, color: cor.cor }}>
                   {cor.nome} · {dataHora(ult.inicio)}</span>}
                 {!s.na_nuvem && <span style={{ fontSize: 11, color: '#b4322a' }}>sem acesso ao Avec na nuvem (CRM &gt; Configurar)</span>}
               </div>
@@ -128,32 +142,65 @@ export default function RoboRelatorioPainel() {
                       Coleta automática ligada
                     </label>
                     <span style={{ fontSize: 12, color: '#6b6860' }}>Vezes por dia: {ed.horarios.length}</span>
-                    {ed.horarios.map((h, i) => (
-                      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <input type="time" value={h} step={900}
-                          onChange={e => setEditando(x => ({ ...x, [s.id]: { ...ed, horarios: ed.horarios.map((y, k) => k === i ? e.target.value : y) } }))}
-                          style={{ fontSize: 12.5, padding: '3px 6px', border: '1px solid #e0ddd8', borderRadius: 6 }} />
-                        <button title="Tirar este horário" onClick={() => setEditando(x => ({ ...x, [s.id]: { ...ed, horarios: ed.horarios.filter((_, k) => k !== i) } }))}
-                          style={{ color: '#b4322a' }}><Trash2 size={13} /></button>
-                      </span>
+                    {ed.horarios.map(h => (
+                      <span key={h} style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#eceaf9', color: '#5b4fcf' }}>{h}</span>
                     ))}
-                    <button onClick={() => {
-                      const livre = grade.find(h => (ocupacao.get(h) || []).length < dados.simultaneas && h >= '22:00') || '22:00'
-                      setEditando(x => ({ ...x, [s.id]: { ...ed, horarios: [...ed.horarios, livre] } }))
-                    }} style={{ fontSize: 12, fontWeight: 700, color: '#5b4fcf', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <Plus size={13} /> horário
+                    <button onClick={() => setEscolhendo(escolhendo === s.id ? null : s.id)}
+                      style={{ fontSize: 12, fontWeight: 800, color: '#5b4fcf', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Clock size={13} /> {escolhendo === s.id ? 'Fechar horários' : 'Escolher horários'}
                     </button>
                     <button disabled={!mudou} onClick={async () => {
                       if (await acao({ acao: 'agenda', salao_id: s.id, ...ed }, 'Agenda salva.')) setEditando(x => { const y = { ...x }; delete y[s.id]; return y })
                     }} style={{ fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 8, background: mudou ? '#1a1a1a' : '#d9d5cf', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Save size={13} /> Salvar
                     </button>
-                    <button onClick={() => acao({ acao: 'rodar_agora', salao_id: s.id }, 'Pedido feito: começa em até 1 minuto (ou quando a fila liberar).')}
-                      disabled={!s.na_nuvem}
-                      style={{ fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 8, background: '#5b4fcf', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 4, opacity: s.na_nuvem ? 1 : .4 }}>
-                      <Play size={13} /> Rodar agora
-                    </button>
+                    {(() => {
+                      const rodando = s.coletas[0]?.situacao === 'rodando'
+                      const naFila = !rodando && (!!s.agenda.rodar_agora_em || !!pedido[s.id])
+                      if (rodando) return (
+                        <span className="animate-pulse" style={{ fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 8, background: '#e7f1e9', color: '#2f6b4f', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <Loader2 size={13} className="animate-spin" /> Rodando desde {dataHora(s.coletas[0].inicio).slice(-5)}
+                        </span>
+                      )
+                      if (naFila) return (
+                        <span style={{ fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 8, background: '#eceaf9', color: '#5b4fcf', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <Loader2 size={13} className="animate-spin" /> Na fila... começa em até 1 minuto
+                        </span>
+                      )
+                      return (
+                        <button onClick={async () => { setPedido(p => ({ ...p, [s.id]: Date.now() })); await acao({ acao: 'rodar_agora', salao_id: s.id }, 'Pedido feito.') }}
+                          disabled={!s.na_nuvem}
+                          style={{ fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 8, background: '#5b4fcf', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 4, opacity: s.na_nuvem ? 1 : .4 }}>
+                          <Play size={13} /> Rodar agora
+                        </button>
+                      )
+                    })()}
                   </div>
+
+                  {escolhendo === s.id && (
+                    <div style={{ border: '1px solid #e8e6e0', borderRadius: 10, padding: 10, background: '#fdfcfa' }}>
+                      <div style={{ fontSize: 11.5, color: '#8f877f', marginBottom: 8 }}>
+                        Clique para marcar ou desmarcar. Laranja = já usado por outro salão (cheio). Depois, Salvar.
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(62px, 1fr))', gap: 5 }}>
+                        {grade.map(h => {
+                          const meu = ed.horarios.includes(h)
+                          const outros = (ocupacao.get(h) || []).filter(n => n !== s.nome)
+                          const cheio = !meu && outros.length >= dados.simultaneas
+                          return (
+                            <button key={h} disabled={cheio} title={outros.join(', ') || 'livre'}
+                              onClick={() => setEditando(x => ({ ...x, [s.id]: { ...ed, horarios: meu ? ed.horarios.filter(y => y !== h) : [...ed.horarios, h].sort() } }))}
+                              style={{ fontSize: 11.5, fontWeight: meu ? 800 : 600, padding: '5px 0', borderRadius: 7, border: '1px solid',
+                                borderColor: meu ? '#5b4fcf' : cheio ? '#e8c9a6' : '#e0ddd8',
+                                background: meu ? '#5b4fcf' : cheio ? '#fbf2e0' : '#fff',
+                                color: meu ? '#fff' : cheio ? '#b8a07a' : '#1a1a1a', cursor: cheio ? 'not-allowed' : 'pointer' }}>
+                              {h}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                     <thead><tr style={{ color: '#8f877f', textAlign: 'left' }}>
