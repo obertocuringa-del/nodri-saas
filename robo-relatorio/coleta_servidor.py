@@ -41,6 +41,34 @@ if not os.path.exists(_CFG):
     import shutil
     shutil.copy(os.path.join(AQUI, "config_padrao.json"), _CFG)
 
+# ── O "Enter" do robô ─────────────────────────────────────────────────────────
+# No Windows o robô aperta Enter no TECLADO (pyautogui) entre os dois cliques em
+# "Buscar" -- é o que fecha o aviso do Avec. No servidor não há teclado: este
+# módulo faz o MESMO Enter pelo Chrome (aceita o aviso aberto; sem aviso, Enter
+# na página). O código do robô continua chamando pyautogui.press('enter').
+import types as _types
+_DRIVER = {"d": None}
+
+
+def _press(tecla, *a, **k):
+    from selenium.webdriver.common.keys import Keys as _K
+    from selenium.webdriver.common.action_chains import ActionChains as _AC
+    d = _DRIVER["d"]
+    if d is None or str(tecla).lower() not in ("enter", "return"):
+        return
+    try:
+        d.switch_to.alert.accept()
+        return
+    except Exception:
+        pass
+    try:
+        _AC(d).send_keys(_K.ENTER).perform()
+    except Exception:
+        pass
+
+
+sys.modules["pyautogui"] = _types.SimpleNamespace(press=_press, hotkey=lambda *a, **k: None, FAILSAFE=False)
+
 import relatorio_original_windows as R           # noqa: E402  (o robô de verdade)
 from selenium import webdriver                    # noqa: E402
 from selenium.webdriver.chrome.options import Options  # noqa: E402
@@ -58,6 +86,7 @@ class ColetaNoServidor(R.SistemaColetaNodri):
         opts.add_experimental_option("debuggerAddress", f"127.0.0.1:{PORTA}")
         self.driver = webdriver.Chrome(service=Service(CHROMEDRIVER), options=opts)
         self.driver.set_page_load_timeout(60)
+        _DRIVER["d"] = self.driver
         # A aba "Relatório": a mesma de sempre, ou uma nova se sumiu.
         guardada = open(ARQ_ABA).read().strip() if os.path.exists(ARQ_ABA) else ""
         if guardada and guardada in self.driver.window_handles:
