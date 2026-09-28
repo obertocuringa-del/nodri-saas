@@ -63,16 +63,20 @@ def iniciar(s, origem):
     env = {**os.environ, "HOME": casa, "SALAO_ID": s["salao_id"], "PORTA": str(porta),
            "AVEC_URL": s.get("url_login") or "", "AVEC_EMAIL": s.get("email") or "", "AVEC_SENHA": s.get("senha") or ""}
     env.pop("APPDATA", None)
-    saida = open(os.path.join(casa, "ultima_coleta.log"), "w")
-    p = subprocess.Popen([PY, os.path.join(AQUI, "coleta_servidor.py")], env=env, cwd=casa,
-                         stdout=subprocess.PIPE, stderr=saida, text=True)
-    rodando[s["salao_id"]] = (p, cid, s["nome"])
+    # Tudo que o robô escreve vai para um arquivo (o log do robô é longo; num
+    # "pipe" ele enche e a coleta trava no meio). A resposta é a última linha JSON.
+    arq_log = os.path.join(casa, "ultima_coleta.log")
+    saida = open(arq_log, "w")
+    p = subprocess.Popen([PY, "-u", os.path.join(AQUI, "coleta_servidor.py")], env=env, cwd=casa,
+                         stdout=saida, stderr=subprocess.STDOUT, text=True)
+    rodando[s["salao_id"]] = (p, cid, s["nome"], arq_log)
     log(s["nome"], f": coleta iniciada ({origem}), porta {porta}")
 
 
 def terminar(salao_id):
-    p, cid, nome = rodando.pop(salao_id)
-    linhas = [l for l in (p.stdout.read() or "").splitlines() if l.strip().startswith("{")]
+    p, cid, nome, arq_log = rodando.pop(salao_id)
+    texto = open(arq_log, encoding="utf-8", errors="replace").read()
+    linhas = [l for l in texto.splitlines() if l.strip().startswith('{"ok"')]
     res = json.loads(linhas[-1]) if linhas else {"ok": False, "erro": f"a coleta saiu sem resposta (código {p.returncode})"}
     if not res.get("ok"):
         nodri_post({"acao": "erro", "id": cid, "motivo": res.get("erro")})
