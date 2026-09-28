@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
     }
     try {
       const fs = await import('fs')
-      const r = await receberColeta(b.id, b.salao_id, fs.readFileSync(arq))
+      const alertas = Array.isArray(b.alertas) ? b.alertas.map((x: any) => String(x).slice(0, 300)) : []
+      const r = await receberColeta(b.id, b.salao_id, fs.readFileSync(arq), alertas)
       return NextResponse.json({ ok: true, ...r })
     } catch (e: any) {
       await supabaseAdmin.from('robo_coletas').update({

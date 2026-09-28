@@ -82,7 +82,8 @@ def terminar(salao_id):
         nodri_post({"acao": "erro", "id": cid, "motivo": res.get("erro")})
         log(nome, ": ERRO --", res.get("erro"))
         return
-    r = nodri_post({"acao": "fim", "id": cid, "salao_id": salao_id, "arquivo": res["arquivo"]})
+    r = nodri_post({"acao": "fim", "id": cid, "salao_id": salao_id, "arquivo": res["arquivo"],
+                    "alertas": res.get("alertas") or []})
     log(nome, ":", r.get("situacao") or r.get("error"), "|", "; ".join(r.get("motivos") or []))
 
 

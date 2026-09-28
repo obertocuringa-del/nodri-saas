@@ -172,7 +172,7 @@ export async function importarComoATela(salaoId: string, a: Record<string, any[]
 }
 
 /** Coleta que chegou do robô: guarda o Excel, confere e importa (ou segura). */
-export async function receberColeta(coletaId: string, salaoId: string, buffer: Buffer) {
+export async function receberColeta(coletaId: string, salaoId: string, buffer: Buffer, alertas: string[] = []) {
   const { data: c } = await supabaseAdmin.from('robo_coletas').select('ano, mes').eq('id', coletaId).maybeSingle()
   const hoje = new Date()
   const ano = c?.ano || hoje.getFullYear(), mes = c?.mes || hoje.getMonth() + 1
@@ -183,6 +183,8 @@ export async function receberColeta(coletaId: string, salaoId: string, buffer: B
 
   const abas = await lerPlanilha(buffer)
   const conf = await conferir(salaoId, ano, mes, abas)
+  // Vigia do robô: relatório que veio com menos linhas do que a tela do Avec mostrava.
+  if (alertas.length) { conf.ok = false; conf.motivos.push(...alertas) }
   const base = {
     fim: new Date().toISOString(), arquivo, ano, mes,
     linhas: conf.linhas, faturamento: conf.faturamento, dias_com_dados: conf.dias_com_dados, anterior: conf.anterior,

@@ -153,6 +153,59 @@ class ColetaNoServidor(R.SistemaColetaNodri):
             self.driver = None
 
 
+# ── Vigia de cada relatório (pedido do dono, 28/09) ───────────────────────────
+# Depois de CADA relatório baixado, compara o total que a tela do Avec mostra
+# ("Mostrando 1 a N de M Registros") com as linhas do arquivo que chegou. Faltou
+# linha -> anota; no fim a coleta vai para "Aguardando aprovação" no painel.
+ALERTAS = []
+
+
+def _linhas_do_arquivo(caminho):
+    try:
+        import pandas as pd
+        if caminho.lower().endswith((".xlsx", ".xls")):
+            return len(pd.read_excel(caminho, header=None).dropna(how="all"))
+        return len(pd.read_csv(caminho, header=None, sep=None, engine="python").dropna(how="all"))
+    except Exception:
+        return None
+
+
+def _vigiar(nome_metodo, codigo):
+    original = getattr(R.SistemaColetaNodri, nome_metodo)
+
+    def embrulho(self, *a, **k):
+        """Baixa; confere com a tela; faltou linha -> baixa SÓ este relatório de
+        novo (até 3 tentativas, com pausa). Só vira alerta se não bater nunca."""
+        pasta = self.configuracoes_editaveis["caminhos"]["pasta_relatorios"]
+        resultado, ultimo = None, ""
+        for tentativa in (1, 2, 3):
+            antes = set(os.listdir(pasta)) if os.path.isdir(pasta) else set()
+            resultado = original(self, *a, **k)
+            try:
+                esperados = self._registros_da_listagem()
+                novos = [os.path.join(pasta, f) for f in (set(os.listdir(pasta)) - antes)] if os.path.isdir(pasta) else []
+                if not esperados:
+                    return resultado            # relatório de resumo: sem contagem na tela
+                linhas = max((_linhas_do_arquivo(f) or 0) for f in novos) if novos else 0
+                # o arquivo tem cabeçalho/total a mais; faltar é que é problema
+                if linhas >= esperados:
+                    R.logging.info(f"VIGIA {codigo}: ok na tentativa {tentativa} ({linhas} linhas, tela {esperados})")
+                    return resultado
+                ultimo = f"{codigo}: a tela do Avec diz {esperados} registros e o arquivo trouxe {linhas}"
+                R.logging.warning(f"VIGIA {ultimo} -- tentativa {tentativa} de 3")
+            except Exception as e:
+                R.logging.warning(f"VIGIA {codigo}: não consegui conferir ({e})")
+                return resultado
+            time.sleep(20 * tentativa)
+        ALERTAS.append(ultimo + " (mesmo depois de baixar 3 vezes).")
+        return resultado
+    setattr(R.SistemaColetaNodri, nome_metodo, embrulho)
+
+
+for _nome in [n for n in dir(R.SistemaColetaNodri) if n.startswith("coletar_relatorio_")]:
+    _vigiar(_nome, _nome.rsplit("_", 1)[-1])
+
+
 def esta_no_login(driver) -> bool:
     """Campo de senha VISÍVEL = tela de login (mesma regra da extensão)."""
     try:
@@ -210,7 +263,7 @@ def main():
         if not arq or not os.path.exists(arq):
             print(json.dumps({"ok": False, "erro": "O Excel não foi gerado."}))
             return
-        print(json.dumps({"ok": True, "arquivo": os.path.abspath(arq)}))
+        print(json.dumps({"ok": True, "arquivo": os.path.abspath(arq), "alertas": ALERTAS}))
     except Exception as e:
         print(json.dumps({"ok": False, "erro": f"{type(e).__name__}: {e}"[:800]}))
     finally:
