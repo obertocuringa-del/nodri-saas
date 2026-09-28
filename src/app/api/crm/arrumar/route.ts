@@ -326,7 +326,9 @@ async function reclassificarPelaUltima(salaoId: string, aplicar: boolean, agora:
     // ficam todas no começo da mensagem, dentro dos 120 caracteres. Buscar a
     // mensagem inteira de cada conversa eram 600+ consultas em sequência e a
     // função estourava o tempo sem terminar nenhuma vez.
-    const novo = estadoPelaUltimaMensagem(daCliente, c.ultima_previa || '')
+    let novo = estadoPelaUltimaMensagem(daCliente, c.ultima_previa || '')
+    // Lista continua lista: o Envio automático não tem frase de promoção.
+    if (!daCliente && novo === 'aguardando' && c.estado === 'aguardando_promo') novo = 'aguardando_promo'
     if (novo === c.estado) continue
     if (reclassificadas >= TETO) { faltam++; continue }
     reclassificadas++

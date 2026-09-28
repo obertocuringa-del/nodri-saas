@@ -897,7 +897,12 @@ export async function POST(req: NextRequest) {
       if (r.daCliente) patch.nao_lidas = Math.max(1, Number(conversa.nao_lidas || 0))
       // Pasta decidida à mão, e pasta que o salão criou, o histórico não mexe.
       if (!ESTADOS_DECIDIDOS.includes(conversa.estado) && !ehEstadoDoSalao(conversa.estado)) {
-        const novo = estadoPelaUltimaMensagem(r.daCliente, r.ultima.texto)
+        let novo = estadoPelaUltimaMensagem(r.daCliente, r.ultima.texto)
+        // Lista continua lista (pedido do dono, 28/09/2026): a mensagem do
+        // Envio automático não tem frase de promoção, e o histórico que o
+        // WhatsApp reentrega a levaria de "Listas" para "Aguardando". Só a
+        // resposta da cliente tira a conversa de Listas (vai para Preciso agir).
+        if (!r.daCliente && novo === 'aguardando' && conversa.estado === 'aguardando_promo') novo = 'aguardando_promo'
         patch.estado = novo
         patch.proxima_acao = proximaAcaoPadrao(novo)
         patch.aguardando_desde = r.daCliente ? (conversa.aguardando_desde || r.quando) : null
