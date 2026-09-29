@@ -315,6 +315,7 @@ export default function EnvioAutomatico() {
                   <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                   <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
+                  {c.fim && r.faltam > 0 && <span>fila de hoje termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
                   {!!r.sem_ciclo?.length && <span style={{ color: '#b4322a' }}>Sem ciclo de retorno: {r.sem_ciclo.join(', ')}</span>}
                 </div>
               )}
@@ -736,10 +737,20 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             <div>Com o máximo de <b>{d.max_dia}</b> por dia, a última sai por volta das <b>{c.terminaAs}</b>.</div>
           )}
           {d.inicio && <div>Começa em <b>{br(d.inicio)}</b>{d.fim ? <> e vai até <b>{br(d.fim)}</b></> : null}.</div>}
-          {!retorno && previa && previa.total > 0 && c.porDia > 0 && (
-            <div>A lista de <b>{previa.total}</b> clientes leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.</div>
+          {/* A previsão vale para TODOS os tipos (pedido do dono, 29/09/2026):
+              é por ela que se marca o início do envio seguinte. No lembrete e
+              na lista contínua ela conta quem já está na fila hoje. */}
+          {previa && previa.total > 0 && c.porDia > 0 && (
+            <div>{retorno || d.continuo ? <>Quem já está na fila hoje (<b>{previa.total}</b> clientes)</> : <>A lista de <b>{previa.total}</b> clientes</>} leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.
+              {(retorno || d.continuo) && <> Depois disso ele continua ligado, mandando só para quem for chegando na regra, poucas por dia.</>}</div>
           )}
-          {!retorno && previa && c.cabemNoPeriodo != null && c.cabemNoPeriodo < previa.total && (
+          {previa && previa.total === 0 && (retorno || d.continuo) && (
+            <div>Ninguém na fila hoje. Ele fica ligado e manda conforme as clientes forem chegando na regra.</div>
+          )}
+          {c.fim && previa && previa.total > 0 && (
+            <div style={{ color: '#6b6860' }}>Para o próximo envio começar depois deste, marque a data de início dele para depois de <b>{c.fim.toLocaleDateString('pt-BR')}</b>. Se outro envio estiver rodando no mesmo período, os dois dividem o dia e a data vai um pouco mais longe.</div>
+          )}
+          {previa && c.cabemNoPeriodo != null && c.cabemNoPeriodo < previa.total && (
             <div style={{ color: '#9a6b12', fontWeight: 700 }}>
               Até {br(d.fim)} só dá para mandar umas {c.cabemNoPeriodo}: as outras {previa.total - c.cabemNoPeriodo} ficam para um próximo envio (é só ligar de novo depois).
             </div>
