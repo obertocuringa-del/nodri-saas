@@ -1,0 +1,78 @@
+# Vigia de queda do NODRI.
+#
+# Roda nos computadores do GitHub, fora do servidor Hostinger: se o servidor
+# cair, a vigia continua de pé e avisa. A cada 5 minutos bate em /api/health
+# (que vai até o banco antes de responder). Se falhar 3 vezes seguidas, abre
+# um "issue" no repositório -- o GitHub manda e-mail para o dono na hora.
+# Quando o site volta, comenta no mesmo issue e fecha (novo e-mail: "voltou").
+#
+# Observação: o agendamento do GitHub pode atrasar alguns minutos em horário
+# de pico. Para aviso em 1 minuto, somar o UptimeRobot apontando para o mesmo
+# endereço.
+name: Monitor de queda
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: monitor-queda
+  cancel-in-progress: false
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Testar o site
+        id: teste
+        run: |
+          URL="https://www.nodri.com.br/api/health"
+          for tentativa in 1 2 3; do
+            CODIGO=$(curl -s -o /tmp/resposta -w '%{http_code}' -m 20 "$URL" || echo 000)
+            if [ "$CODIGO" = "200" ]; then
+              echo "situacao=ok" >> "$GITHUB_OUTPUT"
+              echo "Site de pé ($(cat /tmp/resposta))"
+              exit 0
+            fi
+            echo "Tentativa $tentativa falhou: HTTP $CODIGO"
+            sleep 20
+          done
+          echo "situacao=fora" >> "$GITHUB_OUTPUT"
+          echo "codigo=$CODIGO" >> "$GITHUB_OUTPUT"
+
+      - name: Abrir ou fechar aviso
+        uses: actions/github-script@v7
+        env:
+          SITUACAO: ${{ steps.teste.outputs.situacao }}
+          CODIGO: ${{ steps.teste.outputs.codigo }}
+        with:
+          script: |
+            const TITULO = 'NODRI fora do ar'
+            const { data: abertos } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'queda', per_page: 5,
+            })
+            const aberto = abertos.find(i => i.title === TITULO)
+            const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+
+            if (process.env.SITUACAO === 'fora' && !aberto) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: TITULO, labels: ['queda'],
+                body: `O endereço https://www.nodri.com.br/api/health não respondeu em 3 tentativas (último código: ${process.env.CODIGO || 'sem resposta'}).\n\nDetectado em ${agora} (horário de Brasília).\n\nCódigo 503 = site de pé mas banco (Supabase) fora. Código 000/502 = servidor ou NODRI parado (ver pm2 no Hostinger).`,
+              })
+            } else if (process.env.SITUACAO === 'ok' && aberto) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: aberto.number, body: `Voltou ao ar em ${agora} (horário de Brasília).`,
+              })
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: aberto.number, state: 'closed',
+              })
+            }
