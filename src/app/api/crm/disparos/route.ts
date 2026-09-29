@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const lista = alvos.lista.filter(x => !recuperando.has(x.chave))
     return NextResponse.json({
       total: lista.length, sem_celular: alvos.semCelular, repetidos: alvos.repetidos, sem_ciclo: alvos.sem_ciclo,
-      na_recuperacao: alvos.lista.length - lista.length, por_dia: cabemPorDia(d),
+      na_recuperacao: alvos.lista.length - lista.length, agendadas: alvos.agendadas, por_dia: cabemPorDia(d),
       // Cada atalho de período com a MESMA conta do total (inclusive lembrete
       // de retorno e quem sai por estar na recuperação), para os números baterem.
       periodos: await Promise.all(periodosDe(perfis, d.publico).map(async o => {

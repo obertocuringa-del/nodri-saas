@@ -622,6 +622,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               {retorno && !!previa.sem_ciclo?.length && <div style={{ color: '#b4322a', fontWeight: 700 }}>Sem ciclo de retorno (ficam de fora): {previa.sem_ciclo.join(', ')}</div>}
               {!!previa.sem_celular && <span style={{ color: '#a09a90' }}> · {previa.sem_celular} sem celular válido ficam de fora</span>}
               {!!previa.repetidos && <span style={{ color: '#a09a90' }}> · {previa.repetidos} com celular repetido recebem uma vez só</span>}
+              {!!previa.agendadas && <span style={{ color: '#a09a90' }}> · {previa.agendadas} já têm horário marcado (ficam de fora)</span>}
               {!!previa.na_recuperacao && <span style={{ color: '#a09a90' }}> · {previa.na_recuperacao} ficam de fora por estar em Recuperar perdidas/Clientes em risco (a recuperação tem prioridade)</span>}
               {pub.servicos.length > 1 && (
                 <div style={{ color: '#6b6860', marginTop: 3 }}>

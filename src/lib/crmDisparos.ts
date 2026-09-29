@@ -600,9 +600,44 @@ async function ultimasPorServico(salaoId: string) {
  * a tolerância), da que venceu há mais tempo para a mais recente.
  */
 export async function alvosDoDisparo(salaoId: string, d: Disparo, perfis: PerfilCliente[]) {
+  const r = await alvosSemAgenda(salaoId, d, perfis)
+  // Já tem horário marcado (hoje ou depois): não recebe nada -- nem
+  // "sentimos sua falta", nem lembrete, nem promoção.
+  const agenda = await comHorarioMarcado(salaoId)
+  const lista = r.lista.filter(x => !agenda.chaves.has(x.chave) && !x.nomes.some(n => agenda.nomes.has(n)))
+  return { ...r, lista, agendadas: r.lista.length - lista.length }
+}
+
+/**
+ * Quem tem horário marcado de hoje em diante na agenda importada do Avec
+ * (agendamentos_raw). Guardado 30 minutos.
+ */
+const _agenda = new Map<string, { em: number; chaves: Set<string>; nomes: Set<string> }>()
+async function comHorarioMarcado(salaoId: string) {
+  const c = _agenda.get(salaoId)
+  if (c && Date.now() - c.em < 30 * 60000) return c
+  const hoje = agoraNoSalao()
+  const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('agendamentos_raw')
+    .select('cliente, celular, data_reserva, status').eq('salao_id', salaoId).gte('ano', hoje.ano).range(de, ate))
+  const chaves = new Set<string>(), nomes = new Set<string>()
+  const limite = new Date(`${hoje.dia}T00:00:00Z`).getTime()
+  for (const r of dados) {
+    if (/cancel|falt|desmarc/i.test(String(r.status || ''))) continue
+    if (parseBR(String(r.data_reserva || '')) < limite) continue
+    if (r.celular) chaves.add(chaveTelefone(normalizarTelefone(r.celular)))
+    if (r.cliente) nomes.add(semAcento(r.cliente).replace(/\s+/g, ' '))
+  }
+  const v = { em: Date.now(), chaves, nomes }
+  _agenda.set(salaoId, v)
+  return v
+}
+
+async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente[]) {
   if (d.tipo !== 'retorno') {
     const r = publicoDe(perfis, d.publico)
-    return { ...r, lista: r.lista.map(x => ({ ...x, envio_chave: x.chave })), sem_ciclo: [] as string[] }
+    // Contínuo: a marca de "já recebeu" leva a data da última visita. Se ela
+    // voltar e depois sumir de novo, entra de novo -- é outra vez que sumiu.
+    return { ...r, lista: r.lista.map(x => ({ ...x, envio_chave: d.continuo ? `${x.chave}|v|${parseBR(x.ultima_visita)}` : x.chave })), sem_ciclo: [] as string[] }
   }
   // Os dias sem vir não valem aqui: quem manda é a data de cada serviço.
   const base = publicoDe(perfis, { ...d.publico, servicos: [], dias_min: 0, dias_max: 0 })
@@ -975,9 +1010,11 @@ async function segundasPendentes(salaoId: string, d: Disparo, perfis: PerfilClie
     for (const c of convs || []) if (['agendado', 'confirmado'].includes(c.estado)) decidida.add(c.id)
   }
   const porTel = new Map(perfis.map(p => [p.chave, p]))
+  const agenda = await comHorarioMarcado(salaoId)
   const saida: PerfilCliente[] = []
   for (const r of cand) {
     if (respondeu.has(r.conversa_id) || decidida.has(r.conversa_id)) continue
+    if (agenda.chaves.has(telDaChave(r.chave))) continue
     const x = porTel.get(telDaChave(r.chave))
     if (!x || parseBR(x.ultima_visita) > new Date(r.enviado_em).getTime()) continue
     saida.push({ ...x, envio_chave: r.chave + SEGUNDA })
