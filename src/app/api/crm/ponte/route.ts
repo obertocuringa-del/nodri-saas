@@ -1183,6 +1183,28 @@ export async function POST(req: NextRequest) {
       nao_lidas: daCliente ? 1 : 0,
     }).select().maybeSingle()
     conversa = nova
+  } else if (daCliente && /^extra_.*finaliz/.test(String(conversa.estado || ''))
+    && !(String(body?.tipo || 'texto') === 'texto' && ehSoAgradecimento(texto))) {
+    // ── "Conversa Finalizada" + a cliente escreveu: volta para a fila ───────
+    //
+    // Pedido do dono em 29/09/2026: a pasta segurava a conversa como as
+    // outras pastas do salão (bloco abaixo), e a cliente que escrevia de novo
+    // ficava travada lá dentro sem ninguém ver. Agora vai para "Preciso agir",
+    // como a conversa agendada que recebe assunto novo. Só esta pasta: a
+    // chave nasce do nome (no Rouge, extra_cinversa_finalizada_6py), a mesma
+    // regra de crmCampanhas.ts. "Ok, obrigada" continua sem tirar de lá.
+    reaberta = true
+    await supabaseAdmin.from('crm_conversas').update({
+      estado: 'acao_necessaria',
+      proxima_acao: 'Responder: ela escreveu depois de "Conversa Finalizada"',
+      aguardando_desde: quando,
+      fechada_em: null,
+      ultima_em: quando,
+      ultima_de: 'cliente',
+      ultima_previa: texto.slice(0, 120),
+      nao_lidas: (conversa.nao_lidas || 0) + 1,
+      atualizado_em: agora,
+    }).eq('id', conversa.id)
   } else if (daCliente && String(conversa.estado || '').startsWith('extra_')) {
     // ── Pasta criada pelo salão: a mensagem entra e a conversa FICA ─────────
     //
@@ -1466,7 +1488,7 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: conversa.id, tipo: 'entrou',
       de_estado: reaberta ? conversa.estado : null,
-      para_estado: ((fechadaHaPouco && !reaberta) || String(conversa.estado || '').startsWith('extra_')) ? conversa.estado : 'acao_necessaria',
+      para_estado: !reaberta && (fechadaHaPouco || String(conversa.estado || '').startsWith('extra_')) ? conversa.estado : 'acao_necessaria',
       autor_nome: contato.nome || 'Cliente',
       detalhe: reaberta ? 'Escreveu com assunto numa conversa já decidida: voltou para a fila' : null,
     })
