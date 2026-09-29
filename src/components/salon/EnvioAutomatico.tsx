@@ -104,6 +104,34 @@ const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
   { rotulo: 'Clientes novas', desc: 'Primeira visita este ano e não voltou em 20 dias: garantir a 2ª visita', d: { nome: 'Clientes novas (2ª visita)', categoria: 'novas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 20, dias_max: 0, segmento: 'novo', ano_de: new Date().getFullYear(), ano_ate: new Date().getFullYear() }, ...textosDe('novas') } },
   { rotulo: 'Venda cruzada', desc: 'Fez um serviço e nunca fez outro que combina', d: { nome: 'Venda cruzada', categoria: 'cruzada', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 120 }, ...textosDe('cruzada') } },
 ]
+// Uma cor por tipo de envio (dono, 29/09/2026: tudo branco confundia).
+const CORES: Record<string, { fundo: string; borda: string }> = {
+  retorno: { fundo: '#f3f0ff', borda: '#7c6ae0' },
+  perdidas: { fundo: '#fdf0ee', borda: '#d9776b' },
+  risco: { fundo: '#fdf6e8', borda: '#e0a23a' },
+  novas: { fundo: '#eef8f1', borda: '#4caf7a' },
+  cruzada: { fundo: '#eef5fc', borda: '#4a8fd6' },
+  promocao: { fundo: '#fcf0f7', borda: '#d46aa6' },
+  vip: { fundo: '#fbf6e6', borda: '#c9a227' },
+  '': { fundo: '#ffffff', borda: '#b9b2ee' },
+}
+
+/** Baixa a lista do envio em planilha (abre no Excel), para conferir no Avec. */
+async function baixarLista(d: { id?: string; nome: string }) {
+  const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'exportar', id: d.id }) })
+  const j = await r.json().catch(() => ({}))
+  if (!r.ok || !Array.isArray(j.linhas)) { alert(j.error || 'Não consegui gerar a lista.'); return }
+  const cab = ['Ordem', 'Cliente', 'Celular', 'Última visita', 'Dias sem vir', 'Visitas', 'Tipo', 'Serviço do lembrete', 'Serviço feito em', 'Venceu há (dias)', 'Já recebeu em', 'Situação']
+  const cel = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const linhas = j.linhas.map((l: any) => [l.ordem, l.cliente, l.celular, l.ultima_visita, l.dias_sem_vir, l.visitas, l.tipo, l.servico, l.servico_feito_em, l.venceu_ha_dias, l.ja_recebeu, l.situacao].map(cel).join(';'))
+  const blob = new Blob(['\ufeff' + [cab.map(cel).join(';'), ...linhas].join('\r\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${d.nome.replace(/[^\w\u00C0-\u017F -]/g, '').trim() || 'envio'} - ${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+}
+
 const ROTULO_CAT: Record<string, string> = Object.fromEntries(Object.entries(PRONTOS).map(([k, v]) => [k, v.rotulo]))
 
 const NOVO: Disparo = {
@@ -285,7 +313,7 @@ export default function EnvioAutomatico() {
           const concluido = !!d.estado?.concluido_em && !d.ligado
           const agendado = !!d.ligado && !!d.inicio && d.inicio > hojeISO()
           return (
-            <div key={d.id} style={{ background: '#fff', border: `1.5px solid ${d.ligado ? '#b9b2ee' : '#e0ddd8'}`, borderRadius: 12, padding: '14px 18px' }}>
+            <div key={d.id} style={{ background: (CORES[d.categoria] || CORES['']).fundo, border: '1.5px solid #e0ddd8', borderLeft: `6px solid ${(CORES[d.categoria] || CORES['']).borda}`, borderRadius: 12, padding: '14px 18px', opacity: d.ligado ? 1 : 0.92 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Chave ligada={!!d.ligado} ocupado={!!ocupado} onTrocar={() => ligar(d, !d.ligado)} />
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{d.nome}</div>
@@ -303,6 +331,7 @@ export default function EnvioAutomatico() {
                 )}
                 {(d.ciclo || 1) > 1 && <span style={{ fontSize: 11, color: '#8f877f' }}>ciclo {d.ciclo}</span>}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button onClick={() => baixarLista(d)} title="Baixa a lista completa (abre no Excel) para conferir no Avec" style={botao('#fff', '#1a1a1a', '#e0ddd8')}><Users size={13} /> Baixar lista</button>
                   <button onClick={() => abrirEditor(d)} style={botao('#fff', '#1a1a1a', '#e0ddd8')}><Pencil size={13} /> Editar</button>
                   {!retorno && (concluido || (r && r.enviadas > 0)) && !d.ligado && (
                     <button onClick={() => { if (confirm('Reiniciar o ciclo? Todas as clientes da lista voltam a poder receber este envio.')) acao({ acao: 'reiniciar', id: d.id }, 'Ciclo reiniciado.') }}
