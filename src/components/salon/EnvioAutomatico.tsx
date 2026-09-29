@@ -477,7 +477,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             <input value={d.nome} onChange={e => set({ nome: e.target.value })} placeholder="Ex.: Recuperar perdidas" style={campo} /></label>
           {retorno ? (
             <label><span style={rotulo}>Lembrar até quantos dias depois da data de voltar</span>
-              <input type="number" min={1} max={365} value={d.tolerancia_dias} onChange={e => set({ tolerancia_dias: Number(e.target.value) || 1 })} style={campo} /></label>
+              <input type="number" min={1} max={3650} value={d.tolerancia_dias} onChange={e => set({ tolerancia_dias: Number(e.target.value) || 1 })} style={campo} /></label>
           ) : (<>
           <label><span style={rotulo}>Sem vir há pelo menos (dias)</span>
             <input type="number" min={0} value={pub.dias_min} onChange={e => setPub({ dias_min: Number(e.target.value) || 0 })} style={campo} /></label>

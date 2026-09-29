@@ -178,7 +178,7 @@ export function lerDisparo(b: any): Disparo | null {
     },
     ciclos: Object.fromEntries(Object.entries(b.ciclos && typeof b.ciclos === 'object' ? b.ciclos : {})
       .map(([k, v]) => [String(k).slice(0, 120), num(v, 0, 0, 3650)] as [string, number]).filter(([, v]) => v > 0).slice(0, 40)),
-    tolerancia_dias: num(b.tolerancia_dias, 30, 1, 365),
+    tolerancia_dias: num(b.tolerancia_dias, 30, 1, 3650),
     publico: {
       dias_min, dias_max, segmento: seg, ano_de, ano_ate,
       servicos: Array.isArray(p.servicos) ? p.servicos.map((s: any) => String(s || '').trim()).filter(Boolean).slice(0, 40) : [],
