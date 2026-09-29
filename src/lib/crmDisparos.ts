@@ -52,7 +52,16 @@ export interface Publico {
   /** ano da última visita: de/até (0 = sem limite). "Este ano", "2 anos"... */
   ano_de: number
   ano_ate: number
+  /** venda cruzada: NUNCA fez nenhum destes (vazio = sem essa regra) */
+  servicos_nao: string[]
 }
+
+/** Para que o envio serve. Vem do modelo escolhido; só etiqueta e regra de recuperação. */
+export type Categoria = '' | 'perdidas' | 'risco' | 'promocao' | 'vip' | 'novas' | 'cruzada' | 'retorno'
+const CATEGORIAS: Categoria[] = ['perdidas', 'risco', 'promocao', 'vip', 'novas', 'cruzada', 'retorno']
+
+/** A 2ª mensagem para quem não respondeu (pedido do dono, 29/09/2026). */
+export interface Segunda { ligada: boolean; dias: number; mensagens: string[] }
 
 export type TipoAnexo = 'imagem' | 'video' | 'audio' | 'documento'
 export interface Anexo { url: string; tipo: TipoAnexo; nome: string }
@@ -70,6 +79,10 @@ export interface Disparo {
   nome: string
   ligado: boolean
   tipo: TipoDisparo
+  categoria: Categoria
+  /** lista que não termina: todo dia entra quem passa a caber na regra (clientes novas) */
+  continuo: boolean
+  segunda: Segunda
   /** retorno: dias por serviço escolhidos na tela (vazio = o da página Serviços) */
   ciclos: Record<string, number>
   /** retorno: até quantos dias DEPOIS da data de voltar ainda vale lembrar */
@@ -156,12 +169,20 @@ export function lerDisparo(b: any): Disparo | null {
     nome: String(b.nome || 'Envio').slice(0, 60),
     ligado: b.ligado === true,
     tipo: b.tipo === 'retorno' ? 'retorno' : 'lista',
+    categoria: CATEGORIAS.includes(b.categoria) ? b.categoria : (b.tipo === 'retorno' ? 'retorno' : ''),
+    continuo: b.continuo === true,
+    segunda: {
+      ligada: b.segunda?.ligada === true,
+      dias: num(b.segunda?.dias, 5, 1, 60),
+      mensagens: textos(b.segunda?.mensagens),
+    },
     ciclos: Object.fromEntries(Object.entries(b.ciclos && typeof b.ciclos === 'object' ? b.ciclos : {})
       .map(([k, v]) => [String(k).slice(0, 120), num(v, 0, 0, 3650)] as [string, number]).filter(([, v]) => v > 0).slice(0, 40)),
     tolerancia_dias: num(b.tolerancia_dias, 30, 1, 365),
     publico: {
       dias_min, dias_max, segmento: seg, ano_de, ano_ate,
       servicos: Array.isArray(p.servicos) ? p.servicos.map((s: any) => String(s || '').trim()).filter(Boolean).slice(0, 40) : [],
+      servicos_nao: Array.isArray(p.servicos_nao) ? p.servicos_nao.map((s: any) => String(s || '').trim()).filter(Boolean).slice(0, 40) : [],
     },
     saudacoes: textos(b.saudacoes),
     mensagens: textos(b.mensagens),
@@ -328,7 +349,9 @@ export async function perfisDoSalao(salaoId: string, fresco = false): Promise<Pe
  */
 export function publicoDe(perfis: PerfilCliente[], p: Publico) {
   const alvos = new Set(p.servicos.map(semAcento))
+  const nunca = new Set((p.servicos_nao || []).map(semAcento))
   const dentro = perfis.filter(x =>
+    (!nunca.size || !x.servicos.some(s => nunca.has(semAcento(s)))) &&
     x.dias >= p.dias_min && (!p.dias_max || x.dias <= p.dias_max)
     && (!p.ano_de || x.ano >= p.ano_de) && (!p.ano_ate || x.ano <= p.ano_ate)
     && (p.segmento === 'todos' || x.segmento === p.segmento)
@@ -395,6 +418,12 @@ export function pacotePara(d: Disparo, x: PerfilCliente, indice: number) {
   return itens
 }
 
+/** A 2ª mensagem: um texto só, curto, alternando as versões. */
+export function segundaPara(d: Disparo, x: PerfilCliente, indice: number) {
+  const t = preencher(d, x, d.segunda.mensagens.length ? d.segunda.mensagens[indice % d.segunda.mensagens.length] : '')
+  return t ? [{ texto: t, tipo: 'texto', midia_url: null as string | null }] : []
+}
+
 function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
   const alvos = new Set(d.publico.servicos.map(semAcento))
   const servico = x.servico_alvo || x.servicos.find(s => alvos.has(semAcento(s))) || x.servicos[0] || ''
@@ -402,6 +431,7 @@ function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
     cliente: primeiroNome(x.cliente_nome), dias: String(x.dias),
     ultima_visita: x.ultima_visita, servico: servico.toLowerCase(),
     data_servico: x.feito_em || x.ultima_visita,
+    oferta: String((d.publico.servicos_nao || [])[0] || '').toLowerCase(),
   }
   return modelo.replace(/\{(\w+)\}/g, (_, k) => dados[k] ?? '')
     .replace(/[ \t]+([,.!?;:])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim()
@@ -428,7 +458,9 @@ async function bloqueados(salaoId: string) {
 
 /** Recebeu envio automático OU foi contatada à mão (botão das listas) há menos de N dias. */
 /** O telefone da marca de envio (no retorno ela é telefone|serviço|data). */
-const telDaChave = (chave: string) => String(chave || '').split('|')[0]
+const telDaChave = (chave: string) => String(chave || '').split('|')[0].split('#')[0]
+/** A marca da 2ª mensagem é a da 1ª com "#2" no fim. */
+const SEGUNDA = '#2'
 
 /**
  * `soDestes`: conta só os envios destes disparos. É o lembrete de retorno:
@@ -460,7 +492,12 @@ async function travados(salaoId: string, dias: number, soDestes?: Set<string>) {
 
 /** Envio de recuperação: lista de quem sumiu (risco ou perdidas). */
 // 45: o modelo antigo de "Clientes em risco" começava em 45.
-export const ehRecuperacao = (d: Disparo) => d.tipo === 'lista' && d.publico.dias_min >= 45
+export const ehRecuperacao = (d: Disparo) => d.categoria
+  ? (d.categoria === 'perdidas' || d.categoria === 'risco')
+  : d.tipo === 'lista' && d.publico.dias_min >= 45
+
+/** Corre o tempo todo, lado a lado com a lista da vez: lembrete e lista contínua. */
+const sempreRodando = (d: Disparo) => d.tipo === 'retorno' || d.continuo
 
 export async function ciclosDoCatalogo(salaoId: string) {
   const { data } = await supabaseAdmin.from('salao_servicos').select('nome, ciclo_retorno_dias')
@@ -702,7 +739,6 @@ async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, pacote:
  */
 export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   const disparos = await carregarDisparos(salaoId)
-  if (!disparos.some(x => x.ligado)) return 'nenhum ligado'
   const estados = await carregarEstadosDisparo(salaoId)
   const agora = agoraNoSalao()
   const est = (x: Disparo) => { const e = { ...ESTADO_VAZIO, ...(estados[x.id] || {}) }; if (e.dia !== agora.dia) { e.dia = agora.dia; e.enviados_dia = 0 } return e }
@@ -717,28 +753,38 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     }
   }
 
-  // Quem tenta nesta volta: os lembretes de retorno ligados (correm o tempo
-  // todo, lado a lado) e UMA lista -- a de início mais cedo; as outras
-  // esperam a vez. Mesmo assim sai no máximo uma mensagem por volta, e o
-  // intervalo vale para o salão inteiro, não por envio.
-  const listaDaVez = escolherDaVez(disparos.filter(x => x.tipo === 'lista'), agora.dia)
-  const retornos = disparos.filter(x => x.tipo === 'retorno' && x.ligado && (!x.inicio || x.inicio <= agora.dia))
+  // Quem tenta nesta volta: os que correm o tempo todo (lembrete de retorno,
+  // lista contínua) e UMA lista normal -- a de início mais cedo; as outras
+  // esperam a vez. E a lista que já acabou mas ainda tem 2ª mensagem para
+  // mandar. Sai no máximo uma mensagem por volta, e o intervalo vale para o
+  // salão inteiro, não por envio.
+  const noPeriodo = (x: Disparo) => x.ligado && (!x.inicio || x.inicio <= agora.dia)
+  const listaDaVez = escolherDaVez(disparos.filter(x => !sempreRodando(x)), agora.dia)
+  const sempre = disparos.filter(x => sempreRodando(x) && noPeriodo(x))
+  const soSegunda = disparos.filter(x => !x.ligado && x.segunda.ligada && estados[x.id]?.concluido_em
+    && Date.now() - new Date(estados[x.id].concluido_em!).getTime() < (x.segunda.dias + 8) * 864e5)
   for (const x of disparos) {
-    if (!x.ligado || x.id === listaDaVez?.id || retornos.includes(x)) continue
+    if (!x.ligado || x.id === listaDaVez?.id || sempre.includes(x)) continue
     marcar(x, x.inicio && x.inicio > agora.dia
       ? `Agendado: começa em ${dataBR(x.inicio)}`
       : `Na fila: começa quando "${listaDaVez?.nome || 'o anterior'}" terminar`)
   }
-  const candidatos = [...retornos, ...(listaDaVez ? [listaDaVez] : [])]
-  let saida = candidatos.length ? '' : 'nenhum no período'
+  const candidatos = [...sempre, ...(listaDaVez ? [listaDaVez] : []), ...soSegunda]
+  if (!candidatos.length) {
+    if (mudou) await gravarDisparos(salaoId, disparos)
+    await gravarEstadosDisparo(salaoId, estados)
+    return disparos.some(x => x.ligado) ? 'nenhum no período' : 'nenhum ligado'
+  }
+  let saida = ''
 
   const ultimoGeral = Math.max(0, ...disparos.map(x => new Date(estados[x.id]?.ultimo_envio_em || 0).getTime()))
   let ocupada: string | null | undefined
   let perfis: PerfilCliente[] | null = null
-  let comuns: any = null
+  let comuns: [Set<string>, Set<string>, Set<string>] | null = null
 
   for (const d of candidatos) {
     const e = est(d)
+    const soDaSegunda = soSegunda.includes(d)
     const situacao = (() => {
       if (!d.mensagens.length) return 'Sem mensagem escrita'
       if (!d.dias_semana.includes(agora.semana)) return 'Hoje não é dia de envio'
@@ -752,15 +798,53 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       }
       return ''
     })()
-    if (situacao) { marcar(d, situacao, e); continue }
+    if (situacao) { if (!soDaSegunda) marcar(d, situacao, e); continue }
 
     if (ocupada === undefined) ocupada = await filaOcupada(salaoId)
-    if (ocupada) { marcar(d, ocupada, e); continue }
+    if (ocupada) { if (!soDaSegunda) marcar(d, ocupada, e); continue }
 
     perfis = perfis || await perfisDoSalao(salaoId)
     comuns = comuns || await Promise.all([bloqueados(salaoId), telefonesDeProfissionais(salaoId), emRecuperacao(salaoId, disparos, perfis)])
-    const [bloq, profs, recuperando] = comuns as [Set<string>, Set<string>, Set<string>]
+    const [bloq, profs, recuperando] = comuns
     const retorno = d.tipo === 'retorno'
+
+    // Manda para o primeiro da fila que pode receber agora. Olha no máximo 25
+    // por volta: quem está em conversa ou travada fica para depois.
+    const tentar = async (fila: PerfilCliente[], segunda: boolean, trava?: { chaves: Set<string>; nomes: Set<string> }, indice = 0) => {
+      let olhadas = 0
+      for (const x of fila) {
+        if (trava && (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome))) continue
+        if (++olhadas > 25) break
+        const c = await conferirConversa(salaoId, x)
+        if (c.bloquear) {
+          await supabaseAdmin.from('crm_disparo_bloqueios').upsert({ salao_id: salaoId, chave: x.chave, motivo: c.bloquear })
+          continue
+        }
+        if (c.pular) continue
+        const pacote = segunda ? segundaPara(d, x, indice) : pacotePara(d, x, indice)
+        if (!pacote.length) continue
+        const conv = await enviarPara(salaoId, d, x, pacote)
+        if (!conv) continue
+        e.enviados_dia++
+        e.ultimo_envio_em = new Date().toISOString()
+        e.ultimo_cliente = x.cliente_nome
+        // Intervalo com variação de 15% para os envios não saírem num compasso de relógio.
+        const var15 = 0.85 + Math.random() * 0.3
+        e.proximo_em = new Date(Date.now() + d.intervalo_min * var15 * 60000).toISOString()
+        marcar(d, `Enviando: última ${segunda ? '(2ª mensagem) ' : ''}para ${primeiroNome(x.cliente_nome)}`, e)
+        saida = `${d.nome}: ${segunda ? '2ª mensagem' : 'enviou'} para ${primeiroNome(x.cliente_nome)}`
+        return true
+      }
+      return false
+    }
+
+    // 2ª mensagem primeiro: é quem está esperando há dias. Sem a trava de
+    // "recebeu algo há pouco" -- o que ela recebeu foi justamente a 1ª.
+    const segundas = (await segundasPendentes(salaoId, d, perfis))
+      .filter(x => !bloq.has(x.chave) && !profs.has(x.chave) && !(retorno && recuperando.has(x.chave)))
+    if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
+    if (soDaSegunda) continue
+
     const { lista } = await alvosDoDisparo(salaoId, d, perfis)
     const [feitos, trava] = await Promise.all([
       chavesDoEnvio(salaoId, d.id, d.ciclo),
@@ -769,41 +853,17 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     const restantes = lista.filter(x => !feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
       && !(retorno && recuperando.has(x.chave)))
     if (!restantes.length) {
-      if (retorno) { e.proximo_em = new Date(Date.now() + 30 * 60000).toISOString(); marcar(d, 'Ninguém na hora de voltar agora; olha de novo em 30 min', e); continue }
-      e.concluido_em = new Date().toISOString()
-      d.ligado = false; mudou = true
-      marcar(d, 'Lista concluída: todas receberam', e)
-      continue
-    }
-
-    // Olha no máximo 25 por volta: quem está em conversa ou travada fica para
-    // depois, e a volta não pode demorar.
-    let olhadas = 0, enviou = false
-    for (const x of restantes) {
-      if (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome)) continue
-      if (++olhadas > 25) break
-      const c = await conferirConversa(salaoId, x)
-      if (c.bloquear) {
-        await supabaseAdmin.from('crm_disparo_bloqueios').upsert({ salao_id: salaoId, chave: x.chave, motivo: c.bloquear })
+      if (sempreRodando(d)) {
+        e.proximo_em = new Date(Date.now() + 30 * 60000).toISOString()
+        marcar(d, retorno ? 'Ninguém na hora de voltar agora; olha de novo em 30 min' : 'Ninguém novo na lista agora; olha de novo em 30 min', e)
         continue
       }
-      if (c.pular) continue
-      const pacote = pacotePara(d, x, feitos.size)
-      if (!pacote.length) continue
-      const conv = await enviarPara(salaoId, d, x, pacote)
-      if (!conv) continue
-      e.enviados_dia++
-      e.ultimo_envio_em = new Date().toISOString()
-      e.ultimo_cliente = x.cliente_nome
-      // Intervalo com variação de 15% para os envios não saírem num compasso de relógio.
-      const var15 = 0.85 + Math.random() * 0.3
-      e.proximo_em = new Date(Date.now() + d.intervalo_min * var15 * 60000).toISOString()
-      marcar(d, `Enviando: última para ${primeiroNome(x.cliente_nome)}`, e)
-      saida = `${d.nome}: enviou para ${primeiroNome(x.cliente_nome)}`
-      enviou = true
-      break
+      e.concluido_em = new Date().toISOString()
+      d.ligado = false; mudou = true
+      marcar(d, d.segunda.ligada ? 'Lista concluída: todas receberam (a 2ª mensagem continua saindo)' : 'Lista concluída: todas receberam', e)
+      continue
     }
-    if (enviou) break
+    if (await tentar(restantes, false, trava, feitos.size)) break
     e.proximo_em = new Date(Date.now() + 15 * 60000).toISOString()
     marcar(d, 'Ninguém disponível agora (em conversa ou contatada há pouco); tenta de novo em 15 min', e)
   }
@@ -811,6 +871,45 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   if (mudou) await gravarDisparos(salaoId, disparos)
   await gravarEstadosDisparo(salaoId, estados)
   return saida || candidatos.map(x => `${x.nome}: ${estados[x.id]?.situacao || ''}`).join(' | ')
+}
+
+/**
+ * Quem já passou do prazo da 2ª mensagem: recebeu a 1ª há N dias (até uma
+ * semana depois disso), não respondeu, não agendou e não voltou ao salão.
+ */
+async function segundasPendentes(salaoId: string, d: Disparo, perfis: PerfilCliente[]): Promise<PerfilCliente[]> {
+  if (!d.segunda.ligada || !d.segunda.mensagens.length) return []
+  const agora = Date.now(), minimo = d.segunda.dias * 864e5, maximo = (d.segunda.dias + 7) * 864e5
+  const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
+    .select('chave, conversa_id, enviado_em').eq('salao_id', salaoId).eq('disparo_id', d.id).eq('ciclo', d.ciclo)
+    .gte('enviado_em', new Date(agora - maximo).toISOString()).range(de, ate))
+  const feitas = new Set(dados.filter(r => String(r.chave).endsWith(SEGUNDA)).map(r => String(r.chave).slice(0, -SEGUNDA.length)))
+  const cand = dados
+    .filter(r => !String(r.chave).endsWith(SEGUNDA) && !feitas.has(r.chave) && r.conversa_id && agora - new Date(r.enviado_em).getTime() >= minimo)
+    .sort((a, b) => String(a.enviado_em).localeCompare(String(b.enviado_em)))
+  if (!cand.length) return []
+  const enviadoEm = new Map(cand.map(r => [r.conversa_id, new Date(r.enviado_em).getTime()]))
+  const ids = [...enviadoEm.keys()]
+  const respondeu = new Set<string>(), decidida = new Set<string>()
+  for (let i = 0; i < ids.length; i += 150) {
+    const lote = ids.slice(i, i + 150)
+    const [{ data: msgs }, { data: convs }] = await Promise.all([
+      supabaseAdmin.from('crm_mensagens').select('conversa_id, criado_em').in('conversa_id', lote).eq('direcao', 'entrada')
+        .gte('criado_em', new Date(agora - maximo).toISOString()).limit(3000),
+      supabaseAdmin.from('crm_conversas').select('id, estado').in('id', lote),
+    ])
+    for (const m of msgs || []) if (new Date(m.criado_em).getTime() > (enviadoEm.get(m.conversa_id) || Infinity)) respondeu.add(m.conversa_id)
+    for (const c of convs || []) if (['agendado', 'confirmado'].includes(c.estado)) decidida.add(c.id)
+  }
+  const porTel = new Map(perfis.map(p => [p.chave, p]))
+  const saida: PerfilCliente[] = []
+  for (const r of cand) {
+    if (respondeu.has(r.conversa_id) || decidida.has(r.conversa_id)) continue
+    const x = porTel.get(telDaChave(r.chave))
+    if (!x || parseBR(x.ultima_visita) > new Date(r.enviado_em).getTime()) continue
+    saida.push({ ...x, envio_chave: r.chave + SEGUNDA })
+  }
+  return saida
 }
 
 /**
@@ -850,7 +949,8 @@ export async function simularProximo(salaoId: string, d: Disparo) {
     proxima = { cliente: x.cliente_nome, dias: x.dias, servico: x.servico_alvo || null, atraso: x.atraso ?? null, mensagem: pacotePara(d, x, feitos.size).map(p => p.texto || `[${p.tipo}]`).join('\n\n') }
     break
   }
-  return { mandaria_agora: !travas.length && !!proxima, travas, proxima, puladas }
+  const segundas_pendentes = (await segundasPendentes(salaoId, d, perfis)).filter(x => !bloq.has(x.chave)).length
+  return { mandaria_agora: !travas.length && (!!proxima || segundas_pendentes > 0), travas, proxima, puladas, segundas_pendentes }
 }
 
 /** A volta do cron: todos os salões com envio ligado, um de cada vez. */
@@ -862,7 +962,8 @@ export async function rodarDisparos() {
     const { data } = await supabaseAdmin.from('salao_config').select('salao_id, valor').eq('chave', CHAVE_DISPAROS)
     const saida: Record<string, string> = {}
     for (const r of data || []) {
-      const temLigado = ((r.valor as any)?.disparos || []).some((x: any) => x?.ligado === true)
+      // A lista que acabou ainda pode ter 2ª mensagem para mandar.
+      const temLigado = ((r.valor as any)?.disparos || []).some((x: any) => x?.ligado === true || x?.segunda?.ligada === true)
       if (!temLigado) continue
       try { saida[r.salao_id] = await rodarDisparoDoSalao(r.salao_id) }
       catch (err: any) { saida[r.salao_id] = 'erro: ' + String(err?.message || err).slice(0, 200) }
@@ -881,7 +982,7 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
 
   // Respostas e retornos: do ciclo atual, contados em cima das envios gravados.
   const { dados: envios } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
-    .select('cliente_nome, conversa_id, enviado_em').eq('salao_id', salaoId).eq('disparo_id', d.id).range(de, ate))
+    .select('chave, cliente_nome, conversa_id, enviado_em').eq('salao_id', salaoId).eq('disparo_id', d.id).range(de, ate))
   let responderam = 0
   const porConversa = new Map<string, number>()
   for (const v of envios) if (v.conversa_id) porConversa.set(v.conversa_id, Math.min(porConversa.get(v.conversa_id) ?? Infinity, new Date(v.enviado_em).getTime()))
@@ -898,10 +999,12 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const ultimaDe = new Map(perfis.map(p => [p.cliente_nome, parseBR(p.ultima_visita)]))
   const voltaram = envios.filter(v => (ultimaDe.get(v.cliente_nome) || 0) > new Date(v.enviado_em).getTime()).length
 
+  const segundas = envios.filter(v => String(v.chave || '').endsWith(SEGUNDA)).length
   return {
+    segundas,
     total: naLista.length, enviadas, faltam: naLista.length - enviadas,
     sem_celular: semCelular, repetidos, sem_ciclo, bloqueados: lista.length - naLista.length,
-    responderam, voltaram, envios_total: envios.length,
+    responderam, voltaram, envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
   }
 }

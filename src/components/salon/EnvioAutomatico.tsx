@@ -12,15 +12,16 @@ import { Loader2, Play, Pause, Pencil, Trash2, RotateCcw, Send, Plus, X, Clock, 
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 
-type Publico = { dias_min: number; dias_max: number; servicos: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo'; ano_de: number; ano_ate: number }
+type Publico = { dias_min: number; dias_max: number; servicos: string[]; servicos_nao: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo'; ano_de: number; ano_ate: number }
 type Anexo = { url: string; tipo: 'imagem' | 'video' | 'audio' | 'documento'; nome: string }
 type Disparo = {
-  id?: string; nome: string; ligado?: boolean; tipo: 'lista' | 'retorno'; ciclos: Record<string, number>; tolerancia_dias: number; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
+  id?: string; nome: string; ligado?: boolean; tipo: 'lista' | 'retorno'; categoria: Categoria; continuo: boolean
+  segunda: { ligada: boolean; dias: number; mensagens: string[] }; ciclos: Record<string, number>; tolerancia_dias: number; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
   inicio: string; fim: string
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { segundas?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -32,24 +33,80 @@ const INTERVALOS = [10, 15, 20, 30, 40, 45, 60, 90, 120, 180]
 // A saudação vai sozinha, antes: é a mensagem curta que a cliente vê na
 // notificação, e o texto chega logo depois (pedido do dono, 29/09/2026).
 const OI = 'Oi *{cliente}*, tudo bem?'
-const MSG_RECUPERAR = 'Faz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
-const MSG_RETORNO = 'Já está chegando a hora de refazer o seu {servico}: o último foi em {data_servico}.\n\nQuer que eu veja um horário bom para você?'
-const MSG_PROMO = 'Como você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?'
+
+type Categoria = '' | 'perdidas' | 'risco' | 'promocao' | 'vip' | 'novas' | 'cruzada' | 'retorno'
+type Textos = { saudacoes: string[]; mensagens: string[]; segunda: string[] }
+
+// Modelos prontos por objetivo, 3 versões cada (pedido do dono, 29/09/2026).
+// Versões diferentes alternam entre as clientes: além de soar menos robô, o
+// WhatsApp desconfia menos de texto que não é idêntico.
+const SAUDACOES = ['Oi *{cliente}*, tudo bem?', 'Olá *{cliente}*, como você está?', 'Oi *{cliente}*! Tudo certo por aí?']
+const SEGUNDA_PADRAO = [
+  'Oi *{cliente}*, conseguiu ver minha mensagem? Se quiser, vejo um horário para você essa semana.',
+  '*{cliente}*, passando de novo por aqui. Se preferir outro dia ou horário, me fala que eu encaixo.',
+  'Oi *{cliente}*! Ainda dá tempo de garantir o seu horário. Quer que eu reserve um para você?',
+]
+const PRONTOS: Record<Exclude<Categoria, ''>, { rotulo: string } & Textos> = {
+  perdidas: { rotulo: 'Recuperar perdidas', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Faz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.',
+    'Estava olhando a nossa agenda e lembrei de você. Faz tempo que não te vemos por aqui!\n\nSe teve algo que a gente possa melhorar, me conta. E se quiser voltar, separo um horário especial para você.',
+    'Passando para saber como você está e dizer que as portas continuam abertas para você.\n\nQuer que eu veja um horário essa semana ou na próxima?',
+  ] },
+  risco: { rotulo: 'Clientes em risco', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Já faz {dias} dias desde a sua última visita. Que tal já deixar o próximo horário marcado?\n\nMe responde aqui que eu vejo o melhor dia para você.',
+    'Sentimos sua falta por aqui! Está chegando a hora de cuidar do cabelo de novo.\n\nQuer que eu veja um horário essa semana?',
+    'Tenho alguns horários bons essa semana e lembrei de você.\n\nPrefere de manhã ou à tarde?',
+  ] },
+  retorno: { rotulo: 'Lembrete de retorno', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Já está chegando a hora de refazer o seu {servico}: o último foi em {data_servico}.\n\nQuer que eu veja um horário bom para você?',
+    'Pelo nosso controle, o seu {servico} feito em {data_servico} já está na hora de ser refeito.\n\nQuer que eu reserve um horário para você?',
+    'Para o seu {servico} continuar sempre bonito, o ideal é refazer agora.\n\nQual dia fica melhor para você essa semana?',
+  ] },
+  promocao: { rotulo: 'Promoção', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Como você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?',
+    'Preparamos uma condição especial para quem já é cliente da casa, válida só este mês.\n\nQuer que eu te explique e já veja um horário?',
+    'Tenho uma novidade para você: uma condição especial por tempo limitado, só para clientes da casa.\n\nPosso reservar um horário?',
+  ] },
+  vip: { rotulo: 'VIP', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Você é uma das nossas clientes mais especiais e queremos te agradecer por isso.\n\nSeparei uma condição exclusiva para você este mês. Quer saber qual é?',
+    'Clientes como você fazem o nosso salão ser o que é. Por isso, você tem prioridade na nossa agenda.\n\nQuer que eu já reserve o seu próximo horário?',
+    'Preparamos um mimo exclusivo para as nossas clientes VIP, e você está na lista.\n\nMe responde aqui que eu te conto.',
+  ] },
+  novas: { rotulo: 'Clientes novas', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Queria saber: como ficou o seu cabelo depois da sua visita? Ficamos muito felizes em te atender.\n\nQue tal já deixar o próximo horário marcado?',
+    'Foi um prazer te receber aqui no salão! Para manter o resultado bonito, o ideal é voltar em breve.\n\nQuer que eu veja um horário para você?',
+    'Passando para agradecer a sua primeira visita. Gostou do atendimento? A sua opinião é muito importante para nós.\n\nE se quiser, já agendo o seu retorno.',
+  ] },
+  cruzada: { rotulo: 'Venda cruzada', saudacoes: SAUDACOES, segunda: SEGUNDA_PADRAO, mensagens: [
+    'Como você já faz {servico} com a gente, queria te apresentar {oferta}: combina muito e deixa o resultado ainda mais bonito.\n\nQuer saber mais?',
+    'Sabia que dá para deixar o seu {servico} ainda melhor? {oferta} combina perfeitamente, e muitas clientes amam.\n\nPosso te contar como funciona?',
+    'Separei uma sugestão para você: {oferta}, que complementa o seu {servico} e cuida ainda mais do seu cabelo.\n\nQuer que eu veja um horário para experimentar?',
+  ] },
+}
+const textosDe = (c: Exclude<Categoria, ''>) => ({
+  saudacoes: [...PRONTOS[c].saudacoes], mensagens: [...PRONTOS[c].mensagens],
+  segunda: { ligada: false, dias: 5, mensagens: [...PRONTOS[c].segunda] },
+})
 
 // "Perdidas" e "Em risco" com a MESMA régua das abas de Mais Relatórios
 // (api/relatorios/analise-clientes: perdida > 90 dias, risco 46 a 90), para o
 // número daqui bater com o de lá. O que ainda difere é só quem não tem
 // celular ou divide o celular com outra ficha -- e isso aparece na tela.
-const PUB = { servicos: [], segmento: 'todos' as const, ano_de: 0, ano_ate: 0 }
+const PUB = { servicos: [], servicos_nao: [], segmento: 'todos' as const, ano_de: 0, ano_ate: 0 }
 const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
-  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR] } },
-  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', publico: { ...PUB, dias_min: 46, dias_max: 90 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR] } },
-  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', publico: { ...PUB, dias_min: 0, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_PROMO] } },
-  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, saudacoes: [OI], mensagens: [''] } },
+  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', categoria: 'perdidas', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas') } },
+  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
+  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', categoria: 'promocao', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('promocao') } },
+  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', categoria: 'vip', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, ...textosDe('vip') } },
+  // Contínua: todo dia entra quem completou 20 dias da primeira visita.
+  { rotulo: 'Clientes novas', desc: 'Vieram 1 vez, há 20 a 30 dias: garantir a 2ª visita', d: { nome: 'Clientes novas (2ª visita)', categoria: 'novas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 20, dias_max: 30, segmento: 'novo' }, ...textosDe('novas') } },
+  { rotulo: 'Venda cruzada', desc: 'Fez um serviço e nunca fez outro que combina', d: { nome: 'Venda cruzada', categoria: 'cruzada', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 120 }, ...textosDe('cruzada') } },
 ]
+const ROTULO_CAT: Record<string, string> = Object.fromEntries(Object.entries(PRONTOS).map(([k, v]) => [k, v.rotulo]))
 
 const NOVO: Disparo = {
-  nome: '', tipo: 'lista', ciclos: {}, tolerancia_dias: 30, publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR], anexo: null,
+  nome: '', tipo: 'lista', categoria: '', continuo: false, ciclos: {}, tolerancia_dias: 30,
+  publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas'), anexo: null,
   inicio: '', fim: '',
   janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
 }
@@ -92,8 +149,8 @@ function contas(d: Disparo, faltam: number) {
 // Lembrete de retorno (pedido do dono, 29/09/2026): quem fez o serviço e
 // chegou a hora de voltar pelo ciclo da página Serviços.
 const NOVO_RETORNO: Disparo = {
-  ...NOVO, nome: 'Lembrete de retorno', tipo: 'retorno',
-  publico: { ...PUB, dias_min: 0, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RETORNO],
+  ...NOVO, nome: 'Lembrete de retorno', tipo: 'retorno', categoria: 'retorno',
+  publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('retorno'),
   intervalo_min: 20, max_dia: 30, trava_dias: 15,
 }
 
@@ -103,7 +160,9 @@ const br = (iso: string) => iso ? iso.split('-').reverse().join('/') : ''
 const completar = (d: any): Disparo => ({
   ...NOVO, ...d, saudacoes: d.saudacoes || [], anexo: d.anexo || null, inicio: d.inicio || '', fim: d.fim || '',
   tipo: d.tipo === 'retorno' ? 'retorno' : 'lista', ciclos: d.ciclos || {}, tolerancia_dias: d.tolerancia_dias || 30,
-  publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0 },
+  categoria: d.categoria || (d.tipo === 'retorno' ? 'retorno' : ''), continuo: d.continuo === true,
+  segunda: { ligada: false, dias: 5, mensagens: [...SEGUNDA_PADRAO], ...(d.segunda || {}) },
+  publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0, servicos_nao: d.publico?.servicos_nao || [] },
 })
 
 export default function EnvioAutomatico() {
@@ -216,7 +275,9 @@ export default function EnvioAutomatico() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <Chave ligada={!!d.ligado} ocupado={!!ocupado} onTrocar={() => ligar(d, !d.ligado)} />
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{d.nome}</div>
-                {retorno && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: '#eceaf9', color: ROXO }}>Lembrete de retorno</span>}
+                {!!ROTULO_CAT[d.categoria] && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: '#eceaf9', color: ROXO }}>{ROTULO_CAT[d.categoria]}</span>}
+                {d.continuo && <span style={{ fontSize: 11, color: '#8f877f' }}>contínuo</span>}
+                {d.segunda?.ligada && <span style={{ fontSize: 11, color: '#8f877f' }}>com 2ª mensagem em {d.segunda.dias} dias</span>}
                 <span className={d.ligado ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999,
                   background: agendado ? '#fdf3e1' : d.ligado ? '#e7f1e9' : concluido ? '#eceaf9' : '#f1efe8', color: agendado ? '#9a6b12' : d.ligado ? '#2f6b4f' : concluido ? ROXO : '#8f877f' }}>
                   {agendado ? 'Agendado' : d.ligado ? 'Ligado' : concluido ? 'Concluído' : 'Pausado'}
@@ -252,6 +313,7 @@ export default function EnvioAutomatico() {
                   <span><b style={{ color: '#1a1a1a' }}>{r.envios_total || 0}</b> lembretes enviados</span>
                   <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
                   <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                    {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                   <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
                   {!!r.sem_ciclo?.length && <span style={{ color: '#b4322a' }}>Sem ciclo de retorno: {r.sem_ciclo.join(', ')}</span>}
                 </div>
@@ -266,6 +328,7 @@ export default function EnvioAutomatico() {
                     <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> faltam</span>
                     <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
                     <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                    {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                     <span><Users size={12} style={{ verticalAlign: -2 }} /> {c.porDia} por dia</span>
                     {c.fim && r.faltam > 0 && <span>termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
                     {!!r.sem_celular && <span style={{ color: '#a09a90' }}>{r.sem_celular} sem celular (fora)</span>}
@@ -310,6 +373,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
   const [previa, setPrevia] = useState<any>(null)
   const [carregandoPrevia, setCarregandoPrevia] = useState(false)
   const [buscaServ, setBuscaServ] = useState('')
+  const [buscaNao, setBuscaNao] = useState('')
   const [telTeste, setTelTeste] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [testando, setTestando] = useState(false)
@@ -350,6 +414,10 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
     const q = buscaServ.trim().toLowerCase()
     return servicos.filter(s => !pub.servicos.includes(s.nome) && (!q || s.nome.toLowerCase().includes(q))).slice(0, 30)
   }, [servicos, buscaServ, pub.servicos])
+  const naoFiltrados = useMemo(() => {
+    const q = buscaNao.trim().toLowerCase()
+    return servicos.filter(s => !pub.servicos_nao.includes(s.nome) && (!q || s.nome.toLowerCase().includes(q))).slice(0, 30)
+  }, [servicos, buscaNao, pub.servicos_nao])
 
   return (
     <div>
@@ -371,7 +439,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         {!d.id && !retorno && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
             {MODELOS.map(m => (
-              <button key={m.rotulo} onClick={() => setD({ ...d, ...m.d, mensagens: m.d.mensagens?.[0] ? m.d.mensagens : d.mensagens } as Disparo)}
+              <button key={m.rotulo} onClick={() => setD({ ...d, ...m.d } as Disparo)}
                 style={{ ...botao('#faf9f7', ROXO, '#e0ddd8'), borderRadius: 999 }}>{m.rotulo}</button>
             ))}
           </div>
@@ -469,6 +537,44 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           )}
         </div>
 
+        {d.categoria === 'cruzada' && (
+          <div style={{ marginTop: 12 }}>
+            <span style={rotulo}>E NUNCA fez nenhum destes (o serviço que você quer vender)</span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+              {pub.servicos_nao.map(s => (
+                <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fdf3e1', color: '#9a6b12', fontSize: 12, fontWeight: 700, padding: '4px 8px', borderRadius: 999 }}>
+                  {s} <button onClick={() => setPub({ servicos_nao: pub.servicos_nao.filter(x => x !== s) })} style={{ color: '#9a6b12', display: 'inline-flex' }}><X size={12} /></button>
+                </span>
+              ))}
+            </div>
+            <input value={buscaNao} onChange={e => setBuscaNao(e.target.value)} placeholder="Procurar o serviço a oferecer (hidratação, tratamento...)" style={{ ...campo, maxWidth: 360 }} />
+            {buscaNao.trim() && (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+                {naoFiltrados.length > 1 && (
+                  <button onClick={() => { setPub({ servicos_nao: [...pub.servicos_nao, ...naoFiltrados.map(s => s.nome)].slice(0, 40) }); setBuscaNao('') }}
+                    style={botao('#9a6b12', '#fff', '#9a6b12')}><Plus size={12} /> Adicionar todos ({naoFiltrados.length})</button>
+                )}
+                {naoFiltrados.map(s => (
+                  <button key={s.nome} onClick={() => { setPub({ servicos_nao: [...pub.servicos_nao, s.nome] }); setBuscaNao('') }}
+                    style={{ ...botao('#fff', '#1a1a1a', '#e0ddd8'), fontWeight: 600 }}>{s.nome} <span style={{ color: '#a09a90' }}>{s.clientes}</span></button>
+                ))}
+                {!naoFiltrados.length && <span style={{ fontSize: 12, color: '#a09a90' }}>Nenhum serviço com esse nome.</span>}
+              </div>
+            )}
+            <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 6 }}>
+              Na mensagem, <code>{'{servico}'}</code> é o que ela já faz e <code>{'{oferta}'}</code> é o primeiro serviço desta lista.
+            </div>
+          </div>
+        )}
+
+        {!retorno && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, fontSize: 12.5, cursor: 'pointer' }}>
+            <input type="checkbox" checked={d.continuo} onChange={e => set({ continuo: e.target.checked })} style={{ marginTop: 3 }} />
+            <span><b>Envio contínuo</b>: não termina. Todo dia entra quem passa a caber na regra (ex.: completou 20 dias da primeira visita).
+              Roda junto com as outras listas, sempre uma mensagem por vez.</span>
+          </label>
+        )}
+
         <div style={{ marginTop: 12, background: '#faf9f7', borderRadius: 10, padding: '10px 12px', fontSize: 12.5 }}>
           {carregandoPrevia && !previa ? <span style={{ color: '#6b6860' }}><Loader2 size={13} className="animate-spin" /> Contando...</span> : previa && (
             <>
@@ -504,6 +610,16 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
       {/* 2. Mensagem */}
       <div style={secao}>
         <div style={tituloSecao}>2. Mensagem</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#6b6860' }}>Modelos prontos (3 versões cada):</span>
+          {(Object.keys(PRONTOS) as (keyof typeof PRONTOS)[]).map(k => (
+            <button key={k} onClick={() => {
+              if (d.mensagens.some(m => m.trim()) && !confirm(`Trocar a saudação, a mensagem e a 2ª mensagem pelas do modelo "${PRONTOS[k].rotulo}"?`)) return
+              const t = textosDe(k)
+              set({ saudacoes: t.saudacoes, mensagens: t.mensagens, segunda: { ...d.segunda, mensagens: t.segunda.mensagens } })
+            }} style={{ ...botao(d.categoria === k ? '#eceaf9' : '#fff', ROXO, '#dcd7fa'), borderRadius: 999 }}>{PRONTOS[k].rotulo}</button>
+          ))}
+        </div>
         <div style={{ fontSize: 12, color: '#1a1a1a', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
           A cliente recebe, nesta ordem e separadas: <b>1)</b> a saudação{d.saudacoes.some(x => x.trim()) ? '' : ' (vazia: não vai)'},
           {' '}<b>2)</b> a mensagem{d.anexo ? <>, <b>3)</b> o anexo</> : ' (sem anexo: só estas)'}.
@@ -511,7 +627,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 10, lineHeight: 1.5 }}>
           Campos que se preenchem sozinhos: <code>{'{cliente}'}</code> primeiro nome, <code>{'{servico}'}</code> o serviço escolhido
           no filtro acima (use só quando escolher serviço),
-          {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data{retorno ? <>, <code>{'{data_servico}'}</code> quando fez o serviço do lembrete</> : null}. Escreva 2 ou 3 versões
+          {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data{retorno ? <>, <code>{'{data_servico}'}</code> quando fez o serviço do lembrete</> : null}{d.categoria === 'cruzada' ? <>, <code>{'{oferta}'}</code> o serviço a oferecer</> : null}. Escreva 2 ou 3 versões
           diferentes: o sistema alterna entre elas, e o WhatsApp desconfia menos de texto que não é idêntico.
         </div>
         <div style={{ ...rotulo, fontSize: 12.5, color: '#1a1a1a', marginTop: 4 }}>1ª mensagem: saudação (opcional)</div>
@@ -632,6 +748,38 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         </div>
       </div>
 
+      {/* 5. 2ª mensagem (pedido do dono, 29/09/2026) */}
+      <div style={secao}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+          <div style={{ ...tituloSecao, marginBottom: 0 }}>Segunda mensagem para quem não respondeu</div>
+          <Chave ligada={d.segunda.ligada} ocupado={false} onTrocar={() => set({ segunda: { ...d.segunda, ligada: !d.segunda.ligada } })} />
+        </div>
+        <div style={{ fontSize: 12, color: '#6b6860', lineHeight: 1.5, marginBottom: 10 }}>
+          Sai uma vez só, uma mensagem curta, para quem recebeu a primeira e <b>não respondeu, não agendou e não voltou ao salão</b>.
+          Conta no mesmo máximo por dia e respeita o mesmo horário. Muita cliente só responde na segunda tentativa.
+        </div>
+        {d.segunda.ligada && (
+          <>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, marginBottom: 10 }}>
+              Mandar <input type="number" min={1} max={60} value={d.segunda.dias} onChange={e => set({ segunda: { ...d.segunda, dias: Number(e.target.value) || 1 } })} style={{ ...campo, width: 70, padding: '5px 8px' }} /> dias depois da primeira
+            </label>
+            {d.segunda.mensagens.map((m, i) => (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={rotulo}>Versão {i + 1}</span>
+                  {d.segunda.mensagens.length > 1 && <button onClick={() => set({ segunda: { ...d.segunda, mensagens: d.segunda.mensagens.filter((_, j) => j !== i) } })} style={{ fontSize: 11.5, color: '#b4322a', fontWeight: 700 }}>remover</button>}
+                </div>
+                <textarea value={m} rows={2} onChange={e => set({ segunda: { ...d.segunda, mensagens: d.segunda.mensagens.map((x, j) => j === i ? e.target.value : x) } })}
+                  style={{ ...campo, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
+              </div>
+            ))}
+            {d.segunda.mensagens.length < 3 && (
+              <button onClick={() => set({ segunda: { ...d.segunda, mensagens: [...d.segunda.mensagens, ''] } })} style={botao('#fff', ROXO, '#e0ddd8')}><Plus size={13} /> Outra versão</button>
+            )}
+          </>
+        )}
+      </div>
+
       {/* 4. Teste e salvar */}
       <div style={secao}>
         <div style={tituloSecao}>4. Testar antes de ligar</div>
@@ -664,6 +812,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               {simulacao.proxima
                 ? <div>Próxima da fila: <b>{simulacao.proxima.cliente}</b> ({simulacao.proxima.dias} dias sem vir).</div>
                 : <div>Ninguém disponível na lista agora.</div>}
+              {!!simulacao.segundas_pendentes && <div>2ª mensagem esperando para sair: <b>{simulacao.segundas_pendentes}</b> cliente(s) que não responderam.</div>}
               {!!simulacao.puladas?.length && (
                 <div style={{ color: '#6b6860' }}>Puladas antes dela: {simulacao.puladas.map((p: any) => `${p.cliente} (${p.motivo})`).join(', ')}.</div>
               )}

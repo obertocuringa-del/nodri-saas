@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, alvosDoDisparo, textoPara, saudacaoPara, pacotePara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  servicosDoSalao, perfisDoSalao, alvosDoDisparo, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -82,7 +82,10 @@ export async function POST(req: NextRequest) {
     if (!conversa) return NextResponse.json({ error: 'Não consegui abrir a conversa.' }, { status: 500 })
     // Uma rodada por versão, na ordem que a cliente recebe: saudação,
     // mensagem, anexo (o anexo só na primeira, para não lotar o celular).
-    const itens = d.mensagens.flatMap((_, i) => pacotePara(d, modelo, i).filter(p => i === 0 || !p.midia_url))
+    const itens = [
+      ...d.mensagens.flatMap((_, i) => pacotePara(d, modelo, i).filter(p => i === 0 || !p.midia_url)),
+      ...(d.segunda.ligada ? d.segunda.mensagens.flatMap((_, i) => segundaPara(d, modelo, i)) : []),
+    ]
     const agora = Date.now()
     await supabaseAdmin.from('crm_mensagens').insert(itens.map((p, i) => ({
       salao_id: salaoId, conversa_id: conversa.id, direcao: 'saida', texto: p.texto, tipo: p.tipo, midia_url: p.midia_url,
