@@ -98,8 +98,10 @@ const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
   { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
   { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', categoria: 'promocao', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('promocao') } },
   { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', categoria: 'vip', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, ...textosDe('vip') } },
-  // Contínua: todo dia entra quem completou 20 dias da primeira visita.
-  { rotulo: 'Clientes novas', desc: 'Vieram 1 vez, há 20 a 30 dias: garantir a 2ª visita', d: { nome: 'Clientes novas (2ª visita)', categoria: 'novas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 20, dias_max: 30, segmento: 'novo' }, ...textosDe('novas') } },
+  // Contínua: todo dia entra quem completou 20 dias da primeira visita sem
+  // voltar. Sem teto de dias (dono, 29/09/2026: com 20 a 30 só apareciam 14,
+  // e ele queria TODAS as novas do ano que não voltaram), limitada ao ano.
+  { rotulo: 'Clientes novas', desc: 'Primeira visita este ano e não voltou em 20 dias: garantir a 2ª visita', d: { nome: 'Clientes novas (2ª visita)', categoria: 'novas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 20, dias_max: 0, segmento: 'novo', ano_de: new Date().getFullYear(), ano_ate: new Date().getFullYear() }, ...textosDe('novas') } },
   { rotulo: 'Venda cruzada', desc: 'Fez um serviço e nunca fez outro que combina', d: { nome: 'Venda cruzada', categoria: 'cruzada', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 120 }, ...textosDe('cruzada') } },
 ]
 const ROTULO_CAT: Record<string, string> = Object.fromEntries(Object.entries(PRONTOS).map(([k, v]) => [k, v.rotulo]))
@@ -538,6 +540,14 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           )}
         </div>
 
+        {d.categoria === 'novas' && (
+          <div style={{ fontSize: 12, color: '#1a1a1a', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 8, padding: '9px 11px', marginTop: 12, lineHeight: 1.55 }}>
+            Aqui entra quem veio <b>pela primeira vez na vida</b> e <b>não voltou</b> depois de pelo menos {pub.dias_min} dias
+            {pub.dias_max ? <> (e no máximo {pub.dias_max})</> : null}. A aba <b>Novo</b> com "Este ano" mostra um número maior porque
+            conta quem veio <b>1 vez neste ano</b>, incluindo clientes antigas que vinham nos anos anteriores. Para essas, a mensagem
+            certa é a de Recuperar perdidas ou Clientes em risco.
+          </div>
+        )}
         {d.categoria === 'cruzada' && (
           <div style={{ marginTop: 12 }}>
             <span style={rotulo}>E NUNCA fez nenhum destes (o serviço que você quer vender)</span>
