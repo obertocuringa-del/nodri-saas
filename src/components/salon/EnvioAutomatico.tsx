@@ -284,15 +284,25 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
 
   // Prévia com meio segundo de folga depois da última mudança.
   const chave = JSON.stringify([pub, d.saudacoes, d.mensagens])
+  // Também pelo botão "Buscar" (pedido do dono, 29/09/2026: sem ele, não dava
+  // para ter certeza de que a lista já tinha mudado). O número de ordem
+  // impede que uma resposta atrasada sobrescreva a mais nova.
   const timer = useRef<any>(null)
+  const ordem = useRef(0)
+  const [atualizadaEm, setAtualizadaEm] = useState('')
+  async function buscar() {
+    clearTimeout(timer.current)
+    const minha = ++ordem.current
+    setCarregandoPrevia(true)
+    const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'previa', disparo: d }) }).catch(() => null)
+    const j = r?.ok ? await r.json().catch(() => null) : null
+    if (minha !== ordem.current) return
+    if (j) { setPrevia(j); setAtualizadaEm(new Date().toLocaleTimeString('pt-BR')) }
+    setCarregandoPrevia(false)
+  }
   useEffect(() => {
     clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      setCarregandoPrevia(true)
-      const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'previa', disparo: d }) })
-      setPrevia(r.ok ? await r.json() : null)
-      setCarregandoPrevia(false)
-    }, 500)
+    timer.current = setTimeout(buscar, 500)
     return () => clearTimeout(timer.current)
   }, [chave]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -347,6 +357,9 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
                 </button>
               )
             })}
+            <button onClick={buscar} disabled={carregandoPrevia} style={{ ...botao(ROXO, '#fff', ROXO), opacity: carregandoPrevia ? 0.7 : 1 }}>
+              {carregandoPrevia ? <Loader2 size={13} className="animate-spin" /> : null} Buscar
+            </button>
             {!!pub.dias_max && (
               <span style={{ fontSize: 11.5, color: '#6b6860', alignSelf: 'center' }}>Contando só quem está entre {pub.dias_min} e {pub.dias_max} dias sem vir.</span>
             )}
@@ -386,7 +399,10 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         <div style={{ marginTop: 12, background: '#faf9f7', borderRadius: 10, padding: '10px 12px', fontSize: 12.5 }}>
           {carregandoPrevia && !previa ? <span style={{ color: '#6b6860' }}><Loader2 size={13} className="animate-spin" /> Contando...</span> : previa && (
             <>
-              <b style={{ fontSize: 15, color: ROXO }}>{previa.total}</b> clientes nesta lista
+              {carregandoPrevia
+                ? <div style={{ color: '#9a6b12', fontWeight: 700, marginBottom: 3 }}><Loader2 size={12} className="animate-spin" style={{ verticalAlign: -2 }} /> Atualizando a lista...</div>
+                : atualizadaEm && <div style={{ color: '#2f6b4f', fontWeight: 700, fontSize: 11.5, marginBottom: 3 }}>Lista atualizada às {atualizadaEm}</div>}
+              <b style={{ fontSize: 15, color: ROXO, opacity: carregandoPrevia ? 0.4 : 1 }}>{previa.total}</b> clientes nesta lista
               {!!previa.sem_celular && <span style={{ color: '#a09a90' }}> · {previa.sem_celular} sem celular válido ficam de fora</span>}
               {!!previa.repetidos && <span style={{ color: '#a09a90' }}> · {previa.repetidos} com celular repetido recebem uma vez só</span>}
               {pub.servicos.length > 1 && (
