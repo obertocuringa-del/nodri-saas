@@ -15,12 +15,12 @@ import { enviarArquivo } from '@/lib/enviarArquivo'
 type Publico = { dias_min: number; dias_max: number; servicos: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo'; ano_de: number; ano_ate: number }
 type Anexo = { url: string; tipo: 'imagem' | 'video' | 'audio' | 'documento'; nome: string }
 type Disparo = {
-  id?: string; nome: string; ligado?: boolean; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
+  id?: string; nome: string; ligado?: boolean; tipo: 'lista' | 'retorno'; ciclos: Record<string, number>; tolerancia_dias: number; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
   inicio: string; fim: string
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -33,6 +33,7 @@ const INTERVALOS = [10, 15, 20, 30, 40, 45, 60, 90, 120, 180]
 // notificação, e o texto chega logo depois (pedido do dono, 29/09/2026).
 const OI = 'Oi *{cliente}*, tudo bem?'
 const MSG_RECUPERAR = 'Faz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
+const MSG_RETORNO = 'Já está chegando a hora de refazer o seu {servico}: o último foi em {data_servico}.\n\nQuer que eu veja um horário bom para você?'
 const MSG_PROMO = 'Como você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?'
 
 // "Perdidas" e "Em risco" com a MESMA régua das abas de Mais Relatórios
@@ -48,7 +49,7 @@ const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
 ]
 
 const NOVO: Disparo = {
-  nome: '', publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR], anexo: null,
+  nome: '', tipo: 'lista', ciclos: {}, tolerancia_dias: 30, publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR], anexo: null,
   inicio: '', fim: '',
   janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
 }
@@ -88,17 +89,26 @@ function contas(d: Disparo, faltam: number) {
   return { cabem, porDia, terminaAs, intervaloParaMax, diasDeEnvio, fim, cabemNoPeriodo }
 }
 
+// Lembrete de retorno (pedido do dono, 29/09/2026): quem fez o serviço e
+// chegou a hora de voltar pelo ciclo da página Serviços.
+const NOVO_RETORNO: Disparo = {
+  ...NOVO, nome: 'Lembrete de retorno', tipo: 'retorno',
+  publico: { ...PUB, dias_min: 0, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RETORNO],
+  intervalo_min: 20, max_dia: 30, trava_dias: 15,
+}
+
 const hojeISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const br = (iso: string) => iso ? iso.split('-').reverse().join('/') : ''
 /** Envio salvo antes destes campos existirem vem sem eles. */
 const completar = (d: any): Disparo => ({
   ...NOVO, ...d, saudacoes: d.saudacoes || [], anexo: d.anexo || null, inicio: d.inicio || '', fim: d.fim || '',
+  tipo: d.tipo === 'retorno' ? 'retorno' : 'lista', ciclos: d.ciclos || {}, tolerancia_dias: d.tolerancia_dias || 30,
   publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0 },
 })
 
 export default function EnvioAutomatico() {
   const [lista, setLista] = useState<Disparo[] | null>(null)
-  const [servicos, setServicos] = useState<{ nome: string; clientes: number }[]>([])
+  const [servicos, setServicos] = useState<{ nome: string; clientes: number; ciclo?: number | null }[]>([])
   const [editando, setEditando] = useState<Disparo | null>(null)
   const [original, setOriginal] = useState('')
   const [aviso, setAviso] = useState('')
@@ -133,8 +143,9 @@ export default function EnvioAutomatico() {
   async function ligar(d: Disparo, on: boolean) {
     let ok = on ? 'Envio ligado.' : 'Envio pausado.'
     if (on) {
-      const outros = (lista || []).filter(x => x.ligado && x.id !== d.id)
+      const outros = (lista || []).filter(x => x.ligado && x.id !== d.id && x.tipo !== 'retorno')
       if (d.inicio && d.inicio > hojeISO()) ok = `Envio agendado: começa em ${br(d.inicio)}.`
+      else if (d.tipo === 'retorno') ok = 'Lembrete ligado. Ele corre junto com as listas, sempre uma mensagem por vez.'
       else if (outros.length) ok = `Envio ligado. Ele manda depois de "${outros[0].nome}" terminar: só um envio manda por vez, na ordem da data de início.`
     }
     await acao({ acao: 'ligar', id: d.id, ligado: on }, ok)
@@ -162,10 +173,16 @@ export default function EnvioAutomatico() {
               e sempre esperam a confirmação e o feedback terminarem de sair.
             </div>
           </div>
-          <button onClick={() => abrirEditor({ ...NOVO })}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: ROXO, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-            <Plus size={15} /> Novo envio
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => abrirEditor({ ...NOVO_RETORNO })}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: ROXO, border: `1.5px solid ${ROXO}`, borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <CalendarDays size={15} /> Lembrete de retorno
+            </button>
+            <button onClick={() => abrirEditor({ ...NOVO })}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: ROXO, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <Plus size={15} /> Novo envio
+            </button>
+          </div>
         </div>
         {aviso && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#2f6b4f' }}>{aviso}</div>}
       </div>
@@ -175,7 +192,7 @@ export default function EnvioAutomatico() {
         <div style={{ background: '#fff', border: '1.5px dashed #e0ddd8', borderRadius: 12, padding: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}>Comece por um modelo:</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
-            {MODELOS.map(m => (
+            {[...MODELOS, { rotulo: 'Lembrete de retorno', desc: 'Quem fez o serviço e chegou a hora de voltar', d: NOVO_RETORNO }].map(m => (
               <button key={m.rotulo} onClick={() => abrirEditor({ ...NOVO, ...m.d } as Disparo)}
                 style={{ textAlign: 'left', background: '#faf9f7', border: '1.5px solid #e0ddd8', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: ROXO }}>{m.rotulo}</div>
@@ -189,6 +206,7 @@ export default function EnvioAutomatico() {
       <div style={{ display: 'grid', gap: 12 }}>
         {(lista || []).map(d => {
           const r = d.resumo
+          const retorno = d.tipo === 'retorno'
           const pct = r && r.total ? Math.round(r.enviadas / r.total * 100) : 0
           const c = contas(d, r?.faltam || 0)
           const concluido = !!d.estado?.concluido_em && !d.ligado
@@ -196,7 +214,9 @@ export default function EnvioAutomatico() {
           return (
             <div key={d.id} style={{ background: '#fff', border: `1.5px solid ${d.ligado ? '#b9b2ee' : '#e0ddd8'}`, borderRadius: 12, padding: '14px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <Chave ligada={!!d.ligado} ocupado={!!ocupado} onTrocar={() => ligar(d, !d.ligado)} />
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{d.nome}</div>
+                {retorno && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: '#eceaf9', color: ROXO }}>Lembrete de retorno</span>}
                 <span className={d.ligado ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999,
                   background: agendado ? '#fdf3e1' : d.ligado ? '#e7f1e9' : concluido ? '#eceaf9' : '#f1efe8', color: agendado ? '#9a6b12' : d.ligado ? '#2f6b4f' : concluido ? ROXO : '#8f877f' }}>
                   {agendado ? 'Agendado' : d.ligado ? 'Ligado' : concluido ? 'Concluído' : 'Pausado'}
@@ -208,13 +228,8 @@ export default function EnvioAutomatico() {
                 )}
                 {(d.ciclo || 1) > 1 && <span style={{ fontSize: 11, color: '#8f877f' }}>ciclo {d.ciclo}</span>}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {d.ligado ? (
-                    <button onClick={() => ligar(d, false)} disabled={!!ocupado} style={botao('#fff', '#9a6b12', '#e8c9a6')}><Pause size={13} /> Pausar</button>
-                  ) : (
-                    <button onClick={() => ligar(d, true)} disabled={!!ocupado} style={botao(ROXO, '#fff', ROXO)}><Play size={13} /> Ligar</button>
-                  )}
                   <button onClick={() => abrirEditor(d)} style={botao('#fff', '#1a1a1a', '#e0ddd8')}><Pencil size={13} /> Editar</button>
-                  {(concluido || (r && r.enviadas > 0)) && !d.ligado && (
+                  {!retorno && (concluido || (r && r.enviadas > 0)) && !d.ligado && (
                     <button onClick={() => { if (confirm('Reiniciar o ciclo? Todas as clientes da lista voltam a poder receber este envio.')) acao({ acao: 'reiniciar', id: d.id }, 'Ciclo reiniciado.') }}
                       style={botao('#fff', '#1a1a1a', '#e0ddd8')}><RotateCcw size={13} /> Reiniciar ciclo</button>
                   )}
@@ -231,7 +246,17 @@ export default function EnvioAutomatico() {
                 </div>
               )}
 
-              {r && (
+              {r && retorno && (
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#6b6860', marginTop: 10 }}>
+                  <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> na hora de voltar agora</span>
+                  <span><b style={{ color: '#1a1a1a' }}>{r.envios_total || 0}</b> lembretes enviados</span>
+                  <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
+                  <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                  <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
+                  {!!r.sem_ciclo?.length && <span style={{ color: '#b4322a' }}>Sem ciclo de retorno: {r.sem_ciclo.join(', ')}</span>}
+                </div>
+              )}
+              {r && !retorno && (
                 <>
                   <div style={{ height: 8, background: '#f1efe8', borderRadius: 99, margin: '12px 0 6px', overflow: 'hidden' }}>
                     <div style={{ width: `${pct}%`, height: '100%', background: ROXO, borderRadius: 99 }} />
@@ -257,6 +282,19 @@ export default function EnvioAutomatico() {
   )
 }
 
+/** A chavinha liga/desliga de cada envio (pedido do dono, 29/09/2026). */
+function Chave({ ligada, ocupado, onTrocar }: { ligada: boolean; ocupado: boolean; onTrocar: () => void }) {
+  return (
+    <button onClick={onTrocar} disabled={ocupado} role="switch" aria-checked={ligada} title={ligada ? 'Ligado: clique para pausar' : 'Pausado: clique para ligar'}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: 'none', cursor: ocupado ? 'wait' : 'pointer', padding: 0 }}>
+      <span style={{ width: 38, height: 22, borderRadius: 999, background: ligada ? '#2f9e62' : '#cfcac2', position: 'relative', transition: 'background .15s' }}>
+        <span style={{ position: 'absolute', top: 3, left: ligada ? 19 : 3, width: 16, height: 16, borderRadius: 999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.25)', transition: 'left .15s' }} />
+      </span>
+      <span style={{ fontSize: 11.5, fontWeight: 800, color: ligada ? '#2f6b4f' : '#8f877f' }}>{ligada ? 'Ligado' : 'Desligado'}</span>
+    </button>
+  )
+}
+
 function botao(fundo: string, cor: string, borda: string): React.CSSProperties {
   return { display: 'inline-flex', alignItems: 'center', gap: 5, background: fundo, color: cor, border: `1.5px solid ${borda}`, borderRadius: 8, padding: '6px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }
 }
@@ -266,7 +304,7 @@ const secao: React.CSSProperties = { background: '#fff', border: '1.5px solid #e
 const tituloSecao: React.CSSProperties = { fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', marginBottom: 12 }
 
 function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
-  d: Disparo; setD: (d: Disparo) => void; servicos: { nome: string; clientes: number }[]; sujo: boolean
+  d: Disparo; setD: (d: Disparo) => void; servicos: { nome: string; clientes: number; ciclo?: number | null }[]; sujo: boolean
   onCancelar: () => void; onSalvar: () => Promise<void>
 }) {
   const [previa, setPrevia] = useState<any>(null)
@@ -279,11 +317,12 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
   const [simulacao, setSimulacao] = useState<any>(null)
   const [subindo, setSubindo] = useState(false)
   const pub = d.publico
+  const retorno = d.tipo === 'retorno'
   const set = (p: Partial<Disparo>) => setD({ ...d, ...p })
   const setPub = (p: Partial<Publico>) => setD({ ...d, publico: { ...pub, ...p } })
 
   // Prévia com meio segundo de folga depois da última mudança.
-  const chave = JSON.stringify([pub, d.saudacoes, d.mensagens])
+  const chave = JSON.stringify([pub, d.saudacoes, d.mensagens, d.ciclos, d.tolerancia_dias])
   // Também pelo botão "Buscar" (pedido do dono, 29/09/2026: sem ele, não dava
   // para ter certeza de que a lista já tinha mudado). O número de ordem
   // impede que uma resposta atrasada sobrescreva a mais nova.
@@ -316,13 +355,20 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <button onClick={onCancelar} style={botao('#fff', '#1a1a1a', '#e0ddd8')}><X size={13} /> Voltar</button>
-        <div style={{ fontSize: 15, fontWeight: 800 }}>{d.id ? 'Editar envio' : 'Novo envio'}</div>
+        <div style={{ fontSize: 15, fontWeight: 800 }}>{d.id ? 'Editar' : 'Novo'} {retorno ? 'lembrete de retorno' : 'envio'}</div>
       </div>
 
       {/* 1. Público */}
       <div style={secao}>
-        <div style={tituloSecao}>1. Para quem enviar</div>
-        {!d.id && (
+        <div style={tituloSecao}>1. {retorno ? 'Quais serviços lembrar' : 'Para quem enviar'}</div>
+        {retorno && (
+          <div style={{ fontSize: 12.5, color: '#1a1a1a', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 8, padding: '9px 11px', marginBottom: 12, lineHeight: 1.55 }}>
+            Recebe quem fez um dos serviços escolhidos e já passou da data de voltar (data do serviço + ciclo de retorno da página
+            Serviços). <b>Não recebe</b> quem está numa lista de <b>risco ou perdidas</b>: já recebeu a mensagem de recuperação depois
+            da última visita, ou está na fila de uma que está ligada. Promoção e VIP não impedem o lembrete.
+          </div>
+        )}
+        {!d.id && !retorno && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
             {MODELOS.map(m => (
               <button key={m.rotulo} onClick={() => setD({ ...d, ...m.d, mensagens: m.d.mensagens?.[0] ? m.d.mensagens : d.mensagens } as Disparo)}
@@ -333,10 +379,15 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
           <label><span style={rotulo}>Nome do envio</span>
             <input value={d.nome} onChange={e => set({ nome: e.target.value })} placeholder="Ex.: Recuperar perdidas" style={campo} /></label>
+          {retorno ? (
+            <label><span style={rotulo}>Lembrar até quantos dias depois da data de voltar</span>
+              <input type="number" min={1} max={365} value={d.tolerancia_dias} onChange={e => set({ tolerancia_dias: Number(e.target.value) || 1 })} style={campo} /></label>
+          ) : (<>
           <label><span style={rotulo}>Sem vir há pelo menos (dias)</span>
             <input type="number" min={0} value={pub.dias_min} onChange={e => setPub({ dias_min: Number(e.target.value) || 0 })} style={campo} /></label>
           <label><span style={rotulo}>E no máximo (dias, 0 = sem limite)</span>
             <input type="number" min={0} value={pub.dias_max} onChange={e => setPub({ dias_max: Number(e.target.value) || 0 })} style={campo} /></label>
+          </>)}
           <label><span style={rotulo}>Tipo de cliente</span>
             <select value={pub.segmento} onChange={e => setPub({ segmento: e.target.value as any })} style={campo}>
               <option value="todos">Todas</option><option value="vip">VIP</option><option value="regular">Regulares</option><option value="novo">Vieram 1 vez</option>
@@ -365,15 +416,37 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             )}
           </div>
         </div>
-        {pub.dias_min >= 90 && (!pub.dias_max || pub.dias_max > 540) && (
+        {!retorno && pub.dias_min >= 90 && (!pub.dias_max || pub.dias_max > 540) && (
           <div style={{ fontSize: 11.5, color: '#9a6b12', marginTop: 8 }}>
             Cliente sumida há mais de 1 ano e meio quase nunca volta e é quem mais denuncia a mensagem como spam. Vale colocar um limite máximo.
           </div>
         )}
 
         <div style={{ marginTop: 12 }}>
-          <span style={rotulo}>Fez algum destes serviços (vazio = qualquer serviço)</span>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+          <span style={rotulo}>{retorno ? 'Serviços (escolha um ou mais)' : 'Fez algum destes serviços (vazio = qualquer serviço)'}</span>
+          {retorno && pub.servicos.length > 0 && (
+            <div style={{ display: 'grid', gap: 6, marginBottom: 8 }}>
+              {pub.servicos.map(s => {
+                const doCatalogo = servicos.find(x => x.nome === s)?.ciclo || null
+                const proprio = d.ciclos[s] || 0
+                return (
+                  <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 8, padding: '6px 10px', fontSize: 12.5 }}>
+                    <b style={{ minWidth: 160 }}>{s}</b>
+                    <span style={{ color: '#6b6860' }}>volta em</span>
+                    <input type="number" min={1} value={proprio || ''} placeholder={doCatalogo ? String(doCatalogo) : '?'}
+                      onChange={e => { const v = Number(e.target.value) || 0; const c = { ...d.ciclos }; if (v) c[s] = v; else delete c[s]; set({ ciclos: c }) }}
+                      style={{ ...campo, width: 80, padding: '5px 8px' }} />
+                    <span style={{ color: '#6b6860' }}>dias</span>
+                    {!proprio && doCatalogo && <span style={{ color: '#2f6b4f', fontSize: 11.5 }}>(da página Serviços)</span>}
+                    {!proprio && !doCatalogo && <span style={{ color: '#b4322a', fontSize: 11.5, fontWeight: 700 }}>sem ciclo: cadastre em Serviços ou escreva aqui</span>}
+                    <button onClick={() => { const c = { ...d.ciclos }; delete c[s]; setD({ ...d, ciclos: c, publico: { ...pub, servicos: pub.servicos.filter(x => x !== s) } }) }}
+                      style={{ marginLeft: 'auto', color: '#b4322a', display: 'inline-flex' }}><X size={14} /></button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          <div style={{ display: retorno ? 'none' : 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
             {pub.servicos.map(s => (
               <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#eceaf9', color: ROXO, fontSize: 12, fontWeight: 700, padding: '4px 8px', borderRadius: 999 }}>
                 {s} <button onClick={() => setPub({ servicos: pub.servicos.filter(x => x !== s) })} style={{ color: ROXO, display: 'inline-flex' }}><X size={12} /></button>
@@ -402,7 +475,9 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               {carregandoPrevia
                 ? <div style={{ color: '#9a6b12', fontWeight: 700, marginBottom: 3 }}><Loader2 size={12} className="animate-spin" style={{ verticalAlign: -2 }} /> Atualizando a lista...</div>
                 : atualizadaEm && <div style={{ color: '#2f6b4f', fontWeight: 700, fontSize: 11.5, marginBottom: 3 }}>Lista atualizada às {atualizadaEm}</div>}
-              <b style={{ fontSize: 15, color: ROXO, opacity: carregandoPrevia ? 0.4 : 1 }}>{previa.total}</b> clientes nesta lista
+              <b style={{ fontSize: 15, color: ROXO, opacity: carregandoPrevia ? 0.4 : 1 }}>{previa.total}</b> {retorno ? 'clientes na hora de voltar agora' : 'clientes nesta lista'}
+              {retorno && !pub.servicos.length && <div style={{ color: '#b4322a', fontWeight: 700 }}>Escolha pelo menos um serviço.</div>}
+              {retorno && !!previa.sem_ciclo?.length && <div style={{ color: '#b4322a', fontWeight: 700 }}>Sem ciclo de retorno (ficam de fora): {previa.sem_ciclo.join(', ')}</div>}
               {!!previa.sem_celular && <span style={{ color: '#a09a90' }}> · {previa.sem_celular} sem celular válido ficam de fora</span>}
               {!!previa.repetidos && <span style={{ color: '#a09a90' }}> · {previa.repetidos} com celular repetido recebem uma vez só</span>}
               {pub.servicos.length > 1 && (
@@ -411,11 +486,13 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
                   Por isso o total é menor que a soma dos números ao lado de cada serviço.
                 </div>
               )}
-              <div style={{ color: '#6b6860', marginTop: 3 }}>Ordem de envio: da visita mais recente para a mais antiga. As primeiras:</div>
+              <div style={{ color: '#6b6860', marginTop: 3 }}>{retorno
+                ? 'Ordem de envio: de quem venceu há mais tempo para quem venceu agora. Todo dia entra quem chegou na data. As primeiras:'
+                : 'Ordem de envio: da visita mais recente para a mais antiga. As primeiras:'}</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                 {(previa.amostra || []).map((a: any) => (
                   <span key={a.cliente} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 7, padding: '3px 8px', fontSize: 11.5 }}>
-                    {a.cliente} <span style={{ color: '#a09a90' }}>· {a.dias}d</span>
+                    {a.cliente} <span style={{ color: '#a09a90' }}>· {a.servico ? `${a.servico} em ${a.feito_em}${a.atraso ? `, venceu há ${a.atraso}d` : ', vence hoje'}` : `${a.dias}d`}</span>
                   </span>
                 ))}
               </div>
@@ -434,7 +511,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 10, lineHeight: 1.5 }}>
           Campos que se preenchem sozinhos: <code>{'{cliente}'}</code> primeiro nome, <code>{'{servico}'}</code> o serviço escolhido
           no filtro acima (use só quando escolher serviço),
-          {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data. Escreva 2 ou 3 versões
+          {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data{retorno ? <>, <code>{'{data_servico}'}</code> quando fez o serviço do lembrete</> : null}. Escreva 2 ou 3 versões
           diferentes: o sistema alterna entre elas, e o WhatsApp desconfia menos de texto que não é idêntico.
         </div>
         <div style={{ ...rotulo, fontSize: 12.5, color: '#1a1a1a', marginTop: 4 }}>1ª mensagem: saudação (opcional)</div>
@@ -543,10 +620,10 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             <div>Com o máximo de <b>{d.max_dia}</b> por dia, a última sai por volta das <b>{c.terminaAs}</b>.</div>
           )}
           {d.inicio && <div>Começa em <b>{br(d.inicio)}</b>{d.fim ? <> e vai até <b>{br(d.fim)}</b></> : null}.</div>}
-          {previa && previa.total > 0 && c.porDia > 0 && (
+          {!retorno && previa && previa.total > 0 && c.porDia > 0 && (
             <div>A lista de <b>{previa.total}</b> clientes leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.</div>
           )}
-          {previa && c.cabemNoPeriodo != null && c.cabemNoPeriodo < previa.total && (
+          {!retorno && previa && c.cabemNoPeriodo != null && c.cabemNoPeriodo < previa.total && (
             <div style={{ color: '#9a6b12', fontWeight: 700 }}>
               Até {br(d.fim)} só dá para mandar umas {c.cabemNoPeriodo}: as outras {previa.total - c.cabemNoPeriodo} ficam para um próximo envio (é só ligar de novo depois).
             </div>

@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, publicoDe, textoPara, saudacaoPara, pacotePara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  servicosDoSalao, perfisDoSalao, alvosDoDisparo, textoPara, saudacaoPara, pacotePara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -48,12 +48,13 @@ export async function POST(req: NextRequest) {
     const d = lerDisparo({ ...b.disparo, id: b.disparo?.id || 'previa' })
     if (!d) return NextResponse.json({ error: 'Envio inválido' }, { status: 400 })
     const perfis = await perfisDoSalao(salaoId)
-    const { lista, semCelular, repetidos } = publicoDe(perfis, d.publico)
+    const { lista, semCelular, repetidos, sem_ciclo } = await alvosDoDisparo(salaoId, d, perfis)
     return NextResponse.json({
-      total: lista.length, sem_celular: semCelular, repetidos, por_dia: cabemPorDia(d),
+      total: lista.length, sem_celular: semCelular, repetidos, sem_ciclo, por_dia: cabemPorDia(d),
       periodos: periodosDe(perfis, d.publico),
       amostra: lista.slice(0, 8).map((x, i) => ({
         cliente: x.cliente_nome, dias: x.dias, ultima_visita: x.ultima_visita,
+        servico: x.servico_alvo || null, feito_em: x.feito_em || null, atraso: x.atraso ?? null,
         saudacao: saudacaoPara(d, x, i), mensagem: textoPara(d, x, i),
       })),
     })
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     const tel = normalizarTelefone(b.telefone)
     if (!d || !d.mensagens.length) return NextResponse.json({ error: 'Escreva a mensagem primeiro.' }, { status: 400 })
     if (tel.length < 12) return NextResponse.json({ error: 'Telefone inválido.' }, { status: 400 })
-    const { lista } = publicoDe(await perfisDoSalao(salaoId), d.publico)
+    const { lista } = await alvosDoDisparo(salaoId, d, await perfisDoSalao(salaoId))
     const modelo = lista[0] || { cliente_nome: 'Maria', dias: 120, ultima_visita: '', servicos: [] } as any
     const contato = await acharOuCriarContato(salaoId, tel)
     if (!contato) return NextResponse.json({ error: 'Não consegui criar o contato.' }, { status: 500 })
