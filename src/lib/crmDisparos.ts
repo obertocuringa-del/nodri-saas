@@ -252,7 +252,10 @@ const _perfis = new Map<string, { em: number; lista: PerfilCliente[] }>()
 
 const parseBR = (s: string) => {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || '')
-  return m ? new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00-03:00`).getTime() : 0
+  // Meia-noite UTC, a MESMA conta de api/relatorios/analise-clientes: com
+  // outro horário, a cliente de 46 dias lá virava 45 aqui e as abas Em Risco
+  // e Perdidos não batiam com o envio na beirada.
+  return m ? new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() : 0
 }
 
 /** Celular de verdade: 55 + DDD + 9 dígitos, ou o formato antigo de 8 começando em 6-9. */
@@ -335,7 +338,10 @@ export function periodosDe(perfis: PerfilCliente[], p: Publico) {
     { id: '3anos', rotulo: '3 anos', ano_de: ano - 2, ano_ate: 0 },
     { id: 'tudo', rotulo: 'Tudo', ano_de: 0, ano_ate: 0 },
   ]
-  return opcoes.map(o => ({ ...o, total: publicoDe(perfis, { ...p, dias_max: 0, ano_de: o.ano_de, ano_ate: o.ano_ate }).lista.length }))
+  // O resto do filtro (inclusive o máximo de dias) continua valendo: em
+  // "Clientes em risco" (46 a 90 dias), "Este ano" conta só as em risco que
+  // vieram este ano -- não todas as que vieram este ano.
+  return opcoes.map(o => ({ ...o, total: publicoDe(perfis, { ...p, ano_de: o.ano_de, ano_ate: o.ano_ate }).lista.length }))
 }
 
 const primeiroNome = (s: string) => {

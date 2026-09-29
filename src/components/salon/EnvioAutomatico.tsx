@@ -333,22 +333,22 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             </select></label>
         </div>
         {/* Período da última visita: os mesmos atalhos do filtro de Mais
-            Relatórios, cada um com quantas entram. Escolher um tira o
-            "máximo de dias" -- quem manda passa a ser o ano. */}
+            Relatórios, cada um com quantas entram. Somam-se aos dias acima:
+            não apagam o "máximo de dias". */}
         <div style={{ marginTop: 12 }}>
           <span style={rotulo}>Última visita foi em</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {(previa?.periodos || []).map((o: any) => {
-              const ativo = !pub.dias_max && pub.ano_de === o.ano_de && pub.ano_ate === o.ano_ate
+              const ativo = pub.ano_de === o.ano_de && pub.ano_ate === o.ano_ate
               return (
-                <button key={o.id} onClick={() => setPub({ ano_de: o.ano_de, ano_ate: o.ano_ate, dias_max: 0 })}
+                <button key={o.id} onClick={() => setPub({ ano_de: o.ano_de, ano_ate: o.ano_ate })}
                   style={{ ...botao(ativo ? ROXO : '#fff', ativo ? '#fff' : '#1a1a1a', ativo ? ROXO : '#e0ddd8'), borderRadius: 999 }}>
                   {o.rotulo} <span style={{ opacity: 0.7, fontWeight: 600 }}>{o.total}</span>
                 </button>
               )
             })}
-            {!!(pub.ano_de || pub.ano_ate) && !!pub.dias_max && (
-              <span style={{ fontSize: 11.5, color: '#9a6b12', alignSelf: 'center' }}>O limite de {pub.dias_max} dias também está valendo.</span>
+            {!!pub.dias_max && (
+              <span style={{ fontSize: 11.5, color: '#6b6860', alignSelf: 'center' }}>Contando só quem está entre {pub.dias_min} e {pub.dias_max} dias sem vir.</span>
             )}
           </div>
         </div>
