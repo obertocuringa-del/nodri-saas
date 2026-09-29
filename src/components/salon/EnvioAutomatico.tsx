@@ -631,7 +631,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
                 </div>
               )}
               <div style={{ color: '#6b6860', marginTop: 3 }}>{retorno
-                ? 'Ordem de envio: de quem venceu há mais tempo para quem venceu agora. Todo dia entra quem chegou na data. As primeiras:'
+                ? 'Ordem de envio: de quem veio ao salão mais recentemente para a mais antiga. Todo dia entra quem chegou na data. As primeiras:'
                 : 'Ordem de envio: da visita mais recente para a mais antiga. As primeiras:'}</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                 {(previa.amostra || []).map((a: any) => (

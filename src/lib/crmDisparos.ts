@@ -597,7 +597,7 @@ async function ultimasPorServico(salaoId: string) {
 /**
  * Quem recebe, já na ordem de envio. Lista: o público de sempre. Retorno:
  * quem fez um dos serviços e já passou da data de voltar (mas não mais que
- * a tolerância), da que venceu há mais tempo para a mais recente.
+ * a tolerância), de quem veio ao salão mais recentemente para a mais antiga.
  */
 export async function alvosDoDisparo(salaoId: string, d: Disparo, perfis: PerfilCliente[]) {
   const r = await alvosSemAgenda(salaoId, d, perfis)
@@ -664,7 +664,10 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
     }
     if (melhor) lista.push(melhor)
   }
-  lista.sort((a, b) => (b.atraso || 0) - (a.atraso || 0))
+  // Mesma ordem de todas as listas (dono, 29/09/2026): quem veio ao salão
+  // mais recentemente primeiro -- tem conversa no WhatsApp (menos risco de
+  // bloqueio) e volta mais. Empate: quem venceu há menos tempo.
+  lista.sort((a, b) => a.dias - b.dias || (a.atraso || 0) - (b.atraso || 0))
   return { lista, semCelular: base.semCelular, repetidos: base.repetidos, sem_ciclo }
 }
 
