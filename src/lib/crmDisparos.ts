@@ -15,7 +15,9 @@
 //                 nunca recebe de novo, mesmo pausando por meses
 //   trava         quem recebeu qualquer envio -- ou foi contatada à mão pelo
 //                 botão das listas -- nos últimos N dias fica de fora
-//   um por vez    só um envio ligado por salão (a rota desliga os outros)
+//   um por vez    vários podem ficar ligados, cada um com seu período
+//                 (inicio/fim); a volta pega UM só, o de início mais cedo,
+//                 e o seguinte começa quando ele acaba (`escolherDaVez`)
 //   não junta     com mensagem na fila (confirmação, feedback) ele ESPERA a
 //                 fila esvaziar e mais 5 minutos (`filaOcupada`)
 //   parar         quem responde "parar"/"sair" nunca mais recebe envio
@@ -46,15 +48,29 @@ export interface Publico {
   /** fez pelo menos um destes serviços (vazio = qualquer) */
   servicos: string[]
   segmento: Segmento
+  /** ano da última visita: de/até (0 = sem limite). "Este ano", "2 anos"... */
+  ano_de: number
+  ano_ate: number
 }
+
+export type TipoAnexo = 'imagem' | 'video' | 'audio' | 'documento'
+export interface Anexo { url: string; tipo: TipoAnexo; nome: string }
 
 export interface Disparo {
   id: string
   nome: string
   ligado: boolean
   publico: Publico
-  /** 1 a 3 versões da mesma mensagem, alternadas */
+  /** 1ª mensagem (saudação): 0 a 3 versões, alternadas. Vazio = não manda. */
+  saudacoes: string[]
+  /** 2ª mensagem: 1 a 3 versões da mesma mensagem, alternadas */
   mensagens: string[]
+  /** 3ª: foto, vídeo, áudio ou arquivo, depois do texto (opcional) */
+  anexo: Anexo | null
+  /** dia em que começa a mandar (AAAA-MM-DD; vazio = assim que ligar) */
+  inicio: string
+  /** último dia de envio (vazio = até a lista acabar) */
+  fim: string
   janela_ini: string
   janela_fim: string
   /** 0 = domingo ... 6 = sábado */
@@ -88,6 +104,19 @@ const soHora = (s: any, pad: string) => {
   const h = Math.min(Number(m[1]), 23), mi = Math.min(Number(m[2]), 59)
   return `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`
 }
+const soData = (s: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) ? String(s) : ''
+const TIPOS_ANEXO: TipoAnexo[] = ['imagem', 'video', 'audio', 'documento']
+function lerAnexo(a: any): Anexo | null {
+  const url = String(a?.url || '').trim()
+  if (!/^https:\/\//.test(url)) return null
+  return {
+    url, tipo: TIPOS_ANEXO.includes(a.tipo) ? a.tipo : 'documento',
+    nome: String(a.nome || 'arquivo').slice(0, 120),
+  }
+}
+const textos = (v: any) => (Array.isArray(v) ? v : [])
+  .map((m: any) => String(m || '').trim()).filter(Boolean).slice(0, 3)
+
 export const semAcento = (s: string) => String(s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
@@ -98,6 +127,12 @@ export function lerDisparo(b: any): Disparo | null {
   const dias_min = num(p.dias_min, 90, 0, 3650)
   let dias_max = num(p.dias_max, 365, 0, 3650)
   if (dias_max && dias_max < dias_min) dias_max = dias_min
+  const ano_de = num(p.ano_de, 0, 0, 2200)
+  let ano_ate = num(p.ano_ate, 0, 0, 2200)
+  if (ano_de && ano_ate && ano_ate < ano_de) ano_ate = ano_de
+  const inicio = soData(b.inicio)
+  let fim = soData(b.fim)
+  if (inicio && fim && fim < inicio) fim = inicio
   const seg = ['todos', 'vip', 'regular', 'novo'].includes(p.segmento) ? p.segmento : 'todos'
   const dias = Array.isArray(b.dias_semana)
     ? [...new Set(b.dias_semana.map((d: any) => num(d, -1, -1, 6)).filter((d: number) => d >= 0))] as number[]
@@ -107,11 +142,13 @@ export function lerDisparo(b: any): Disparo | null {
     nome: String(b.nome || 'Envio').slice(0, 60),
     ligado: b.ligado === true,
     publico: {
-      dias_min, dias_max, segmento: seg,
+      dias_min, dias_max, segmento: seg, ano_de, ano_ate,
       servicos: Array.isArray(p.servicos) ? p.servicos.map((s: any) => String(s || '').trim()).filter(Boolean).slice(0, 40) : [],
     },
-    mensagens: (Array.isArray(b.mensagens) ? b.mensagens : [])
-      .map((m: any) => String(m || '').trim()).filter(Boolean).slice(0, 3),
+    saudacoes: textos(b.saudacoes),
+    mensagens: textos(b.mensagens),
+    anexo: lerAnexo(b.anexo),
+    inicio, fim,
     janela_ini: soHora(b.janela_ini, '09:00'),
     janela_fim: soHora(b.janela_fim, '21:00'),
     dias_semana: dias.length ? dias.sort() : [1, 2, 3, 4, 5, 6],
@@ -167,7 +204,19 @@ function agoraNoSalao() {
   const g = (t: string) => p.find(x => x.type === t)?.value || ''
   const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
   const hora = `${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`
-  return { dia: `${g('year')}-${g('month')}-${g('day')}`, hora, semana: dias[g('weekday')] ?? 0 }
+  return { dia: `${g('year')}-${g('month')}-${g('day')}`, hora, semana: dias[g('weekday')] ?? 0, ano: Number(g('year')) }
+}
+const dataBR = (iso: string) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : ''
+
+/**
+ * Dos envios ligados, qual manda agora: o que já está no período e tem o
+ * início mais cedo (empate: o criado primeiro). Os outros esperam a vez --
+ * é assim que "um de tal dia a tal dia, depois outro" funciona sozinho.
+ */
+export function escolherDaVez(disparos: Disparo[], hoje: string) {
+  return disparos
+    .filter(x => x.ligado && (!x.inicio || x.inicio <= hoje) && (!x.fim || x.fim >= hoje))
+    .sort((a, b) => (a.inicio || '').localeCompare(b.inicio || '') || a.criado_em.localeCompare(b.criado_em))[0] || null
 }
 const minutos = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
 
@@ -195,6 +244,8 @@ export interface PerfilCliente {
   dias: number
   servicos: string[]
   segmento: 'vip' | 'regular' | 'novo'
+  /** ano da última visita (0 = sem data) */
+  ano: number
 }
 
 const _perfis = new Map<string, { em: number; lista: PerfilCliente[] }>()
@@ -231,6 +282,7 @@ export async function perfisDoSalao(salaoId: string, fresco = false): Promise<Pe
       dias: ultima ? Math.floor((agora - parseBR(ultima)) / 864e5) : 99999,
       servicos: Array.isArray(r.servicos_feitos) ? r.servicos_feitos : [],
       segmento: 'regular' as const,
+      ano: Number(ultima.slice(6, 10)) || 0,
     }
   }).filter(p => p.cliente_nome)
   // VIP = top 15% por gasto; novo = 1 visita (a mesma regra da tela).
@@ -251,19 +303,39 @@ export function publicoDe(perfis: PerfilCliente[], p: Publico) {
   const alvos = new Set(p.servicos.map(semAcento))
   const dentro = perfis.filter(x =>
     x.dias >= p.dias_min && (!p.dias_max || x.dias <= p.dias_max)
+    && (!p.ano_de || x.ano >= p.ano_de) && (!p.ano_ate || x.ano <= p.ano_ate)
     && (p.segmento === 'todos' || x.segmento === p.segmento)
     && (!alvos.size || x.servicos.some(s => alvos.has(semAcento(s)))))
   dentro.sort((a, b) => a.dias - b.dias)
   const vistos = new Set<string>()
   const lista: PerfilCliente[] = []
-  let semCelular = 0
+  let semCelular = 0, repetidos = 0
   for (const x of dentro) {
     if (!x.celular_ok) { semCelular++; continue }
-    if (vistos.has(x.chave)) continue
+    // Duas fichas com o mesmo celular (mãe e filha, cadastro em dobro): a
+    // mensagem vai uma vez só. É parte da diferença para a aba Perdidos, que
+    // conta por NOME -- por isso o número aparece na tela.
+    if (vistos.has(x.chave)) { repetidos++; continue }
     vistos.add(x.chave)
     lista.push(x)
   }
-  return { lista, semCelular }
+  return { lista, semCelular, repetidos }
+}
+
+/**
+ * Os atalhos de período da tela, com quantas entram em cada um (com o resto
+ * do filtro igual). Mesmos rótulos do filtro de Mais Relatórios.
+ */
+export function periodosDe(perfis: PerfilCliente[], p: Publico) {
+  const ano = agoraNoSalao().ano
+  const opcoes = [
+    { id: 'este', rotulo: 'Este ano', ano_de: ano, ano_ate: ano },
+    { id: 'passado', rotulo: 'Ano passado', ano_de: ano - 1, ano_ate: ano - 1 },
+    { id: '2anos', rotulo: '2 anos', ano_de: ano - 1, ano_ate: 0 },
+    { id: '3anos', rotulo: '3 anos', ano_de: ano - 2, ano_ate: 0 },
+    { id: 'tudo', rotulo: 'Tudo', ano_de: 0, ano_ate: 0 },
+  ]
+  return opcoes.map(o => ({ ...o, total: publicoDe(perfis, { ...p, dias_max: 0, ano_de: o.ano_de, ano_ate: o.ano_ate }).lista.length }))
 }
 
 const primeiroNome = (s: string) => {
@@ -273,7 +345,27 @@ const primeiroNome = (s: string) => {
 }
 
 export function textoPara(d: Disparo, x: PerfilCliente, indice: number) {
-  const modelo = d.mensagens.length ? d.mensagens[indice % d.mensagens.length] : ''
+  return preencher(d, x, d.mensagens.length ? d.mensagens[indice % d.mensagens.length] : '')
+}
+export function saudacaoPara(d: Disparo, x: PerfilCliente, indice: number) {
+  return preencher(d, x, d.saudacoes.length ? d.saudacoes[indice % d.saudacoes.length] : '')
+}
+
+/**
+ * O que a cliente recebe, na ordem: saudação, mensagem, anexo. Cada item vira
+ * uma mensagem separada no WhatsApp, alguns segundos uma da outra.
+ */
+export function pacotePara(d: Disparo, x: PerfilCliente, indice: number) {
+  const itens: { texto: string; tipo: string; midia_url: string | null }[] = []
+  const oi = saudacaoPara(d, x, indice)
+  if (oi) itens.push({ texto: oi, tipo: 'texto', midia_url: null })
+  const corpo = textoPara(d, x, indice)
+  if (corpo) itens.push({ texto: corpo, tipo: 'texto', midia_url: null })
+  if (d.anexo && itens.length) itens.push({ texto: '', tipo: d.anexo.tipo, midia_url: d.anexo.url })
+  return itens
+}
+
+function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
   const alvos = new Set(d.publico.servicos.map(semAcento))
   const servico = x.servicos.find(s => alvos.has(semAcento(s))) || x.servicos[0] || ''
   const dados: Record<string, string> = {
@@ -403,7 +495,8 @@ export async function conversaDoContato(salaoId: string, contatoId: string, past
   return { conversa, reaberta, nova: false }
 }
 
-async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, texto: string) {
+async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, pacote: ReturnType<typeof pacotePara>) {
+  const texto = pacote.filter(p => p.texto).map(p => p.texto).join('\n\n')
   const contato = await acharOuCriarContato(salaoId, x.celular, x.cliente_nome)
   if (!contato) return null
   const { conversa, reaberta, nova } = await conversaDoContato(salaoId, contato.id, PASTA_DO_DISPARO)
@@ -433,10 +526,15 @@ async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, texto: 
   })
   if (dup) return null
 
-  const { data: msg } = await supabaseAdmin.from('crm_mensagens').insert({
-    salao_id: salaoId, conversa_id: conversa.id, direcao: 'saida', texto, tipo: 'texto',
-    situacao: 'na_fila', autor_nome: AUTOR_DISPARO, em_massa: true, criado_em: agoraIso,
-  }).select('id').maybeSingle()
+  // Saudação, mensagem e anexo saem separados, 8 segundos um do outro
+  // (criado_em no futuro = a ponte só pega a partir dali). A marca de envio
+  // guarda a PRIMEIRA, que é a que conta como "recebeu".
+  const { data: msgs } = await supabaseAdmin.from('crm_mensagens').insert(pacote.map((p, i) => ({
+    salao_id: salaoId, conversa_id: conversa.id, direcao: 'saida', texto: p.texto, tipo: p.tipo, midia_url: p.midia_url,
+    situacao: 'na_fila', autor_nome: AUTOR_DISPARO, em_massa: true,
+    criado_em: new Date(Date.now() + i * 8000).toISOString(),
+  }))).select('id, criado_em')
+  const msg = (msgs || []).sort((a: any, b: any) => String(a.criado_em).localeCompare(String(b.criado_em)))[0]
   if (msg?.id) {
     await supabaseAdmin.from('crm_disparo_envios').update({ mensagem_id: msg.id })
       .eq('salao_id', salaoId).eq('disparo_id', d.id).eq('ciclo', d.ciclo).eq('chave', x.chave)
@@ -458,13 +556,34 @@ async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, texto: 
  */
 export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   const disparos = await carregarDisparos(salaoId)
-  const d = disparos.find(x => x.ligado)
-  if (!d) return 'nenhum ligado'
+  if (!disparos.some(x => x.ligado)) return 'nenhum ligado'
   const estados = await carregarEstadosDisparo(salaoId)
+  const agora = agoraNoSalao()
+
+  // Passou do último dia: desliga sozinho, com o aviso de quanto faltou.
+  let mudou = false
+  for (const x of disparos) {
+    if (x.ligado && x.fim && x.fim < agora.dia) {
+      x.ligado = false; mudou = true
+      estados[x.id] = { ...ESTADO_VAZIO, ...(estados[x.id] || {}), situacao: `Período terminou em ${dataBR(x.fim)}` }
+    }
+  }
+  if (mudou) await gravarDisparos(salaoId, disparos)
+
+  const d = escolherDaVez(disparos, agora.dia)
+  // Os ligados que não são a vez dizem por quê na tela.
+  for (const x of disparos) {
+    if (!x.ligado || x.id === d?.id) continue
+    const situacao = x.inicio && x.inicio > agora.dia
+      ? `Agendado: começa em ${dataBR(x.inicio)}`
+      : `Na fila: começa quando "${d?.nome || 'o anterior'}" terminar`
+    estados[x.id] = { ...ESTADO_VAZIO, ...(estados[x.id] || {}), situacao }
+  }
+  if (!d) { await gravarEstadosDisparo(salaoId, estados); return 'nenhum no período' }
+
   const e: EstadoDisparo = { ...ESTADO_VAZIO, ...(estados[d.id] || {}) }
   const salvar = async (situacao: string) => { e.situacao = situacao; estados[d.id] = e; await gravarEstadosDisparo(salaoId, estados); return situacao }
 
-  const agora = agoraNoSalao()
   if (e.dia !== agora.dia) { e.dia = agora.dia; e.enviados_dia = 0 }
   if (!d.mensagens.length) return salvar('Sem mensagem escrita')
   if (!d.dias_semana.includes(agora.semana)) return salvar('Hoje não é dia de envio')
@@ -504,9 +623,9 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       continue
     }
     if (c.pular) continue
-    const texto = textoPara(d, x, feitos.size)
-    if (!texto) continue
-    const conv = await enviarPara(salaoId, d, x, texto)
+    const pacote = pacotePara(d, x, feitos.size)
+    if (!pacote.length) continue
+    const conv = await enviarPara(salaoId, d, x, pacote)
     if (!conv) continue
     e.enviados_dia++
     e.ultimo_envio_em = new Date().toISOString()
@@ -528,6 +647,8 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
 export async function simularProximo(salaoId: string, d: Disparo) {
   const agora = agoraNoSalao()
   const travas: string[] = []
+  if (d.inicio && d.inicio > agora.dia) travas.push(`só começa em ${dataBR(d.inicio)}`)
+  if (d.fim && d.fim < agora.dia) travas.push(`o período terminou em ${dataBR(d.fim)}`)
   if (!d.dias_semana.includes(agora.semana)) travas.push('hoje não é dia de envio')
   if (agora.hora < d.janela_ini || agora.hora >= d.janela_fim) travas.push(`fora do horário (${d.janela_ini} às ${d.janela_fim})`)
   const ocupada = await filaOcupada(salaoId)
@@ -547,7 +668,7 @@ export async function simularProximo(salaoId: string, d: Disparo) {
     if (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome)) { puladas.push({ cliente: x.cliente_nome, motivo: `contatada nos últimos ${d.trava_dias} dias` }); continue }
     const c = await conferirConversa(salaoId, x)
     if (c.bloquear || c.pular) { puladas.push({ cliente: x.cliente_nome, motivo: c.bloquear || c.pular! }); continue }
-    proxima = { cliente: x.cliente_nome, dias: x.dias, mensagem: textoPara(d, x, feitos.size) }
+    proxima = { cliente: x.cliente_nome, dias: x.dias, mensagem: pacotePara(d, x, feitos.size).map(p => p.texto || `[${p.tipo}]`).join('\n\n') }
     break
   }
   return { mandaria_agora: !travas.length && !!proxima, travas, proxima, puladas }
@@ -574,7 +695,7 @@ export async function rodarDisparos() {
 // ── Números para a tela ──────────────────────────────────────────────────────
 export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
-  const { lista, semCelular } = publicoDe(perfis, d.publico)
+  const { lista, semCelular, repetidos } = publicoDe(perfis, d.publico)
   const [feitos, bloq] = await Promise.all([chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId)])
   const naLista = lista.filter(x => !bloq.has(x.chave))
   const enviadas = naLista.filter(x => feitos.has(x.chave)).length
@@ -600,7 +721,7 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
 
   return {
     total: naLista.length, enviadas, faltam: naLista.length - enviadas,
-    sem_celular: semCelular, bloqueados: lista.length - naLista.length,
+    sem_celular: semCelular, repetidos, bloqueados: lista.length - naLista.length,
     responderam, voltaram, envios_total: envios.length,
     por_dia: cabemPorDia(d),
   }

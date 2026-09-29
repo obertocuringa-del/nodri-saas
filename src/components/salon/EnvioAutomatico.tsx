@@ -8,16 +8,19 @@
 // confirmação/feedback terminarem de sair.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, Play, Pause, Pencil, Trash2, RotateCcw, Send, Plus, X, Clock, Users, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Loader2, Play, Pause, Pencil, Trash2, RotateCcw, Send, Plus, X, Clock, Users, MessageCircle, CheckCircle2, Paperclip, CalendarDays } from 'lucide-react'
 import { useGuardaSalvar } from '@/lib/guardaSalvar'
+import { enviarArquivo } from '@/lib/enviarArquivo'
 
-type Publico = { dias_min: number; dias_max: number; servicos: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo' }
+type Publico = { dias_min: number; dias_max: number; servicos: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo'; ano_de: number; ano_ate: number }
+type Anexo = { url: string; tipo: 'imagem' | 'video' | 'audio' | 'documento'; nome: string }
 type Disparo = {
-  id?: string; nome: string; ligado?: boolean; publico: Publico; mensagens: string[]
+  id?: string; nome: string; ligado?: boolean; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
+  inicio: string; fim: string
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { total: number; enviadas: number; faltam: number; sem_celular: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -26,18 +29,27 @@ const INTERVALOS = [10, 15, 20, 30, 40, 45, 60, 90, 120, 180]
 
 // Sem {servico}: sem serviço escolhido no filtro, o campo pega um serviço
 // qualquer da cliente ("complemento keune"), e a frase sai estranha.
-const MSG_RECUPERAR = 'Oi *{cliente}*, tudo bem?\n\nFaz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
-const MSG_PROMO = 'Oi *{cliente}*, tudo bem?\n\nComo você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?'
+// A saudação vai sozinha, antes: é a mensagem curta que a cliente vê na
+// notificação, e o texto chega logo depois (pedido do dono, 29/09/2026).
+const OI = 'Oi *{cliente}*, tudo bem?'
+const MSG_RECUPERAR = 'Faz um tempinho que você não vem aqui no salão e sentimos sua falta. Que tal agendar um horário essa semana?\n\nSe quiser, é só me responder aqui que eu vejo um horário bom para você.'
+const MSG_PROMO = 'Como você já faz {servico} com a gente, separei uma condição especial para você este mês.\n\nQuer que eu veja um horário?'
 
+// "Perdidas" e "Em risco" com a MESMA régua das abas de Mais Relatórios
+// (api/relatorios/analise-clientes: perdida > 90 dias, risco 46 a 90), para o
+// número daqui bater com o de lá. O que ainda difere é só quem não tem
+// celular ou divide o celular com outra ficha -- e isso aparece na tela.
+const PUB = { servicos: [], segmento: 'todos' as const, ano_de: 0, ano_ate: 0 }
 const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
-  { rotulo: 'Recuperar perdidas', desc: 'Não vêm há 90 a 365 dias', d: { nome: 'Recuperar perdidas', publico: { dias_min: 90, dias_max: 365, servicos: [], segmento: 'todos' }, mensagens: [MSG_RECUPERAR] } },
-  { rotulo: 'Clientes em risco', desc: 'Não vêm há 45 a 90 dias', d: { nome: 'Clientes em risco', publico: { dias_min: 45, dias_max: 90, servicos: [], segmento: 'todos' }, mensagens: [MSG_RECUPERAR] } },
-  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', publico: { dias_min: 0, dias_max: 0, servicos: [], segmento: 'todos' }, mensagens: [MSG_PROMO] } },
-  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', publico: { dias_min: 0, dias_max: 0, servicos: [], segmento: 'vip' }, mensagens: [''] } },
+  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR] } },
+  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', publico: { ...PUB, dias_min: 46, dias_max: 90 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR] } },
+  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', publico: { ...PUB, dias_min: 0, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_PROMO] } },
+  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, saudacoes: [OI], mensagens: [''] } },
 ]
 
 const NOVO: Disparo = {
-  nome: '', publico: { dias_min: 90, dias_max: 365, servicos: [], segmento: 'todos' }, mensagens: [MSG_RECUPERAR],
+  nome: '', publico: { ...PUB, dias_min: 91, dias_max: 0 }, saudacoes: [OI], mensagens: [MSG_RECUPERAR], anexo: null,
+  inicio: '', fim: '',
   janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
 }
 
@@ -56,14 +68,33 @@ function contas(d: Disparo, faltam: number) {
   let fim: Date | null = null
   if (porDia && d.dias_semana.length && faltam > 0) {
     const dt = new Date(); let n = 0
+    const ini = d.inicio ? new Date(d.inicio + 'T12:00:00') : null
+    if (ini && ini > dt) dt.setTime(ini.getTime())
     for (let i = 0; i < 3650 && n < diasDeEnvio; i++) {
       if (i > 0) dt.setDate(dt.getDate() + 1)
       if (d.dias_semana.includes(dt.getDay())) n++
     }
     fim = dt
   }
-  return { cabem, porDia, terminaAs, intervaloParaMax, diasDeEnvio, fim }
+  // Com data final, a lista pode não caber: quantas ficam sem receber.
+  let cabemNoPeriodo: number | null = null
+  if (d.fim && porDia) {
+    const dt = new Date(); const ini = d.inicio ? new Date(d.inicio + 'T12:00:00') : null
+    if (ini && ini > dt) dt.setTime(ini.getTime())
+    const ult = new Date(d.fim + 'T12:00:00'); let n = 0
+    for (let i = 0; i < 3650 && dt <= ult; i++) { if (d.dias_semana.includes(dt.getDay())) n++; dt.setDate(dt.getDate() + 1) }
+    cabemNoPeriodo = n * porDia
+  }
+  return { cabem, porDia, terminaAs, intervaloParaMax, diasDeEnvio, fim, cabemNoPeriodo }
 }
+
+const hojeISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+const br = (iso: string) => iso ? iso.split('-').reverse().join('/') : ''
+/** Envio salvo antes destes campos existirem vem sem eles. */
+const completar = (d: any): Disparo => ({
+  ...NOVO, ...d, saudacoes: d.saudacoes || [], anexo: d.anexo || null, inicio: d.inicio || '', fim: d.fim || '',
+  publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0 },
+})
 
 export default function EnvioAutomatico() {
   const [lista, setLista] = useState<Disparo[] | null>(null)
@@ -84,7 +115,7 @@ export default function EnvioAutomatico() {
   useGuardaSalvar(sujo, 'Envio automático')
 
   function abrirEditor(d: Disparo) {
-    const copia = JSON.parse(JSON.stringify(d)); delete copia.estado; delete copia.resumo
+    const copia = completar(JSON.parse(JSON.stringify(d))); delete copia.estado; delete copia.resumo
     setEditando(copia); setOriginal(JSON.stringify(copia))
   }
 
@@ -100,11 +131,13 @@ export default function EnvioAutomatico() {
   }
 
   async function ligar(d: Disparo, on: boolean) {
+    let ok = on ? 'Envio ligado.' : 'Envio pausado.'
     if (on) {
-      const outro = (lista || []).find(x => x.ligado && x.id !== d.id)
-      if (outro && !confirm(`Só um envio fica ligado por vez. Ligar "${d.nome}" vai pausar "${outro.nome}". Continuar?`)) return
+      const outros = (lista || []).filter(x => x.ligado && x.id !== d.id)
+      if (d.inicio && d.inicio > hojeISO()) ok = `Envio agendado: começa em ${br(d.inicio)}.`
+      else if (outros.length) ok = `Envio ligado. Ele manda depois de "${outros[0].nome}" terminar: só um envio manda por vez, na ordem da data de início.`
     }
-    await acao({ acao: 'ligar', id: d.id, ligado: on }, on ? 'Envio ligado.' : 'Envio pausado.')
+    await acao({ acao: 'ligar', id: d.id, ligado: on }, ok)
   }
 
   if (editando) {
@@ -124,8 +157,9 @@ export default function EnvioAutomatico() {
             <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}>Envio automático pelo WhatsApp</div>
             <div style={{ fontSize: 12.5, color: '#6b6860', marginTop: 4, lineHeight: 1.5 }}>
               Escolha uma lista de clientes e a mensagem; o sistema manda uma por vez, no ritmo que você definir, da cliente
-              que veio mais recente para a mais antiga. Quem já recebeu não recebe de novo, só um envio fica ligado por vez e
-              ele sempre espera a confirmação e o feedback terminarem de sair.
+              que veio mais recente para a mais antiga. Quem já recebeu não recebe de novo e a conversa cai em Listas no CRM.
+              Pode deixar vários envios ligados, cada um com sua data de início: eles se revezam sozinhos, um de cada vez,
+              e sempre esperam a confirmação e o feedback terminarem de sair.
             </div>
           </div>
           <button onClick={() => abrirEditor({ ...NOVO })}
@@ -158,14 +192,20 @@ export default function EnvioAutomatico() {
           const pct = r && r.total ? Math.round(r.enviadas / r.total * 100) : 0
           const c = contas(d, r?.faltam || 0)
           const concluido = !!d.estado?.concluido_em && !d.ligado
+          const agendado = !!d.ligado && !!d.inicio && d.inicio > hojeISO()
           return (
             <div key={d.id} style={{ background: '#fff', border: `1.5px solid ${d.ligado ? '#b9b2ee' : '#e0ddd8'}`, borderRadius: 12, padding: '14px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{d.nome}</div>
                 <span className={d.ligado ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999,
-                  background: d.ligado ? '#e7f1e9' : concluido ? '#eceaf9' : '#f1efe8', color: d.ligado ? '#2f6b4f' : concluido ? ROXO : '#8f877f' }}>
-                  {d.ligado ? 'Ligado' : concluido ? 'Concluído' : 'Pausado'}
+                  background: agendado ? '#fdf3e1' : d.ligado ? '#e7f1e9' : concluido ? '#eceaf9' : '#f1efe8', color: agendado ? '#9a6b12' : d.ligado ? '#2f6b4f' : concluido ? ROXO : '#8f877f' }}>
+                  {agendado ? 'Agendado' : d.ligado ? 'Ligado' : concluido ? 'Concluído' : 'Pausado'}
                 </span>
+                {(d.inicio || d.fim) && (
+                  <span style={{ fontSize: 11.5, color: '#6b6860', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <CalendarDays size={12} /> {d.inicio ? `de ${br(d.inicio)}` : 'já'}{d.fim ? ` até ${br(d.fim)}` : ' até a lista acabar'}
+                  </span>
+                )}
                 {(d.ciclo || 1) > 1 && <span style={{ fontSize: 11, color: '#8f877f' }}>ciclo {d.ciclo}</span>}
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {d.ligado ? (
@@ -204,6 +244,7 @@ export default function EnvioAutomatico() {
                     <span><Users size={12} style={{ verticalAlign: -2 }} /> {c.porDia} por dia</span>
                     {c.fim && r.faltam > 0 && <span>termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
                     {!!r.sem_celular && <span style={{ color: '#a09a90' }}>{r.sem_celular} sem celular (fora)</span>}
+                    {!!r.repetidos && <span style={{ color: '#a09a90' }}>{r.repetidos} com celular repetido (recebem uma vez)</span>}
                     {!!r.bloqueados && <span style={{ color: '#a09a90' }}>{r.bloqueados} pediram para sair</span>}
                   </div>
                 </>
@@ -236,12 +277,13 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
   const [testando, setTestando] = useState(false)
   const [simulando, setSimulando] = useState(false)
   const [simulacao, setSimulacao] = useState<any>(null)
+  const [subindo, setSubindo] = useState(false)
   const pub = d.publico
   const set = (p: Partial<Disparo>) => setD({ ...d, ...p })
   const setPub = (p: Partial<Publico>) => setD({ ...d, publico: { ...pub, ...p } })
 
   // Prévia com meio segundo de folga depois da última mudança.
-  const chave = JSON.stringify([pub, d.mensagens])
+  const chave = JSON.stringify([pub, d.saudacoes, d.mensagens])
   const timer = useRef<any>(null)
   useEffect(() => {
     clearTimeout(timer.current)
@@ -290,6 +332,26 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               <option value="todos">Todas</option><option value="vip">VIP</option><option value="regular">Regulares</option><option value="novo">Vieram 1 vez</option>
             </select></label>
         </div>
+        {/* Período da última visita: os mesmos atalhos do filtro de Mais
+            Relatórios, cada um com quantas entram. Escolher um tira o
+            "máximo de dias" -- quem manda passa a ser o ano. */}
+        <div style={{ marginTop: 12 }}>
+          <span style={rotulo}>Última visita foi em</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {(previa?.periodos || []).map((o: any) => {
+              const ativo = !pub.dias_max && pub.ano_de === o.ano_de && pub.ano_ate === o.ano_ate
+              return (
+                <button key={o.id} onClick={() => setPub({ ano_de: o.ano_de, ano_ate: o.ano_ate, dias_max: 0 })}
+                  style={{ ...botao(ativo ? ROXO : '#fff', ativo ? '#fff' : '#1a1a1a', ativo ? ROXO : '#e0ddd8'), borderRadius: 999 }}>
+                  {o.rotulo} <span style={{ opacity: 0.7, fontWeight: 600 }}>{o.total}</span>
+                </button>
+              )
+            })}
+            {!!(pub.ano_de || pub.ano_ate) && !!pub.dias_max && (
+              <span style={{ fontSize: 11.5, color: '#9a6b12', alignSelf: 'center' }}>O limite de {pub.dias_max} dias também está valendo.</span>
+            )}
+          </div>
+        </div>
         {pub.dias_min >= 90 && (!pub.dias_max || pub.dias_max > 540) && (
           <div style={{ fontSize: 11.5, color: '#9a6b12', marginTop: 8 }}>
             Cliente sumida há mais de 1 ano e meio quase nunca volta e é quem mais denuncia a mensagem como spam. Vale colocar um limite máximo.
@@ -308,6 +370,10 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           <input value={buscaServ} onChange={e => setBuscaServ(e.target.value)} placeholder="Procurar serviço (modelagem, mega...)" style={{ ...campo, maxWidth: 360 }} />
           {buscaServ.trim() && (
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+              {servFiltrados.length > 1 && (
+                <button onClick={() => { setPub({ servicos: [...pub.servicos, ...servFiltrados.map(s => s.nome)].slice(0, 40) }); setBuscaServ('') }}
+                  style={botao(ROXO, '#fff', ROXO)}><Plus size={12} /> Adicionar todos ({servFiltrados.length})</button>
+              )}
               {servFiltrados.map(s => (
                 <button key={s.nome} onClick={() => { setPub({ servicos: [...pub.servicos, s.nome] }); setBuscaServ('') }}
                   style={{ ...botao('#fff', '#1a1a1a', '#e0ddd8'), fontWeight: 600 }}>{s.nome} <span style={{ color: '#a09a90' }}>{s.clientes}</span></button>
@@ -322,6 +388,13 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             <>
               <b style={{ fontSize: 15, color: ROXO }}>{previa.total}</b> clientes nesta lista
               {!!previa.sem_celular && <span style={{ color: '#a09a90' }}> · {previa.sem_celular} sem celular válido ficam de fora</span>}
+              {!!previa.repetidos && <span style={{ color: '#a09a90' }}> · {previa.repetidos} com celular repetido recebem uma vez só</span>}
+              {pub.servicos.length > 1 && (
+                <div style={{ color: '#6b6860', marginTop: 3 }}>
+                  Com vários serviços marcados, cada cliente entra <b>uma vez só</b>, mesmo que tenha feito mais de um deles.
+                  Por isso o total é menor que a soma dos números ao lado de cada serviço.
+                </div>
+              )}
               <div style={{ color: '#6b6860', marginTop: 3 }}>Ordem de envio: da visita mais recente para a mais antiga. As primeiras:</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                 {(previa.amostra || []).map((a: any) => (
@@ -338,12 +411,32 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
       {/* 2. Mensagem */}
       <div style={secao}>
         <div style={tituloSecao}>2. Mensagem</div>
+        <div style={{ fontSize: 12, color: '#1a1a1a', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
+          A cliente recebe, nesta ordem e separadas: <b>1)</b> a saudação{d.saudacoes.some(x => x.trim()) ? '' : ' (vazia: não vai)'},
+          {' '}<b>2)</b> a mensagem{d.anexo ? <>, <b>3)</b> o anexo</> : ' (sem anexo: só estas)'}.
+        </div>
         <div style={{ fontSize: 12, color: '#6b6860', marginBottom: 10, lineHeight: 1.5 }}>
           Campos que se preenchem sozinhos: <code>{'{cliente}'}</code> primeiro nome, <code>{'{servico}'}</code> o serviço escolhido
           no filtro acima (use só quando escolher serviço),
           {' '}<code>{'{dias}'}</code> há quantos dias não vem, <code>{'{ultima_visita}'}</code> a data. Escreva 2 ou 3 versões
           diferentes: o sistema alterna entre elas, e o WhatsApp desconfia menos de texto que não é idêntico.
         </div>
+        <div style={{ ...rotulo, fontSize: 12.5, color: '#1a1a1a', marginTop: 4 }}>1ª mensagem: saudação (opcional)</div>
+        {d.saudacoes.map((m, i) => (
+          <div key={'s' + i} style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={rotulo}>Versão {i + 1}</span>
+              <button onClick={() => set({ saudacoes: d.saudacoes.filter((_, j) => j !== i) })} style={{ fontSize: 11.5, color: '#b4322a', fontWeight: 700 }}>remover</button>
+            </div>
+            <input value={m} onChange={e => set({ saudacoes: d.saudacoes.map((x, j) => j === i ? e.target.value : x) })} style={campo} />
+          </div>
+        ))}
+        {d.saudacoes.length < 3 && (
+          <button onClick={() => set({ saudacoes: [...d.saudacoes, d.saudacoes.length ? '' : OI] })} style={{ ...botao('#fff', ROXO, '#e0ddd8'), marginBottom: 12 }}>
+            <Plus size={13} /> {d.saudacoes.length ? 'Outra versão da saudação' : 'Pôr saudação'}
+          </button>
+        )}
+        <div style={{ ...rotulo, fontSize: 12.5, color: '#1a1a1a', marginTop: 8 }}>2ª mensagem</div>
         {d.mensagens.map((m, i) => (
           <div key={i} style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -354,7 +447,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               style={{ ...campo, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
             {previa?.amostra?.[i] && m.trim() && (
               <div style={{ fontSize: 11.5, color: '#6b6860', background: '#e7f1e9', borderRadius: 8, padding: '8px 10px', marginTop: 4, whiteSpace: 'pre-wrap' }}>
-                <b>Como chega para {previa.amostra[i].cliente.split(' ')[0]}:</b>{'\n'}{previa.amostra[i].mensagem}
+                <b>Como chega para {previa.amostra[i].cliente.split(' ')[0]}:</b>{'\n'}{previa.amostra[i].saudacao ? previa.amostra[i].saudacao + '\n—\n' : ''}{previa.amostra[i].mensagem}{d.anexo ? '\n—\n[' + d.anexo.tipo + ': ' + d.anexo.nome + ']' : ''}
               </div>
             )}
           </div>
@@ -362,11 +455,46 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         {d.mensagens.length < 3 && (
           <button onClick={() => set({ mensagens: [...d.mensagens, ''] })} style={botao('#fff', ROXO, '#e0ddd8')}><Plus size={13} /> Outra versão</button>
         )}
+
+        <div style={{ ...rotulo, fontSize: 12.5, color: '#1a1a1a', marginTop: 16 }}>3ª: anexo (opcional) — foto, vídeo, áudio ou arquivo</div>
+        {d.anexo ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 8, padding: '8px 10px' }}>
+            {d.anexo.tipo === 'imagem' && <img src={d.anexo.url} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6 }} />}
+            {d.anexo.tipo === 'video' && <video src={d.anexo.url} style={{ width: 96, height: 56, borderRadius: 6, background: '#000' }} />}
+            {d.anexo.tipo === 'audio' && <audio src={d.anexo.url} controls style={{ height: 34 }} />}
+            <span style={{ fontSize: 12.5 }}><b>{d.anexo.nome}</b> <span style={{ color: '#a09a90' }}>({d.anexo.tipo})</span></span>
+            <button onClick={() => set({ anexo: null })} style={{ marginLeft: 'auto', fontSize: 11.5, color: '#b4322a', fontWeight: 700 }}>remover</button>
+          </div>
+        ) : (
+          <label style={{ ...botao('#fff', ROXO, '#dcd7fa'), display: 'inline-flex', opacity: subindo ? 0.6 : 1 }}>
+            {subindo ? <Loader2 size={13} className="animate-spin" /> : <Paperclip size={13} />} {subindo ? 'Enviando arquivo...' : 'Anexar arquivo'}
+            <input type="file" accept="image/*,video/*,audio/*,application/pdf" style={{ display: 'none' }} disabled={subindo}
+              onChange={async e => {
+                const f = e.target.files?.[0]; e.target.value = ''
+                if (!f) return
+                if (f.size > 16 * 1024 * 1024) { alert('Arquivo grande demais para o WhatsApp mandar em lista (máximo 16 MB).'); return }
+                setSubindo(true)
+                try {
+                  const { url, type } = await enviarArquivo(f)
+                  const m = String(type || f.type || '')
+                  const tipo = m.startsWith('image/') ? 'imagem' : m.startsWith('video/') ? 'video' : m.startsWith('audio/') ? 'audio' : 'documento'
+                  set({ anexo: { url, tipo, nome: f.name } })
+                } catch (err: any) { alert(err?.message || 'Não consegui enviar o arquivo.') }
+                setSubindo(false)
+              }} />
+          </label>
+        )}
       </div>
 
       {/* 3. Ritmo */}
       <div style={secao}>
         <div style={tituloSecao}>3. Ritmo (é isso que evita bloqueio)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 10 }}>
+          <label><span style={rotulo}>Começa no dia (vazio = assim que ligar)</span>
+            <input type="date" value={d.inicio} min={hojeISO()} onChange={e => set({ inicio: e.target.value })} style={campo} /></label>
+          <label><span style={rotulo}>Último dia (vazio = até a lista acabar)</span>
+            <input type="date" value={d.fim} min={d.inicio || hojeISO()} onChange={e => set({ fim: e.target.value })} style={campo} /></label>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
           <label><span style={rotulo}>Começa às</span><input type="time" value={d.janela_ini} onChange={e => set({ janela_ini: e.target.value })} style={campo} /></label>
           <label><span style={rotulo}>Para às</span><input type="time" value={d.janela_fim} onChange={e => set({ janela_fim: e.target.value })} style={campo} /></label>
@@ -398,8 +526,14 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           ) : (
             <div>Com o máximo de <b>{d.max_dia}</b> por dia, a última sai por volta das <b>{c.terminaAs}</b>.</div>
           )}
+          {d.inicio && <div>Começa em <b>{br(d.inicio)}</b>{d.fim ? <> e vai até <b>{br(d.fim)}</b></> : null}.</div>}
           {previa && previa.total > 0 && c.porDia > 0 && (
             <div>A lista de <b>{previa.total}</b> clientes leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.</div>
+          )}
+          {previa && c.cabemNoPeriodo != null && c.cabemNoPeriodo < previa.total && (
+            <div style={{ color: '#9a6b12', fontWeight: 700 }}>
+              Até {br(d.fim)} só dá para mandar umas {c.cabemNoPeriodo}: as outras {previa.total - c.cabemNoPeriodo} ficam para um próximo envio (é só ligar de novo depois).
+            </div>
           )}
           {d.max_dia > 50 && <div style={{ color: '#9a6b12' }}>Mais de 50 por dia aumenta o risco de bloqueio. Comece com 20 e suba aos poucos.</div>}
         </div>
@@ -419,7 +553,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           }} style={botao('#fff', ROXO, '#dcd7fa')}>
             {testando ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Enviar teste
           </button>
-          <span style={{ fontSize: 11.5, color: '#a09a90' }}>Manda cada versão da mensagem para este número. Ninguém da lista recebe.</span>
+          <span style={{ fontSize: 11.5, color: '#a09a90' }}>Manda saudação, mensagem e anexo (cada versão) para este número. Ninguém da lista recebe.</span>
         </div>
         <div style={{ marginTop: 12 }}>
           <button disabled={simulando} onClick={async () => {

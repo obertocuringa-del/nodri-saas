@@ -15,6 +15,8 @@ function getStatus(): Promise<any> {
   return _statusCache
 }
 
+const ABA_CONVERSA = 'nodri_conversa'
+
 export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; origem: string }) {
   const [travadoAte, setTravadoAte] = useState<number | null>(null)
   const [recep, setRecep] = useState<any[]>([])
@@ -99,7 +101,11 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     if (!recepSel) return
     // A aba nasce AGORA, ainda dentro do clique: depois dos awaits o navegador
     // do celular já não deixa abrir aba nova. O endereço entra no fim.
-    const aba = window.open('about:blank', '_blank')
+    //
+    // Aba COM NOME: a primeira cliente abre a aba "nodri_conversa"; da
+    // segunda em diante o navegador reaproveita a mesma aba em vez de abrir
+    // outra (pedido do dono, 29/09/2026: 50 clientes eram 50 abas).
+    const aba = window.open('', ABA_CONVERSA)
     setEnviando(true)
     const recepObj = recep.find(r => r.nome === recepSel)
 
@@ -131,7 +137,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
     } catch { /* fica o WhatsApp */ }
     // Registrar primeiro continua certo (é o que garante a contagem). Se o
     // navegador barrou a aba, aparece um link de verdade para tocar.
-    if (aba) aba.location.href = url
+    if (aba) { aba.location.href = url; aba.focus() }
     else setLinkWhats(url)
 
     setEnviando(false)
@@ -231,7 +237,7 @@ export default function BotaoRecuperacao({ cliente, origem }: { cliente: any; or
                 <p style={{ fontSize: 12, color: '#166534', fontWeight: 700, margin: '0 0 8px' }}>
                   Contato registrado. O navegador bloqueou a aba nova — toque no botão abaixo para abrir a conversa.
                 </p>
-                <a href={linkWhats} target="_blank" rel="noopener noreferrer"
+                <a href={linkWhats} target={ABA_CONVERSA}
                   onClick={() => { setLinkWhats(''); setOpen(false) }}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
                   <MessageCircle size={16} /> Abrir a conversa

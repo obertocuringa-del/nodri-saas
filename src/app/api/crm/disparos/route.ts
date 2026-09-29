@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, publicoDe, textoPara, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  servicosDoSalao, perfisDoSalao, publicoDe, textoPara, saudacaoPara, pacotePara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -48,12 +48,13 @@ export async function POST(req: NextRequest) {
     const d = lerDisparo({ ...b.disparo, id: b.disparo?.id || 'previa' })
     if (!d) return NextResponse.json({ error: 'Envio inválido' }, { status: 400 })
     const perfis = await perfisDoSalao(salaoId)
-    const { lista, semCelular } = publicoDe(perfis, d.publico)
+    const { lista, semCelular, repetidos } = publicoDe(perfis, d.publico)
     return NextResponse.json({
-      total: lista.length, sem_celular: semCelular, por_dia: cabemPorDia(d),
+      total: lista.length, sem_celular: semCelular, repetidos, por_dia: cabemPorDia(d),
+      periodos: periodosDe(perfis, d.publico),
       amostra: lista.slice(0, 8).map((x, i) => ({
         cliente: x.cliente_nome, dias: x.dias, ultima_visita: x.ultima_visita,
-        mensagem: textoPara(d, x, i),
+        saudacao: saudacaoPara(d, x, i), mensagem: textoPara(d, x, i),
       })),
     })
   }
@@ -78,14 +79,16 @@ export async function POST(req: NextRequest) {
     if (!contato) return NextResponse.json({ error: 'Não consegui criar o contato.' }, { status: 500 })
     const { conversa } = await conversaDoContato(salaoId, contato.id, 'aguardando')
     if (!conversa) return NextResponse.json({ error: 'Não consegui abrir a conversa.' }, { status: 500 })
-    const textos = d.mensagens.map((_, i) => textoPara(d, modelo, i))
+    // Uma rodada por versão, na ordem que a cliente recebe: saudação,
+    // mensagem, anexo (o anexo só na primeira, para não lotar o celular).
+    const itens = d.mensagens.flatMap((_, i) => pacotePara(d, modelo, i).filter(p => i === 0 || !p.midia_url))
     const agora = Date.now()
-    await supabaseAdmin.from('crm_mensagens').insert(textos.map((texto, i) => ({
-      salao_id: salaoId, conversa_id: conversa.id, direcao: 'saida', texto, tipo: 'texto',
+    await supabaseAdmin.from('crm_mensagens').insert(itens.map((p, i) => ({
+      salao_id: salaoId, conversa_id: conversa.id, direcao: 'saida', texto: p.texto, tipo: p.tipo, midia_url: p.midia_url,
       situacao: 'na_fila', autor_nome: AUTOR_DISPARO + ' (teste)', em_massa: false,
       criado_em: new Date(agora + i * 5000).toISOString(),
     })))
-    return NextResponse.json({ ok: true, enviadas: textos.length })
+    return NextResponse.json({ ok: true, enviadas: itens.length })
   }
 
   if (b.acao === 'salvar') {
@@ -105,12 +108,8 @@ export async function POST(req: NextRequest) {
   if (b.acao === 'ligar') {
     const ligar = b.ligado === true
     if (ligar && !d.mensagens.length) return NextResponse.json({ error: 'Escreva a mensagem antes de ligar.' }, { status: 400 })
-    // Um por vez: ligar este pausa os outros (pedido do dono).
-    let pausados: string[] = []
-    if (ligar) {
-      pausados = disparos.filter(x => x.ligado && x.id !== d.id).map(x => x.nome)
-      for (const x of disparos) x.ligado = false
-    }
+    // Vários podem ficar ligados, cada um com seu período: o relógio manda um
+    // por vez, na ordem da data de início (escolherDaVez em crmDisparos.ts).
     d.ligado = ligar
     await gravarDisparos(salaoId, disparos)
     if (ligar) {
@@ -122,7 +121,7 @@ export async function POST(req: NextRequest) {
         }, { onConflict: 'salao_id,chave' })
       }
     }
-    return NextResponse.json({ ok: true, pausados })
+    return NextResponse.json({ ok: true })
   }
 
   if (b.acao === 'reiniciar') {
