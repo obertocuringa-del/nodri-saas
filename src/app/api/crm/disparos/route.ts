@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, alvosDoDisparo, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  servicosDoSalao, perfisDoSalao, alvosDoDisparo, foraPorRecuperacao, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -48,10 +48,19 @@ export async function POST(req: NextRequest) {
     const d = lerDisparo({ ...b.disparo, id: b.disparo?.id || 'previa' })
     if (!d) return NextResponse.json({ error: 'Envio inválido' }, { status: 400 })
     const perfis = await perfisDoSalao(salaoId)
-    const { lista, semCelular, repetidos, sem_ciclo } = await alvosDoDisparo(salaoId, d, perfis)
+    const alvos = await alvosDoDisparo(salaoId, d, perfis)
+    // Quem está numa recuperação (risco/perdidas) não entra nos outros envios.
+    const recuperando = await foraPorRecuperacao(salaoId, d, perfis)
+    const lista = alvos.lista.filter(x => !recuperando.has(x.chave))
     return NextResponse.json({
-      total: lista.length, sem_celular: semCelular, repetidos, sem_ciclo, por_dia: cabemPorDia(d),
-      periodos: periodosDe(perfis, d.publico),
+      total: lista.length, sem_celular: alvos.semCelular, repetidos: alvos.repetidos, sem_ciclo: alvos.sem_ciclo,
+      na_recuperacao: alvos.lista.length - lista.length, por_dia: cabemPorDia(d),
+      // Cada atalho de período com a MESMA conta do total (inclusive lembrete
+      // de retorno e quem sai por estar na recuperação), para os números baterem.
+      periodos: await Promise.all(periodosDe(perfis, d.publico).map(async o => {
+        const r = await alvosDoDisparo(salaoId, { ...d, publico: { ...d.publico, ano_de: o.ano_de, ano_ate: o.ano_ate } }, perfis)
+        return { ...o, total: r.lista.filter(x => !recuperando.has(x.chave)).length }
+      })),
       amostra: lista.slice(0, 8).map((x, i) => ({
         cliente: x.cliente_nome, dias: x.dias, ultima_visita: x.ultima_visita,
         servico: x.servico_alvo || null, feito_em: x.feito_em || null, atraso: x.atraso ?? null,

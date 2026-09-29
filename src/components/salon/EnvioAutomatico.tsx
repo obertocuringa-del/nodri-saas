@@ -21,7 +21,7 @@ type Disparo = {
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { segundas?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { segundas?: number; na_recuperacao?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -156,6 +156,16 @@ const NOVO_RETORNO: Disparo = {
   intervalo_min: 20, max_dia: 30, trava_dias: 15,
 }
 
+/** "PIGMENTAÇÃO 14" e "Pigmentação 14" aparecem uma vez só; lista longa vira "+N". */
+function nomesServicos(lista: string[], max = 4) {
+  const vistos = new Set<string>(), unicos: string[] = []
+  for (const s of lista) {
+    const k = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+    if (!vistos.has(k)) { vistos.add(k); unicos.push(s) }
+  }
+  return unicos.slice(0, max).join(', ') + (unicos.length > max ? ` e mais ${unicos.length - max}` : '')
+}
+
 const hojeISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const br = (iso: string) => iso ? iso.split('-').reverse().join('/') : ''
 /** Envio salvo antes destes campos existirem vem sem eles. */
@@ -232,6 +242,8 @@ export default function EnvioAutomatico() {
               que veio mais recente para a mais antiga. Quem já recebeu não recebe de novo e a conversa cai em Listas no CRM.
               Pode deixar vários envios ligados, cada um com sua data de início: eles se revezam sozinhos, um de cada vez,
               e sempre esperam a confirmação e o feedback terminarem de sair.
+              <br /><b>Prioridade:</b> quem está em Recuperar perdidas ou Clientes em risco não recebe nenhum outro envio.
+              E entre dois envios diferentes para a mesma cliente passa pelo menos 1 semana.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -303,6 +315,16 @@ export default function EnvioAutomatico() {
                 </div>
               </div>
 
+              {(d.publico?.servicos?.length > 0 || d.publico?.servicos_nao?.length > 0) && (
+                <div style={{ marginTop: 6, fontSize: 12, color: '#6b6860', lineHeight: 1.5 }}>
+                  {d.categoria === 'cruzada' ? (
+                    <>Fez: <b style={{ color: '#1a1a1a' }}>{nomesServicos(d.publico.servicos)}</b>
+                      {d.publico.servicos_nao?.length > 0 && <> · oferecer: <b style={{ color: '#9a6b12' }}>{nomesServicos(d.publico.servicos_nao)}</b></>}</>
+                  ) : (
+                    <>{retorno ? 'Lembrete de' : 'Serviços'}: <b style={{ color: '#1a1a1a' }}>{nomesServicos(d.publico.servicos)}</b></>
+                  )}
+                </div>
+              )}
               {d.ligado && d.estado?.situacao && (
                 <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: /Pausado|Limite|Encerrado/.test(d.estado.situacao) ? '#9a6b12' : '#2f6b4f', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Clock size={13} /> {d.estado.situacao}
@@ -318,6 +340,7 @@ export default function EnvioAutomatico() {
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                   <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
                   {c.fim && r.faltam > 0 && <span>fila de hoje termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
+                  {!!r.na_recuperacao && <span style={{ color: '#a09a90' }}>{r.na_recuperacao} fora por estar em risco/perdidas</span>}
                   {!!r.sem_ciclo?.length && <span style={{ color: '#b4322a' }}>Sem ciclo de retorno: {r.sem_ciclo.join(', ')}</span>}
                 </div>
               )}
@@ -337,6 +360,7 @@ export default function EnvioAutomatico() {
                     {!!r.sem_celular && <span style={{ color: '#a09a90' }}>{r.sem_celular} sem celular (fora)</span>}
                     {!!r.repetidos && <span style={{ color: '#a09a90' }}>{r.repetidos} com celular repetido (recebem uma vez)</span>}
                     {!!r.bloqueados && <span style={{ color: '#a09a90' }}>{r.bloqueados} pediram para sair</span>}
+                    {!!r.na_recuperacao && <span style={{ color: '#a09a90' }}>{r.na_recuperacao} fora por estar em risco/perdidas</span>}
                   </div>
                 </>
               )}
@@ -436,7 +460,8 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           <div style={{ fontSize: 12.5, color: '#1a1a1a', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 8, padding: '9px 11px', marginBottom: 12, lineHeight: 1.55 }}>
             Recebe quem fez um dos serviços escolhidos e já passou da data de voltar (data do serviço + ciclo de retorno da página
             Serviços). <b>Não recebe</b> quem está numa lista de <b>risco ou perdidas</b>: já recebeu a mensagem de recuperação depois
-            da última visita, ou está na fila de uma que está ligada. Promoção e VIP não impedem o lembrete.
+            da última visita, ou está na fila de uma que está ligada. Promoção e VIP não impedem o lembrete, mas entre um envio
+            e outro passa pelo menos 1 semana.
           </div>
         )}
         {!d.id && !retorno && (
@@ -597,6 +622,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               {retorno && !!previa.sem_ciclo?.length && <div style={{ color: '#b4322a', fontWeight: 700 }}>Sem ciclo de retorno (ficam de fora): {previa.sem_ciclo.join(', ')}</div>}
               {!!previa.sem_celular && <span style={{ color: '#a09a90' }}> · {previa.sem_celular} sem celular válido ficam de fora</span>}
               {!!previa.repetidos && <span style={{ color: '#a09a90' }}> · {previa.repetidos} com celular repetido recebem uma vez só</span>}
+              {!!previa.na_recuperacao && <span style={{ color: '#a09a90' }}> · {previa.na_recuperacao} ficam de fora por estar em Recuperar perdidas/Clientes em risco (a recuperação tem prioridade)</span>}
               {pub.servicos.length > 1 && (
                 <div style={{ color: '#6b6860', marginTop: 3 }}>
                   Com vários serviços marcados, cada cliente entra <b>uma vez só</b>, mesmo que tenha feito mais de um deles.

@@ -291,6 +291,8 @@ export interface PerfilCliente {
   atraso?: number
   /** a marca de "já recebeu": o telefone, ou telefone|serviço|data no retorno */
   envio_chave?: string
+  /** todos os nomes (sem acento) desta pessoa: fichas com o nome escrito de outro jeito ou o mesmo celular */
+  nomes: string[]
 }
 
 const _perfis = new Map<string, { em: number; lista: PerfilCliente[] }>()
@@ -310,13 +312,58 @@ function ehCelular(tel: string) {
   return false
 }
 
+/**
+ * A mesma pessoa em mais de uma ficha (dono, 29/09/2026: 150 casos no Rouge).
+ *
+ * 1. Mesmo nome escrito de outro jeito ("ANA SILVA" e "Ana Silva"): vira
+ *    uma ficha só -- visitas e gasto somados, a última visita é a mais nova.
+ * 2. Nomes diferentes com o MESMO celular: cada ficha continua, mas todas
+ *    passam a ter a última visita da pessoa. Sem isso, a ficha antiga de
+ *    quem veio mês passado caía em "Perdidas" e a cliente ativa recebia
+ *    "sentimos sua falta".
+ */
+function juntarFichas(brutos: PerfilCliente[]): PerfilCliente[] {
+  const porNome = new Map<string, PerfilCliente>()
+  for (const p of brutos) {
+    const k = semAcento(p.cliente_nome).replace(/\s+/g, ' ')
+    const a = porNome.get(k)
+    if (!a) { porNome.set(k, { ...p, nomes: [k] }); continue }
+    const novo = p.dias < a.dias ? p : a
+    porNome.set(k, {
+      ...novo,
+      celular: novo.celular_ok ? novo.celular : (a.celular_ok ? a.celular : p.celular),
+      celular_ok: novo.celular_ok || a.celular_ok || p.celular_ok,
+      chave: novo.celular_ok ? novo.chave : (a.celular_ok ? a.chave : p.chave),
+      ltv_total: a.ltv_total + p.ltv_total,
+      total_visitas: a.total_visitas + p.total_visitas,
+      servicos: [...new Set([...a.servicos, ...p.servicos])],
+      nomes: [k],
+    })
+  }
+  const lista = [...porNome.values()]
+  const porTel = new Map<string, PerfilCliente[]>()
+  for (const p of lista) if (p.celular_ok) porTel.set(p.chave, [...(porTel.get(p.chave) || []), p])
+  for (const grupo of porTel.values()) {
+    if (grupo.length < 2) continue
+    const maisNova = grupo.reduce((m, x) => (x.dias < m.dias ? x : m))
+    const visitas = grupo.reduce((t, x) => t + x.total_visitas, 0)
+    const servicos = [...new Set(grupo.flatMap(x => x.servicos))]
+    const nomes = [...new Set(grupo.flatMap(x => x.nomes))]
+    for (const x of grupo) {
+      x.dias = maisNova.dias; x.ultima_visita = maisNova.ultima_visita; x.ano = maisNova.ano
+      x.total_visitas = visitas; x.servicos = servicos; x.nomes = nomes
+    }
+  }
+  return lista
+}
+
 export async function perfisDoSalao(salaoId: string, fresco = false): Promise<PerfilCliente[]> {
   const c = _perfis.get(salaoId)
   if (!fresco && c && Date.now() - c.em < 30 * 60000) return c.lista
   const { dados } = await paginar<any>((de, ate) =>
     supabaseAdmin.rpc('perfis_clientes', { p_salao: salaoId, p_ano_de: null, p_ano_ate: null }).range(de, ate) as any, 60000)
   const agora = Date.now()
-  const lista: PerfilCliente[] = dados.map((r: any) => {
+  const brutos: PerfilCliente[] = dados.map((r: any) => {
     const tel = normalizarTelefone(r.celular)
     const ultima = String(r.ultima_visita || '')
     return {
@@ -331,8 +378,10 @@ export async function perfisDoSalao(salaoId: string, fresco = false): Promise<Pe
       servicos: Array.isArray(r.servicos_feitos) ? r.servicos_feitos : [],
       segmento: 'regular' as const,
       ano: Number(ultima.slice(6, 10)) || 0,
+      nomes: [] as string[],
     }
   }).filter(p => p.cliente_nome)
+  const lista = juntarFichas(brutos)
   // VIP = top 15% por gasto; novo = 1 visita (a mesma regra da tela).
   const ltvs = lista.map(p => p.ltv_total).sort((a, b) => b - a)
   const corte = ltvs.length ? (ltvs[Math.floor(ltvs.length * 0.15)] || ltvs[0] || 0) : 0
@@ -457,6 +506,21 @@ async function bloqueados(salaoId: string) {
 }
 
 /** Recebeu envio automático OU foi contatada à mão (botão das listas) há menos de N dias. */
+/**
+ * Entre dois envios DIFERENTES para a mesma cliente, no mínimo uma semana
+ * (dono, 29/09/2026: nada de venda cruzada hoje e lembrete amanhã). A 2ª
+ * mensagem do mesmo envio não conta: ela é a continuação da primeira.
+ */
+export const DIAS_ENTRE_ENVIOS = 7
+async function enviosDaSemana(salaoId: string) {
+  const desde = new Date(Date.now() - DIAS_ENTRE_ENVIOS * 864e5).toISOString()
+  const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
+    .select('chave, disparo_id').eq('salao_id', salaoId).gte('enviado_em', desde).range(de, ate))
+  return dados.map(r => ({ tel: telDaChave(r.chave), disparo: r.disparo_id as string }))
+}
+const deOutros = (semana: { tel: string; disparo: string }[], d: Disparo) =>
+  new Set(semana.filter(r => r.disparo !== d.id).map(r => r.tel))
+
 /** O telefone da marca de envio (no retorno ela é telefone|serviço|data). */
 const telDaChave = (chave: string) => String(chave || '').split('|')[0].split('#')[0]
 /** A marca da 2ª mensagem é a da 1ª com "#2" no fim. */
@@ -518,7 +582,7 @@ async function ultimasPorServico(salaoId: string) {
   if (c && c.rows === rows) return c.mapa
   const mapa = new Map<string, Map<string, { nome: string; em: number; data: string }>>()
   for (const r of rows) {
-    const cli = semAcento(r.cliente), serv = String(r.servico || '').trim()
+    const cli = semAcento(r.cliente).replace(/\s+/g, ' '), serv = String(r.servico || '').trim()
     const em = parseData(String(r.data_comanda || ''))
     if (!cli || !serv || !em) continue
     let m = mapa.get(cli)
@@ -548,11 +612,14 @@ export async function alvosDoDisparo(salaoId: string, d: Disparo, perfis: Perfil
   const agora = Date.now()
   const lista: PerfilCliente[] = []
   for (const x of base.lista) {
-    const feitos = ultimas.get(semAcento(x.cliente_nome))
-    if (!feitos) continue
+    // A última vez do serviço em QUALQUER ficha da pessoa.
+    const mapas = x.nomes.map(n => ultimas.get(n)).filter(Boolean) as Map<string, { nome: string; em: number; data: string }>[]
+    if (!mapas.length) continue
+    const ultimaDo = (s: string) => mapas.map(m => m.get(semAcento(s))).filter(Boolean)
+      .reduce<{ nome: string; em: number; data: string } | undefined>((m, u) => (!m || u!.em > m.em ? u! : m), undefined)
     let melhor: PerfilCliente | null = null
     for (const s of d.publico.servicos) {
-      const u = feitos.get(semAcento(s)), ciclo = cicloDe(s)
+      const u = ultimaDo(s), ciclo = cicloDe(s)
       if (!u || !ciclo) continue
       const atraso = Math.floor((agora - (u.em + ciclo * 864e5)) / 864e5)
       if (atraso < 0 || atraso > d.tolerancia_dias) continue
@@ -567,10 +634,10 @@ export async function alvosDoDisparo(salaoId: string, d: Disparo, perfis: Perfil
 }
 
 /**
- * Quem o lembrete de retorno NÃO pega: está numa recuperação (risco ou
- * perdidas) -- já recebeu depois da última visita, ou está na fila de uma
- * recuperação ligada. Assim ela não recebe "sentimos sua falta" e "está na
- * hora de voltar" na mesma semana.
+ * Quem NENHUM outro envio pega: está numa recuperação (risco ou perdidas) --
+ * já recebeu depois da última visita, ou está na fila de uma recuperação
+ * ligada. A recuperação manda (dono, 29/09/2026): se ela parou de vir, foi
+ * por algum motivo, e lembrete, promoção ou venda cruzada esperam ela voltar.
  */
 async function emRecuperacao(salaoId: string, disparos: Disparo[], perfis: PerfilCliente[]) {
   const rec = disparos.filter(ehRecuperacao)
@@ -769,7 +836,9 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       ? `Agendado: começa em ${dataBR(x.inicio)}`
       : `Na fila: começa quando "${listaDaVez?.nome || 'o anterior'}" terminar`)
   }
+  // Recuperação primeiro: é ela que manda quando a cliente está em duas listas.
   const candidatos = [...sempre, ...(listaDaVez ? [listaDaVez] : []), ...soSegunda]
+    .sort((a, b) => Number(ehRecuperacao(b)) - Number(ehRecuperacao(a)))
   if (!candidatos.length) {
     if (mudou) await gravarDisparos(salaoId, disparos)
     await gravarEstadosDisparo(salaoId, estados)
@@ -780,7 +849,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   const ultimoGeral = Math.max(0, ...disparos.map(x => new Date(estados[x.id]?.ultimo_envio_em || 0).getTime()))
   let ocupada: string | null | undefined
   let perfis: PerfilCliente[] | null = null
-  let comuns: [Set<string>, Set<string>, Set<string>] | null = null
+  let comuns: [Set<string>, Set<string>, Set<string>, { tel: string; disparo: string }[]] | null = null
 
   for (const d of candidatos) {
     const e = est(d)
@@ -804,9 +873,11 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     if (ocupada) { if (!soDaSegunda) marcar(d, ocupada, e); continue }
 
     perfis = perfis || await perfisDoSalao(salaoId)
-    comuns = comuns || await Promise.all([bloqueados(salaoId), telefonesDeProfissionais(salaoId), emRecuperacao(salaoId, disparos, perfis)])
-    const [bloq, profs, recuperando] = comuns
+    comuns = comuns || await Promise.all([bloqueados(salaoId), telefonesDeProfissionais(salaoId), emRecuperacao(salaoId, disparos, perfis), enviosDaSemana(salaoId)])
+    const [bloq, profs, recuperando, semana] = comuns
     const retorno = d.tipo === 'retorno'
+    const naRecuperacao = (x: PerfilCliente) => !ehRecuperacao(d) && recuperando.has(x.chave)
+    const recebeuOutro = deOutros(semana, d)
 
     // Manda para o primeiro da fila que pode receber agora. Olha no máximo 25
     // por volta: quem está em conversa ou travada fica para depois.
@@ -841,7 +912,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     // 2ª mensagem primeiro: é quem está esperando há dias. Sem a trava de
     // "recebeu algo há pouco" -- o que ela recebeu foi justamente a 1ª.
     const segundas = (await segundasPendentes(salaoId, d, perfis))
-      .filter(x => !bloq.has(x.chave) && !profs.has(x.chave) && !(retorno && recuperando.has(x.chave)))
+      .filter(x => !bloq.has(x.chave) && !profs.has(x.chave) && !naRecuperacao(x) && !recebeuOutro.has(x.chave))
     if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
     if (soDaSegunda) continue
 
@@ -851,7 +922,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       travados(salaoId, d.trava_dias, retorno ? new Set([d.id, ...disparos.filter(ehRecuperacao).map(x => x.id)]) : undefined),
     ])
     const restantes = lista.filter(x => !feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
-      && !(retorno && recuperando.has(x.chave)))
+      && !naRecuperacao(x))
     if (!restantes.length) {
       if (sempreRodando(d)) {
         e.proximo_em = new Date(Date.now() + 30 * 60000).toISOString()
@@ -863,6 +934,8 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       marcar(d, d.segunda.ligada ? 'Lista concluída: todas receberam (a 2ª mensagem continua saindo)' : 'Lista concluída: todas receberam', e)
       continue
     }
+    // Quem recebeu outro envio nesta semana fica para depois (continua na fila).
+    for (const t of recebeuOutro) trava.chaves.add(t)
     if (await tentar(restantes, false, trava, feitos.size)) break
     e.proximo_em = new Date(Date.now() + 15 * 60000).toISOString()
     marcar(d, 'Ninguém disponível agora (em conversa ou contatada há pouco); tenta de novo em 15 min', e)
@@ -933,14 +1006,16 @@ export async function simularProximo(salaoId: string, d: Disparo) {
   const [feitos, bloq, trava, profs, recuperando] = await Promise.all([
     chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId),
     travados(salaoId, d.trava_dias, retorno ? new Set([d.id, ...todos.filter(ehRecuperacao).map(x => x.id)]) : undefined),
-    telefonesDeProfissionais(salaoId), retorno ? emRecuperacao(salaoId, todos, perfis) : Promise.resolve(new Set<string>()),
+    telefonesDeProfissionais(salaoId), ehRecuperacao(d) ? Promise.resolve(new Set<string>()) : emRecuperacao(salaoId, todos, perfis),
   ])
+  const recebeuOutro = deOutros(await enviosDaSemana(salaoId), d)
   const puladas: { cliente: string; motivo: string }[] = []
   let proxima: any = null
   for (const x of lista) {
     if (puladas.length > 25) break
     if (feitos.has(x.envio_chave!)) continue
     if (recuperando.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'está numa lista de risco/perdidas' }); continue }
+    if (recebeuOutro.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: `recebeu outro envio nos últimos ${DIAS_ENTRE_ENVIOS} dias` }); continue }
     if (bloq.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'pediu para sair' }); continue }
     if (profs.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'profissional do salão' }); continue }
     if (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome)) { puladas.push({ cliente: x.cliente_nome, motivo: `contatada nos últimos ${d.trava_dias} dias` }); continue }
@@ -976,8 +1051,9 @@ export async function rodarDisparos() {
 export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
   const { lista, semCelular, repetidos, sem_ciclo } = await alvosDoDisparo(salaoId, d, perfis)
-  const [feitos, bloq] = await Promise.all([chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId)])
-  const naLista = lista.filter(x => !bloq.has(x.chave))
+  const [feitos, bloq, recuperando] = await Promise.all([chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId), foraPorRecuperacao(salaoId, d, perfis)])
+  const na_recuperacao = lista.filter(x => recuperando.has(x.chave) && !feitos.has(x.envio_chave!)).length
+  const naLista = lista.filter(x => !bloq.has(x.chave) && (feitos.has(x.envio_chave!) || !recuperando.has(x.chave)))
   const enviadas = naLista.filter(x => feitos.has(x.envio_chave!)).length
 
   // Respostas e retornos: do ciclo atual, contados em cima das envios gravados.
@@ -1003,19 +1079,34 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   return {
     segundas,
     total: naLista.length, enviadas, faltam: naLista.length - enviadas,
-    sem_celular: semCelular, repetidos, sem_ciclo, bloqueados: lista.length - naLista.length,
+    sem_celular: semCelular, repetidos, sem_ciclo, na_recuperacao, bloqueados: lista.length - naLista.length,
     responderam, voltaram, envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
   }
 }
 
+/** Quem fica de fora deste envio por estar numa recuperação (vazio se ele mesmo é recuperação). */
+export async function foraPorRecuperacao(salaoId: string, d: Disparo, perfis: PerfilCliente[]) {
+  if (ehRecuperacao(d)) return new Set<string>()
+  return emRecuperacao(salaoId, await carregarDisparos(salaoId), perfis)
+}
+
 /** Os serviços do salão, do mais feito para o menos, para a tela escolher. */
 export async function servicosDoSalao(salaoId: string) {
   const perfis = await perfisDoSalao(salaoId)
-  const conta = new Map<string, number>()
-  for (const p of perfis) for (const s of p.servicos) conta.set(s, (conta.get(s) || 0) + 1)
+  // "PIGMENTAÇÃO 14" e "Pigmentação 14" são o mesmo serviço: um item só, com
+  // a grafia mais usada. A busca e o envio já comparam sem acento/maiúscula.
+  const conta = new Map<string, { clientes: Set<string>; grafias: Map<string, number> }>()
+  for (const p of perfis) for (const s of p.servicos) {
+    const k = semAcento(s).replace(/\s+/g, ' ')
+    const c = conta.get(k) || { clientes: new Set<string>(), grafias: new Map<string, number>() }
+    c.clientes.add(p.chave || p.cliente_nome); c.grafias.set(s, (c.grafias.get(s) || 0) + 1)
+    conta.set(k, c)
+  }
   const catalogo = await ciclosDoCatalogo(salaoId)
   // `ciclo`: o ciclo de retorno da página Serviços, quando o nome bate.
-  return [...conta.entries()].sort((a, b) => b[1] - a[1])
-    .map(([nome, clientes]) => ({ nome, clientes, ciclo: catalogo.get(semAcento(nome)) || null }))
+  return [...conta.values()].map(c => {
+    const nome = [...c.grafias.entries()].sort((a, b) => b[1] - a[1])[0][0]
+    return { nome, clientes: c.clientes.size, ciclo: catalogo.get(semAcento(nome)) || null }
+  }).sort((a, b) => b.clientes - a.clientes)
 }
