@@ -473,14 +473,29 @@ export function segundaPara(d: Disparo, x: PerfilCliente, indice: number) {
   return t ? [{ texto: t, tipo: 'texto', midia_url: null as string | null }] : []
 }
 
+/**
+ * O nome do serviço como a cliente entende (dono, 29/09/2026): sem o código
+ * interno do salão nem observação entre parênteses. "MODELAGEM 71" vira
+ * "modelagem"; "REALINHAMENTO CAPILAR 56" vira "realinhamento capilar";
+ * "MODELAGEM  HIGIENIZAÇÃO ( SETEMBRO )" vira "modelagem higienização".
+ */
+export function nomeParaCliente(nome: string) {
+  return String(nome || '')
+    .replace(/\([^)]*\)/g, ' ')          // (SETEMBRO), (promo)
+    .replace(/\b\d+([.,]\d+)?\b/g, ' ')  // 71, 56, 14
+    .replace(/\s*[-–]\s*$/g, '')          // hífen que sobrou no fim
+    .replace(/\s+\.(?=\S)/g, ' ')          // "ESPECIAIS .DOS PÉS"
+    .replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
 function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
   const alvos = new Set(d.publico.servicos.map(semAcento))
   const servico = x.servico_alvo || x.servicos.find(s => alvos.has(semAcento(s))) || x.servicos[0] || ''
   const dados: Record<string, string> = {
     cliente: primeiroNome(x.cliente_nome), dias: String(x.dias),
-    ultima_visita: x.ultima_visita, servico: servico.toLowerCase(),
+    ultima_visita: x.ultima_visita, servico: nomeParaCliente(servico),
     data_servico: x.feito_em || x.ultima_visita,
-    oferta: String((d.publico.servicos_nao || [])[0] || '').toLowerCase(),
+    oferta: nomeParaCliente(String((d.publico.servicos_nao || [])[0] || '')),
   }
   return modelo.replace(/\{(\w+)\}/g, (_, k) => dados[k] ?? '')
     .replace(/[ \t]+([,.!?;:])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim()
