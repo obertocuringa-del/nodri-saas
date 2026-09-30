@@ -746,7 +746,7 @@ ${montarContratoHTML()}
 
 <p><strong>1)&nbsp;&nbsp;&nbsp;&nbsp; Do Objeto e Considerações do Contrato:</strong></p>
 
-<p>O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia ${dDataContrato || '___/___/______'}.</p>
+<p>O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia ${dDataDistrato || '___/___/______'}.</p>
 
 <p><strong>1.1)</strong> As partes resolvem, nesta data, em comum acordo, que, considerando que não existem pendências de ambas as partes, fica consumado o distrato.</p>
 
@@ -1672,10 +1672,9 @@ ${montarContratoHTML()}
                       Os dados do profissional (nome, CPF, CNPJ, endereço) são puxados automaticamente do <strong>cadastro do profissional</strong> selecionado acima. Para alterar, edite a ficha dele.
                     </p>
                     <p style={{ fontSize: '11px', fontWeight: 700, color: '#444', margin: '0 0 12px', fontFamily: 'sans-serif' }}>DATAS</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data início do contrato<input style={iStyle} value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Local do distrato<input style={iStyle} value={dLocalDistrato} onChange={e => setDLocalDistrato(e.target.value)} /></label>
-                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data do distrato<input style={iStyle} value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
+                      <label style={{ fontSize: '11px', color: '#555', fontFamily: 'sans-serif' }}>Data do distrato (vale nos dois lugares)<input style={iStyle} value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)} placeholder="dd/mm/aaaa" /></label>
                     </div>
                   </div>
                 )}
@@ -1695,8 +1694,13 @@ ${montarContratoHTML()}
                 </p>
                 <p style={{ textAlign: 'justify', marginBottom: '14pt', fontFamily: 'inherit' }}>
                   O presente tem como OBJETO o contrato de parceria celebrado entre as partes neste mencionadas, o qual teve como fundamento, o seguinte: O SALÃO-PARCEIRO, empresa destinada à prestação de serviços de salão de beleza e afins, proprietária e/ou possuidora de bens móveis e de instalação para barbeiros, cabeleireiros, manicuras, pedicuras, esteticistas, massagistas, maquiadores, escovistas, calistas, depiladores e demais profissões afins, sendo proprietária e possuidora de espaço, equipamentos e móveis apropriados à atividade desses profissionais, estabelece parceria com o PROFISSIONAL-PARCEIRO, pelo que a ele dá, em locação e/ou uso, móveis, aparelhos, utensílios e produtos de sua propriedade e/ou posse, para fins de exploração específica da atividade de cabeleireira e outras que porventura sejam praticadas exclusivamente dentro da abrangência da Lei 13.352, de 27 de outubro de 2016, em serviços de beleza, dentro do seu objeto social, não podendo o PROFISSIONAL-PARCEIRO usar os objetos dados em locação para quaisquer outros fins. Além dos bens dados em locação, o SALÃO-PARCEIRO também concede, ao PROFISSIONAL-PARCEIRO, serviços de gestão, de apoio administrativo e de escritório, tais como, exemplificativamente, cobrança e recebimento de valores pagos pelos clientes atendidos por ela, datado do dia{' '}
-                  <input value={dDataContrato} onChange={e => setDDataContrato(e.target.value)} placeholder="dd/mm/aaaa"
-                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '110px', outline: 'none', textAlign: 'center', color: dDataContrato ? 'inherit' : '#ef4444', fontWeight: dDataContrato ? 'inherit' : 600 }} />.
+                  {/* Espelha a data do distrato (a de baixo, que vem da Data de
+                      Demissão do cadastro). Pedido do dono, 30/09/2026: uma data
+                      só, automática, para ninguém digitar duas vezes. Mudar
+                      aqui muda embaixo também. */}
+                  <input value={dDataDistrato} onChange={e => setDDataDistrato(e.target.value)} placeholder="dd/mm/aaaa"
+                    title="Mesma data do desligamento (Data de Demissão do cadastro)"
+                    style={{ border: 'none', borderBottom: '2px solid #ef4444', background: 'transparent', fontFamily: 'inherit', fontSize: 'inherit', width: '110px', outline: 'none', textAlign: 'center', color: dDataDistrato ? 'inherit' : '#ef4444', fontWeight: dDataDistrato ? 'inherit' : 600 }} />.
                 </p>
 
                 {/* ── CLÁUSULA 1.1 ── */}
