@@ -309,6 +309,17 @@ const parseBR = (s: string) => {
   return m ? new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() : 0
 }
 
+/**
+ * Os 8 últimos dígitos do telefone: o mesmo número com ou sem 55, com ou sem
+ * o nono dígito, com ou sem máscara. É o que separa duas clientes com o mesmo
+ * nome (30/09/2026: duas "FABIANA" viravam uma só e o lembrete de uma ia para
+ * o celular da outra).
+ */
+export const fone8 = (t: string | null | undefined) => {
+  const d = String(t || '').replace(/\D/g, '')
+  return d.length >= 8 ? d.slice(-8) : ''
+}
+
 /** Celular de verdade: 55 + DDD + 9 dígitos, ou o formato antigo de 8 começando em 6-9. */
 function ehCelular(tel: string) {
   if (tel.length === 13) return tel[4] === '9'
@@ -327,11 +338,25 @@ function ehCelular(tel: string) {
  *    "sentimos sua falta".
  */
 function juntarFichas(brutos: PerfilCliente[]): PerfilCliente[] {
+  // Passo 1 por NOME + CELULAR (30/09/2026). Grafias do mesmo nome com o
+  // mesmo celular (ou sem celular, quando o nome só tem um) viram uma ficha;
+  // o mesmo nome com celulares diferentes são pessoas diferentes.
+  const nomeDe = (p: PerfilCliente) => semAcento(p.cliente_nome).replace(/\s+/g, ' ')
+  const fonesDoNome = new Map<string, Set<string>>()
+  for (const p of brutos) {
+    const f = fone8(p.celular)
+    if (!f) continue
+    const k = nomeDe(p)
+    fonesDoNome.set(k, new Set([...(fonesDoNome.get(k) || []), f]))
+  }
   const porNome = new Map<string, PerfilCliente>()
   for (const p of brutos) {
-    const k = semAcento(p.cliente_nome).replace(/\s+/g, ' ')
+    const nome = nomeDe(p)
+    const fones = fonesDoNome.get(nome)
+    const f = fone8(p.celular) || (fones && fones.size === 1 ? [...fones][0] : '')
+    const k = `${nome}|${f}`
     const a = porNome.get(k)
-    if (!a) { porNome.set(k, { ...p, nomes: [k] }); continue }
+    if (!a) { porNome.set(k, { ...p, nomes: [nome] }); continue }
     const novo = p.dias < a.dias ? p : a
     porNome.set(k, {
       ...novo,
@@ -341,7 +366,7 @@ function juntarFichas(brutos: PerfilCliente[]): PerfilCliente[] {
       ltv_total: a.ltv_total + p.ltv_total,
       total_visitas: a.total_visitas + p.total_visitas,
       servicos: [...new Set([...a.servicos, ...p.servicos])],
-      nomes: [k],
+      nomes: [nome],
     })
   }
   const lista = [...porNome.values()]
@@ -370,7 +395,7 @@ export async function perfisDoSalao(salaoId: string, fresco = false): Promise<Pe
 
 async function lerPerfis(salaoId: string): Promise<PerfilCliente[]> {
   const { dados } = await paginar<any>((de, ate) =>
-    supabaseAdmin.rpc('perfis_clientes', { p_salao: salaoId, p_ano_de: null, p_ano_ate: null }).range(de, ate) as any, 60000)
+    supabaseAdmin.rpc('perfis_clientes_por_celular', { p_salao: salaoId }).range(de, ate) as any, 60000)
   const agora = Date.now()
   const brutos: PerfilCliente[] = dados.map((r: any) => {
     const tel = normalizarTelefone(r.celular)
@@ -698,6 +723,28 @@ async function ultimasPorServico(salaoId: string) {
 }
 
 /** Só as 3 colunas que interessam, em páginas buscadas 8 de cada vez. */
+/**
+ * A chave de cada atendimento: nome + 8 últimos dígitos do celular. Sem
+ * celular, vale o único celular daquele nome; se o nome tem vários, fica sem
+ * (e não casa com ninguém -- melhor não mandar do que mandar a data de outra).
+ */
+function chavesDosAtendimentos(rows: any[]) {
+  const fones = new Map<string, Set<string>>()
+  for (const r of rows) {
+    const cli = semAcento(r.cliente).replace(/\s+/g, ' '), f = fone8(r.celular)
+    if (cli && f) fones.set(cli, new Set([...(fones.get(cli) || []), f]))
+  }
+  return (r: any) => {
+    const cli = semAcento(r.cliente).replace(/\s+/g, ' ')
+    if (!cli) return ''
+    const fs = fones.get(cli)
+    const f = fone8(r.celular) || (fs && fs.size === 1 ? [...fs][0] : '')
+    return `${cli}|${f}`
+  }
+}
+/** A mesma chave para quem está na lista: um dos nomes dela + o celular. */
+const chaveDaCliente = (nome: string, celular: string) => `${nome}|${fone8(celular)}`
+
 async function lerAtendimentosLeve(salaoId: string) {
   const { count } = await supabaseAdmin.from('atendimentos_raw').select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
   const total = count || 0
@@ -706,7 +753,7 @@ async function lerAtendimentosLeve(salaoId: string) {
   const rows: any[] = []
   for (let i = 0; i < paginas.length; i += 8) {
     const lotes = await Promise.all(paginas.slice(i, i + 8).map(de => supabaseAdmin.from('atendimentos_raw')
-      .select('cliente, servico, data_comanda, total, valor').eq('salao_id', salaoId).order('id').range(de, de + 999)))
+      .select('cliente, celular, servico, data_comanda, total, valor').eq('salao_id', salaoId).order('id').range(de, de + 999)))
     for (const l of lotes) rows.push(...(l.data || []))
   }
   return rows
@@ -717,9 +764,10 @@ const _receita = new Map<string, Map<string, { em: number; valor: number }[]>>()
 
 async function montarUltimas(salaoId: string) {
   const rows = await lerAtendimentosLeve(salaoId)
+  const chaveDe = chavesDosAtendimentos(rows)
   const receita = new Map<string, { em: number; valor: number }[]>()
   for (const r of rows) {
-    const cli = semAcento(r.cliente).replace(/\s+/g, ' '), em = parseData(String(r.data_comanda || ''))
+    const cli = chaveDe(r), em = parseData(String(r.data_comanda || ''))
     const valor = Number(r.total) || Number(r.valor) || 0
     if (!cli || !em || !valor) continue
     const l = receita.get(cli) || []; l.push({ em, valor }); receita.set(cli, l)
@@ -727,7 +775,7 @@ async function montarUltimas(salaoId: string) {
   _receita.set(salaoId, receita)
   const mapa = new Map<string, Map<string, { nome: string; em: number; data: string }>>()
   for (const r of rows) {
-    const cli = semAcento(r.cliente).replace(/\s+/g, ' '), serv = String(r.servico || '').trim()
+    const cli = chaveDe(r), serv = String(r.servico || '').trim()
     const em = parseData(String(r.data_comanda || ''))
     if (!cli || !serv || !em) continue
     let m = mapa.get(cli)
@@ -814,7 +862,7 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
   const lista: PerfilCliente[] = []
   for (const x of base.lista) {
     // A última vez de cada família em QUALQUER ficha da pessoa.
-    const mapas = x.nomes.map(n => ultimas.get(n)).filter(Boolean) as Map<string, { nome: string; em: number; data: string }>[]
+    const mapas = x.nomes.map(n => ultimas.get(chaveDaCliente(n, x.celular))).filter(Boolean) as Map<string, { nome: string; em: number; data: string }>[]
     if (!mapas.length) continue
     const ultimaDaFamilia = new Map<string, { nome: string; em: number; data: string }>()
     for (const m of mapas) {
@@ -1325,8 +1373,10 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
       if (new Date(m.criado_em).getTime() > (porConversa.get(m.conversa_id) || Infinity)) { ja.add(m.conversa_id); responderam++ }
     }
   }
-  const ultimaDe = new Map(perfis.map(p => [p.cliente_nome, parseBR(p.ultima_visita)]))
-  const voltaram = envios.filter(v => (ultimaDe.get(v.cliente_nome) || 0) > new Date(v.enviado_em).getTime()).length
+  // Pelo celular: pelo nome, a volta de uma "FABIANA" contava para a outra.
+  const ultimaDe = new Map<string, number>()
+  for (const p of perfis) ultimaDe.set(p.chave, Math.max(ultimaDe.get(p.chave) || 0, parseBR(p.ultima_visita)))
+  const voltaram = envios.filter(v => (ultimaDe.get(telDaChave(v.chave)) || 0) > new Date(v.enviado_em).getTime()).length
 
   // Receita: o que quem recebeu gastou no salão DEPOIS de receber (até 60
   // dias). A primeira mensagem de cada cliente conta; a 2ª não soma de novo.
@@ -1336,7 +1386,7 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const primeira = new Map<string, number>()
   for (const v of envios) {
     if (String(v.chave || '').endsWith(SEGUNDA)) continue
-    const k = semAcento(v.cliente_nome).replace(/\s+/g, ' '), t = new Date(v.enviado_em).getTime()
+    const k = chaveDaCliente(semAcento(v.cliente_nome).replace(/\s+/g, ' '), telDaChave(v.chave)), t = new Date(v.enviado_em).getTime()
     if (!primeira.has(k) || t < primeira.get(k)!) primeira.set(k, t)
   }
   for (const [k, t] of primeira) {
