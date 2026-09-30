@@ -568,7 +568,30 @@ async function enviosDoDisparo(salaoId: string, d: Disparo) {
     const n = ult.get(x.envio_chave!)?.n || 0
     return n ? { ...x, envio_chave: `${x.envio_chave}|r${n}` } : x
   }
-  return { feitos, ult, total, marcaDe }
+  // Lembrete: a marca leva o serviço e a data em que ela o fez. Se a regra
+  // de qual serviço vale mudar (como a da família, 30/09/2026), a marca nova
+  // não bate com a antiga e a cliente receberia de novo. Então: já recebeu
+  // deste envio DEPOIS do atendimento que a marca aponta, da mesma família,
+  // conta como feito.
+  const porTel = new Map<string, { base: string; fam: string; em: number }[]>()
+  if (d.tipo === 'retorno') {
+    for (const [base, u] of ult) {
+      const partes = base.split('|')
+      if (partes.length < 3) continue
+      const l = porTel.get(partes[0]) || []
+      l.push({ base, fam: nomeParaCliente(partes[1]), em: u.em })
+      porTel.set(partes[0], l)
+    }
+  }
+  const alinhar = <T extends PerfilCliente>(lista: T[]): T[] => d.tipo !== 'retorno' ? lista : lista.map(x => {
+    const k = x.envio_chave || ''
+    if (ult.has(k)) return x
+    const partes = k.split('|'), feitoEm = Number(partes[2]) || 0
+    if (partes.length < 3) return x
+    const antes = (porTel.get(partes[0]) || []).find(v => v.fam === nomeParaCliente(partes[1]) && v.em > feitoEm)
+    return antes ? { ...x, envio_chave: antes.base } : x
+  })
+  return { feitos, ult, total, marcaDe, alinhar }
 }
 
 function bloqueados(salaoId: string) {
@@ -764,31 +787,55 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
   const base = publicoDe(perfis, { ...d.publico, servicos: [], dias_min: 0, dias_max: 0 })
   const [ultimas, catalogo] = await Promise.all([ultimasPorServico(salaoId), ciclosDoCatalogo(salaoId)])
   const cicloDe = (nome: string) => d.ciclos[nome] || catalogo.get(semAcento(nome)) || 0
-  const sem_ciclo = d.publico.servicos.filter(s => !cicloDe(s))
+  // O mesmo serviço tem várias grafias e códigos no Avec ("REALINHAMENTO
+  // CAPILAR 30", "... 46", "... 56"). Antes cada código era um serviço à parte
+  // e valia o que estava MAIS atrasado: a cliente que fez o 56 em 2025 recebeu
+  // "seu último atendimento foi em 20/10/2023", a data do 30 (dono,
+  // 30/09/2026). Agora conta a FAMÍLIA do serviço (o nome sem o código), e a
+  // data é a do atendimento mais recente de qualquer variação -- mesmo uma
+  // que não esteja marcada na lista.
+  const familias = new Set(d.publico.servicos.map(s => nomeParaCliente(s)).filter(Boolean))
+  const cicloFam = new Map<string, number>()
+  const guardarCiclo = (nome: string, c: number) => {
+    const f = nomeParaCliente(nome)
+    if (c > 0 && familias.has(f)) cicloFam.set(f, Math.max(cicloFam.get(f) || 0, c))
+  }
+  for (const s of d.publico.servicos) guardarCiclo(s, cicloDe(s))
+  for (const [nome, c] of Object.entries(d.ciclos || {})) guardarCiclo(nome, Number(c) || 0)
+  for (const [nome, c] of catalogo) guardarCiclo(nome, c)
+  const sem_ciclo = d.publico.servicos.filter(s => !cicloFam.get(nomeParaCliente(s)))
   const agora = Date.now()
   const lista: PerfilCliente[] = []
   for (const x of base.lista) {
-    // A última vez do serviço em QUALQUER ficha da pessoa.
+    // A última vez de cada família em QUALQUER ficha da pessoa.
     const mapas = x.nomes.map(n => ultimas.get(n)).filter(Boolean) as Map<string, { nome: string; em: number; data: string }>[]
     if (!mapas.length) continue
-    const ultimaDo = (s: string) => mapas.map(m => m.get(semAcento(s))).filter(Boolean)
-      .reduce<{ nome: string; em: number; data: string } | undefined>((m, u) => (!m || u!.em > m.em ? u! : m), undefined)
+    const ultimaDaFamilia = new Map<string, { nome: string; em: number; data: string }>()
+    for (const m of mapas) {
+      for (const u of m.values()) {
+        const f = nomeParaCliente(u.nome)
+        if (!familias.has(f)) continue
+        const a = ultimaDaFamilia.get(f)
+        if (!a || u.em > a.em) ultimaDaFamilia.set(f, u)
+      }
+    }
     let melhor: PerfilCliente | null = null
-    for (const s of d.publico.servicos) {
-      const u = ultimaDo(s), ciclo = cicloDe(s)
-      if (!u || !ciclo) continue
+    for (const [f, u] of ultimaDaFamilia) {
+      const ciclo = cicloFam.get(f) || 0
+      if (!ciclo) continue
       const atraso = Math.floor((agora - (u.em + ciclo * 864e5)) / 864e5)
       if (atraso < 0 || atraso > d.tolerancia_dias) continue
-      if (!melhor || atraso > (melhor.atraso || 0)) {
+      // Mais de um serviço vencido: lembra o que venceu mais recentemente.
+      if (!melhor || atraso < (melhor.atraso || 0)) {
         melhor = { ...x, servico_alvo: u.nome, feito_em: u.data, atraso, envio_chave: `${x.chave}|${semAcento(u.nome)}|${u.em}` }
       }
     }
     if (melhor) lista.push(melhor)
   }
-  // Mesma ordem de todas as listas (dono, 29/09/2026): quem veio ao salão
-  // mais recentemente primeiro -- tem conversa no WhatsApp (menos risco de
-  // bloqueio) e volta mais. Empate: quem venceu há menos tempo.
-  lista.sort((a, b) => a.dias - b.dias || (a.atraso || 0) - (b.atraso || 0))
+  // Ordem do lembrete (dono, 30/09/2026): quem fez o serviço mais
+  // recentemente primeiro (venceu há menos tempo -- 2025 antes de 2023).
+  // Empate: quem veio ao salão mais recentemente.
+  lista.sort((a, b) => (a.atraso || 0) - (b.atraso || 0) || a.dias - b.dias)
   return { lista, semCelular: base.semCelular, repetidos: base.repetidos, sem_ciclo }
 }
 
@@ -1115,7 +1162,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       enviosDoDisparo(salaoId, d),
       travados(salaoId, d.trava_dias, retorno ? new Set([d.id, ...disparos.filter(ehRecuperacao).map(x => x.id)]) : undefined),
     ])
-    const restantes = lista.filter(x => !env.feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
+    const restantes = env.alinhar(lista).filter(x => !env.feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
       && !naRecuperacao(x)).map(env.marcaDe)
     if (!restantes.length) {
       if (sempreRodando(d)) {
@@ -1207,7 +1254,7 @@ export async function simularProximo(salaoId: string, d: Disparo) {
   const recebeuOutro = deOutros(await enviosDaSemana(salaoId), d)
   const puladas: { cliente: string; motivo: string }[] = []
   let proxima: any = null
-  for (const x of lista) {
+  for (const x of env.alinhar(lista)) {
     if (puladas.length > 25) break
     if (env.feitos.has(x.envio_chave!)) continue
     if (recuperando.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'está numa lista de risco/perdidas' }); continue }
@@ -1246,8 +1293,10 @@ export async function rodarDisparos() {
 // ── Números para a tela ──────────────────────────────────────────────────────
 export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
-  const { lista, semCelular, repetidos, sem_ciclo } = await alvosDoDisparo(salaoId, d, perfis)
+  const alvos = await alvosDoDisparo(salaoId, d, perfis)
+  const { semCelular, repetidos, sem_ciclo } = alvos
   const [env, bloq, recuperando] = await Promise.all([enviosDoDisparo(salaoId, d), bloqueados(salaoId), foraPorRecuperacao(salaoId, d, perfis)])
+  const lista = env.alinhar(alvos.lista)
   const na_recuperacao = lista.filter(x => recuperando.has(x.chave) && !env.feitos.has(x.envio_chave!)).length
   const naLista = lista.filter(x => !bloq.has(x.chave) && (env.feitos.has(x.envio_chave!) || !recuperando.has(x.chave)))
   // "enviadas" = quem está feito agora; quem voltou a poder receber (repetição) conta em "faltam".

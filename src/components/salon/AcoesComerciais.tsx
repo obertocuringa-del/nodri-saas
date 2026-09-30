@@ -62,7 +62,7 @@ export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boo
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
   const [fCategoria, setFCategoria] = useState('')
-  const [fStatus, setFStatus] = useState<'todas' | 'ativa' | 'agendada' | 'encerrada'>('todas')
+  const [fStatus, setFStatus] = useState<'valendo' | 'finalizada' | 'todas' | 'ativa' | 'agendada' | 'encerrada'>('valendo')
   const [ordem, setOrdem] = useState<'recentes' | 'compartilhadas'>('recentes')
   const [aberta, setAberta] = useState<Campanha | null>(null)
   const [editando, setEditando] = useState<Campanha | null>(null)
@@ -158,6 +158,11 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
       if (fStatus === 'ativa' && st !== 'ativa') return false
       if (fStatus === 'agendada' && st !== 'agendada') return false
       if (fStatus === 'encerrada' && st !== 'encerrada') return false
+      // Tela principal: só o que está valendo ou vai valer. Encerrada (a data
+      // de fim passou) e oculta (rascunho) vão para "Finalizadas e ocultas"
+      // (dono, 30/09/2026: a campanha vencida continuava na tela).
+      if (fStatus === 'valendo' && (st === 'encerrada' || st === 'inativa')) return false
+      if (fStatus === 'finalizada' && st !== 'encerrada' && st !== 'inativa') return false
       if (fCategoria && c.categoria !== fCategoria) return false
       if (q && !(`${c.titulo} ${c.descricao} ${c.categoria}`.toLowerCase().includes(q))) return false
       return true
@@ -167,6 +172,7 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
   }, [campanhas, busca, fStatus, fCategoria, ordem])
 
   const totalAtivas = campanhas.filter(c => statusCampanha(c) === 'ativa').length
+  const qtdValendo = campanhas.filter(c => { const st = statusCampanha(c); return st === 'ativa' || st === 'agendada' }).length
   const totalShares = campanhas.reduce((s, c) => s + (c.shares || 0), 0)
   const totalViews = campanhas.reduce((s, c) => s + (c.views || 0), 0)
 
@@ -269,11 +275,10 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
       {/* Status + ordem + seleção */}
       <div className="ac-status">
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
-          {/* Só "Todas" e "Encerradas". Separar ativa de futura obrigava a
-              cliente a adivinhar em que gaveta estava a promoção que ela viu —
-              e "Futuras" ainda escondia o que já dava para agendar. O que
-              interessa é: está valendo, ou já passou. */}
-          {([['todas', 'Todas'], ['encerrada', 'Encerradas']] as const).map(([k, l]) => (
+          {/* Duas gavetas: o que está valendo (inclui as que ainda vão
+              começar) e o que já passou ou foi ocultado. Separar ativa de
+              futura obrigava a adivinhar em que gaveta estava a promoção. */}
+          {([['valendo', `Valendo (${qtdValendo})`], ['finalizada', `Finalizadas e ocultas (${campanhas.length - qtdValendo})`]] as const).map(([k, l]) => (
             <button key={k} onClick={() => setFStatus(k)}
               style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none',
                 background: fStatus === k ? '#1a1a2e' : '#f0eee8', color: fStatus === k ? '#fff' : '#6b6860' }}>{l}</button>
