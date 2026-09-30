@@ -3403,13 +3403,58 @@ function Anexo({ m }: { m: Mensagem }) {
   if (m.tipo === 'audio') {
     // Áudio de cliente é onde mora metade da informação de um salão. Tocar
     // aqui dentro evita a viagem até o celular.
-    return <audio src={url} controls className="mb-1" style={{ maxWidth: 240 }} />
+    return <AudioComTexto m={m} url={url} />
   }
   return (
     <a href={url} target="_blank" rel="noreferrer"
       className="flex items-center gap-1.5 mb-1 text-[12px] font-bold underline">
       <FileText size={13} /> Abrir arquivo
     </a>
+  )
+}
+
+
+// Áudio com o botão "Ver o que está no áudio": nem sempre dá para ouvir na
+// recepção. A transcrição fica guardada na mensagem, então a segunda vez
+// que alguém clica ela aparece na hora.
+function AudioComTexto({ m, url }: { m: Mensagem; url: string }) {
+  const [texto, setTexto] = useState<string>(m.transcricao || '')
+  const [aberto, setAberto] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function ver() {
+    if (aberto) { setAberto(false); return }
+    setAberto(true)
+    if (texto || carregando) return
+    setCarregando(true); setErro('')
+    try {
+      const r = await fetch('/api/crm/transcrever', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: m.id }),
+      })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) setErro(j.error || 'Não consegui transcrever.')
+      else setTexto(j.texto || '')
+    } catch { setErro('Sem conexão. Tente de novo.') }
+    setCarregando(false)
+  }
+
+  return (
+    <div className="mb-1" style={{ maxWidth: 260 }}>
+      <audio src={url} controls style={{ maxWidth: 240 }} />
+      <button type="button" onClick={ver}
+        className="flex items-center gap-1 mt-1 text-[11.5px] font-bold underline"
+        style={{ opacity: 0.8 }}>
+        <FileText size={12} /> {aberto ? 'Esconder texto' : 'Ver o que está no áudio'}
+      </button>
+      {aberto && (
+        <div className="mt-1 px-2 py-1.5 rounded text-[13px] leading-[1.4] whitespace-pre-wrap break-words"
+          style={{ background: 'rgba(0,0,0,.05)', borderLeft: '3px solid #a8624f' }}>
+          {carregando ? 'Ouvindo o áudio...' : erro ? <span style={{ color: '#b3261e' }}>{erro}</span> : texto}
+        </div>
+      )}
+    </div>
   )
 }
 
