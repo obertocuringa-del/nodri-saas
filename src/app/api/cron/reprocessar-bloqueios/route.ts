@@ -27,7 +27,13 @@ function formatBR(date: Date): string {
 }
 
 // Roda diariamente às 03:00 — reprocessa bloqueios de todos os salões
-export async function GET() {
+// Chamada só pelo agendador do servidor (/etc/cron.d/nodri), com o Bearer
+// CRON_SECRET -- a Vercel, que chamava antes, saiu em 26/09/2026.
+export async function GET(req: Request) {
+  const segredo = process.env.CRON_SECRET
+  if (!segredo || req.headers.get('authorization') !== `Bearer ${segredo}`) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
   try {
     const todayStr = new Date().toISOString().slice(0, 10)
 

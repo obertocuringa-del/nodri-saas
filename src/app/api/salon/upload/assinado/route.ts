@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { tipoPermitido, MSG_TIPO_RECUSADO } from '@/lib/tiposArquivo'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
   if (Number(tamanho) > 50 * 1024 * 1024) {
     return NextResponse.json({ error: 'Arquivo muito grande (máx. 50 MB)' }, { status: 400 })
   }
+
+  if (!tipoPermitido(String(nome || ''))) return NextResponse.json({ error: MSG_TIPO_RECUSADO }, { status: 400 })
 
   const safe = String(nome || 'arquivo').replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80)
   const path = `arquivos/${payload.salaoId}/${Date.now()}_${safe}`

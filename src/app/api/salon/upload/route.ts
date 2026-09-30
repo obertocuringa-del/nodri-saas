@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { tipoPermitido, MSG_TIPO_RECUSADO } from '@/lib/tiposArquivo'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -23,10 +24,13 @@ export async function POST(req: NextRequest) {
   if (!file) return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
   if (file.size > 50 * 1024 * 1024) return NextResponse.json({ error: 'Arquivo muito grande (máx. 50 MB)' }, { status: 400 })
 
+  const tipo = tipoPermitido(file.name || '', file.type)
+  if (!tipo) return NextResponse.json({ error: MSG_TIPO_RECUSADO }, { status: 400 })
+
   const safe = (file.name || 'arquivo').replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80)
   const path = `arquivos/${payload.salaoId}/${Date.now()}_${safe}`
   const buffer = Buffer.from(await file.arrayBuffer())
-  const opts = { contentType: file.type || 'application/octet-stream', upsert: true }
+  const opts = { contentType: tipo, upsert: true }
 
   let { error } = await supabaseAdmin.storage.from('uploads').upload(path, buffer, opts)
   // Cria o bucket (público) automaticamente na primeira vez e tenta de novo
@@ -37,5 +41,5 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const { data: { publicUrl } } = supabaseAdmin.storage.from('uploads').getPublicUrl(path)
-  return NextResponse.json({ url: publicUrl, filename: file.name || safe, type: file.type || '' })
+  return NextResponse.json({ url: publicUrl, filename: file.name || safe, type: tipo })
 }

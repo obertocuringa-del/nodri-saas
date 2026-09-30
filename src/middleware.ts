@@ -59,6 +59,12 @@ async function roteador(request: NextRequest) {
     pathname === '/api/cron/limpar-midia' ||
     // Relógio do Envio automático (a cada minuto), mesmo Bearer na rota.
     pathname === '/api/cron/disparos' ||
+    // As tarefas diárias (antes da Vercel): mesmo Bearer, conferido na rota.
+    pathname === '/api/cron/check-licencas' ||
+    pathname === '/api/cron/check-trials' ||
+    pathname === '/api/cron/lembretes-pix' ||
+    pathname === '/api/cron/limpar-compras' ||
+    pathname === '/api/cron/reprocessar-bloqueios' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em

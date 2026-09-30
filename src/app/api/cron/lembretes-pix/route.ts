@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Roda todo dia — verifica salões PIX que vencem em 5 dias
-export async function GET() {
+// Chamada só pelo agendador do servidor (/etc/cron.d/nodri), com o Bearer
+// CRON_SECRET -- a Vercel, que chamava antes, saiu em 26/09/2026.
+export async function GET(req: Request) {
+  const segredo = process.env.CRON_SECRET
+  if (!segredo || req.headers.get('authorization') !== `Bearer ${segredo}`) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
   try {
     const hoje = new Date()
     const em5dias = new Date()

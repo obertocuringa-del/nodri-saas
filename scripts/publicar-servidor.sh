@@ -24,5 +24,18 @@ ssh -i "$CHAVE" "$SERVIDOR" 'su - nodri -c "cd ~/nodri-novo \
   && if NODE_OPTIONS=--max-old-space-size=2560 npm run build > /tmp/nodri-build.log 2>&1; then tail -3 /tmp/nodri-build.log; \
      else echo; echo ======== ERRO NA MONTAGEM ========; tail -40 /tmp/nodri-build.log; echo ==================================; fi; \
   pm2 restart nodri --update-env >/dev/null && echo NODRI reiniciado; free -m | head -2"'
+# Tarefas diárias que a Vercel chamava (auditoria, 30/09/2026): licenças,
+# testes grátis, lembrete de PIX, bloqueios e limpeza de compras. Ficam num
+# arquivo PRÓPRIO (/etc/cron.d/nodri-diarias), sem tocar no /etc/cron.d/nodri
+# que já existe. Refeito a cada publicação -- é idempotente. A chave sai do
+# .env do servidor e nunca passa por aqui.
+ssh -i "$CHAVE" "$SERVIDOR" 'SEG=$(grep -E "^CRON_SECRET=" /home/nodri/nodri-novo/.env.production.local | head -1 | cut -d= -f2- | tr -d "\"'"'"'\r"); \
+  if [ -n "$SEG" ]; then \
+    { echo "# NODRI -- tarefas diárias (gerado por scripts/publicar-servidor.sh)"; \
+      echo "SHELL=/bin/sh"; \
+      for t in "0 8 check-licencas" "0 9 check-trials" "0 10 lembretes-pix" "0 3 reprocessar-bloqueios" "0 4 limpar-compras"; do \
+        set -- $t; echo "$1 $2 * * * root curl -s -m 110 -H \"Authorization: Bearer $SEG\" https://www.nodri.com.br/api/cron/$3 >/dev/null 2>&1"; \
+      done; } > /etc/cron.d/nodri-diarias && chmod 644 /etc/cron.d/nodri-diarias && echo "tarefas diárias agendadas"; \
+  else echo "AVISO: CRON_SECRET não achado no servidor -- tarefas diárias não agendadas"; fi'
 sleep 10
 curl -s -o /dev/null -w "site: %{http_code}\n" https://www.nodri.com.br/api/health

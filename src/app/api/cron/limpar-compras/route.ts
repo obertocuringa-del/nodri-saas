@@ -22,7 +22,13 @@ export const dynamic = 'force-dynamic'
 // cadastro de quem pagou atrasado, e o webhook não teria como criar o salão.
 const DIAS = 7
 
-export async function GET() {
+// Chamada só pelo agendador do servidor (/etc/cron.d/nodri), com o Bearer
+// CRON_SECRET -- a Vercel, que chamava antes, saiu em 26/09/2026.
+export async function GET(req: Request) {
+  const segredo = process.env.CRON_SECRET
+  if (!segredo || req.headers.get('authorization') !== `Bearer ${segredo}`) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
   const limite = new Date(Date.now() - DIAS * 24 * 60 * 60 * 1000).toISOString()
 
   const { data, error } = await supabaseAdmin
