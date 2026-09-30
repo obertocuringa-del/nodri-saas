@@ -45,10 +45,17 @@ if [ -n "$SEG" ]; then
 else
   echo "AVISO: CRON_SECRET não achado no servidor -- tarefas diárias não agendadas"
 fi
+# O vigia (scripts/vigia-servidor.sh): a cada 5 min confere site, robô do
+# Avec e ponte do WhatsApp, e religa o que parou. Arquivo próprio no cron.
+if [ -f /home/nodri/nodri-novo/scripts/vigia-servidor.sh ]; then
+  install -m 755 /home/nodri/nodri-novo/scripts/vigia-servidor.sh /usr/local/bin/nodri-vigia.sh \
+    && printf '# NODRI -- vigia (gerado por scripts/publicar-servidor.sh)\nSHELL=/bin/bash\n*/5 * * * * root /usr/local/bin/nodri-vigia.sh\n' > /etc/cron.d/nodri-vigia \
+    && chmod 644 /etc/cron.d/nodri-vigia && echo "vigia ligado (a cada 5 min)"
+fi
 FIM
 )
 git archive HEAD src public package.json package-lock.json next.config.mjs tsconfig.json \
-    tailwind.config.js postcss.config.js \
+    tailwind.config.js postcss.config.js scripts/vigia-servidor.sh \
   | ssh -o ConnectTimeout=20 -i "$CHAVE" "$SERVIDOR" "$REMOTO"
 sleep 10
 curl -s -o /dev/null -w "site: %{http_code}\n" https://www.nodri.com.br/api/health

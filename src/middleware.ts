@@ -65,6 +65,7 @@ async function roteador(request: NextRequest) {
     pathname === '/api/cron/lembretes-pix' ||
     pathname === '/api/cron/limpar-compras' ||
     pathname === '/api/cron/reprocessar-bloqueios' ||
+    pathname === '/api/cron/saude' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em

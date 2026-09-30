@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { lerSaude } from '@/lib/saudeSistema'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, escritaBloqueadaSub } from '@/lib/apiAuth'
 import { MODELOS_PADRAO, MOTIVOS_PERDA_PADRAO, ORIGENS_PADRAO, MOTIVOS_DESMARQUE_PADRAO } from '@/lib/crm'
@@ -154,7 +155,9 @@ export async function GET() {
     .eq('salao_id', sess!.salaoId).eq('chave', CHAVE_ESTADOS).maybeSingle()
   const estados = estRow ? lerConfigEstados((estRow as any).valor) : ESTADOS_VAZIO
 
-  return NextResponse.json({ canal, foraDoAr, estados, atendentes, profissionais, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [] })
+  // O que o vigia do servidor achou parado (lib/saudeSistema): a tela avisa.
+  const saude = await lerSaude(sess!.salaoId).catch(() => null)
+  return NextResponse.json({ canal, foraDoAr, estados, atendentes, profissionais, modelos: modelos || [], motivos: motivos || [], origens: origens || [], desmarques: desmarques || [], saude })
 }
 
 /** "Já conferi": apaga o aviso de que a ponte ficou fora do ar. */

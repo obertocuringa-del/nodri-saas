@@ -288,6 +288,9 @@ export default function CrmPage() {
     porNaCaixa(String(m.texto || ''), novas.atendente, novas.profissional)
   }
 
+  // O que o vigia do servidor achou parado (robô do Avec, ponte do WhatsApp).
+  const [saude, setSaude] = useState<any>(null)
+
   async function puxarCanal() {
     try {
       const r = await fetch('/api/crm/canal')
@@ -299,6 +302,7 @@ export default function CrmPage() {
       setOrigens(d.origens || [])
       setDesmarques(d.desmarques || [])
       setForaDoAr(d.foraDoAr || null)
+      setSaude(d.saude || null)
       setEstadosCfg(d.estados || ESTADOS_VAZIO)
       setAtendentes(d.atendentes || [])
       setProfissionais(d.profissionais || [])
@@ -1137,6 +1141,30 @@ export default function CrmPage() {
           </div>
         )}
 
+        {/* ── O vigia achou algo parado ────────────────────────────────────
+            30/09/2026: o robô do Avec ficou o dia parado sem ninguém saber.
+            O servidor tenta religar sozinho a cada 5 min; esta faixa diz o
+            que está parado e quantas vezes ele já tentou. Some quando volta. */}
+        {saude?.problemas?.length > 0 && (
+          <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-start gap-3"
+            style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+            <AlertTriangle size={16} style={{ color: '#9a6b12', flexShrink: 0, marginTop: 2 }} />
+            <div className="text-[12.5px] flex-1" style={{ color: '#6e625c' }}>
+              {saude.problemas.map((p: any, i: number) => (
+                <p key={i}><strong style={{ color: '#9a6b12' }}>{p.motivo.charAt(0).toUpperCase() + p.motivo.slice(1)}.</strong></p>
+              ))}
+              <p>
+                {p_servicoTexto(saude.problemas)}
+                {' '}O servidor tenta religar sozinho a cada 5 minutos
+                {(() => {
+                  const hoje = (saude.reinicios || []).filter((r: any) => new Date(r.em).toDateString() === new Date().toDateString())
+                  return hoje.length ? ` (já tentou ${hoje.length}x hoje, a última às ${new Date(hoje[hoje.length - 1].em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}).` : '.'
+                })()}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── O CRM ficou fora do ar e ninguém soube ─────────────────────────
             Mensagem que chegou nesse período está SÓ no celular: para o
             WhatsApp, aparelho desconectado deixou de existir, e não há como
@@ -1685,6 +1713,14 @@ export default function CrmPage() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+
+/** O que para quando cada serviço para -- dito do jeito que a recepção sente. */
+function p_servicoTexto(problemas: any[]) {
+  const partes: string[] = []
+  if (problemas.some(p => p.servico === 'robo')) partes.push('aviso ao profissional, confirmação e feedback não estão saindo')
+  if (problemas.some(p => p.servico === 'ponte')) partes.push('mensagens do WhatsApp podem não estar chegando nem saindo')
+  return partes.length ? `Enquanto isso, ${partes.join(' e ')}.` : ''
+}
 
 function SeloConexao({ canal }: { canal: any }) {
   const mapa: Record<string, { t: string; cor: string; fundo: string }> = {
