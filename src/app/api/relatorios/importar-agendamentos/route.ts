@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { agendarDeteccao } from '@/lib/profissionaisNovos'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin.from('agendamentos_raw').insert(chunk)
     }
 
+    agendarDeteccao(salaoId)
     return NextResponse.json({ ok: true, salvos: rows?.length || 0 })
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })

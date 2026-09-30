@@ -651,6 +651,33 @@ ${montarContratoHTML()}
     carregarProfissionais()
   }
 
+  // Profissional nova nos relatórios da Avec vira cadastro pendente aqui.
+  // A importação já confere sozinha; abrir a tela confere de novo, para
+  // ninguém depender de lembrar de procurar.
+  useEffect(() => {
+    fetch('/api/profissionais/novos-relatorio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'detectar' }) })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const n = d?.criados?.length || 0
+        if (n) { toast.success(n === 1 ? `Nova profissional nos relatórios: ${d.criados[0]}` : `${n} profissionais novas nos relatórios`); carregarProfissionais() }
+      }).catch(() => { })
+  }, [])
+
+  const [juntarDestino, setJuntarDestino] = useState<Record<string, string>>({})
+  async function juntarCom(prof: Profissional) {
+    const destino = juntarDestino[prof.id]
+    if (!destino) { toast.error('Escolha com quem juntar'); return }
+    const alvo = profissionais.find(p => p.id === destino)
+    if (!window.confirm(`Juntar "${prof.nome_completo}" com ${alvo?.nome_completo || 'a pessoa escolhida'}? A ficha pendente sai e o sistema passa a reconhecer esse nome como ${alvo?.apelido || alvo?.nome_completo}.`)) return
+    setAprovandoId(prof.id)
+    try {
+      const res = await fetch('/api/profissionais/novos-relatorio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'juntar', pendente: prof.id, destino }) })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) { toast.success('Juntado. Esse nome não aparece mais como novo.'); carregarProfissionais() } else toast.error(d.error || 'Erro ao juntar')
+    } catch { toast.error('Erro de conexão') }
+    setAprovandoId(null)
+  }
+
   useEffect(() => { carregarProfissionais(); buscarLinkCadastro(); carregarServicos(); carregarSalao(); fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setSouDono(d?.role === 'salon')).catch(() => { }); fetch('/api/salon/grid?chave=prof_categorias').then(r => r.ok ? r.json() : null).then(d => { if (d && Array.isArray(d.lista)) setCatsCustom(d.lista) }).catch(() => { }); fetch('/api/salon/boletos?resumo=1').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.vencidos === 'number') setBoletosVencidos(d.vencidos) }).catch(() => { }) }, [])
 
   async function carregarSalao() {
@@ -1056,12 +1083,42 @@ ${montarContratoHTML()}
                         </span>
                         <button disabled={aprovandoId === p.id} onClick={() => aprovarCadastro(p)}
                           style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: aprovandoId === p.id ? 'default' : 'pointer', opacity: aprovandoId === p.id ? 0.6 : 1 }}>
-                          {aprovandoId === p.id ? 'Aprovando...' : '✓ Aprovar'}
+                          {aprovandoId === p.id ? 'Aprovando...' : 'Aprovar'}
+                        </button>
+                        <button disabled={aprovandoId === p.id} onClick={() => { try { sessionStorage.setItem('nodri_prof_' + p.id, JSON.stringify(p)) } catch(_){} router.push(`/salon/profissionais/${p.id}`) }}
+                          style={{ background: '#fff', color: '#1a1a1a', border: '1px solid #d6d3d1', borderRadius: '7px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                          Corrigir
                         </button>
                         <button disabled={aprovandoId === p.id} onClick={() => recusarCadastro(p)}
                           style={{ background: '#fff', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '7px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                           Recusar
                         </button>
+                        {(p as any).origem_relatorio && (() => {
+                          const o = (p as any).origem_relatorio
+                          const FONTES: Record<string, string> = { atendimentos: 'atendimentos', agenda: 'agenda', feedbacks: 'feedbacks', servicos: 'serviços', pagamentos: 'pagamentos' }
+                          const fontes = Object.entries(o.fontes || {}).map(([f, n]) => `${FONTES[f] || f}: ${n}`).join(' · ')
+                          return (
+                            <div style={{ flexBasis: '100%', fontSize: '11px', color: '#57534e', lineHeight: 1.5 }}>
+                              <div>Veio dos relatórios da Avec como: <b>{(o.nomes || []).join(', ')}</b></div>
+                              {fontes && <div>{fontes}</div>}
+                              {(o.avisos || []).map((a: string, i: number) => <div key={i} style={{ color: '#b45309', fontWeight: 600 }}>{a}</div>)}
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
+                                <span>Já é alguém do cadastro?</span>
+                                <select value={juntarDestino[p.id] || ''} onChange={e => setJuntarDestino(v => ({ ...v, [p.id]: e.target.value }))}
+                                  style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #d6d3d1', maxWidth: 220 }}>
+                                  <option value="">Escolha a pessoa...</option>
+                                  {profissionais.filter(x => x.id !== p.id && !(x as any).is_departamento && (x as any).status_cadastro !== 'pendente')
+                                    .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''))
+                                    .map(x => <option key={x.id} value={x.id}>{x.nome_completo}{x.apelido ? ` (${x.apelido})` : ''}{x.ativo === false ? ' - inativa' : ''}</option>)}
+                                </select>
+                                <button disabled={aprovandoId === p.id || !juntarDestino[p.id]} onClick={() => juntarCom(p)}
+                                  style={{ background: '#fff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: juntarDestino[p.id] ? 'pointer' : 'default', opacity: juntarDestino[p.id] ? 1 : 0.5 }}>
+                                  Juntar
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })()}
                       </div>
                     ))}
                   </div>

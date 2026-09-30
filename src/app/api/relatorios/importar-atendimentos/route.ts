@@ -4,6 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { limparCacheAtendimentos } from '@/lib/atendimentosCache'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { agendarDeteccao } from '@/lib/profissionaisNovos'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
 
     // Dados brutos mudaram → invalida o cache de leitura.
     limparCacheAtendimentos(salaoId)
+
+    // Profissional nova na Avec vira cadastro pendente (sem esperar).
+    agendarDeteccao(salaoId)
 
     return NextResponse.json({ ok: true, salvos: rows?.length || 0, ultimo_chunk })
   } catch (err: any) {

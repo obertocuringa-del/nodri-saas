@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { escritaBloqueadaSub } from '@/lib/apiAuth'
+import { agendarDeteccao } from '@/lib/profissionaisNovos'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
       if (!ef) feedbacksSalvos = rows.length
     }
 
+    agendarDeteccao(salaoId)
     return NextResponse.json({
       ok: true,
       periodos_salvos: salvos,
