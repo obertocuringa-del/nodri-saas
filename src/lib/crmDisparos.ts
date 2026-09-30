@@ -15,9 +15,9 @@
 //                 nunca recebe de novo, mesmo pausando por meses
 //   trava         quem recebeu qualquer envio -- ou foi contatada à mão pelo
 //                 botão das listas -- nos últimos N dias fica de fora
-//   um por vez    vários podem ficar ligados, cada um com seu período
-//                 (inicio/fim); a volta pega UM só, o de início mais cedo,
-//                 e o seguinte começa quando ele acaba (`escolherDaVez`)
+//   um por vez    vários podem ficar ligados, cada um com seu período e
+//                 horário; sai UMA mensagem por volta para o salão inteiro e
+//                 a vez é de quem mandou há mais tempo (revezamento)
 //   não junta     com mensagem na fila (confirmação, feedback) ele ESPERA a
 //                 fila esvaziar e mais 5 minutos (`filaOcupada`)
 //   parar         quem responde "parar"/"sair" nunca mais recebe envio
@@ -945,30 +945,22 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     }
   }
 
-  // Quem tenta nesta volta: os que correm o tempo todo (lembrete de retorno,
-  // lista contínua) e UMA lista normal -- a de início mais cedo; as outras
-  // esperam a vez. E a lista que já acabou mas ainda tem 2ª mensagem para
-  // mandar. Sai no máximo uma mensagem por volta, e o intervalo vale para o
-  // salão inteiro, não por envio.
+  // Todas as ligadas que já estão no período revezam (dono, 30/09/2026):
+  // sai uma mensagem por volta para o salão inteiro e a vez é de quem mandou
+  // há mais tempo -- nunca duas juntas. Para uma lista só começar depois de
+  // outra, usa-se a data de início ou "Cada uma no seu horário".
   const noPeriodo = (x: Disparo) => x.ligado && (!x.inicio || x.inicio <= agora.dia)
-  // Com o dia dividido (cada lista no seu horário), a da vez é a que está no
-  // horário dela agora; sem ninguém no horário, a de início mais cedo (só
-  // para a tela dizer "começa às").
-  const normais = disparos.filter(x => !sempreRodando(x))
-  const noHorario = (x: Disparo) => x.dias_semana.includes(agora.semana) && agora.hora >= x.janela_ini && agora.hora < x.janela_fim
-  const listaDaVez = escolherDaVez(normais.filter(noHorario), agora.dia) || escolherDaVez(normais, agora.dia)
-  const sempre = disparos.filter(x => sempreRodando(x) && noPeriodo(x))
+  const ativos = disparos.filter(noPeriodo)
   const soSegunda = disparos.filter(x => !x.ligado && x.segunda.ligada && estados[x.id]?.concluido_em
     && Date.now() - new Date(estados[x.id].concluido_em!).getTime() < (x.segunda.dias + 8) * 864e5)
   for (const x of disparos) {
-    if (!x.ligado || x.id === listaDaVez?.id || sempre.includes(x)) continue
-    marcar(x, x.inicio && x.inicio > agora.dia
-      ? `Agendado: começa em ${dataBR(x.inicio)}`
-      : `Na fila: começa quando "${listaDaVez?.nome || 'o anterior'}" terminar`)
+    if (!x.ligado || ativos.includes(x)) continue
+    marcar(x, `Agendado: começa em ${dataBR(x.inicio)}`)
   }
-  // Recuperação primeiro: é ela que manda quando a cliente está em duas listas.
-  const candidatos = [...sempre, ...(listaDaVez ? [listaDaVez] : []), ...soSegunda]
-    .sort((a, b) => Number(ehRecuperacao(b)) - Number(ehRecuperacao(a)))
+  // A lista que já acabou mas ainda tem 2ª mensagem também entra.
+  const ultimoDe = (x: Disparo) => new Date(estados[x.id]?.ultimo_envio_em || 0).getTime()
+  const candidatos = [...ativos, ...soSegunda]
+    .sort((a, b) => ultimoDe(a) - ultimoDe(b) || Number(ehRecuperacao(b)) - Number(ehRecuperacao(a)))
   if (!candidatos.length) {
     if (mudou) await gravarDisparos(salaoId, disparos)
     await gravarEstadosDisparo(salaoId, estados)
@@ -1225,10 +1217,19 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
 // (prévia) e aqui (o que é salvo).
 export interface Fatia { id: string; max_dia: number; janela_ini: string; janela_fim: string; intervalo_min: number }
 const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
-export function dividirDia(ids: string[], total: number, ini: string, fim: string): Fatia[] {
+export function dividirDia(ids: string[], total: number, ini: string, fim: string, modo: 'sequencia' | 'intercalado' = 'sequencia'): Fatia[] {
   const n = ids.length
   const janela = Math.max(0, minutos(fim) - minutos(ini))
   if (!n || !janela || total < 1) return []
+  if (modo === 'intercalado') {
+    // Todas o dia todo, revezando: o intervalo do salão é janela ÷ total
+    // (12 h ÷ 100 = 7 min), e cada lista fica com a sua cota do dia.
+    const intervalo = Math.max(5, Math.floor(janela / total))
+    const cabemNoDia = Math.floor(janela / intervalo) + 1
+    const t = Math.min(total, cabemNoDia)
+    const base = Math.floor(t / n), sobra = t % n
+    return ids.map((id, i) => ({ id, max_dia: Math.max(1, base + (i < sobra ? 1 : 0)), janela_ini: ini, janela_fim: fim, intervalo_min: intervalo }))
+  }
   const fatia = Math.floor(janela / n)
   const base = Math.floor(total / n), sobra = total % n
   return ids.map((id, i) => {

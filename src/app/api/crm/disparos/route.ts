@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     const total = Math.max(1, Math.min(500, Math.round(Number(b.total) || 0)))
     const ini = /^\d{2}:\d{2}$/.test(b.janela_ini) ? b.janela_ini : '09:00'
     const fim = /^\d{2}:\d{2}$/.test(b.janela_fim) ? b.janela_fim : '21:00'
-    const fatias = dividirDia(ids, total, ini, fim)
+    const fatias = dividirDia(ids, total, ini, fim, b.modo === 'intercalado' ? 'intercalado' : 'sequencia')
     if (ids.length && !fatias.length) return NextResponse.json({ error: 'Horário inválido.' }, { status: 400 })
     for (const x of disparos) {
       const f = fatias.find(y => y.id === x.id)

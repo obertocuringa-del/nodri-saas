@@ -250,7 +250,7 @@ export default function EnvioAutomatico() {
       const outros = (lista || []).filter(x => x.ligado && x.id !== d.id && x.tipo !== 'retorno')
       if (d.inicio && d.inicio > hojeISO()) ok = `Envio agendado: começa em ${br(d.inicio)}.`
       else if (d.tipo === 'retorno') ok = 'Lembrete ligado. Ele corre junto com as listas, sempre uma mensagem por vez.'
-      else if (outros.length) ok = `Envio ligado. Ele manda depois de "${outros[0].nome}" terminar: só um envio manda por vez, na ordem da data de início.`
+      else if (outros.length) ok = `Envio ligado. Ele reveza com os outros ${outros.length} ligado(s): sai uma mensagem por vez no salão inteiro.`
     }
     await acao({ acao: 'ligar', id: d.id, ligado: on }, ok)
   }
@@ -426,12 +426,18 @@ function LimitarDiario({ lista, onFechar, onSalvo }: { lista: Disparo[]; onFecha
   const [total, setTotal] = useState(Math.min(100, lista.filter(d => d.ligado).reduce((t, d) => t + d.max_dia, 0) || 50))
   const [ini, setIni] = useState('09:00')
   const [fim, setFim] = useState('21:00')
+  const [modo, setModo] = useState<'intercalado' | 'sequencia'>('intercalado')
   const [salvando, setSalvando] = useState(false)
   // Na ordem da página: é a ordem dos horários do dia.
   const ids = lista.filter(d => ligados.includes(d.id!)).map(d => d.id!)
   const fatias = useMemo(() => {
     const n = ids.length, janela = Math.max(0, min(fim) - min(ini))
     if (!n || !janela || total < 1) return {} as Record<string, { max_dia: number; janela_ini: string; janela_fim: string; intervalo_min: number }>
+    if (modo === 'intercalado') {
+      const intervalo = Math.max(5, Math.floor(janela / total))
+      const t = Math.min(total, Math.floor(janela / intervalo) + 1), b0 = Math.floor(t / n), s0 = t % n
+      return Object.fromEntries(ids.map((id, i) => [id, { max_dia: Math.max(1, b0 + (i < s0 ? 1 : 0)), janela_ini: ini, janela_fim: fim, intervalo_min: intervalo }]))
+    }
     const fatia = Math.floor(janela / n), base = Math.floor(total / n), sobra = total % n
     return Object.fromEntries(ids.map((id, i) => {
       const cota = Math.max(1, base + (i < sobra ? 1 : 0))
@@ -439,13 +445,13 @@ function LimitarDiario({ lista, onFechar, onSalvo }: { lista: Disparo[]; onFecha
       const intervalo = Math.max(5, Math.floor((b - a) / cota))
       return [id, { max_dia: Math.min(cota, Math.floor((b - a) / intervalo) + 1), janela_ini: hhmm(a), janela_fim: hhmm(b), intervalo_min: intervalo }]
     }))
-  }, [ids.join(','), total, ini, fim]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ids.join(','), total, ini, fim, modo]) // eslint-disable-line react-hooks/exhaustive-deps
   const somado = Object.values(fatias).reduce((t, f) => t + f.max_dia, 0)
 
   async function salvar() {
     setSalvando(true)
     const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'distribuir', ids, total, janela_ini: ini, janela_fim: fim }) })
+      body: JSON.stringify({ acao: 'distribuir', ids, total, janela_ini: ini, janela_fim: fim, modo }) })
     const j = await r.json().catch(() => ({}))
     setSalvando(false)
     if (!r.ok) { alert(j.error || 'Não consegui salvar.'); return }
@@ -472,6 +478,20 @@ function LimitarDiario({ lista, onFechar, onSalvo }: { lista: Disparo[]; onFecha
             {ids.length ? <><b>{ids.length}</b> ligado(s) · cerca de <b>{Math.floor(total / ids.length)}</b> por envio</> : 'Nenhum ligado'}
           </div>
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 8, marginBottom: 12 }}>
+          {([['intercalado', 'Todas intercaladas o dia todo', 'Revezam uma mensagem de cada: A, B, C, A, B, C... O intervalo do salão é calculado sozinho.'],
+             ['sequencia', 'Cada uma no seu horário', 'Uma lista por vez: a primeira de manhã, a seguinte depois, e assim por diante.']] as const).map(([k, t, dsc]) => (
+            <button key={k} onClick={() => setModo(k)} style={{ textAlign: 'left', background: modo === k ? '#eceaf9' : '#fff', border: `1.5px solid ${modo === k ? ROXO : '#e0ddd8'}`, borderRadius: 10, padding: '10px 12px', cursor: 'pointer' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: modo === k ? ROXO : '#1a1a1a' }}>{t}</div>
+              <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 2 }}>{dsc}</div>
+            </button>
+          ))}
+        </div>
+        {modo === 'intercalado' && !!ids.length && Object.values(fatias)[0] && (
+          <div style={{ fontSize: 12.5, color: '#1a1a1a', marginBottom: 10 }}>
+            Das <b>{ini}</b> às <b>{fim}</b>, sai uma mensagem a cada <b>{Object.values(fatias)[0].intervalo_min} min</b> no salão inteiro, revezando entre as listas. Nunca duas ao mesmo tempo.
+          </div>
+        )}
         {total > 100 && <div style={{ fontSize: 12, color: '#9a6b12', fontWeight: 700, marginBottom: 10 }}>Mais de 100 por dia aumenta muito o risco de bloqueio no WhatsApp.</div>}
         {!!ids.length && somado < total && <div style={{ fontSize: 12, color: '#9a6b12', marginBottom: 10 }}>No horário escolhido só cabem {somado} (uma a cada 5 minutos no máximo por envio). Aumente o horário ou diminua o total.</div>}
 
