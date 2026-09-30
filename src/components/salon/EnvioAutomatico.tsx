@@ -406,7 +406,7 @@ export default function EnvioAutomatico() {
                     {c.fim && r.faltam > 0 && <span>termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
                     {!!r.sem_celular && <span style={{ color: '#a09a90' }}>{r.sem_celular} sem celular (fora)</span>}
                     {!!r.repetidos && <span style={{ color: '#a09a90' }}>{r.repetidos} com celular repetido (recebem uma vez)</span>}
-                    {!!r.bloqueados && <span style={{ color: '#a09a90' }}>{r.bloqueados} pediram para sair</span>}
+                    {!!r.bloqueados && <span style={{ color: '#a09a90' }}>{r.bloqueados} pediram para sair ou estão em "não perturbe"</span>}
                     {!!r.na_recuperacao && <span style={{ color: '#a09a90' }}>{r.na_recuperacao} fora por estar em risco/perdidas</span>}
                     {!!r.repetindo && <span style={{ color: '#6b6860' }}>{r.repetindo} voltaram para a fila (não vieram em {d.repetir_dias} dias)</span>}
                   </div>

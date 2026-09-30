@@ -25,7 +25,7 @@
 //   - o painel de saúde
 
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO, podeReceber, tipoDaMensagemDoSalao, type TipoAutomatico } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 
 export const CHAVE_CAMPANHAS = 'crm_campanhas'
@@ -444,9 +444,15 @@ export async function processarCampanha(
     return true
   })
   let posicao = 0
+  // Que tipo de mensagem esta campanha manda, para o "não perturbe".
+  const tipoFrase = tipoDaMensagemDoSalao(c.mensagens.join('\n'))
+  const tipoAuto: TipoAutomatico = c.pasta === 'confirmacao' || tipoFrase === 'confirmacao' ? 'confirmacao'
+    : c.pasta === 'feedback' || tipoFrase === 'feedback' ? 'feedback' : 'promocoes'
   const processarAlvo = async (a: Alvo) => {
     const contato = await acharOuCriarContato(salaoId, a.telefone, a.nomeContato || undefined, null)
     if (!contato) { resumo.puladas++; return }
+    // Profissional recebe o aviso do salão sempre; cliente respeita o "não perturbe".
+    if (c.destinatario !== 'profissional' && !podeReceber((contato as any).etiquetas, tipoAuto)) { resumo.puladas++; return }
 
     const textos = c.mensagens.map(m => preencher(m, a.dados)).filter(Boolean)
     if (!textos.length) { resumo.puladas++; return }

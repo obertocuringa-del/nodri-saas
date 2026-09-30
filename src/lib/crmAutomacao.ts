@@ -16,7 +16,7 @@
 // A senha do Avec NÃO mora aqui -- fica na extensão, no computador do salão.
 
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO, podeReceber } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 
 export const CHAVE_CFG = 'crm_automacao_feedback'
@@ -253,6 +253,7 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
     const primeiro = primeiroNome(nome)
     const contato = await acharOuCriarContato(salaoId, l.celular, nome || undefined, null)
     if (!contato) { resumo.puladas++; continue }
+    if (!podeReceber((contato as any).etiquetas, 'feedback')) { resumo.puladas++; continue }
 
     // Conversa aberta da cliente, se houver; senão nasce uma na pasta Feedback,
     // importada (feedback não é oportunidade que o salão gerou).

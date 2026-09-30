@@ -28,7 +28,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase'
 import { paginar } from '@/lib/paginar'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, podeReceber, ETIQUETA_NAO_PERTURBE } from '@/lib/crm'
 import { acharOuCriarContato, grafiasDoTelefone } from '@/lib/crmContatos'
 import { carregarCampanhas } from '@/lib/crmCampanhas'
 import { assinaturaAtendimentos } from '@/lib/atendimentosCache'
@@ -574,7 +574,12 @@ function bloqueados(salaoId: string) {
   return memo(`bloq:${salaoId}`, 60, async () => {
     const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_bloqueios')
       .select('chave').eq('salao_id', salaoId).range(de, ate))
-    return new Set(dados.map(r => r.chave))
+    const fora = new Set(dados.map(r => r.chave))
+    // "Não perturbe" sem "aceita: promoções": nenhum envio automático.
+    const { data: np } = await supabaseAdmin.from('crm_contatos').select('telefone, etiquetas')
+      .eq('salao_id', salaoId).contains('etiquetas', [ETIQUETA_NAO_PERTURBE]).limit(5000)
+    for (const c of np || []) if (c.telefone && !podeReceber(c.etiquetas, 'promocoes')) fora.add(chaveTelefone(normalizarTelefone(c.telefone)))
+    return fora
   })
 }
 

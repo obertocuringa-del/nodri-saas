@@ -29,6 +29,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import {
   ESTADOS, estadoPor, telefoneBonito, telefoneParaCopiar, minutosUteis, tempoCurto,
   urgenciaPorMinutos, CORES_URGENCIA, donoAtivo, preencherMensagem, type EstadoConversa,
+  ETIQUETA_NAO_PERTURBE, ETIQUETA_ACEITA,
 } from '@/lib/crm'
 
 type Conversa = any
@@ -56,6 +57,9 @@ const NOME_PASTA_FABRICA: Record<string, string> = {
 const NOTA_DO_BOTAO: Record<string, string> = { follow_up: 'volta amanhã', pausada: 'volta em 7 dias' }
 // Conversas ja decididas. Mensagem nova numa delas nao reabre; so avisa.
 const FECHADOS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
+// "Não perturbe": aba própria (a conversa continua na pasta dela -- se a
+// cliente escrever, vai para "Preciso agir" como qualquer outra).
+const ehNaoPerturbe = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NAO_PERTURBE)
 const ehNova = (c: any) => Array.isArray(c?.contato?.etiquetas) && c.contato.etiquetas.includes(ETIQUETA_NOVA)
 
 // Como chamar a pessoa na tela. Ordem: o nome que o WhatsApp deu, o nome do
@@ -89,7 +93,7 @@ export default function CrmPage() {
   // 'fila' = precisa de resposta e e de agora. 'antigas' = a cliente falou por
   // ultimo e ficou para tras. As duas sao 'acao_necessaria' no banco: o que
   // separa e a idade, e isso e decisao de tela, nao de estado.
-  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'novas' | 'todas' | EstadoConversa>('fila')
+  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'novas' | 'naoperturbe' | 'todas' | EstadoConversa>('fila')
   const setFiltro = (f: any) => { setFiltroCru(f); setMotivoFiltro('') }
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
@@ -512,6 +516,7 @@ export default function CrmPage() {
     if (filtro === 'fila') lista = lista.filter(c => (c.estado === 'acao_necessaria' && !c._antiga) || c._depois)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro === 'novas') lista = lista.filter(ehNova)
+    else if (filtro === 'naoperturbe') lista = lista.filter(ehNaoPerturbe)
     else if (filtro !== 'todas') lista = lista.filter(c => c.estado === filtro)
     if ((filtro === 'sem_conversao' || filtro === 'desmarcou') && motivoFiltro) {
       lista = lista.filter(c => c.motivo_perda === motivoFiltro)
@@ -556,6 +561,7 @@ export default function CrmPage() {
       desmarcadas: comTempo.filter(c => c.estado === 'desmarcou').length,
       confirmadas: comTempo.filter(c => c.estado === 'confirmado').length,
       novas: comTempo.filter(ehNova).length,
+      naoPerturbe: comTempo.filter(ehNaoPerturbe).length,
     }
   }, [comTempo])
 
@@ -911,6 +917,20 @@ export default function CrmPage() {
     } catch {}
   }
 
+  // "Não perturbe": grava as etiquetas do contato (as outras ficam como estão).
+  async function salvarEtiquetas(novas: string[]) {
+    const ct = aberta?.contato
+    if (!ct?.id) return
+    setConversas(atual => atual.map(c =>
+      c.contato?.id === ct.id ? { ...c, contato: { ...c.contato, etiquetas: novas } } : c))
+    setAberta((a: any) => (a ? { ...a, contato: { ...a.contato, etiquetas: novas } } : a))
+    const r = await fetch('/api/crm/contato', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: ct.id, etiquetas: novas }),
+    }).catch(() => null)
+    if (!r?.ok) alert('Não consegui salvar. Tente de novo.')
+  }
+
   async function marcarNaoLida() {
     if (!aberta) return
     const id = aberta.id
@@ -1224,6 +1244,10 @@ export default function CrmPage() {
             {contagem.perdidas > 0 && (
               <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
                 texto={`${nomePasta('sem_conversao')} (${contagem.perdidas})`} />
+            )}
+            {contagem.naoPerturbe > 0 && (
+              <Aba ativo={filtro === 'naoperturbe'} onClick={() => setFiltro('naoperturbe')}
+                texto={`Não perturbe (${contagem.naoPerturbe})`} />
             )}
             <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
           </div>
@@ -1618,13 +1642,13 @@ export default function CrmPage() {
           </main>
 
           {/* ── O que o NODRI já sabe ── */}
-          {aberta && !noCelular && <PainelCliente c={aberta} />}
+          {aberta && !noCelular && <PainelCliente c={aberta} onEtiquetas={salvarEtiquetas} />}
           {aberta && noCelular && fichaAberta && (
             <div className="fixed inset-0 z-30 flex" onClick={() => setFichaAberta(false)}>
               <div className="flex-1" style={{ background: 'rgba(26,22,20,.35)' }} />
               <div onClick={e => e.stopPropagation()} className="h-full overflow-y-auto"
                 style={{ width: 300, maxWidth: '86vw', background: '#fff', boxShadow: '-6px 0 24px rgba(0,0,0,.14)' }}>
-                <PainelCliente c={aberta} />
+                <PainelCliente c={aberta} onEtiquetas={salvarEtiquetas} />
               </div>
             </div>
           )}
@@ -2302,8 +2326,9 @@ function Encaminhar({ m, conversas, onFechar, onEscolher }: { m: Mensagem; conve
 // a coluna parecia um relatório. Agora tem cabeçalho, avatar, um cartão só
 // para "o que lembrar dela" (alergia é a informação mais cara de esquecer),
 // resumo com ícones e a lista do que ela costuma fazer.
-function PainelCliente({ c }: { c: Conversa }) {
+function PainelCliente({ c, onEtiquetas }: { c: Conversa; onEtiquetas?: (e: string[]) => void }) {
   const [dados, setDados] = useState<any>(null)
+  const [prefsAbertas, setPrefsAbertas] = useState(false)
   const ct = c.contato || {}
   const nomeBusca = ct.cliente_nome || ct.nome || ct.nome_agenda || ''
   // ── O telefone vai junto, e é ele que manda ───────────────────────────────
@@ -2470,6 +2495,11 @@ function PainelCliente({ c }: { c: Conversa }) {
           </>
         )}
 
+        {ct.id && onEtiquetas && (
+          <PreferenciasEnvio etiquetas={Array.isArray(ct.etiquetas) ? ct.etiquetas : []} aberto={prefsAbertas}
+            setAberto={setPrefsAbertas} onSalvar={onEtiquetas} />
+        )}
+
         {Array.isArray(ct.etiquetas) && ct.etiquetas.length > 0 && (
           <div className="mt-4 pt-3 border-t" style={{ borderColor: '#e9ddd6' }}>
             <p className="text-[10.5px] font-bold mb-1.5" style={{ color: '#9a8c85' }}>ETIQUETAS</p>
@@ -2483,6 +2513,71 @@ function PainelCliente({ c }: { c: Conversa }) {
         )}
       </div>
     </aside>
+  )
+}
+
+// ── "Não perturbe": o que a cliente aceita receber ─────────────────────────
+//
+// Pedido do dono (30/09/2026): em vez de bloquear a cliente, marcar que ela
+// não quer mensagem automática e escolher o que ela ainda aceita. O envio
+// automático, a confirmação e o feedback conferem isto antes de mandar
+// (podeReceber em src/lib/crm.ts). Mensagem digitada pela recepção sai sempre.
+function PreferenciasEnvio({ etiquetas, aberto, setAberto, onSalvar }: {
+  etiquetas: string[]; aberto: boolean; setAberto: (v: boolean) => void; onSalvar: (e: string[]) => void
+}) {
+  const ativo = etiquetas.includes(ETIQUETA_NAO_PERTURBE)
+  const tipos = [
+    ['confirmacao', 'Confirmação de horário'],
+    ['feedback', 'Feedback depois do atendimento'],
+    ['promocoes', 'Promoções, lembretes e listas (envio automático)'],
+  ] as const
+  const [marcados, setMarcados] = useState<string[]>([])
+  useEffect(() => {
+    if (aberto) setMarcados(tipos.filter(([k]) => etiquetas.includes(ETIQUETA_ACEITA[k])).map(([k]) => k))
+  }, [aberto]) // eslint-disable-line react-hooks/exhaustive-deps
+  const semPrefs = etiquetas.filter(e => e !== ETIQUETA_NAO_PERTURBE && !Object.values(ETIQUETA_ACEITA).includes(e))
+  const aceita = tipos.filter(([k]) => etiquetas.includes(ETIQUETA_ACEITA[k])).map(([, t]) => t)
+
+  return (
+    <div className="mt-4 pt-3 border-t" style={{ borderColor: '#e9ddd6' }}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10.5px] font-bold" style={{ color: '#9a8c85' }}>MENSAGENS AUTOMÁTICAS</p>
+        <button type="button" onClick={() => setAberto(!aberto)} className="text-[11px] font-bold" style={{ color: '#8a4a3a' }}>
+          {aberto ? 'Fechar' : 'Alterar'}
+        </button>
+      </div>
+      {!aberto && (
+        <p className="text-[12px] mt-1" style={{ color: ativo ? '#b4322a' : '#2f6b4f' }}>
+          {ativo ? <>Não perturbe{aceita.length ? <> · recebe só: {aceita.join(', ')}</> : <> · não recebe nenhuma</>}</> : 'Recebe todas'}
+        </p>
+      )}
+      {aberto && (
+        <div className="mt-2 rounded-lg p-2.5" style={{ background: '#fff', border: '1px solid #e9ddd6' }}>
+          <p className="text-[11.5px] mb-2" style={{ color: '#6b5f59' }}>
+            Marque só o que ela <b>aceita</b> receber. O resto não sai para ela, mesmo que esteja numa lista. Mensagem digitada pela recepção sai sempre.
+          </p>
+          {tipos.map(([k, t]) => (
+            <label key={k} className="flex items-center gap-2 text-[12px] py-1 cursor-pointer">
+              <input type="checkbox" checked={marcados.includes(k)}
+                onChange={e => setMarcados(e.target.checked ? [...marcados, k] : marcados.filter(x => x !== k))} />
+              {t}
+            </label>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <button type="button" className="flex-1 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: '#b4322a', color: '#fff' }}
+              onClick={() => { onSalvar([...semPrefs, ETIQUETA_NAO_PERTURBE, ...marcados.map(k => ETIQUETA_ACEITA[k as keyof typeof ETIQUETA_ACEITA])]); setAberto(false) }}>
+              {ativo ? 'Salvar' : 'Ativar não perturbe'}
+            </button>
+            {ativo && (
+              <button type="button" className="flex-1 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: '#e7f1e9', color: '#2f6b4f' }}
+                onClick={() => { onSalvar(semPrefs); setAberto(false) }}>
+                Voltar a receber tudo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

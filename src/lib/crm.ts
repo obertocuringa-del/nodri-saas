@@ -294,6 +294,26 @@ export function proximaAcaoPadrao(estado: EstadoConversa): string {
 // vir com uma promoção pendurada no rodapé, e o que importa é a confirmação.
 export type TipoSaida = 'confirmacao' | 'feedback' | 'lista'
 
+// ── "Não perturbe" (dono, 30/09/2026) ───────────────────────────────────────
+//
+// A cliente que não quer receber mensagem automática ganha a etiqueta abaixo
+// no contato, e junto o que ela ACEITA ("aceita: confirmação"...). Nada mais
+// automático sai para ela, mesmo que esteja numa lista. Em vez de bloquear a
+// cliente (e perder o contato), o salão só para de mandar o que ela não quer.
+// Mora nas etiquetas do contato: sem tabela nova, sem mudar o banco.
+export const ETIQUETA_NAO_PERTURBE = 'não perturbe'
+export type TipoAutomatico = 'confirmacao' | 'feedback' | 'promocoes'
+export const ETIQUETA_ACEITA: Record<TipoAutomatico, string> = {
+  confirmacao: 'aceita: confirmação',
+  feedback: 'aceita: feedback',
+  promocoes: 'aceita: promoções',
+}
+/** Pode receber esta mensagem automática? Sem a etiqueta, sempre pode. */
+export function podeReceber(etiquetas: any, tipo: TipoAutomatico) {
+  const e: string[] = Array.isArray(etiquetas) ? etiquetas : []
+  return !e.includes(ETIQUETA_NAO_PERTURBE) || e.includes(ETIQUETA_ACEITA[tipo])
+}
+
 export const ESTADO_DO_TIPO: Record<TipoSaida, EstadoConversa> = {
   confirmacao: 'confirmacao',
   feedback: 'feedback',
