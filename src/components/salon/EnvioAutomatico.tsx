@@ -88,21 +88,23 @@ const textosDe = (c: Exclude<Categoria, ''>) => ({
   segunda: { ligada: false, dias: 5, mensagens: [...PRONTOS[c].segunda] },
 })
 
+// Toda lista nasce contínua (dono, 30/09/2026): quem passa a caber na regra
+// entra sozinho na fila, sem refazer a lista. Dá para desmarcar no editor.
 // "Perdidas" e "Em risco" com a MESMA régua das abas de Mais Relatórios
 // (api/relatorios/analise-clientes: perdida > 90 dias, risco 46 a 90), para o
 // número daqui bater com o de lá. O que ainda difere é só quem não tem
 // celular ou divide o celular com outra ficha -- e isso aparece na tela.
 const PUB = { servicos: [], servicos_nao: [], segmento: 'todos' as const, ano_de: 0, ano_ate: 0 }
 const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
-  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', categoria: 'perdidas', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas') } },
-  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
-  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', categoria: 'promocao', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('promocao') } },
-  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', categoria: 'vip', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, ...textosDe('vip') } },
+  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', categoria: 'perdidas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas') } },
+  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
+  { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', categoria: 'promocao', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('promocao') } },
+  { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', categoria: 'vip', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, ...textosDe('vip') } },
   // Contínua: todo dia entra quem completou 20 dias da primeira visita sem
   // voltar. Sem teto de dias (dono, 29/09/2026: com 20 a 30 só apareciam 14,
   // e ele queria TODAS as novas do ano que não voltaram), limitada ao ano.
   { rotulo: 'Clientes novas', desc: 'Primeira visita este ano e não voltou em 20 dias: garantir a 2ª visita', d: { nome: 'Clientes novas (2ª visita)', categoria: 'novas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 20, dias_max: 0, segmento: 'novo', ano_de: new Date().getFullYear(), ano_ate: new Date().getFullYear() }, ...textosDe('novas') } },
-  { rotulo: 'Venda cruzada', desc: 'Fez um serviço e nunca fez outro que combina', d: { nome: 'Venda cruzada', categoria: 'cruzada', tipo: 'lista', continuo: false, publico: { ...PUB, dias_min: 0, dias_max: 120 }, ...textosDe('cruzada') } },
+  { rotulo: 'Venda cruzada', desc: 'Fez um serviço e nunca fez outro que combina', d: { nome: 'Venda cruzada', categoria: 'cruzada', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 0, dias_max: 120 }, ...textosDe('cruzada') } },
 ]
 // Uma cor por tipo de envio (dono, 29/09/2026: tudo branco confundia).
 const CORES: Record<string, { fundo: string; borda: string }> = {
@@ -135,7 +137,7 @@ async function baixarLista(d: { id?: string; nome: string }) {
 const ROTULO_CAT: Record<string, string> = Object.fromEntries(Object.entries(PRONTOS).map(([k, v]) => [k, v.rotulo]))
 
 const NOVO: Disparo = {
-  nome: '', tipo: 'lista', categoria: '', continuo: false, ciclos: {}, tolerancia_dias: 30,
+  nome: '', tipo: 'lista', categoria: '', continuo: true, ciclos: {}, tolerancia_dias: 30,
   publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas'), anexo: null,
   inicio: '', fim: '',
   janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
