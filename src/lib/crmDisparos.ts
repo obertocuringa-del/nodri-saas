@@ -194,8 +194,9 @@ export function lerDisparo(b: any): Disparo | null {
     janela_ini: soHora(b.janela_ini, '09:00'),
     janela_fim: soHora(b.janela_fim, '21:00'),
     dias_semana: dias.length ? dias.sort() : [1, 2, 3, 4, 5, 6],
-    // Piso de 5 minutos: abaixo disso deixa de ser "espaçado".
-    intervalo_min: num(b.intervalo_min, 30, 5, 720),
+    // Piso de 2 minutos: o dono digita o que quiser; a tela avisa do risco
+    // abaixo de 5. Menos que isso nem a rodada de 1 em 1 minuto acompanha.
+    intervalo_min: num(b.intervalo_min, 30, 2, 720),
     max_dia: num(b.max_dia, 20, 1, 300),
     trava_dias: num(b.trava_dias, 30, 0, 180),
     ciclo: num(b.ciclo, 1, 1, 999),

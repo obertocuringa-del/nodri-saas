@@ -551,6 +551,35 @@ function botao(fundo: string, cor: string, borda: string): React.CSSProperties {
   return { display: 'inline-flex', alignItems: 'center', gap: 5, background: fundo, color: cor, border: `1.5px solid ${borda}`, borderRadius: 8, padding: '6px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }
 }
 const rotulo: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }
+// Intervalo digitável: escolhe um dos prontos na lista OU digita os minutos
+// que quiser. O texto fica solto enquanto digita e só vale ao sair do campo,
+// senão apagar o "1" de "15" já viraria o piso na hora.
+const INTERVALO_MIN = 2, INTERVALO_MAX = 720
+function IntervaloCampo({ valor, onChange }: { valor: number; onChange: (v: number) => void }) {
+  const [txt, setTxt] = useState(String(valor))
+  useEffect(() => { setTxt(String(valor)) }, [valor])
+  const confirmar = () => {
+    const n = Math.round(Number(String(txt).replace(',', '.')))
+    const v = Number.isFinite(n) && n > 0 ? Math.min(INTERVALO_MAX, Math.max(INTERVALO_MIN, n)) : valor
+    setTxt(String(v)); if (v !== valor) onChange(v)
+  }
+  return (
+    <div>
+      <div style={{ position: 'relative' }}>
+        <input type="number" inputMode="numeric" min={INTERVALO_MIN} max={INTERVALO_MAX} list="nodri-intervalos"
+          value={txt} onChange={e => setTxt(e.target.value)} onBlur={confirmar}
+          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+          style={{ ...campo, paddingRight: 44 }} />
+        <span style={{ position: 'absolute', right: 26, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#8f877f', pointerEvents: 'none' }}>min</span>
+        <datalist id="nodri-intervalos">
+          {INTERVALOS.map(v => <option key={v} value={v}>{v < 60 ? `${v} min` : `${v / 60} h`.replace('.5', ',5')}</option>)}
+        </datalist>
+      </div>
+      {valor < 5 && <div style={{ fontSize: 11, color: '#b4322a', marginTop: 3 }}>Abaixo de 5 min aumenta muito o risco de bloqueio do WhatsApp.</div>}
+    </div>
+  )
+}
+
 const campo: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: 13, color: '#1a1a1a', background: '#fff' }
 const secao: React.CSSProperties = { background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: '16px 18px', marginBottom: 12 }
 const tituloSecao: React.CSSProperties = { fontSize: 13.5, fontWeight: 800, color: '#1a1a1a', marginBottom: 12 }
@@ -915,9 +944,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
           <label><span style={rotulo}>Começa às</span><input type="time" value={d.janela_ini} onChange={e => set({ janela_ini: e.target.value })} style={campo} /></label>
           <label><span style={rotulo}>Para às</span><input type="time" value={d.janela_fim} onChange={e => set({ janela_fim: e.target.value })} style={campo} /></label>
           <label><span style={rotulo}>Uma mensagem a cada</span>
-            <select value={d.intervalo_min} onChange={e => set({ intervalo_min: Number(e.target.value) })} style={campo}>
-              {[...new Set([...INTERVALOS, d.intervalo_min])].sort((a, b) => a - b).map(v => <option key={v} value={v}>{v < 60 ? `${v} min` : `${v / 60} h`.replace('.5', ',5')}</option>)}
-            </select></label>
+            <IntervaloCampo valor={d.intervalo_min} onChange={v => set({ intervalo_min: v })} /></label>
           <label><span style={rotulo}>Máximo por dia</span><input type="number" min={1} max={300} value={d.max_dia} onChange={e => set({ max_dia: Number(e.target.value) || 1 })} style={campo} /></label>
           <label><span style={rotulo}>Não mandar para quem recebeu algo nos últimos (dias)</span>
             <input type="number" min={0} max={180} value={d.trava_dias} onChange={e => set({ trava_dias: Number(e.target.value) || 0 })} style={campo} /></label>
