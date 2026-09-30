@@ -31,7 +31,7 @@ import { paginar } from '@/lib/paginar'
 import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO } from '@/lib/crm'
 import { acharOuCriarContato, grafiasDoTelefone } from '@/lib/crmContatos'
 import { carregarCampanhas } from '@/lib/crmCampanhas'
-import { getAtendimentosRaw } from '@/lib/atendimentosCache'
+import { assinaturaAtendimentos } from '@/lib/atendimentosCache'
 
 export const CHAVE_DISPAROS = 'crm_disparos'
 export const CHAVE_ESTADO_DISPAROS = 'crm_disparos_estado'
@@ -360,6 +360,11 @@ function juntarFichas(brutos: PerfilCliente[]): PerfilCliente[] {
 export async function perfisDoSalao(salaoId: string, fresco = false): Promise<PerfilCliente[]> {
   const c = _perfis.get(salaoId)
   if (!fresco && c && Date.now() - c.em < 30 * 60000) return c.lista
+  // Vários cartões pedindo ao mesmo tempo dividem UMA leitura.
+  return memo(`perfis:${salaoId}:${fresco ? Date.now() : ''}`, 20, () => lerPerfis(salaoId))
+}
+
+async function lerPerfis(salaoId: string): Promise<PerfilCliente[]> {
   const { dados } = await paginar<any>((de, ate) =>
     supabaseAdmin.rpc('perfis_clientes', { p_salao: salaoId, p_ano_de: null, p_ano_ate: null }).range(de, ate) as any, 60000)
   const agora = Date.now()
@@ -502,6 +507,20 @@ function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
 }
 
 // ── Quem nunca / agora não ───────────────────────────────────────────────────
+// ── Guardar por um tempo o que toda tela e toda volta pedem igual ──────────
+//
+// A tela de envios pedia, para CADA envio, a mesma lista de bloqueados, a
+// mesma recuperação e a mesma agenda -- seis envios, seis vezes cada, e a
+// página levava dezenas de segundos para abrir (dono, 30/09/2026).
+const _memo = new Map<string, { em: number; v: Promise<any> }>()
+function memo<T>(chave: string, segundos: number, fn: () => Promise<T>): Promise<T> {
+  const c = _memo.get(chave)
+  if (c && Date.now() - c.em < segundos * 1000) return c.v
+  const v = fn().catch(e => { _memo.delete(chave); throw e })
+  _memo.set(chave, { em: Date.now(), v })
+  return v
+}
+
 const PEDIU_PARA_SAIR = [
   /^\s*(parar|pare|para|sair|stop|cancelar|remover|descadastrar)\s*[.!]*\s*$/i,
   /n[aã]o quero (mais )?receber/i,
@@ -514,10 +533,12 @@ async function chavesDoEnvio(salaoId: string, disparoId: string, ciclo: number) 
   return new Set(dados.map(r => r.chave))
 }
 
-async function bloqueados(salaoId: string) {
-  const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_bloqueios')
-    .select('chave').eq('salao_id', salaoId).range(de, ate))
-  return new Set(dados.map(r => r.chave))
+function bloqueados(salaoId: string) {
+  return memo(`bloq:${salaoId}`, 60, async () => {
+    const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_bloqueios')
+      .select('chave').eq('salao_id', salaoId).range(de, ate))
+    return new Set(dados.map(r => r.chave))
+  })
 }
 
 /** Recebeu envio automático OU foi contatada à mão (botão das listas) há menos de N dias. */
@@ -590,11 +611,37 @@ const parseData = (s: string) => /^\d{4}-\d{2}-\d{2}/.test(s || '') ? new Date(s
 
 // Última vez que cada cliente fez cada serviço. Refeito só quando os
 // atendimentos mudam (o cache devolve o mesmo array enquanto nada é importado).
-const _ultimas = new Map<string, { rows: any[]; mapa: Map<string, Map<string, { nome: string; em: number; data: string }>> }>()
+const _ultimas = new Map<string, { sig: string; mapa: Map<string, Map<string, { nome: string; em: number; data: string }>> }>()
 async function ultimasPorServico(salaoId: string) {
-  const rows = await getAtendimentosRaw(salaoId)
+  // A assinatura (contagem + último importado) diz se houve importação nova;
+  // conferida no máximo a cada minuto.
+  const sig = await memo(`sig:${salaoId}`, 60, () => assinaturaAtendimentos(salaoId))
   const c = _ultimas.get(salaoId)
-  if (c && c.rows === rows) return c.mapa
+  if (c && c.sig === sig) return c.mapa
+  return memo(`ult:${salaoId}:${sig}`, 600, async () => {
+    const mapa = await montarUltimas(salaoId)
+    _ultimas.set(salaoId, { sig, mapa })
+    return mapa
+  })
+}
+
+/** Só as 3 colunas que interessam, em páginas buscadas 8 de cada vez. */
+async function lerAtendimentosLeve(salaoId: string) {
+  const { count } = await supabaseAdmin.from('atendimentos_raw').select('id', { count: 'exact', head: true }).eq('salao_id', salaoId)
+  const total = count || 0
+  const paginas: number[] = []
+  for (let de = 0; de < total; de += 1000) paginas.push(de)
+  const rows: any[] = []
+  for (let i = 0; i < paginas.length; i += 8) {
+    const lotes = await Promise.all(paginas.slice(i, i + 8).map(de => supabaseAdmin.from('atendimentos_raw')
+      .select('cliente, servico, data_comanda').eq('salao_id', salaoId).order('id').range(de, de + 999)))
+    for (const l of lotes) rows.push(...(l.data || []))
+  }
+  return rows
+}
+
+async function montarUltimas(salaoId: string) {
+  const rows = await lerAtendimentosLeve(salaoId)
   const mapa = new Map<string, Map<string, { nome: string; em: number; data: string }>>()
   for (const r of rows) {
     const cli = semAcento(r.cliente).replace(/\s+/g, ' '), serv = String(r.servico || '').trim()
@@ -605,7 +652,6 @@ async function ultimasPorServico(salaoId: string) {
     const k = semAcento(serv), atual = m.get(k)
     if (!atual || em > atual.em) m.set(k, { nome: serv, em, data: String(r.data_comanda) })
   }
-  _ultimas.set(salaoId, { rows, mapa })
   return mapa
 }
 
@@ -631,9 +677,15 @@ const _agenda = new Map<string, { em: number; chaves: Set<string>; nomes: Set<st
 async function comHorarioMarcado(salaoId: string) {
   const c = _agenda.get(salaoId)
   if (c && Date.now() - c.em < 30 * 60000) return c
+  return memo(`agenda:${salaoId}`, 20, () => lerAgenda(salaoId))
+}
+async function lerAgenda(salaoId: string) {
   const hoje = agoraNoSalao()
+  // Só do mês atual em diante: a agenda inteira são 100 mil linhas.
+  const mes = Number(hoje.dia.slice(5, 7))
   const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('agendamentos_raw')
-    .select('cliente, celular, data_reserva, status').eq('salao_id', salaoId).gte('ano', hoje.ano).range(de, ate))
+    .select('cliente, celular, data_reserva, status').eq('salao_id', salaoId)
+    .or(`ano.gt.${hoje.ano},and(ano.eq.${hoje.ano},mes.gte.${mes})`).range(de, ate))
   const chaves = new Set<string>(), nomes = new Set<string>()
   const limite = new Date(`${hoje.dia}T00:00:00Z`).getTime()
   for (const r of dados) {
@@ -692,8 +744,12 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
  * ligada. A recuperação manda (dono, 29/09/2026): se ela parou de vir, foi
  * por algum motivo, e lembrete, promoção ou venda cruzada esperam ela voltar.
  */
-async function emRecuperacao(salaoId: string, disparos: Disparo[], perfis: PerfilCliente[]) {
+function emRecuperacao(salaoId: string, disparos: Disparo[], perfis: PerfilCliente[]) {
   const rec = disparos.filter(ehRecuperacao)
+  const chave = `rec:${salaoId}:` + rec.map(x => `${x.id}.${x.ciclo}.${x.ligado}.${JSON.stringify(x.publico)}`).join('|')
+  return memo(chave, 60, () => calcularRecuperacao(salaoId, rec, perfis))
+}
+async function calcularRecuperacao(salaoId: string, rec: Disparo[], perfis: PerfilCliente[]) {
   const fora = new Set<string>()
   if (!rec.length) return fora
   const ultimaDe = new Map(perfis.map(p => [p.chave, parseBR(p.ultima_visita)]))

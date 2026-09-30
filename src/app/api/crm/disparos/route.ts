@@ -22,17 +22,22 @@ async function sessao() {
   return s
 }
 
-export async function GET() {
+// A lista abre na hora; os números de cada envio vêm numa segunda chamada
+// (?resumos=1), calculados em paralelo (dono, 30/09/2026: a página levava
+// dezenas de segundos para abrir porque calculava envio por envio antes).
+export async function GET(req: NextRequest) {
   const s = await sessao()
   if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (new URL(req.url).searchParams.get('resumos') === '1') {
+    const disparos = await carregarDisparos(s.salaoId)
+    const resumos: Record<string, any> = {}
+    await Promise.all(disparos.map(async d => { resumos[d.id] = await resumoDoDisparo(s.salaoId, d).catch(() => null) }))
+    return NextResponse.json({ resumos })
+  }
   const [disparos, estados, servicos] = await Promise.all([
     carregarDisparos(s.salaoId), carregarEstadosDisparo(s.salaoId), servicosDoSalao(s.salaoId),
   ])
-  const lista = []
-  for (const d of disparos) {
-    lista.push({ ...d, estado: estados[d.id] || null, resumo: await resumoDoDisparo(s.salaoId, d) })
-  }
-  return NextResponse.json({ disparos: lista, servicos })
+  return NextResponse.json({ disparos: disparos.map(d => ({ ...d, estado: estados[d.id] || null })), servicos })
 }
 
 export async function POST(req: NextRequest) {

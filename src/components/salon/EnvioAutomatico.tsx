@@ -213,10 +213,14 @@ export default function EnvioAutomatico() {
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState('')
 
+  // Primeiro a lista (rápido), depois os números de cada cartão.
+  const [resumos, setResumos] = useState<Record<string, any> | null>(null)
   async function carregar() {
     const r = await fetch('/api/crm/disparos', { cache: 'no-store' })
     const d = r.ok ? await r.json() : { disparos: [], servicos: [] }
     setLista(d.disparos || []); setServicos(d.servicos || [])
+    const rr = await fetch('/api/crm/disparos?resumos=1', { cache: 'no-store' }).catch(() => null)
+    if (rr?.ok) setResumos((await rr.json()).resumos || {})
   }
   useEffect(() => { carregar(); const t = setInterval(carregar, 60000); return () => clearInterval(t) }, [])
 
@@ -306,7 +310,7 @@ export default function EnvioAutomatico() {
 
       <div style={{ display: 'grid', gap: 12 }}>
         {(lista || []).map(d => {
-          const r = d.resumo
+          const r = resumos?.[d.id!] || d.resumo
           const retorno = d.tipo === 'retorno'
           const pct = r && r.total ? Math.round(r.enviadas / r.total * 100) : 0
           const c = contas(d, r?.faltam || 0)
@@ -360,6 +364,7 @@ export default function EnvioAutomatico() {
                 </div>
               )}
 
+              {!r && <div style={{ marginTop: 10, fontSize: 12, color: '#8f877f' }}><Loader2 size={12} className="animate-spin" style={{ verticalAlign: -2 }} /> Calculando os números...</div>}
               {r && retorno && (
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#6b6860', marginTop: 10 }}>
                   <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> na hora de voltar agora</span>
