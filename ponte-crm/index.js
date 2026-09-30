@@ -1274,6 +1274,18 @@ async function despacharFila(salaoId, fila) {
           message: { conversation: String(msg.citada.texto || '').slice(0, 300) || ' ' },
         },
       } : undefined
+      // ── "digitando..." antes de mandar (auditoria, 30/09/2026) ───────────
+      // Mensagem que sai sem o "digitando" e sempre no mesmo compasso é a
+      // cara de robô que o WhatsApp procura. Aqui a ponte mostra "digitando"
+      // por um tempo proporcional ao texto (1,5 a 5 s, com variação) e só
+      // então envia. Falha nisto nunca impede o envio.
+      try {
+        const tam = String(msg.texto || '').length
+        const digitando = Math.min(5000, 1500 + tam * 25) * (0.8 + Math.random() * 0.4)
+        await s.sock.sendPresenceUpdate(msg.tipo === 'audio' ? 'recording' : 'composing', jid)
+        await new Promise(r => setTimeout(r, digitando))
+        await s.sock.sendPresenceUpdate('paused', jid)
+      } catch { /* sem presença, manda assim mesmo */ }
       const enviada = await s.sock.sendMessage(jid, corpoDoEnvio(msg), opcoes)
       // Guardada ANTES de confirmar: o pedido de reenvio pode chegar no
       // segundo seguinte, e chegar antes de a mensagem estar guardada seria
@@ -1295,7 +1307,8 @@ async function despacharFila(salaoId, fila) {
       // Só entre uma e a próxima -- esperar depois da última seria segurar a
       // volta seguinte por 1,2 segundo sem motivo, e é o envio seguinte que
       // pagaria a conta.
-      if (msg !== fila[fila.length - 1]) await new Promise(r => setTimeout(r, 1200))
+      // Entre uma e outra, 2 a 5 s variando (antes: 1,2 s sempre igual).
+      if (msg !== fila[fila.length - 1]) await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000))
     } catch (e) {
       registro(salaoId, 'falha ao enviar:', e.message)
       await nodri('?acao=confirmar', {

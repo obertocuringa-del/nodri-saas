@@ -931,6 +931,17 @@ export default function CrmPage() {
     if (!r?.ok) alert('Não consegui salvar. Tente de novo.')
   }
 
+  // Mensagem que falhou volta para a fila (a mesma, sem duplicar o balão).
+  async function reenviar(m: any) {
+    setMensagens(atual => atual.map(x => x.id === m.id ? { ...x, situacao: 'na_fila', erro: null } : x))
+    const r = await fetch('/api/crm/mensagens', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id, acao: 'reenviar' }) }).catch(() => null)
+    if (!r?.ok) {
+      setMensagens(atual => atual.map(x => x.id === m.id ? { ...x, situacao: 'falhou' } : x))
+      alert('Não consegui colocar de volta na fila. Tente de novo.')
+    }
+  }
+
   async function marcarNaoLida() {
     if (!aberta) return
     const id = aberta.id
@@ -1427,7 +1438,8 @@ export default function CrmPage() {
                         onReagir={m.id_whatsapp && m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' ? () => setReagindoA(reagindoA === m.id ? null : m.id) : undefined}
                         reagindo={reagindoA === m.id}
                         onEscolherReacao={(e: string) => reagir(m, e)}
-                        onEncaminhar={m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' && (m.texto || m.midia_url) ? () => setEncaminhando(m) : undefined} />
+                        onEncaminhar={m.tipo !== 'apagada' && m.tipo !== 'reacao' && m.tipo !== 'acao_reagir' && (m.texto || m.midia_url) ? () => setEncaminhando(m) : undefined}
+                        onReenviar={m.situacao === 'falhou' && !String(m.tipo || '').startsWith('acao_') ? () => reenviar(m) : undefined} />
                     </div>
                   ))}
                   <div ref={fimDaConversa} />
@@ -2151,8 +2163,8 @@ function SeparadorDia({ em }: { em: string }) {
 
 const REACOES_RAPIDAS = ['\u{1F44D}', '\u{2764}\u{FE0F}', '\u{1F602}', '\u{1F62E}', '\u{1F622}', '\u{1F64F}']
 
-function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onEscolherReacao, onEncaminhar }: {
-  m: Mensagem; onCitar?: () => void; citada?: Mensagem | null
+function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onEscolherReacao, onEncaminhar, onReenviar }: {
+  m: Mensagem; onCitar?: () => void; citada?: Mensagem | null; onReenviar?: () => void
   onEditar?: () => void; onApagar?: () => void; onReagir?: () => void; reagindo?: boolean
   onEscolherReacao?: (e: string) => void; onEncaminhar?: () => void
 }) {
@@ -2262,6 +2274,10 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
           {(m as any).editada_em && ' · editada'}
           {meu && m.situacao === 'na_fila' && ' · na fila'}
           {meu && m.situacao === 'falhou' && ' · falhou'}
+          {meu && m.situacao === 'falhou' && onReenviar && (
+            <button type="button" onClick={onReenviar} title={m.erro || 'Tentar mandar de novo'}
+              className="ml-1.5 px-1.5 rounded font-bold" style={{ background: '#b4322a', color: '#fff', opacity: 1 }}>Reenviar</button>
+          )}
           {meu && m.autor_nome ? ` · ${m.autor_nome}` : ''}
           {/* Os tiques do WhatsApp, repassados pela ponte: um = saiu daqui,
               dois = chegou no aparelho dela, azul = ela leu. Sem isto,

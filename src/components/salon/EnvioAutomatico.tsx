@@ -21,7 +21,7 @@ type Disparo = {
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { segundas?: number; na_recuperacao?: number; repetindo?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { segundas?: number; na_recuperacao?: number; receita?: number; repetindo?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -140,7 +140,7 @@ const NOVO: Disparo = {
   nome: '', tipo: 'lista', categoria: '', continuo: true, repetir_dias: 0, ciclos: {}, tolerancia_dias: 30,
   publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas'), anexo: null,
   inicio: '', fim: '',
-  janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
+  janela_ini: '09:00', janela_fim: '20:30', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
 }
 
 const min = (h: string) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5))
@@ -384,6 +384,7 @@ export default function EnvioAutomatico() {
                   <span><b style={{ color: '#1a1a1a' }}>{r.envios_total || 0}</b> lembretes enviados</span>
                   <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
                   <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                    {!!r.receita && <span style={{ color: '#2f6b4f', fontWeight: 700 }}>R$ {r.receita.toLocaleString('pt-BR')} em atendimentos depois do envio</span>}
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                   <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
                   {c.fim && r.faltam > 0 && <span>fila de hoje termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
@@ -401,6 +402,7 @@ export default function EnvioAutomatico() {
                     <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> faltam</span>
                     <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
                     <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                    {!!r.receita && <span style={{ color: '#2f6b4f', fontWeight: 700 }}>R$ {r.receita.toLocaleString('pt-BR')} em atendimentos depois do envio</span>}
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                     <span><Users size={12} style={{ verticalAlign: -2 }} /> {c.porDia} por dia</span>
                     {c.fim && r.faltam > 0 && <span>termina por volta de <b style={{ color: '#1a1a1a' }}>{c.fim.toLocaleDateString('pt-BR')}</b></span>}
@@ -430,7 +432,7 @@ function LimitarDiario({ lista, onFechar, onSalvo }: { lista: Disparo[]; onFecha
   const [ligados, setLigados] = useState<string[]>(lista.filter(d => d.ligado).map(d => d.id!))
   const [total, setTotal] = useState(Math.min(100, lista.filter(d => d.ligado).reduce((t, d) => t + d.max_dia, 0) || 50))
   const [ini, setIni] = useState('09:00')
-  const [fim, setFim] = useState('21:00')
+  const [fim, setFim] = useState('20:30')
   const [modo, setModo] = useState<'intercalado' | 'sequencia'>('intercalado')
   const [salvando, setSalvando] = useState(false)
   // Na ordem da página: é a ordem dos horários do dia.

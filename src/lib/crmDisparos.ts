@@ -676,14 +676,25 @@ async function lerAtendimentosLeve(salaoId: string) {
   const rows: any[] = []
   for (let i = 0; i < paginas.length; i += 8) {
     const lotes = await Promise.all(paginas.slice(i, i + 8).map(de => supabaseAdmin.from('atendimentos_raw')
-      .select('cliente, servico, data_comanda').eq('salao_id', salaoId).order('id').range(de, de + 999)))
+      .select('cliente, servico, data_comanda, total, valor').eq('salao_id', salaoId).order('id').range(de, de + 999)))
     for (const l of lotes) rows.push(...(l.data || []))
   }
   return rows
 }
 
+/** Por cliente (nome sem acento): cada comanda com data e valor -- a receita do envio. */
+const _receita = new Map<string, Map<string, { em: number; valor: number }[]>>()
+
 async function montarUltimas(salaoId: string) {
   const rows = await lerAtendimentosLeve(salaoId)
+  const receita = new Map<string, { em: number; valor: number }[]>()
+  for (const r of rows) {
+    const cli = semAcento(r.cliente).replace(/\s+/g, ' '), em = parseData(String(r.data_comanda || ''))
+    const valor = Number(r.total) || Number(r.valor) || 0
+    if (!cli || !em || !valor) continue
+    const l = receita.get(cli) || []; l.push({ em, valor }); receita.set(cli, l)
+  }
+  _receita.set(salaoId, receita)
   const mapa = new Map<string, Map<string, { nome: string; em: number; data: string }>>()
   for (const r of rows) {
     const cli = semAcento(r.cliente).replace(/\s+/g, ' '), serv = String(r.servico || '').trim()
@@ -863,6 +874,35 @@ async function filaOcupada(salaoId: string): Promise<string | null> {
   return null
 }
 
+// ── WhatsApp com problema: o envio automático para sozinho ──────────────────
+//
+// Auditoria (30/09/2026). Mandar lista com o WhatsApp desconectado enche a
+// fila; mandar com mensagens falhando ou presas num tique só (sinal clássico
+// de número restrito) é o caminho mais curto para o bloqueio. Qualquer um dos
+// três pausa TODOS os envios automáticos até normalizar -- confirmação e
+// feedback continuam por conta deles.
+async function saudeDoWhatsapp(salaoId: string): Promise<string | null> {
+  return memo(`saude:${salaoId}`, 60, async () => {
+    const { data: canal } = await supabaseAdmin.from('crm_canais').select('situacao, visto_em').eq('salao_id', salaoId).maybeSingle()
+    if (!canal || canal.situacao !== 'conectado') return 'Pausado: o WhatsApp do salão está desconectado'
+    if (!canal.visto_em || Date.now() - new Date(canal.visto_em).getTime() > 5 * 60000) return 'Pausado: a ponte do WhatsApp não dá sinal há mais de 5 minutos'
+    const duasHoras = new Date(Date.now() - 2 * 3600e3).toISOString()
+    const { count: falhas } = await supabaseAdmin.from('crm_mensagens').select('id', { count: 'exact', head: true })
+      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('situacao', 'falhou').gte('criado_em', duasHoras)
+    if ((falhas || 0) >= 5) return `Pausado: ${falhas} mensagens falharam nas últimas 2 horas (confira o WhatsApp)`
+    // Um tique só: das 30 últimas do envio automático saídas há mais de 1 h,
+    // se a maioria nunca chegou no aparelho, o número pode estar restrito.
+    const { data: ult } = await supabaseAdmin.from('crm_mensagens').select('situacao')
+      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('autor_nome', AUTOR_DISPARO)
+      .lt('criado_em', new Date(Date.now() - 3600e3).toISOString()).gte('criado_em', new Date(Date.now() - 864e5).toISOString())
+      .order('criado_em', { ascending: false }).limit(30)
+    const lista = ult || []
+    const presas = lista.filter((m: any) => m.situacao === 'enviada').length
+    if (lista.length >= 20 && presas / lista.length > 0.6) return `Pausado: ${presas} de ${lista.length} mensagens do envio ficaram com um tique só (o número pode estar restrito)`
+    return null
+  })
+}
+
 // ── A conversa onde a mensagem entra ─────────────────────────────────────────
 //
 // A mesma regra das campanhas: conversa aberta é reusada; encerrada há até 7
@@ -1022,7 +1062,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     })()
     if (situacao) { if (!soDaSegunda) marcar(d, situacao, e); continue }
 
-    if (ocupada === undefined) ocupada = await filaOcupada(salaoId)
+    if (ocupada === undefined) ocupada = (await saudeDoWhatsapp(salaoId)) || (await filaOcupada(salaoId))
     if (ocupada) { if (!soDaSegunda) marcar(d, ocupada, e); continue }
 
     perfis = perfis || await perfisDoSalao(salaoId)
@@ -1152,7 +1192,7 @@ export async function simularProximo(salaoId: string, d: Disparo) {
   if (d.fim && d.fim < agora.dia) travas.push(`o período terminou em ${dataBR(d.fim)}`)
   if (!d.dias_semana.includes(agora.semana)) travas.push('hoje não é dia de envio')
   if (agora.hora < d.janela_ini || agora.hora >= d.janela_fim) travas.push(`fora do horário (${d.janela_ini} às ${d.janela_fim})`)
-  const ocupada = await filaOcupada(salaoId)
+  const ocupada = (await saudeDoWhatsapp(salaoId)) || (await filaOcupada(salaoId))
   if (ocupada) travas.push(ocupada)
   const perfis = await perfisDoSalao(salaoId)
   const { lista } = await alvosDoDisparo(salaoId, d, perfis)
@@ -1232,12 +1272,27 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const ultimaDe = new Map(perfis.map(p => [p.cliente_nome, parseBR(p.ultima_visita)]))
   const voltaram = envios.filter(v => (ultimaDe.get(v.cliente_nome) || 0) > new Date(v.enviado_em).getTime()).length
 
+  // Receita: o que quem recebeu gastou no salão DEPOIS de receber (até 60
+  // dias). A primeira mensagem de cada cliente conta; a 2ª não soma de novo.
+  await ultimasPorServico(salaoId)
+  const receitaMap = _receita.get(salaoId)
+  let receita = 0
+  const primeira = new Map<string, number>()
+  for (const v of envios) {
+    if (String(v.chave || '').endsWith(SEGUNDA)) continue
+    const k = semAcento(v.cliente_nome).replace(/\s+/g, ' '), t = new Date(v.enviado_em).getTime()
+    if (!primeira.has(k) || t < primeira.get(k)!) primeira.set(k, t)
+  }
+  for (const [k, t] of primeira) {
+    for (const c of receitaMap?.get(k) || []) if (c.em > t && c.em - t <= 60 * 864e5) receita += c.valor
+  }
+
   const segundas = envios.filter(v => String(v.chave || '').endsWith(SEGUNDA)).length
   return {
     segundas,
     total: naLista.length, enviadas, faltam: naLista.length - enviadas,
     sem_celular: semCelular, repetidos, sem_ciclo, na_recuperacao, repetindo, bloqueados: lista.length - naLista.length,
-    responderam, voltaram, envios_total: envios.length - segundas,
+    responderam, voltaram, receita: Math.round(receita), envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
   }
 }

@@ -156,6 +156,20 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const id = String(body?.id || '')
   const acao = String(body?.acao || '')
+
+  // ── Reenviar a que falhou (auditoria, 30/09/2026) ─────────────────────────
+  // A mesma linha volta para a fila: sem duplicar o balão na conversa.
+  if (id && acao === 'reenviar') {
+    const { data: m } = await supabaseAdmin.from('crm_mensagens').select('id, situacao, direcao')
+      .eq('id', id).eq('salao_id', sess!.salaoId).maybeSingle()
+    if (!m) return NextResponse.json({ error: 'Mensagem não encontrada' }, { status: 404 })
+    if (m.direcao !== 'saida' || m.situacao !== 'falhou') return NextResponse.json({ error: 'Só dá para reenviar mensagem que falhou' }, { status: 400 })
+    await supabaseAdmin.from('crm_mensagens').update({
+      situacao: 'na_fila', erro: null, enviado_em: null, criado_em: new Date().toISOString(),
+    }).eq('id', id).eq('salao_id', sess!.salaoId)
+    return NextResponse.json({ ok: true })
+  }
+
   if (!id || !['editar', 'apagar', 'reagir'].includes(acao)) {
     return NextResponse.json({ error: 'Ação desconhecida' }, { status: 400 })
   }
