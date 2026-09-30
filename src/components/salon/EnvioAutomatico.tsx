@@ -153,18 +153,31 @@ function contas(d: Disparo, faltam: number) {
   const porDia = Math.max(0, Math.min(d.max_dia, cabem))
   const terminaAs = hhmm(min(d.janela_ini) + Math.max(0, porDia - 1) * d.intervalo_min)
   const intervaloParaMax = d.max_dia > 1 ? Math.floor(janela / (d.max_dia - 1)) : janela
-  const diasDeEnvio = porDia ? Math.ceil(faltam / porDia) : 0
-  // Data de término: conta só os dias da semana marcados.
+  // Término: anda dia a dia pelos dias da semana marcados. Hoje só conta o
+  // que ainda cabe até o "Para às" (dono, 30/09/2026: às 18h o dia de hoje
+  // entrava como um dia cheio de envio).
   let fim: Date | null = null
+  let diasDeEnvio = 0
+  const datas: Date[] = []
   if (porDia && d.dias_semana.length && faltam > 0) {
-    const dt = new Date(); let n = 0
+    const agora = new Date()
+    const dt = new Date(); let resta = faltam
     const ini = d.inicio ? new Date(d.inicio + 'T12:00:00') : null
     if (ini && ini > dt) dt.setTime(ini.getTime())
-    for (let i = 0; i < 3650 && n < diasDeEnvio; i++) {
+    const ehHoje = (x: Date) => x.toDateString() === agora.toDateString()
+    for (let i = 0; i < 3650 && resta > 0; i++) {
       if (i > 0) dt.setDate(dt.getDate() + 1)
-      if (d.dias_semana.includes(dt.getDay())) n++
+      if (!d.dias_semana.includes(dt.getDay())) continue
+      let cabeHoje = porDia
+      if (ehHoje(dt)) {
+        const agoraMin = agora.getHours() * 60 + agora.getMinutes()
+        const de = Math.max(agoraMin, min(d.janela_ini)), ate = min(d.janela_fim)
+        cabeHoje = de > ate ? 0 : Math.min(porDia, Math.floor((ate - de) / d.intervalo_min) + 1)
+      }
+      if (cabeHoje <= 0) continue
+      resta -= cabeHoje; diasDeEnvio++; datas.push(new Date(dt))
     }
-    fim = dt
+    fim = new Date(dt)
   }
   // Com data final, a lista pode não caber: quantas ficam sem receber.
   let cabemNoPeriodo: number | null = null
@@ -175,7 +188,7 @@ function contas(d: Disparo, faltam: number) {
     for (let i = 0; i < 3650 && dt <= ult; i++) { if (d.dias_semana.includes(dt.getDay())) n++; dt.setDate(dt.getDate() + 1) }
     cabemNoPeriodo = n * porDia
   }
-  return { cabem, porDia, terminaAs, intervaloParaMax, diasDeEnvio, fim, cabemNoPeriodo }
+  return { cabem, porDia, terminaAs, intervaloParaMax, diasDeEnvio, fim, cabemNoPeriodo, datas }
 }
 
 // Lembrete de retorno (pedido do dono, 29/09/2026): quem fez o serviço e
@@ -980,7 +993,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               é por ela que se marca o início do envio seguinte. No lembrete e
               na lista contínua ela conta quem já está na fila hoje. */}
           {previa && previa.total > 0 && c.porDia > 0 && (
-            <div>{retorno || d.continuo ? <>Quem já está na fila hoje (<b>{previa.total}</b> clientes)</> : <>A lista de <b>{previa.total}</b> clientes</>} leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.
+            <div>{retorno || d.continuo ? <>Quem já está na fila hoje (<b>{previa.total}</b> clientes)</> : <>A lista de <b>{previa.total}</b> clientes</>} leva uns <b>{c.diasDeEnvio}</b> dias de envio{c.datas?.length && c.datas.length <= 10 ? <> ({c.datas.map(x => x.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '')).join(', ')})</> : null}{c.fim ? <> e termina por volta de <b>{c.fim.toLocaleDateString('pt-BR')}</b></> : null}.
               {(retorno || d.continuo) && <> Depois disso ele continua ligado, mandando só para quem for chegando na regra, poucas por dia.</>}</div>
           )}
           {previa && previa.total === 0 && (retorno || d.continuo) && (
