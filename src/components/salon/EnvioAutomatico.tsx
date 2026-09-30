@@ -15,13 +15,13 @@ import { enviarArquivo } from '@/lib/enviarArquivo'
 type Publico = { dias_min: number; dias_max: number; servicos: string[]; servicos_nao: string[]; segmento: 'todos' | 'vip' | 'regular' | 'novo'; ano_de: number; ano_ate: number }
 type Anexo = { url: string; tipo: 'imagem' | 'video' | 'audio' | 'documento'; nome: string }
 type Disparo = {
-  id?: string; nome: string; ligado?: boolean; tipo: 'lista' | 'retorno'; categoria: Categoria; continuo: boolean
+  id?: string; nome: string; ligado?: boolean; tipo: 'lista' | 'retorno'; categoria: Categoria; continuo: boolean; repetir_dias: number
   segunda: { ligada: boolean; dias: number; mensagens: string[] }; ciclos: Record<string, number>; tolerancia_dias: number; publico: Publico; saudacoes: string[]; mensagens: string[]; anexo: Anexo | null
   inicio: string; fim: string
   janela_ini: string; janela_fim: string; dias_semana: number[]; intervalo_min: number; max_dia: number; trava_dias: number
   ciclo?: number
   estado?: { situacao?: string; ultimo_envio_em?: string | null; enviados_dia?: number; dia?: string; concluido_em?: string | null } | null
-  resumo?: { segundas?: number; na_recuperacao?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
+  resumo?: { segundas?: number; na_recuperacao?: number; repetindo?: number; total: number; enviadas: number; faltam: number; sem_celular: number; repetidos?: number; sem_ciclo?: string[]; envios_total?: number; bloqueados: number; responderam: number; voltaram: number; por_dia: number }
 }
 
 const ROXO = '#5b4fcf'
@@ -96,8 +96,8 @@ const textosDe = (c: Exclude<Categoria, ''>) => ({
 // celular ou divide o celular com outra ficha -- e isso aparece na tela.
 const PUB = { servicos: [], servicos_nao: [], segmento: 'todos' as const, ano_de: 0, ano_ate: 0 }
 const MODELOS: { rotulo: string; desc: string; d: Partial<Disparo> }[] = [
-  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', categoria: 'perdidas', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas') } },
-  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
+  { rotulo: 'Recuperar perdidas', desc: 'Mais de 90 dias sem vir (igual à aba Perdidos)', d: { nome: 'Recuperar perdidas', categoria: 'perdidas', tipo: 'lista', continuo: true, repetir_dias: 90, publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas') } },
+  { rotulo: 'Clientes em risco', desc: '46 a 90 dias sem vir (igual à aba Em Risco)', d: { nome: 'Clientes em risco', categoria: 'risco', tipo: 'lista', continuo: true, repetir_dias: 90, publico: { ...PUB, dias_min: 46, dias_max: 90 }, ...textosDe('risco') } },
   { rotulo: 'Promoção por serviço', desc: 'Quem faz os serviços escolhidos', d: { nome: 'Promoção', categoria: 'promocao', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 0, dias_max: 0 }, ...textosDe('promocao') } },
   { rotulo: 'VIP', desc: 'As clientes que mais gastam', d: { nome: 'VIP', categoria: 'vip', tipo: 'lista', continuo: true, publico: { ...PUB, dias_min: 0, dias_max: 0, segmento: 'vip' }, ...textosDe('vip') } },
   // Contínua: todo dia entra quem completou 20 dias da primeira visita sem
@@ -137,7 +137,7 @@ async function baixarLista(d: { id?: string; nome: string }) {
 const ROTULO_CAT: Record<string, string> = Object.fromEntries(Object.entries(PRONTOS).map(([k, v]) => [k, v.rotulo]))
 
 const NOVO: Disparo = {
-  nome: '', tipo: 'lista', categoria: '', continuo: true, ciclos: {}, tolerancia_dias: 30,
+  nome: '', tipo: 'lista', categoria: '', continuo: true, repetir_dias: 0, ciclos: {}, tolerancia_dias: 30,
   publico: { ...PUB, dias_min: 91, dias_max: 0 }, ...textosDe('perdidas'), anexo: null,
   inicio: '', fim: '',
   janela_ini: '09:00', janela_fim: '21:00', dias_semana: [1, 2, 3, 4, 5, 6], intervalo_min: 30, max_dia: 20, trava_dias: 30,
@@ -203,6 +203,7 @@ const completar = (d: any): Disparo => ({
   ...NOVO, ...d, saudacoes: d.saudacoes || [], anexo: d.anexo || null, inicio: d.inicio || '', fim: d.fim || '',
   tipo: d.tipo === 'retorno' ? 'retorno' : 'lista', ciclos: d.ciclos || {}, tolerancia_dias: d.tolerancia_dias || 30,
   categoria: d.categoria || (d.tipo === 'retorno' ? 'retorno' : ''), continuo: d.continuo === true,
+  repetir_dias: Number(d.repetir_dias) || 0,
   segunda: { ligada: false, dias: 5, mensagens: [...SEGUNDA_PADRAO], ...(d.segunda || {}) },
   publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0, servicos_nao: d.publico?.servicos_nao || [] },
 })
@@ -334,6 +335,7 @@ export default function EnvioAutomatico() {
                 <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1a1a1a' }}>{d.nome}</div>
                 {!!ROTULO_CAT[d.categoria] && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: '#eceaf9', color: ROXO }}>{ROTULO_CAT[d.categoria]}</span>}
                 {d.continuo && <span style={{ fontSize: 11, color: '#8f877f' }}>contínuo</span>}
+                {!!d.repetir_dias && <span style={{ fontSize: 11, color: '#8f877f' }}>repete em {d.repetir_dias} dias para quem não voltou</span>}
                 {d.segunda?.ligada && <span style={{ fontSize: 11, color: '#8f877f' }}>com 2ª mensagem em {d.segunda.dias} dias</span>}
                 <span className={d.ligado ? 'animate-pulse' : ''} style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999,
                   background: agendado ? '#fdf3e1' : d.ligado ? '#e7f1e9' : concluido ? '#eceaf9' : '#f1efe8', color: agendado ? '#9a6b12' : d.ligado ? '#2f6b4f' : concluido ? ROXO : '#8f877f' }}>
@@ -341,7 +343,7 @@ export default function EnvioAutomatico() {
                 </span>
                 {(d.inicio || d.fim) && (
                   <span style={{ fontSize: 11.5, color: '#6b6860', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <CalendarDays size={12} /> {d.inicio ? `de ${br(d.inicio)}` : 'já'}{d.fim ? ` até ${br(d.fim)}` : ' até a lista acabar'}
+                    <CalendarDays size={12} /> {d.inicio ? `de ${br(d.inicio)}` : 'já'}{d.fim ? ` até ${br(d.fim)} (desliga nesse dia)` : (d.continuo || d.tipo === 'retorno') ? ', sem data para acabar' : ' até a lista acabar'}
                   </span>
                 )}
                 {(d.ciclo || 1) > 1 && <span style={{ fontSize: 11, color: '#8f877f' }}>ciclo {d.ciclo}</span>}
@@ -406,6 +408,7 @@ export default function EnvioAutomatico() {
                     {!!r.repetidos && <span style={{ color: '#a09a90' }}>{r.repetidos} com celular repetido (recebem uma vez)</span>}
                     {!!r.bloqueados && <span style={{ color: '#a09a90' }}>{r.bloqueados} pediram para sair</span>}
                     {!!r.na_recuperacao && <span style={{ color: '#a09a90' }}>{r.na_recuperacao} fora por estar em risco/perdidas</span>}
+                    {!!r.repetindo && <span style={{ color: '#6b6860' }}>{r.repetindo} voltaram para a fila (não vieram em {d.repetir_dias} dias)</span>}
                   </div>
                 </>
               )}
@@ -767,6 +770,13 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               Roda junto com as outras listas, sempre uma mensagem por vez.</span>
           </label>
         )}
+        {!retorno && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, flexWrap: 'wrap' }}>
+            <b>Mandar de novo</b> para quem recebeu e não voltou depois de
+            <input type="number" min={0} max={365} value={d.repetir_dias} onChange={e => set({ repetir_dias: Math.max(0, Number(e.target.value) || 0) })} style={{ ...campo, width: 80, padding: '5px 8px' }} />
+            dias <span style={{ color: '#8f877f' }}>(0 = nunca repete; recomendado 90 em Perdidas e Em risco, e sai outra versão da mensagem)</span>
+          </label>
+        )}
 
         <div style={{ marginTop: 12, background: '#faf9f7', borderRadius: 10, padding: '10px 12px', fontSize: 12.5 }}>
           {carregandoPrevia && !previa ? <span style={{ color: '#6b6860' }}><Loader2 size={13} className="animate-spin" /> Contando...</span> : previa && (
@@ -896,7 +906,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 10 }}>
           <label><span style={rotulo}>Começa no dia (vazio = assim que ligar)</span>
             <input type="date" value={d.inicio} min={hojeISO()} onChange={e => set({ inicio: e.target.value })} style={campo} /></label>
-          <label><span style={rotulo}>Último dia (vazio = até a lista acabar)</span>
+          <label><span style={rotulo}>{d.continuo || retorno ? 'Último dia (vazio = nunca para — recomendado)' : 'Último dia (vazio = até a lista acabar)'}</span>
             <input type="date" value={d.fim} min={d.inicio || hojeISO()} onChange={e => set({ fim: e.target.value })} style={campo} /></label>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
@@ -931,6 +941,12 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
             <div>Com o máximo de <b>{d.max_dia}</b> por dia, a última sai por volta das <b>{c.terminaAs}</b>.</div>
           )}
           {d.inicio && <div>Começa em <b>{br(d.inicio)}</b>{d.fim ? <> e vai até <b>{br(d.fim)}</b></> : null}.</div>}
+          {d.fim && (d.continuo || retorno) && (
+            <div style={{ color: '#b4322a', fontWeight: 700 }}>
+              Atenção: com "Último dia" preenchido, em {br(d.fim)} este envio DESLIGA sozinho e para de pegar as clientes novas que entram.
+              Para ficar rodando sempre, deixe o "Último dia" vazio.
+            </div>
+          )}
           {/* A previsão vale para TODOS os tipos (pedido do dono, 29/09/2026):
               é por ela que se marca o início do envio seguinte. No lembrete e
               na lista contínua ela conta quem já está na fila hoje. */}

@@ -151,12 +151,17 @@ export async function POST(req: NextRequest) {
     const recuperando = await foraPorRecuperacao(salaoId, d, perfis)
     const { data: env } = await supabaseAdmin.from('crm_disparo_envios').select('chave, enviado_em')
       .eq('salao_id', salaoId).eq('disparo_id', d.id).eq('ciclo', d.ciclo).limit(20000)
-    const enviado = new Map((env || []).map((r: any) => [r.chave, r.enviado_em]))
+    // Última vez que cada cliente recebeu (a repetição grava "|r1", "|r2"...).
+    const enviado = new Map<string, string>()
+    for (const r of env || []) {
+      const k = String(r.chave).replace(/#2$/, '').replace(/\|r\d+$/, '')
+      if (!enviado.get(k) || r.enviado_em > enviado.get(k)!) enviado.set(k, r.enviado_em)
+    }
     return NextResponse.json({
       linhas: alvos.lista.map((x, i) => ({
         ordem: i + 1, cliente: x.cliente_nome, celular: x.celular, ultima_visita: x.ultima_visita, dias_sem_vir: x.dias,
         visitas: x.total_visitas, tipo: x.segmento, servico: x.servico_alvo || '', servico_feito_em: x.feito_em || '',
-        venceu_ha_dias: x.atraso ?? '', ja_recebeu: enviado.get(x.envio_chave!) ? new Date(enviado.get(x.envio_chave!)).toLocaleDateString('pt-BR') : '',
+        venceu_ha_dias: x.atraso ?? '', ja_recebeu: enviado.get(x.envio_chave!) ? new Date(enviado.get(x.envio_chave!)!).toLocaleDateString('pt-BR') : '',
         situacao: recuperando.has(x.chave) ? 'fora: está em risco/perdidas' : 'na fila',
       })),
     })

@@ -82,6 +82,8 @@ export interface Disparo {
   categoria: Categoria
   /** lista que não termina: todo dia entra quem passa a caber na regra (clientes novas) */
   continuo: boolean
+  /** manda de novo para quem recebeu e não voltou depois de N dias (0 = nunca repete) */
+  repetir_dias: number
   segunda: Segunda
   /** retorno: dias por serviço escolhidos na tela (vazio = o da página Serviços) */
   ciclos: Record<string, number>
@@ -171,6 +173,7 @@ export function lerDisparo(b: any): Disparo | null {
     tipo: b.tipo === 'retorno' ? 'retorno' : 'lista',
     categoria: CATEGORIAS.includes(b.categoria) ? b.categoria : (b.tipo === 'retorno' ? 'retorno' : ''),
     continuo: b.continuo === true,
+    repetir_dias: b.tipo === 'retorno' ? 0 : num(b.repetir_dias, 0, 0, 365),
     segunda: {
       ligada: b.segunda?.ligada === true,
       dias: num(b.segunda?.dias, 5, 1, 60),
@@ -538,10 +541,33 @@ const PEDIU_PARA_SAIR = [
   /(me )?(tira|tire|remove|remova) (da|dessa|desta) lista/i,
 ]
 
-async function chavesDoEnvio(salaoId: string, disparoId: string, ciclo: number) {
+/**
+ * O que este envio já mandou. `feitos`: quem NÃO pode receber agora (já
+ * recebeu e, se o envio repete, ainda não passaram os dias). `ult`: quantas
+ * vezes e quando foi a última, por cliente. A repetição (dono, 30/09/2026)
+ * grava a marca com "|r1", "|r2"... para cada nova volta.
+ */
+const semVolta = (k: string) => String(k || '').replace(/#2$/, '').replace(/\|r\d+$/, '')
+async function enviosDoDisparo(salaoId: string, d: Disparo) {
   const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
-    .select('chave').eq('salao_id', salaoId).eq('disparo_id', disparoId).eq('ciclo', ciclo).range(de, ate))
-  return new Set(dados.map(r => r.chave))
+    .select('chave, enviado_em').eq('salao_id', salaoId).eq('disparo_id', d.id).eq('ciclo', d.ciclo).range(de, ate))
+  const ult = new Map<string, { em: number; n: number }>()
+  let total = 0
+  for (const r of dados) {
+    if (String(r.chave).endsWith(SEGUNDA)) continue
+    total++
+    const base = semVolta(r.chave), em = new Date(r.enviado_em).getTime(), c = ult.get(base)
+    ult.set(base, { em: Math.max(em, c?.em || 0), n: (c?.n || 0) + 1 })
+  }
+  const repetir = d.repetir_dias * 864e5
+  const feitos = new Set<string>()
+  for (const [base, u] of ult) if (!repetir || Date.now() - u.em < repetir) feitos.add(base)
+  /** A marca da próxima mensagem para esta cliente (repetição ganha "|rN"). */
+  const marcaDe = (x: PerfilCliente): PerfilCliente => {
+    const n = ult.get(x.envio_chave!)?.n || 0
+    return n ? { ...x, envio_chave: `${x.envio_chave}|r${n}` } : x
+  }
+  return { feitos, ult, total, marcaDe }
 }
 
 function bloqueados(salaoId: string) {
@@ -1039,12 +1065,12 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     if (soDaSegunda) continue
 
     const { lista } = await alvosDoDisparo(salaoId, d, perfis)
-    const [feitos, trava] = await Promise.all([
-      chavesDoEnvio(salaoId, d.id, d.ciclo),
+    const [env, trava] = await Promise.all([
+      enviosDoDisparo(salaoId, d),
       travados(salaoId, d.trava_dias, retorno ? new Set([d.id, ...disparos.filter(ehRecuperacao).map(x => x.id)]) : undefined),
     ])
-    const restantes = lista.filter(x => !feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
-      && !naRecuperacao(x))
+    const restantes = lista.filter(x => !env.feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
+      && !naRecuperacao(x)).map(env.marcaDe)
     if (!restantes.length) {
       if (sempreRodando(d)) {
         e.proximo_em = new Date(Date.now() + 30 * 60000).toISOString()
@@ -1058,7 +1084,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     }
     // Quem recebeu outro envio nesta semana fica para depois (continua na fila).
     for (const t of recebeuOutro) trava.chaves.add(t)
-    if (await tentar(restantes, false, trava, feitos.size)) break
+    if (await tentar(restantes, false, trava, env.total)) break
     e.proximo_em = new Date(Date.now() + 15 * 60000).toISOString()
     marcar(d, 'Ninguém disponível agora (em conversa ou contatada há pouco); tenta de novo em 15 min', e)
   }
@@ -1127,8 +1153,8 @@ export async function simularProximo(salaoId: string, d: Disparo) {
   const { lista } = await alvosDoDisparo(salaoId, d, perfis)
   const retorno = d.tipo === 'retorno'
   const todos = await carregarDisparos(salaoId)
-  const [feitos, bloq, trava, profs, recuperando] = await Promise.all([
-    chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId),
+  const [env, bloq, trava, profs, recuperando] = await Promise.all([
+    enviosDoDisparo(salaoId, d), bloqueados(salaoId),
     travados(salaoId, d.trava_dias, retorno ? new Set([d.id, ...todos.filter(ehRecuperacao).map(x => x.id)]) : undefined),
     telefonesDeProfissionais(salaoId), ehRecuperacao(d) ? Promise.resolve(new Set<string>()) : emRecuperacao(salaoId, todos, perfis),
   ])
@@ -1137,7 +1163,7 @@ export async function simularProximo(salaoId: string, d: Disparo) {
   let proxima: any = null
   for (const x of lista) {
     if (puladas.length > 25) break
-    if (feitos.has(x.envio_chave!)) continue
+    if (env.feitos.has(x.envio_chave!)) continue
     if (recuperando.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'está numa lista de risco/perdidas' }); continue }
     if (recebeuOutro.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: `recebeu outro envio nos últimos ${DIAS_ENTRE_ENVIOS} dias` }); continue }
     if (bloq.has(x.chave)) { puladas.push({ cliente: x.cliente_nome, motivo: 'pediu para sair' }); continue }
@@ -1145,7 +1171,7 @@ export async function simularProximo(salaoId: string, d: Disparo) {
     if (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome)) { puladas.push({ cliente: x.cliente_nome, motivo: `contatada nos últimos ${d.trava_dias} dias` }); continue }
     const c = await conferirConversa(salaoId, x)
     if (c.bloquear || c.pular) { puladas.push({ cliente: x.cliente_nome, motivo: c.bloquear || c.pular! }); continue }
-    proxima = { cliente: x.cliente_nome, dias: x.dias, servico: x.servico_alvo || null, atraso: x.atraso ?? null, mensagem: pacotePara(d, x, feitos.size).map(p => p.texto || `[${p.tipo}]`).join('\n\n') }
+    proxima = { cliente: x.cliente_nome, dias: x.dias, servico: x.servico_alvo || null, atraso: x.atraso ?? null, mensagem: pacotePara(d, x, env.total).map(p => p.texto || `[${p.tipo}]`).join('\n\n') }
     break
   }
   const segundas_pendentes = (await segundasPendentes(salaoId, d, perfis)).filter(x => !bloq.has(x.chave)).length
@@ -1175,10 +1201,12 @@ export async function rodarDisparos() {
 export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
   const { lista, semCelular, repetidos, sem_ciclo } = await alvosDoDisparo(salaoId, d, perfis)
-  const [feitos, bloq, recuperando] = await Promise.all([chavesDoEnvio(salaoId, d.id, d.ciclo), bloqueados(salaoId), foraPorRecuperacao(salaoId, d, perfis)])
-  const na_recuperacao = lista.filter(x => recuperando.has(x.chave) && !feitos.has(x.envio_chave!)).length
-  const naLista = lista.filter(x => !bloq.has(x.chave) && (feitos.has(x.envio_chave!) || !recuperando.has(x.chave)))
-  const enviadas = naLista.filter(x => feitos.has(x.envio_chave!)).length
+  const [env, bloq, recuperando] = await Promise.all([enviosDoDisparo(salaoId, d), bloqueados(salaoId), foraPorRecuperacao(salaoId, d, perfis)])
+  const na_recuperacao = lista.filter(x => recuperando.has(x.chave) && !env.feitos.has(x.envio_chave!)).length
+  const naLista = lista.filter(x => !bloq.has(x.chave) && (env.feitos.has(x.envio_chave!) || !recuperando.has(x.chave)))
+  // "enviadas" = quem está feito agora; quem voltou a poder receber (repetição) conta em "faltam".
+  const enviadas = naLista.filter(x => env.feitos.has(x.envio_chave!)).length
+  const repetindo = naLista.filter(x => !env.feitos.has(x.envio_chave!) && env.ult.has(x.envio_chave!)).length
 
   // Respostas e retornos: do ciclo atual, contados em cima das envios gravados.
   const { dados: envios } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
@@ -1203,7 +1231,7 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   return {
     segundas,
     total: naLista.length, enviadas, faltam: naLista.length - enviadas,
-    sem_celular: semCelular, repetidos, sem_ciclo, na_recuperacao, bloqueados: lista.length - naLista.length,
+    sem_celular: semCelular, repetidos, sem_ciclo, na_recuperacao, repetindo, bloqueados: lista.length - naLista.length,
     responderam, voltaram, envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
   }
