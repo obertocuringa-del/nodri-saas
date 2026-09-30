@@ -211,6 +211,7 @@ export default function EnvioAutomatico() {
   const [editando, setEditando] = useState<Disparo | null>(null)
   const [original, setOriginal] = useState('')
   const [aviso, setAviso] = useState('')
+  const [limitando, setLimitando] = useState(false)
   const [ocupado, setOcupado] = useState('')
 
   // Primeiro a lista (rápido), depois os números de cada cartão.
@@ -279,6 +280,10 @@ export default function EnvioAutomatico() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => setLimitando(true)} disabled={!lista?.length}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: '#1a1a1a', border: '1.5px solid #e0ddd8', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <Clock size={15} /> Limitar mensagens diárias
+            </button>
             <button onClick={() => abrirEditor({ ...NOVO_RETORNO })}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: ROXO, border: `1.5px solid ${ROXO}`, borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               <CalendarDays size={15} /> Lembrete de retorno
@@ -292,6 +297,10 @@ export default function EnvioAutomatico() {
         {aviso && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#2f6b4f' }}>{aviso}</div>}
       </div>
 
+      {limitando && lista && (
+        <LimitarDiario lista={lista} onFechar={() => setLimitando(false)}
+          onSalvo={async (msg) => { setLimitando(false); setAviso(msg); setTimeout(() => setAviso(''), 6000); await carregar() }} />
+      )}
       {!lista && <div style={{ padding: 30, textAlign: 'center', color: '#6b6860' }}><Loader2 className="animate-spin" size={18} /> Carregando...</div>}
       {lista && !lista.length && (
         <div style={{ background: '#fff', border: '1.5px dashed #e0ddd8', borderRadius: 12, padding: 24 }}>
@@ -401,6 +410,98 @@ export default function EnvioAutomatico() {
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * "Limitar mensagens diárias" (dono, 30/09/2026): um atalho para não entrar
+ * envio por envio. Liga/desliga cada um, e o total do dia é dividido entre
+ * os ligados, cada um no seu horário (um termina, o outro começa). A conta é
+ * a mesma de dividirDia em src/lib/crmDisparos.ts, que é quem salva.
+ */
+function LimitarDiario({ lista, onFechar, onSalvo }: { lista: Disparo[]; onFechar: () => void; onSalvo: (msg: string) => void }) {
+  const [ligados, setLigados] = useState<string[]>(lista.filter(d => d.ligado).map(d => d.id!))
+  const [total, setTotal] = useState(Math.min(100, lista.filter(d => d.ligado).reduce((t, d) => t + d.max_dia, 0) || 50))
+  const [ini, setIni] = useState('09:00')
+  const [fim, setFim] = useState('21:00')
+  const [salvando, setSalvando] = useState(false)
+  // Na ordem da página: é a ordem dos horários do dia.
+  const ids = lista.filter(d => ligados.includes(d.id!)).map(d => d.id!)
+  const fatias = useMemo(() => {
+    const n = ids.length, janela = Math.max(0, min(fim) - min(ini))
+    if (!n || !janela || total < 1) return {} as Record<string, { max_dia: number; janela_ini: string; janela_fim: string; intervalo_min: number }>
+    const fatia = Math.floor(janela / n), base = Math.floor(total / n), sobra = total % n
+    return Object.fromEntries(ids.map((id, i) => {
+      const cota = Math.max(1, base + (i < sobra ? 1 : 0))
+      const a = min(ini) + i * fatia, b = i === n - 1 ? min(fim) : a + fatia
+      const intervalo = Math.max(5, Math.floor((b - a) / cota))
+      return [id, { max_dia: Math.min(cota, Math.floor((b - a) / intervalo) + 1), janela_ini: hhmm(a), janela_fim: hhmm(b), intervalo_min: intervalo }]
+    }))
+  }, [ids.join(','), total, ini, fim]) // eslint-disable-line react-hooks/exhaustive-deps
+  const somado = Object.values(fatias).reduce((t, f) => t + f.max_dia, 0)
+
+  async function salvar() {
+    setSalvando(true)
+    const r = await fetch('/api/crm/disparos', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'distribuir', ids, total, janela_ini: ini, janela_fim: fim }) })
+    const j = await r.json().catch(() => ({}))
+    setSalvando(false)
+    if (!r.ok) { alert(j.error || 'Não consegui salvar.'); return }
+    onSalvo(ids.length ? `Salvo: ${somado} mensagens por dia divididas entre ${ids.length} envio(s).` : 'Todos os envios foram desligados.')
+  }
+
+  return (
+    <div onClick={onFechar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 820, padding: 22, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>Limitar mensagens diárias</div>
+          <button onClick={onFechar} style={{ color: '#8f877f' }}><X size={18} /></button>
+        </div>
+        <div style={{ fontSize: 12.5, color: '#6b6860', lineHeight: 1.5, marginBottom: 14 }}>
+          Ligue só os envios que você quer rodando. O total do dia é dividido igualmente entre eles, e cada um ganha o seu horário:
+          um termina, o próximo começa. Nunca dois ao mesmo tempo. Ao salvar, cada envio é atualizado sozinho.
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', background: '#f5f3ff', border: '1px solid #dcd7fa', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+          <label><span style={rotulo}>Total de mensagens por dia</span>
+            <input type="number" min={1} max={500} value={total} onChange={e => setTotal(Math.max(1, Number(e.target.value) || 1))} style={{ ...campo, width: 110 }} /></label>
+          <label><span style={rotulo}>Começa às</span><input type="time" value={ini} onChange={e => setIni(e.target.value)} style={{ ...campo, width: 120 }} /></label>
+          <label><span style={rotulo}>Para às</span><input type="time" value={fim} onChange={e => setFim(e.target.value)} style={{ ...campo, width: 120 }} /></label>
+          <div style={{ fontSize: 12.5, color: '#1a1a1a', paddingBottom: 8 }}>
+            {ids.length ? <><b>{ids.length}</b> ligado(s) · cerca de <b>{Math.floor(total / ids.length)}</b> por envio</> : 'Nenhum ligado'}
+          </div>
+        </div>
+        {total > 100 && <div style={{ fontSize: 12, color: '#9a6b12', fontWeight: 700, marginBottom: 10 }}>Mais de 100 por dia aumenta muito o risco de bloqueio no WhatsApp.</div>}
+        {!!ids.length && somado < total && <div style={{ fontSize: 12, color: '#9a6b12', marginBottom: 10 }}>No horário escolhido só cabem {somado} (uma a cada 5 minutos no máximo por envio). Aumente o horário ou diminua o total.</div>}
+
+        <div style={{ display: 'grid', gap: 6 }}>
+          {lista.map(d => {
+            const on = ligados.includes(d.id!), f = fatias[d.id!]
+            const cor = CORES[d.categoria] || CORES['']
+            return (
+              <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: on ? cor.fundo : '#faf9f7', borderLeft: `5px solid ${on ? cor.borda : '#d8d4cd'}`, borderRadius: 8, padding: '9px 12px' }}>
+                <Chave ligada={on} ocupado={false} onTrocar={() => setLigados(on ? ligados.filter(x => x !== d.id) : [...ligados, d.id!])} />
+                <div style={{ minWidth: 200, flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{d.nome}</div>
+                  <div style={{ fontSize: 11.5, color: '#8f877f' }}>{ROTULO_CAT[d.categoria] || 'Envio'}{d.publico?.servicos?.length ? ` · ${nomesServicos(d.publico.servicos, 2)}` : ''}</div>
+                </div>
+                {on && f ? (
+                  <div style={{ fontSize: 12.5, color: '#1a1a1a', textAlign: 'right' }}>
+                    <b>{f.max_dia}</b> por dia · das <b>{f.janela_ini}</b> às <b>{f.janela_fim}</b> · uma a cada <b>{f.intervalo_min} min</b>
+                  </div>
+                ) : <div style={{ fontSize: 12, color: '#a09a90' }}>desligado</div>}
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+          <button onClick={onFechar} style={botao('#fff', '#1a1a1a', '#e0ddd8')}>Cancelar</button>
+          <button onClick={salvar} disabled={salvando} style={{ ...botao(ROXO, '#fff', ROXO), padding: '9px 20px', fontSize: 13 }}>
+            {salvando ? <Loader2 size={14} className="animate-spin" /> : null} Salvar e aplicar
+          </button>
+        </div>
       </div>
     </div>
   )

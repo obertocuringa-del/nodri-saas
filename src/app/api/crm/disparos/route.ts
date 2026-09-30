@@ -5,7 +5,7 @@ import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
-  servicosDoSalao, perfisDoSalao, alvosDoDisparo, foraPorRecuperacao, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  servicosDoSalao, perfisDoSalao, alvosDoDisparo, foraPorRecuperacao, dividirDia, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
@@ -118,6 +118,26 @@ export async function POST(req: NextRequest) {
     else { novo.ligado = false; novo.ciclo = 1; novo.criado_em = new Date().toISOString(); disparos.push(novo) }
     await gravarDisparos(salaoId, disparos)
     return NextResponse.json({ ok: true, disparo: novo })
+  }
+
+  // "Limitar mensagens diárias": liga só os escolhidos, na ordem da tela, e
+  // divide o total e o horário entre eles (dividirDia em crmDisparos.ts).
+  if (b.acao === 'distribuir') {
+    const ids: string[] = (Array.isArray(b.ids) ? b.ids : []).map(String).filter((id: string) => disparos.some(x => x.id === id))
+    const semTexto = disparos.filter(x => ids.includes(x.id) && !x.mensagens.length).map(x => x.nome)
+    if (semTexto.length) return NextResponse.json({ error: `Escreva a mensagem antes de ligar: ${semTexto.join(', ')}` }, { status: 400 })
+    const total = Math.max(1, Math.min(500, Math.round(Number(b.total) || 0)))
+    const ini = /^\d{2}:\d{2}$/.test(b.janela_ini) ? b.janela_ini : '09:00'
+    const fim = /^\d{2}:\d{2}$/.test(b.janela_fim) ? b.janela_fim : '21:00'
+    const fatias = dividirDia(ids, total, ini, fim)
+    if (ids.length && !fatias.length) return NextResponse.json({ error: 'Horário inválido.' }, { status: 400 })
+    for (const x of disparos) {
+      const f = fatias.find(y => y.id === x.id)
+      x.ligado = !!f
+      if (f) Object.assign(x, { max_dia: f.max_dia, janela_ini: f.janela_ini, janela_fim: f.janela_fim, intervalo_min: f.intervalo_min })
+    }
+    await gravarDisparos(salaoId, disparos)
+    return NextResponse.json({ ok: true, fatias })
   }
 
   const d = disparos.find(x => x.id === String(b.id || ''))

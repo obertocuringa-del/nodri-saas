@@ -28,7 +28,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase'
 import { paginar } from '@/lib/paginar'
-import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO } from '@/lib/crm'
+import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao } from '@/lib/crm'
 import { acharOuCriarContato, grafiasDoTelefone } from '@/lib/crmContatos'
 import { carregarCampanhas } from '@/lib/crmCampanhas'
 import { assinaturaAtendimentos } from '@/lib/atendimentosCache'
@@ -872,11 +872,16 @@ async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, pacote:
   if (!conversa) return null
   const agoraIso = new Date().toISOString()
   if (!nova) {
-    // Só tira de pasta PASSIVA: quem está em "Preciso agir", Follow-up ou numa
-    // pasta do salão fica onde está.
+    // Toda mensagem do envio automático fica em Listas (dono, 30/09/2026),
+    // a 1ª e a 2ª: não se mistura com as conversas do dia. Quando a cliente
+    // responde, a ponte leva para "Preciso agir". Só duas exceções: tem
+    // mensagem DELA sem ler (alguém precisa responder -- não se esconde) e a
+    // pasta Profissionais.
     const patch: any = { ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: texto.slice(0, 120), atualizado_em: agoraIso }
-    const reabre = reaberta && !((conversa.nao_lidas || 0) > 0)
-    if (reabre || PASSIVAS_DO_DISPARO.includes(conversa.estado)) {
+    const esperandoResposta = (conversa.nao_lidas || 0) > 0
+    const reabre = reaberta && !esperandoResposta
+    const deProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
+    if (!esperandoResposta && !deProfissional) {
       patch.estado = PASTA_DO_DISPARO
       patch.proxima_acao = proximaAcaoPadrao(PASTA_DO_DISPARO as any)
       patch.aguardando_desde = null
@@ -946,7 +951,12 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   // mandar. Sai no máximo uma mensagem por volta, e o intervalo vale para o
   // salão inteiro, não por envio.
   const noPeriodo = (x: Disparo) => x.ligado && (!x.inicio || x.inicio <= agora.dia)
-  const listaDaVez = escolherDaVez(disparos.filter(x => !sempreRodando(x)), agora.dia)
+  // Com o dia dividido (cada lista no seu horário), a da vez é a que está no
+  // horário dela agora; sem ninguém no horário, a de início mais cedo (só
+  // para a tela dizer "começa às").
+  const normais = disparos.filter(x => !sempreRodando(x))
+  const noHorario = (x: Disparo) => x.dias_semana.includes(agora.semana) && agora.hora >= x.janela_ini && agora.hora < x.janela_fim
+  const listaDaVez = escolherDaVez(normais.filter(noHorario), agora.dia) || escolherDaVez(normais, agora.dia)
   const sempre = disparos.filter(x => sempreRodando(x) && noPeriodo(x))
   const soSegunda = disparos.filter(x => !x.ligado && x.segunda.ligada && estados[x.id]?.concluido_em
     && Date.now() - new Date(estados[x.id].concluido_em!).getTime() < (x.segunda.dias + 8) * 864e5)
@@ -1205,6 +1215,31 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
     responderam, voltaram, envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
   }
+}
+
+// ── Dividir o dia entre os envios ligados ────────────────────────────────────
+//
+// Pedido do dono (30/09/2026): um atalho que liga/desliga os envios e reparte
+// um total de mensagens por dia entre os ligados, cada um no SEU horário --
+// um termina, o outro começa, nunca dois ao mesmo tempo. Mesma conta na tela
+// (prévia) e aqui (o que é salvo).
+export interface Fatia { id: string; max_dia: number; janela_ini: string; janela_fim: string; intervalo_min: number }
+const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+export function dividirDia(ids: string[], total: number, ini: string, fim: string): Fatia[] {
+  const n = ids.length
+  const janela = Math.max(0, minutos(fim) - minutos(ini))
+  if (!n || !janela || total < 1) return []
+  const fatia = Math.floor(janela / n)
+  const base = Math.floor(total / n), sobra = total % n
+  return ids.map((id, i) => {
+    const cota = Math.max(1, base + (i < sobra ? 1 : 0))
+    const a = minutos(ini) + i * fatia
+    const b = i === n - 1 ? minutos(fim) : a + fatia
+    // Piso de 5 minutos (o mesmo do envio); se não couber, a cota encolhe.
+    const intervalo = Math.max(5, Math.floor((b - a) / cota))
+    const cabe = Math.floor((b - a) / intervalo) + 1
+    return { id, max_dia: Math.min(cota, cabe), janela_ini: hhmm(a), janela_fim: hhmm(b), intervalo_min: intervalo }
+  })
 }
 
 /** Quem fica de fora deste envio por estar numa recuperação (vazio se ele mesmo é recuperação). */
