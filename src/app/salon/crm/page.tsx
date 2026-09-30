@@ -1024,9 +1024,12 @@ export default function CrmPage() {
     // com o que sobrar. Antes o corpo descontava 53px na mao, e bastou o
     // cabecalho ganhar uma segunda linha para a conversa vazar para baixo da
     // dobra.
-    <div className="h-screen flex flex-col" style={{ background: '#f6f1ee' }}>
+    <div className="crm-tela h-screen flex flex-col" style={{ background: '#f6f1ee' }}>
       {/* ── Barra ── */}
-      <div ref={faixaRef} className="flex-shrink-0 z-20 border-b relative" style={{ background: '#fff', borderColor: '#e9ddd6' }}>
+      {/* No celular, com a conversa aberta, a barra do CRM sai: a conversa
+          tem o próprio Voltar, e a altura vai para as mensagens. */}
+      <div ref={faixaRef} className="flex-shrink-0 z-20 border-b relative"
+        style={{ background: '#fff', borderColor: '#e9ddd6', display: noCelular && aberta ? 'none' : undefined }}>
         {/* A tira fina: tudo que fica à vista com a faixa recolhida. Diz a
             pasta atual para ninguém se perder (ver "Faixa que se recolhe"). */}
         {faixaRecolhe && (
@@ -1048,10 +1051,10 @@ export default function CrmPage() {
             (z-45). Sem esta folga, o selo de conexao, a engrenagem e o
             atualizar ficam DEBAIXO dela: existem, aparecem no HTML, e ninguem
             consegue clicar. */}
-        <div className="px-4 py-2 flex items-center gap-3"
-          style={{ paddingRight: noCelular ? 16 : 340 }}>
+        <div className={`px-4 py-2 flex items-center ${noCelular ? 'gap-2 flex-wrap' : 'gap-3'}`}
+          style={{ paddingRight: noCelular ? 12 : 340 }}>
           <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#6e625c' }} title="Voltar"><ArrowLeft size={17} /></a>
-          <div className="min-w-0 flex-shrink-0">
+          <div className={noCelular ? 'min-w-0 flex-1' : 'min-w-0 flex-shrink-0'}>
             <h1 className="font-bold text-[15px] leading-tight" style={{ color: '#2b2320' }}>CRM · WhatsApp</h1>
             <p className="text-[11.5px]" style={{ color: '#9a8c85' }}>
               {conectado
@@ -1067,8 +1070,8 @@ export default function CrmPage() {
               recepção clicava no status da cliente. */}
           {conectado && noCelular && (
             <button onClick={() => setAbasAbertas(v => !v)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
-              style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25', minWidth: 190 }}>
+              className="px-3 py-2 rounded-lg text-[13px] font-bold flex items-center gap-2 transition duration-100 hover:brightness-95 active:scale-[.98]"
+              style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25', order: 10, width: '100%' }}>
               <span className="flex-1 text-left truncate">{rotuloDoFiltro}</span>
               {filtro !== 'fila' && contagem.fila > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] flex-shrink-0"
@@ -1081,21 +1084,21 @@ export default function CrmPage() {
             </button>
           )}
 
-          <div className="flex-1" />
+          {!noCelular && <div className="flex-1" />}
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SeloConexao canal={canal} />
+          <div className={`flex items-center flex-shrink-0 ${noCelular ? 'gap-1' : 'gap-2'}`}>
+            {!noCelular && <SeloConexao canal={canal} />}
             {/* Com nome, nao so um icone: a engrenagem sozinha ninguem acha --
                 e nao achou mesmo. */}
             <a href="/salon/crm/painel" title="Painel: conversao, motivos de perda e tempo de resposta"
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
               style={{ background: '#e6f1eb', color: '#2f6b4f' }}>
-              <BarChart3 size={13} /> Painel
+              <BarChart3 size={noCelular ? 15 : 13} />{!noCelular && ' Painel'}
             </a>
             <a href="/salon/crm/config" title="Configurar mensagens prontas, precos e motivos"
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
               style={{ background: '#f3e3dc', color: '#a8624f' }}>
-              <Settings size={13} /> Configurar
+              <Settings size={noCelular ? 15 : 13} />{!noCelular && ' Configurar'}
             </a>
             <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
               className="p-1.5 rounded-lg" style={{ color: '#6e625c' }}><RefreshCw size={15} /></button>
@@ -1616,6 +1619,9 @@ export default function CrmPage() {
                           e.preventDefault(); envolver('_'); return
                         }
                         if (e.key !== 'Enter' || e.shiftKey) return
+                        // No celular o Enter do teclado pula linha, como no
+                        // WhatsApp; envia pelo botão.
+                        if (noCelular) return
                         e.preventDefault()
                         // Atalho: "/oi" vira a mensagem de boas-vindas inteira.
                         // O campo `atalho` das mensagens prontas existia e nao
@@ -1627,7 +1633,7 @@ export default function CrmPage() {
                         if (pronta) { usarModelo(pronta); return }
                         enviar()
                       }}
-                      placeholder="Escreva a resposta... (Enter envia · Shift+Enter quebra linha)"
+                      placeholder={noCelular ? 'Escreva a resposta...' : 'Escreva a resposta... (Enter envia · Shift+Enter quebra linha)'}
                       className="w-full pl-3.5 pr-11 py-2 rounded-2xl text-[13.5px] resize-none focus:outline-none leading-normal block"
                       style={{ background: '#fdfaf8', border: '1px solid #e9ddd6', color: '#2b2320', minHeight: 38, maxHeight: 320, overflowY: 'auto' }} />
                     {texto.trim() ? (
@@ -1656,10 +1662,18 @@ export default function CrmPage() {
           {/* ── O que o NODRI já sabe ── */}
           {aberta && !noCelular && <PainelCliente c={aberta} onEtiquetas={salvarEtiquetas} />}
           {aberta && noCelular && fichaAberta && (
-            <div className="fixed inset-0 z-30 flex" onClick={() => setFichaAberta(false)}>
+            <div className="fixed inset-0 flex" style={{ zIndex: 60 }} onClick={() => setFichaAberta(false)}>
               <div className="flex-1" style={{ background: 'rgba(26,22,20,.35)' }} />
-              <div onClick={e => e.stopPropagation()} className="h-full overflow-y-auto"
-                style={{ width: 300, maxWidth: '86vw', background: '#fff', boxShadow: '-6px 0 24px rgba(0,0,0,.14)' }}>
+              <div onClick={e => e.stopPropagation()} className="h-full overflow-y-auto crm-ficha-celular"
+                style={{ width: 340, maxWidth: '92vw', background: '#fdfaf8', boxShadow: '-6px 0 24px rgba(0,0,0,.14)' }}>
+                <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b"
+                  style={{ background: '#fff', borderColor: '#e9ddd6' }}>
+                  <span className="text-[14px] font-bold" style={{ color: '#2b2320' }}>Ficha da cliente</span>
+                  <button onClick={() => setFichaAberta(false)} aria-label="Fechar"
+                    className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#f3e3dc', color: '#a8624f' }}>
+                    <X size={18} />
+                  </button>
+                </div>
                 <PainelCliente c={aberta} onEtiquetas={salvarEtiquetas} />
               </div>
             </div>
@@ -1925,15 +1939,70 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
   const [statusAberto, setStatusAberto] = useState(false)
   useEffect(() => { setStatusAberto(false) }, [c.id])
   const escolher = (chave: string, extra?: any) => { setStatusAberto(false); onEstado(chave, extra) }
+  // No celular o cabeçalho vira três linhas enxutas: quem é (com Voltar e
+  // Ficha), em que pé está, e origem + status lado a lado. O computador
+  // continua com a linha única de sempre.
+  const origemSelect = (
+    <select value={c.origem || ''} onChange={e => onOrigem(e.target.value)}
+      className={`px-2 py-1 rounded-lg font-bold focus:outline-none ${noCelular ? 'w-full min-w-0' : 'text-[11px]'}`}
+      style={{ background: c.origem ? '#f3e3dc' : '#f6f1ee', color: c.origem ? '#a8624f' : '#9a8c85', border: '1px solid #e9ddd6' }}>
+      <option value="">{noCelular ? 'Veio de: não informado' : 'não informado'}</option>
+      {(origens || []).map((o: any) => <option key={o.id} value={o.nome}>{noCelular ? `Veio de: ${o.nome}` : o.nome}</option>)}
+    </select>
+  )
+  const botaoStatus = (
+    <button onClick={() => { setStatusAberto(v => !v); setFecharAberto(false); setDesmarqueAberto(false) }}
+      className="px-3 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-1.5 flex-shrink-0 transition duration-100 hover:brightness-95 active:scale-[.98]"
+      style={statusAberto
+        ? { background: '#a8624f', color: '#fff' }
+        : { background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25' }}>
+      <Tag size={13} /> {noCelular ? 'Status' : 'Definir status'}
+      <ChevronDown size={13} style={{ transform: statusAberto ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+    </button>
+  )
+  const seloEstado = (
+    <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold flex-shrink-0"
+      style={{ background: est.fundo, color: est.cor }}>
+      {est.rotulo}{c.motivo_perda && (c.estado === 'sem_conversao' || c.estado === 'desmarcou') ? ` · ${c.motivo_perda}` : ''}
+    </span>
+  )
+  const fone = ct.telefone ? telefoneBonito(ct.telefone)
+    : ct.lid ? `id ${String(ct.lid).split('@')[0]} · número aparece quando ela escrever`
+    : 'sem número'
   return (
-    <div className="border-b px-5 py-3" style={{ background: '#fff', borderColor: '#e9ddd6' }}>
+    <div className={`border-b ${noCelular ? 'px-3 py-2' : 'px-5 py-3'}`} style={{ background: '#fff', borderColor: '#e9ddd6' }}>
+      {noCelular ? (
+        <>
+          <div className="flex items-center gap-2">
+            <button onClick={onVoltar} title="Voltar para a fila" aria-label="Voltar"
+              className="w-9 h-9 -ml-1 rounded-lg flex items-center justify-center flex-shrink-0" style={{ color: '#6e625c' }}>
+              <ArrowLeft size={19} />
+            </button>
+            <Avatar nome={nome} nova={ehNova(c)} tamanho={34} />
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-[15px] leading-tight truncate" style={{ color: '#2b2320' }}>{nome}</p>
+              <p className="text-[11.5px] truncate" style={{ color: '#9a8c85' }}>{fone}</p>
+            </div>
+            <button onClick={onFicha} title="A cliente"
+              className="px-3 py-2 rounded-lg text-[12px] font-bold flex items-center gap-1 flex-shrink-0"
+              style={{ background: '#f3e3dc', color: '#a8624f' }}>
+              <User size={13} /> Ficha
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mt-1.5 min-w-0">
+            {seloEstado}
+            {ehNova(c) && <SeloNova onTirar={onTirarNova} />}
+            {c.proxima_acao && (
+              <p className="text-[11.5px] min-w-0 truncate" style={{ color: '#6e625c' }}>{c.proxima_acao}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 min-w-0">{origemSelect}</div>
+            {botaoStatus}
+          </div>
+        </>
+      ) : (
       <div className="flex items-center gap-3 flex-wrap">
-        {noCelular && (
-          <button onClick={onVoltar} title="Voltar para a fila"
-            className="p-1.5 rounded-lg -ml-1" style={{ color: '#6e625c' }}>
-            <ArrowLeft size={18} />
-          </button>
-        )}
         <Avatar nome={nome} nova={ehNova(c)} tamanho={38} />
         <div className="min-w-0">
           <p className="font-bold text-[15.5px] leading-tight" style={{ color: '#2b2320' }}>{nome}</p>
@@ -1950,13 +2019,6 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           {est.rotulo}{c.motivo_perda && (c.estado === 'sem_conversao' || c.estado === 'desmarcou') ? ` · ${c.motivo_perda}` : ''}
         </span>
         {ehNova(c) && <SeloNova onTirar={onTirarNova} />}
-        {noCelular && (
-          <button onClick={onFicha} title="A cliente"
-            className="ml-auto px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1"
-            style={{ background: '#f3e3dc', color: '#a8624f' }}>
-            <User size={12} /> Ficha
-          </button>
-        )}
         {/* Próxima ação e origem na MESMA linha do nome (19/09/2026): a
             segunda linha do cabeçalho custava altura que a caixa de texto
             precisava mais. O texto da próxima ação corta com reticências e o
@@ -1988,6 +2050,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
           <ChevronDown size={13} style={{ transform: statusAberto ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
         </button>
       </div>
+      )}
 
       {/* ── A faixa sai da configuração, não do código ──────────────────────
           O salão esconde, renomeia e cria os seus botões em Configurar. Os

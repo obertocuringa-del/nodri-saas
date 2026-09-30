@@ -581,3 +581,18 @@ body[data-crm-compacto="1"] [data-nodri-flutuante] {
   opacity: 0;
   pointer-events: none;
 }
+
+/* ── CRM no celular (30/09/2026) ─────────────────────────────────────────
+   1) A tela do CRM ocupa a altura VISÍVEL do aparelho (dvh: desconta a barra
+      do navegador) menos a barra fixa do NODRI. Com 100vh + a barra de 52px a
+      página ficava mais alta que a tela e a caixa de escrever sumia embaixo.
+   2) Campo com letra menor que 16px faz o iPhone dar zoom sozinho ao tocar,
+      e a tela inteira "desconfigura". No celular os campos ficam com 16px.
+   3) A ficha da cliente ocupa a gaveta inteira. Só vale até 860px (o mesmo
+      corte do modo celular do CRM); o computador não muda nada. */
+@media (max-width: 860px) {
+  .crm-tela { height: 100dvh !important; }
+  .crm-tela input, .crm-tela textarea, .crm-tela select { font-size: 16px !important; }
+  .crm-ficha-celular aside { width: 100% !important; border-left: 0 !important; }
+}
+body.nodri-topo-fixo .crm-tela { height: calc(100dvh - 52px) !important; }
