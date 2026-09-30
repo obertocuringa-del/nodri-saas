@@ -406,14 +406,17 @@ async function lerPerfis(salaoId: string): Promise<PerfilCliente[]> {
  * mais antiga (quem veio há pouco é quem mais volta). Um telefone só uma vez.
  */
 export function publicoDe(perfis: PerfilCliente[], p: Publico) {
-  const alvos = new Set(p.servicos.map(semAcento))
-  const nunca = new Set((p.servicos_nao || []).map(semAcento))
+  // Por FAMÍLIA do serviço (nome sem código): "MANICURE 12" conta como
+  // manicure mesmo que só "MANICURE" esteja marcada. Senão a venda cruzada
+  // oferecia manicure para quem já faz manicure com outro código.
+  const alvos = new Set(p.servicos.map(familiaServico))
+  const nunca = new Set((p.servicos_nao || []).map(familiaServico))
   const dentro = perfis.filter(x =>
-    (!nunca.size || !x.servicos.some(s => nunca.has(semAcento(s)))) &&
+    (!nunca.size || !x.servicos.some(s => nunca.has(familiaServico(s)))) &&
     x.dias >= p.dias_min && (!p.dias_max || x.dias <= p.dias_max)
     && (!p.ano_de || x.ano >= p.ano_de) && (!p.ano_ate || x.ano <= p.ano_ate)
     && (p.segmento === 'todos' || x.segmento === p.segmento)
-    && (!alvos.size || x.servicos.some(s => alvos.has(semAcento(s)))))
+    && (!alvos.size || x.servicos.some(s => alvos.has(familiaServico(s)))))
   dentro.sort((a, b) => a.dias - b.dias)
   const vistos = new Set<string>()
   const lista: PerfilCliente[] = []
@@ -502,6 +505,9 @@ export function nomeParaCliente(nome: string) {
  * o primeiro): "manicure", "manicure e pedicure", "manicure, pedicure e spa".
  * Nomes que ficam iguais depois de limpos aparecem uma vez.
  */
+/** A família do serviço: sem código, sem acento, sem maiúscula. */
+export const familiaServico = (s: string) => semAcento(nomeParaCliente(s))
+
 export function juntarNomes(nomes: string[]) {
   const u = [...new Set(nomes.map(n => n.trim()).filter(Boolean))]
   if (u.length <= 1) return u[0] || ''
@@ -509,8 +515,8 @@ export function juntarNomes(nomes: string[]) {
 }
 
 function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
-  const alvos = new Set(d.publico.servicos.map(semAcento))
-  const servico = x.servico_alvo || x.servicos.find(s => alvos.has(semAcento(s))) || x.servicos[0] || ''
+  const alvos = new Set(d.publico.servicos.map(familiaServico))
+  const servico = x.servico_alvo || x.servicos.find(s => alvos.has(familiaServico(s))) || x.servicos[0] || ''
   const dados: Record<string, string> = {
     cliente: primeiroNome(x.cliente_nome), dias: String(x.dias),
     ultima_visita: x.ultima_visita, servico: nomeParaCliente(servico),
@@ -579,7 +585,7 @@ async function enviosDoDisparo(salaoId: string, d: Disparo) {
       const partes = base.split('|')
       if (partes.length < 3) continue
       const l = porTel.get(partes[0]) || []
-      l.push({ base, fam: nomeParaCliente(partes[1]), em: u.em })
+      l.push({ base, fam: familiaServico(partes[1]), em: u.em })
       porTel.set(partes[0], l)
     }
   }
@@ -588,7 +594,7 @@ async function enviosDoDisparo(salaoId: string, d: Disparo) {
     if (ult.has(k)) return x
     const partes = k.split('|'), feitoEm = Number(partes[2]) || 0
     if (partes.length < 3) return x
-    const antes = (porTel.get(partes[0]) || []).find(v => v.fam === nomeParaCliente(partes[1]) && v.em > feitoEm)
+    const antes = (porTel.get(partes[0]) || []).find(v => v.fam === familiaServico(partes[1]) && v.em > feitoEm)
     return antes ? { ...x, envio_chave: antes.base } : x
   })
   return { feitos, ult, total, marcaDe, alinhar }
@@ -794,16 +800,16 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
   // 30/09/2026). Agora conta a FAMÍLIA do serviço (o nome sem o código), e a
   // data é a do atendimento mais recente de qualquer variação -- mesmo uma
   // que não esteja marcada na lista.
-  const familias = new Set(d.publico.servicos.map(s => nomeParaCliente(s)).filter(Boolean))
+  const familias = new Set(d.publico.servicos.map(s => familiaServico(s)).filter(Boolean))
   const cicloFam = new Map<string, number>()
   const guardarCiclo = (nome: string, c: number) => {
-    const f = nomeParaCliente(nome)
+    const f = familiaServico(nome)
     if (c > 0 && familias.has(f)) cicloFam.set(f, Math.max(cicloFam.get(f) || 0, c))
   }
   for (const s of d.publico.servicos) guardarCiclo(s, cicloDe(s))
   for (const [nome, c] of Object.entries(d.ciclos || {})) guardarCiclo(nome, Number(c) || 0)
   for (const [nome, c] of catalogo) guardarCiclo(nome, c)
-  const sem_ciclo = d.publico.servicos.filter(s => !cicloFam.get(nomeParaCliente(s)))
+  const sem_ciclo = d.publico.servicos.filter(s => !cicloFam.get(familiaServico(s)))
   const agora = Date.now()
   const lista: PerfilCliente[] = []
   for (const x of base.lista) {
@@ -813,7 +819,7 @@ async function alvosSemAgenda(salaoId: string, d: Disparo, perfis: PerfilCliente
     const ultimaDaFamilia = new Map<string, { nome: string; em: number; data: string }>()
     for (const m of mapas) {
       for (const u of m.values()) {
-        const f = nomeParaCliente(u.nome)
+        const f = familiaServico(u.nome)
         if (!familias.has(f)) continue
         const a = ultimaDaFamilia.get(f)
         if (!a || u.em > a.em) ultimaDaFamilia.set(f, u)
