@@ -1621,6 +1621,21 @@ export async function GET(req: NextRequest) {
  * exatamente o que o espaçamento existe para evitar.
  */
 async function montarFila(saloes: string[]) {
+  // ── Mensagem presa em "enviando" (auditoria, 30/09/2026) ──────────────────
+  //
+  // A ponte marca "enviando" ao pegar a mensagem e só depois confirma. Se ela
+  // cair no meio, a mensagem ficava "enviando" para sempre: a cliente não
+  // recebia e ninguém via (caso real: recepção, 28/09 15:37). Depois de 15
+  // minutos vira "falhou" -- aparece na conversa para a recepção reenviar.
+  // Não volta sozinha para a fila: se tiver saído, a cliente receberia duas.
+  // Conta a partir de quando a ponte PEGOU (enviado_em, gravado abaixo; a
+  // confirmação sobrescreve). Mensagem pega antes desta regra não tem essa
+  // hora: vale o criado_em, com folga de um dia.
+  const limite = new Date(Date.now() - 15 * 60000).toISOString()
+  await supabaseAdmin.from('crm_mensagens').update({ situacao: 'falhou', erro: 'a ponte não confirmou o envio (verifique e reenvie)' })
+    .in('salao_id', saloes).eq('situacao', 'enviando')
+    .or(`enviado_em.lt.${limite},and(enviado_em.is.null,criado_em.lt.${new Date(Date.now() - 864e5).toISOString()})`)
+
   // 20 por salão continua sendo o teto, para um salão movimentado não tomar a
   // volta inteira dos outros.
   const teto = Math.min(20 * saloes.length, 200)
@@ -1668,7 +1683,7 @@ async function montarFila(saloes: string[]) {
   // se demorar a confirmar.
   if (fila.length) {
     await supabaseAdmin.from('crm_mensagens')
-      .update({ situacao: 'enviando' })
+      .update({ situacao: 'enviando', enviado_em: new Date().toISOString() })
       .in('id', fila.map(m => m.id))
   }
 
