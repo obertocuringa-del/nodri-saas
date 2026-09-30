@@ -493,6 +493,17 @@ export function nomeParaCliente(nome: string) {
     .replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
+/**
+ * Vários serviços numa frase só (dono, 30/09/2026: a venda cruzada citava só
+ * o primeiro): "manicure", "manicure e pedicure", "manicure, pedicure e spa".
+ * Nomes que ficam iguais depois de limpos aparecem uma vez.
+ */
+export function juntarNomes(nomes: string[]) {
+  const u = [...new Set(nomes.map(n => n.trim()).filter(Boolean))]
+  if (u.length <= 1) return u[0] || ''
+  return `${u.slice(0, -1).join(', ')} e ${u[u.length - 1]}`
+}
+
 function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
   const alvos = new Set(d.publico.servicos.map(semAcento))
   const servico = x.servico_alvo || x.servicos.find(s => alvos.has(semAcento(s))) || x.servicos[0] || ''
@@ -500,7 +511,7 @@ function preencher(d: Disparo, x: PerfilCliente, modelo: string) {
     cliente: primeiroNome(x.cliente_nome), dias: String(x.dias),
     ultima_visita: x.ultima_visita, servico: nomeParaCliente(servico),
     data_servico: x.feito_em || x.ultima_visita,
-    oferta: nomeParaCliente(String((d.publico.servicos_nao || [])[0] || '')),
+    oferta: juntarNomes((d.publico.servicos_nao || []).map(nomeParaCliente)),
   }
   return modelo.replace(/\{(\w+)\}/g, (_, k) => dados[k] ?? '')
     .replace(/[ \t]+([,.!?;:])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim()

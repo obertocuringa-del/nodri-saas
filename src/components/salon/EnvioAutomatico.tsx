@@ -632,7 +632,7 @@ function Editor({ d, setD, servicos, sujo, onCancelar, onSalvar }: {
               </div>
             )}
             <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 6 }}>
-              Na mensagem, <code>{'{servico}'}</code> é o que ela já faz e <code>{'{oferta}'}</code> é o primeiro serviço desta lista.
+              Na mensagem, <code>{'{servico}'}</code> é o que ela já faz e <code>{'{oferta}'}</code> são os serviços desta lista, todos na mesma frase ("manicure e pedicure").
             </div>
           </div>
         )}
