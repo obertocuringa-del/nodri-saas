@@ -62,6 +62,22 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
+  // ── O servidor tem UM núcleo ──────────────────────────────────────────────
+  //
+  // Antes quem montava era a Vercel, numa máquina separada: só o resultado
+  // pronto vinha para cá. Desde 26/09/2026 a montagem acontece no mesmo
+  // servidor que atende o salão -- e em 01/10 ela passou de 28 minutos com o
+  // servidor em carga 20, disputando um núcleo só com o site, a ponte e o
+  // Chrome do robô.
+  //
+  // O ESLint não muda uma vírgula do que vai para o ar: é conferência de
+  // estilo, e ela já é feita aqui no computador antes de subir. Rodar de novo
+  // lá dentro só atrasa a publicação e deixa o salão com o sistema lento
+  // enquanto monta.
+  //
+  // A conferência de TIPOS continua ligada de propósito: é ela que pega erro
+  // que quebraria uma tela de verdade. Essa vale o tempo.
+  eslint: { ignoreDuringBuilds: true },
   // Não expõe a versão do Next (facilita mirar exploit conhecido)
   poweredByHeader: false,
   // Source maps de produção entregam o código legível ao navegador
