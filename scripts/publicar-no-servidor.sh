@@ -49,7 +49,13 @@ git config --global --add safe.directory "$PASTA" 2>/dev/null || true
 # ── O vigia fica quieto durante a publicação ────────────────────────────────
 # Senão ele vê o site fora do ar no meio da montagem e reinicia tudo.
 touch /var/tmp/nodri-publicando
-limpar() { rm -f /var/tmp/nodri-publicando; }
+ROBO_PAROU=nao
+voltar_robo() {
+  [ "$ROBO_PAROU" = sim ] || return 0
+  su nodri -c "pm2 start robo-avec" >/dev/null 2>&1 && diz "      robô do Avec de volta"
+}
+# Saia por onde sair -- erro, sucesso ou Ctrl+C -- o robô volta e a trava sai.
+limpar() { voltar_robo; rm -f /var/tmp/nodri-publicando; }
 trap limpar EXIT
 
 # ── 1. Puxar o código ────────────────────────────────────────────────────────
@@ -89,6 +95,22 @@ if [ ! -x "$PASTA/node_modules/.bin/next" ]; then
 fi
 
 # ── 3. Montar ────────────────────────────────────────────────────────────────
+# ── O Chrome do robô sai da frente enquanto monta ───────────────────────────
+#
+# A máquina tem 3,9 GB. A conferência de tipos do Next sozinha pede uns 2,5 GB,
+# e o Chrome do robô do Avec segura outros 700 MB a 1 GB. Com os dois juntos
+# sobram menos de 800 MB e a montagem, que leva 8 minutos, passou de 28 em
+# 01/10/2026 -- disco batendo, nada travado, só falta de memória.
+#
+# Então o robô dorme durante a montagem e volta logo depois. São uns 10
+# minutos sem ler o Avec, no meio de uma publicação que o dono pediu. O vigia
+# já está parado nesse período (a trava /var/tmp/nodri-publicando), então
+# ninguém religa pelas costas.
+if su nodri -c "pm2 stop robo-avec" >/dev/null 2>&1; then
+  ROBO_PAROU=sim
+  diz "      robô do Avec pausado para liberar memória"
+fi
+
 diz "[3/4] montando (leva uns 8 minutos)"
 if su nodri -c "cd $PASTA && NODE_OPTIONS=--max-old-space-size=2560 npm run build" > /var/log/nodri-build.log 2>&1; then
   diz "      montou"
