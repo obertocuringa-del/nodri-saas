@@ -23,6 +23,10 @@ set -u
 PASTA=/home/nodri/nodri-novo
 REPO=https://github.com/obertocuringa-del/nodri-saas.git
 LOG=/var/log/nodri-publicar.log
+# Os registros do npm e da montagem ficam em /var/log, não em /tmp: o /tmp tem
+# a trava do sistema (fs.protected_regular) que impede até o root de escrever
+# por cima de um arquivo de outro dono. O npm rodava, dava certo, e o script
+# achava que tinha falhado porque quem falhava era o redirecionamento.
 
 diz() { echo "$(date '+%d/%m %H:%M') $*" | tee -a "$LOG"; }
 
@@ -67,11 +71,11 @@ diz "      $ANTES -> $AGORA  $(git log -1 --pretty=%s)"
 
 # ── 2. Pacotes ───────────────────────────────────────────────────────────────
 diz "[2/4] conferindo os pacotes"
-if ! su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /tmp/nodri-npm.log 2>&1; then
+if ! su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /var/log/nodri-npm.log 2>&1; then
   diz "      npm ci falhou -- refazendo node_modules do zero"
   rm -rf "$PASTA/node_modules"
-  if ! su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /tmp/nodri-npm.log 2>&1; then
-    diz "ERRO ao instalar os pacotes:"; tail -15 /tmp/nodri-npm.log | tee -a "$LOG"
+  if ! su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /var/log/nodri-npm.log 2>&1; then
+    diz "ERRO ao instalar os pacotes:"; tail -15 /var/log/nodri-npm.log | tee -a "$LOG"
     exit 1
   fi
 fi
@@ -80,17 +84,17 @@ fi
 if [ ! -x "$PASTA/node_modules/.bin/next" ]; then
   diz "      o next não está lá -- refazendo node_modules do zero"
   rm -rf "$PASTA/node_modules"
-  su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /tmp/nodri-npm.log 2>&1
+  su nodri -c "cd $PASTA && npm ci --no-audit --no-fund" > /var/log/nodri-npm.log 2>&1
   [ -x "$PASTA/node_modules/.bin/next" ] || { diz "ERRO: o next continua faltando. Site NÃO foi reiniciado."; exit 1; }
 fi
 
 # ── 3. Montar ────────────────────────────────────────────────────────────────
 diz "[3/4] montando (leva uns 8 minutos)"
-if su nodri -c "cd $PASTA && NODE_OPTIONS=--max-old-space-size=2560 npm run build" > /tmp/nodri-build.log 2>&1; then
+if su nodri -c "cd $PASTA && NODE_OPTIONS=--max-old-space-size=2560 npm run build" > /var/log/nodri-build.log 2>&1; then
   diz "      montou"
 else
   diz "ERRO NA MONTAGEM -- o site NÃO foi reiniciado, continua no ar com a versão anterior:"
-  tail -25 /tmp/nodri-build.log | tee -a "$LOG"
+  tail -25 /var/log/nodri-build.log | tee -a "$LOG"
   exit 1
 fi
 # Montagem que não deixou o manifesto é montagem pela metade: reiniciar aqui
@@ -120,4 +124,4 @@ tr -d '\r' < "$PASTA/scripts/publicar-no-servidor.sh" > /usr/local/bin/nodri-pub
   && mv /usr/local/bin/nodri-publicar.sh.novo /usr/local/bin/nodri-publicar.sh \
   && diz "      publicador atualizado"
 
-[ "$COD" = "200" ] && diz "PRONTO: $AGORA no ar." || diz "ATENÇÃO: o site respondeu $COD. Veja /tmp/nodri-build.log"
+[ "$COD" = "200" ] && diz "PRONTO: $AGORA no ar." || diz "ATENÇÃO: o site respondeu $COD. Veja /var/log/nodri-build.log"
