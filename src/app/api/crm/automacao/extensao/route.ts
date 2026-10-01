@@ -82,10 +82,45 @@ export async function GET(req: NextRequest) {
     const fila = await carregarFila(salaoId)
     const p = fila[0]
     if (p) {
-      tarefa = {
-        tipo: 'confirmar_avec', pedido_id: p.id,
-        url_relatorio: conf.url_relatorio,
-        telefone: p.telefone, nome: p.nome, data: p.data || d.amanha.br,
+      // ── O pedido que a extensão pega e nunca devolve ────────────────────
+      //
+      // 01/10/2026: o robô ficou um dia inteiro sem mandar NADA -- nem
+      // feedback, nem confirmação, nem aviso ao profissional. A causa era
+      // este bloco: a marcação no Avec é a 1ª prioridade e, enquanto houver
+      // pedido na fila, é a ÚNICA tarefa que sai daqui.
+      //
+      // As três tentativas que existem logo abaixo (em concluirConfirmacao)
+      // só contam quando a extensão RESPONDE. E ela pode não responder: a
+      // tarefa abre aba, lê o relatório, vai à agenda e marca -- se o Chrome
+      // travar no meio, o service worker da extensão morre sem chegar nem no
+      // catch. O pedido ficou com "tentativas: 0" e foi entregue de novo a
+      // cada 30 segundos, para sempre. Dois pedidos presos pararam o salão.
+      //
+      // Então o relógio passa a correr aqui também: entregou e não teve
+      // resposta em 10 minutos, conta como uma tentativa falha. Dez minutos é
+      // folgado de sobra -- a marcação inteira leva menos de um -- e, na
+      // terceira, o caminho é o mesmo de sempre: a conversa vai para "Preciso
+      // agir" com o motivo e a recepção marca na mão. O que não pode é a fila
+      // segurar o salão inteiro em silêncio.
+      const ESPERA_MS = 10 * 60_000
+      const entregue = (p as any).entregue_em
+      if (entregue && Date.now() - new Date(entregue).getTime() > ESPERA_MS) {
+        await concluirConfirmacao(
+          salaoId, p.id, false,
+          'A extensão pegou a tarefa e não respondeu em 10 minutos', {},
+        )
+        // Sem tarefa neste ciclo de propósito: as outras automações, que
+        // estavam atrás desta na fila, voltam a rodar já na volta seguinte.
+      } else {
+        if (!entregue) {
+          ;(p as any).entregue_em = new Date().toISOString()
+          await gravarFila(salaoId, fila)
+        }
+        tarefa = {
+          tipo: 'confirmar_avec', pedido_id: p.id,
+          url_relatorio: conf.url_relatorio,
+          telefone: p.telefone, nome: p.nome, data: p.data || d.amanha.br,
+        }
       }
     }
   }
@@ -228,6 +263,9 @@ async function concluirConfirmacao(
     p.tentativas = (p.tentativas || 0) + 1
     ;(p as any).ultimo_erro = String(erro || 'motivo desconhecido').slice(0, 200)
     ;(p as any).ultima_tentativa_em = agora
+    // A extensão respondeu: o relógio de "entregue e não voltou" (ver o GET)
+    // recomeça do zero, senão a 2ª tentativa já nasceria com o prazo vencido.
+    ;(p as any).entregue_em = null
     if (p.tentativas < 3) {
       await gravarFila(salaoId, fila)
       return { marcado: false, tentativas: p.tentativas, erro }
