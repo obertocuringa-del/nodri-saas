@@ -51,7 +51,14 @@ fi
 # O vigia (scripts/vigia-servidor.sh): a cada minuto confere site, robô do
 # Avec e ponte do WhatsApp, e religa o que parou. Arquivo próprio no cron.
 if [ -f /home/nodri/nodri-novo/scripts/vigia-servidor.sh ]; then
-  install -m 755 /home/nodri/nodri-novo/scripts/vigia-servidor.sh /usr/local/bin/nodri-vigia.sh \
+  # O tr -d NAO e enfeite: o pacote sai de um PC com Windows e o arquivo chega
+  # com quebra de linha CRLF. O bash engasga no CR ja na terceira linha
+  # ("command not found") e o vigia morre de erro de sintaxe a cada volta,
+  # calado -- foi o que aconteceu de 30/09 a 01/10/2026: o vigia estava
+  # "ligado" no cron e nunca rodou uma vez sequer. Reinstalado sem o CR, ele
+  # achou o robo do Avec travado e religou na primeira volta.
+  tr -d '\r' < /home/nodri/nodri-novo/scripts/vigia-servidor.sh > /usr/local/bin/nodri-vigia.sh \
+    && chmod 755 /usr/local/bin/nodri-vigia.sh \
     && printf '# NODRI -- vigia (gerado por scripts/publicar-servidor.sh)\nSHELL=/bin/bash\n* * * * * root /usr/local/bin/nodri-vigia.sh\n' > /etc/cron.d/nodri-vigia \
     && chmod 644 /etc/cron.d/nodri-vigia && echo "vigia ligado (a cada minuto)"
 fi
