@@ -39,6 +39,8 @@ export default function RoboRelatorioPainel() {
   const [aberto, setAberto] = useState<string | null>(null)
   const [editando, setEditando] = useState<Record<string, { ligado: boolean; horarios: string[] }>>({})
   const [aviso, setAviso] = useState('')
+  // Horários nascem recolhidos (pedido do dono, 01/10/2026) e mostram só os livres.
+  const [horariosAbertos, setHorariosAbertos] = useState(false)
   const [escolhendo, setEscolhendo] = useState<string | null>(null)
   const [pedido, setPedido] = useState<Record<string, number>>({})
   // Histórico por período: sem isto a lista cresceria uma linha por coleta, todo dia.
@@ -95,30 +97,32 @@ export default function RoboRelatorioPainel() {
     <div style={{ display: 'grid', gap: 18 }}>
       {aviso && <div style={{ fontSize: 13, color: '#2f6b4f', fontWeight: 700 }}>{aviso}</div>}
 
-      {/* ── Tela 1: horários ── */}
+      {/* ── Tela 1: horários livres (recolhida) ── */}
       <section style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 900, margin: '0 0 4px' }}>Horários do servidor</h2>
-        <p style={{ fontSize: 12, color: '#8f877f', margin: '0 0 12px' }}>
-          Cada bloco é uma coleta de {min} min. Até {dados.simultaneas} coleta(s) ao mesmo tempo; se passar, a próxima espera
-          na fila. Escolha para o salão novo um horário livre (de preferência depois que o salão fecha).
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))', gap: 6 }}>
-          {grade.map(h => {
-            const quem = ocupacao.get(h) || []
-            const cheio = quem.length >= dados.simultaneas
-            return (
-              <div key={h} title={quem.join(', ') || 'Livre'}
-                style={{ borderRadius: 8, padding: '6px 8px', fontSize: 11.5, border: '1px solid',
-                  borderColor: cheio ? '#e8c9a6' : quem.length ? '#d7d2f3' : '#e8e6e0',
-                  background: cheio ? '#fbf2e0' : quem.length ? '#f3f1fd' : '#fdfcfa' }}>
-                <div style={{ fontWeight: 800 }}>{h}</div>
-                <div style={{ color: quem.length ? '#6b6860' : '#b8b2aa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {quem.length ? quem.join(', ') : 'livre'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <button onClick={() => setHorariosAbertos(v => !v)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 900, margin: 0, flex: 1 }}>
+            Horários livres do servidor <span style={{ fontSize: 12, fontWeight: 600, color: '#8f877f' }}>
+              ({grade.filter(h => (ocupacao.get(h) || []).length < dados.simultaneas).length} de {grade.length} livres)
+            </span>
+          </h2>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#5b4fcf' }}>{horariosAbertos ? 'Fechar' : 'Abrir'}</span>
+        </button>
+        {horariosAbertos && (
+          <>
+            <p style={{ fontSize: 12, color: '#8f877f', margin: '8px 0 12px' }}>
+              Cada bloco é uma coleta de {min} min. Até {dados.simultaneas} coleta(s) ao mesmo tempo. Aqui ficam só os horários
+              livres: quando um salão marca um horário, ele sai daqui na hora. Escolha para o salão novo um horário livre
+              (de preferência depois que o salão fecha). Os horários de cada salão estão na lista de salões abaixo.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 6 }}>
+              {grade.filter(h => (ocupacao.get(h) || []).length < dados.simultaneas).map(h => (
+                <div key={h} style={{ borderRadius: 8, padding: '6px 8px', fontSize: 12, fontWeight: 800, textAlign: 'center',
+                  border: '1px solid #e8e6e0', background: '#fdfcfa' }}>{h}</div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* ── Tela 2: cada salão ── */}

@@ -27,6 +27,9 @@ echo "Publicando $(git log --oneline -1)"
 # Refeito a cada publicação. A chave sai do .env do servidor e nunca passa
 # por aqui.
 REMOTO=$(cat <<'FIM'
+# Enquanto monta, o vigia não mexe (o site fica fora de propósito).
+touch /var/tmp/nodri-publicando
+trap 'rm -f /var/tmp/nodri-publicando' EXIT
 rm -rf /home/nodri/nodri-novo/src /home/nodri/nodri-novo/public \
   && tar -xf - -C /home/nodri/nodri-novo && chown -R nodri:nodri /home/nodri/nodri-novo \
   || { echo "ERRO ao copiar os arquivos para o servidor"; exit 1; }
@@ -45,12 +48,12 @@ if [ -n "$SEG" ]; then
 else
   echo "AVISO: CRON_SECRET não achado no servidor -- tarefas diárias não agendadas"
 fi
-# O vigia (scripts/vigia-servidor.sh): a cada 5 min confere site, robô do
+# O vigia (scripts/vigia-servidor.sh): a cada minuto confere site, robô do
 # Avec e ponte do WhatsApp, e religa o que parou. Arquivo próprio no cron.
 if [ -f /home/nodri/nodri-novo/scripts/vigia-servidor.sh ]; then
   install -m 755 /home/nodri/nodri-novo/scripts/vigia-servidor.sh /usr/local/bin/nodri-vigia.sh \
-    && printf '# NODRI -- vigia (gerado por scripts/publicar-servidor.sh)\nSHELL=/bin/bash\n*/5 * * * * root /usr/local/bin/nodri-vigia.sh\n' > /etc/cron.d/nodri-vigia \
-    && chmod 644 /etc/cron.d/nodri-vigia && echo "vigia ligado (a cada 5 min)"
+    && printf '# NODRI -- vigia (gerado por scripts/publicar-servidor.sh)\nSHELL=/bin/bash\n* * * * * root /usr/local/bin/nodri-vigia.sh\n' > /etc/cron.d/nodri-vigia \
+    && chmod 644 /etc/cron.d/nodri-vigia && echo "vigia ligado (a cada minuto)"
 fi
 FIM
 )
