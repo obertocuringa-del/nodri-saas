@@ -38,6 +38,10 @@ fi
 
 cd "$PASTA" || { diz "ERRO: não achei $PASTA"; exit 1; }
 
+# O git recusa mexer num repositório de outro dono ("dubious ownership"): a
+# pasta é do nodri e quem publica é o root. Autoriza uma vez, sem drama.
+git config --global --add safe.directory "$PASTA" 2>/dev/null || true
+
 # ── O vigia fica quieto durante a publicação ────────────────────────────────
 # Senão ele vê o site fora do ar no meio da montagem e reinicia tudo.
 touch /var/tmp/nodri-publicando
