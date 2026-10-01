@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { lerAgenda, CHAVE_AGENDA } from '@/lib/roboRelatorio'
 import { lerRobo, CHAVE_ROBO } from '@/lib/crmRoboAvec'
 import { lerServidor, pedidosPendentes, pedirReinicio, ALVOS, type Alvo } from '@/lib/servidorCentral'
+import { abasDoSalao, fecharAba, fecharSobrando, ABAS_ESPERADAS } from '@/lib/abasDoRobo'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,12 @@ export const dynamic = 'force-dynamic'
 // linha e a lista do que tem por salão. O pior salão manda na cor do bloco.
 
 type Cor = 'verde' | 'amarelo' | 'vermelho' | 'cinza'
-interface Item { salao?: string; cor: Cor; texto: string; detalhe?: string }
+interface Item {
+  salao?: string; cor: Cor; texto: string; detalhe?: string
+  // Para a tela poder agir no salão certo (ligar/desligar o CRM, fechar aba).
+  salao_id?: string
+  crm_ligado?: boolean
+}
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
 const MIN = 60_000
@@ -167,6 +173,49 @@ export async function GET() {
       : extCor === 'cinza' ? 'Fora do horário de conferência.' : extCor === 'amarelo' ? 'Funcionando, com avisos.' : 'Tudo lendo e enviando.',
   }
 
+  // ── Abas do Chrome ────────────────────────────────────────────────────────
+  //
+  // Duas abas por salão, e só: a da COLETA (robô do relatório) e a da
+  // AUTOMAÇÃO (o 0051 que a extensão lê). Mais que isso é vazamento, e
+  // vazamento aqui custa caro: em 01/10/2026 vinte e três abas comeram 58% do
+  // único núcleo do servidor e as telas do NODRI passaram a abrir em 3 a 5
+  // segundos. Ver src/lib/abasDoRobo.ts.
+  const abasItens: Item[] = []
+  const abasPorSalao: Record<string, any> = {}
+  for (const [id, n] of nome) {
+    const robo = lerRobo(cfg(id, CHAVE_ROBO))
+    if (!robo.no_servidor) continue
+    const urlRel = String((cfg(id, 'crm_automacao_feedback') || {}).url_relatorio || '')
+    const r = await abasDoSalao(id, urlRel)
+    abasPorSalao[id] = r
+    if (r.erro) {
+      abasItens.push({ salao: n, salao_id: id, cor: 'cinza', texto: r.erro })
+      continue
+    }
+    const total = r.abas.length
+    const trabalhando = r.abas.filter(a => !a.pode_fechar).length
+    const detalhe = r.abas
+      .map(a => `${a.papel === 'automacao' ? 'AUTOMAÇÃO' : a.papel === 'coleta' ? 'COLETA' : 'sobrando'} — ${a.url || 'em branco'} (${a.porque})`)
+      .join(' | ')
+    if (total > ABAS_ESPERADAS && r.sobrando > 0) {
+      abasItens.push({
+        salao: n, salao_id: id, cor: 'vermelho',
+        texto: `${total} abas abertas (o certo são ${ABAS_ESPERADAS}). ${r.sobrando} dá para fechar; ${trabalhando} está(ão) trabalhando.`,
+        detalhe,
+      })
+    } else {
+      abasItens.push({ salao: n, salao_id: id, cor: 'verde', texto: `${total} aba(s) — nenhuma sobrando.`, detalhe })
+    }
+  }
+  const abasCor = pior(abasItens.map(i => i.cor))
+  const abasBloco: Bloco = {
+    cor: abasCor, itens: abasItens,
+    resumo: !abasItens.length ? 'Nenhum salão roda no servidor.'
+      : abasCor === 'vermelho' ? `${abasItens.filter(i => i.cor === 'vermelho').length} salão(ões) com aba sobrando.`
+      : abasCor === 'cinza' ? 'Sem resposta do Chrome.' : 'Duas abas, como tem que ser.',
+    extra: { porSalao: abasPorSalao, esperadas: ABAS_ESPERADAS },
+  }
+
   // ── CRM e ponte ───────────────────────────────────────────────────────────
   const crmItens: Item[] = []
   const ponteItens: Item[] = []
@@ -176,14 +225,28 @@ export async function GET() {
     const vis = c.visto_em ? new Date(c.visto_em).getTime() : 0
     const f = conta(falhas, c.salao_id), p = conta(presas, c.salao_id)
     if (c.situacao === 'desconectado') {
-      crmItens.push({ salao: n, cor: 'cinza', texto: 'WhatsApp desconectado (o salão não usa ou tirou o QR).' })
+      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'cinza', texto: 'WhatsApp desconectado (o salão não usa ou tirou o QR).' })
       continue
     }
-    if (c.situacao !== 'conectado') crmItens.push({ salao: n, cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
-    else if (c.erro) crmItens.push({ salao: n, cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
-    else if (p) crmItens.push({ salao: n, cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
-    else if (f) crmItens.push({ salao: n, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'No CRM, a mensagem que falhou tem o botão Reenviar.' })
-    else crmItens.push({ salao: n, cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
+    // ── Esperando o QR não é defeito ─────────────────────────────────────────
+    //
+    // Salão que nunca chegou a conectar (sem número, parado em aguardando_qr)
+    // fica esperando alguém encostar o celular na tela -- e isso pode levar
+    // dias. Em 01/10/2026 o salão "Luan Leal" nessa situação deixava a Central
+    // com CRM e Ponte em VERMELHO o tempo todo, com o WhatsApp do Rouge
+    // funcionando perfeitamente. Vermelho que vive aceso deixa de ser aviso.
+    //
+    // E a ponte é UMA só para todos: cobrar sinal de um canal que nunca
+    // conectou é acusar a ponte de todo mundo por causa de quem não começou.
+    if (c.situacao === 'aguardando_qr' && !c.numero) {
+      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'cinza', texto: 'Esperando ler o QR Code (o salão ainda não conectou).' })
+      continue
+    }
+    if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
+    else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
+    else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
+    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'No CRM, a mensagem que falhou tem o botão Reenviar.' })
+    else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
 
     ponteItens.push(!vis || agora - vis > 5 * MIN
       ? { salao: n, cor: 'vermelho', texto: `Sem sinal da ponte há ${vis ? ha(agora - vis) : 'muito tempo'}.`, detalhe: 'Mensagens podem não estar chegando nem saindo.' }
@@ -229,7 +292,7 @@ export async function GET() {
 
   return NextResponse.json({
     agora: dataHoraSP(agora),
-    blocos: { coleta: coletaBloco, extensao: extBloco, crm: crmBloco, ponte: ponteBloco, servidor: servidorBloco, vigias: vigiasBloco },
+    blocos: { coleta: coletaBloco, extensao: extBloco, crm: crmBloco, ponte: ponteBloco, abas: abasBloco, servidor: servidorBloco, vigias: vigiasBloco },
   })
 }
 
@@ -241,5 +304,57 @@ export async function POST(req: NextRequest) {
     await pedirReinicio(b.alvo as Alvo, String((quem as any).nome || (quem as any).email || 'master'))
     return NextResponse.json({ ok: true })
   }
+
+  // ── Ligar e desligar o CRM de um salão ───────────────────────────────────
+  //
+  // Salão que nunca leu o QR fica em `aguardando_qr` para sempre -- e a ponte,
+  // obediente, gera um QR novo a cada vinte segundos, sem parar, por dias. É
+  // trabalho à toa num servidor de um núcleo só, e o WhatsApp não gosta de
+  // quem pede pareamento sem parar.
+  //
+  // Desligar põe o canal em `desconectado`, que a ponte entende como "não é
+  // para abrir sessão deste salão". Ligar devolve para `aguardando_qr`, e o QR
+  // volta a aparecer no CRM do salão.
+  //
+  // Não apaga conversa nenhuma: isso é o botão "Recomeçar" do próprio CRM, e
+  // continua sendo só de lá.
+  if (b.acao === 'crm_ligar' || b.acao === 'crm_desligar') {
+    const salaoId = String(b.salao_id || '')
+    if (!salaoId) return NextResponse.json({ error: 'Salão não informado' }, { status: 400 })
+    const ligar = b.acao === 'crm_ligar'
+    const { error } = await supabaseAdmin.from('crm_canais').update({
+      situacao: ligar ? 'aguardando_qr' : 'desconectado',
+      qr: null,
+      erro: null,
+      ...(ligar ? {} : { sessao: null, numero: null }),
+      atualizado_em: new Date().toISOString(),
+    }).eq('salao_id', salaoId)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({
+      ok: true,
+      texto: ligar
+        ? 'CRM ligado: o QR Code volta a aparecer no CRM deste salão.'
+        : 'CRM desligado: a ponte para de gerar QR para este salão.',
+    })
+  }
+
+  // ── Fechar aba do Chrome do robô ─────────────────────────────────────────
+  // Só fecha o que está sobrando: aba da coleta em andamento e aba da
+  // automação nunca aparecem como fecháveis, e a última aba do Chrome também
+  // não (sem aba nenhuma o Chrome se encerra e o robô reabre tudo).
+  if (b.acao === 'abas_fechar' || b.acao === 'abas_limpar') {
+    const salaoId = String(b.salao_id || '')
+    if (!salaoId) return NextResponse.json({ error: 'Salão não informado' }, { status: 400 })
+    const { data } = await supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', salaoId).eq('chave', 'crm_automacao_feedback').maybeSingle()
+    const urlRel = String((data?.valor as any)?.url_relatorio || '')
+    if (b.acao === 'abas_limpar') {
+      const r = await fecharSobrando(salaoId, urlRel)
+      return NextResponse.json({ ok: r.fechadas > 0, texto: r.motivo })
+    }
+    const r = await fecharAba(salaoId, urlRel, String(b.aba_id || ''))
+    return NextResponse.json({ ok: r.ok, texto: r.motivo })
+  }
+
   return NextResponse.json({ error: 'Ação desconhecida' }, { status: 400 })
 }

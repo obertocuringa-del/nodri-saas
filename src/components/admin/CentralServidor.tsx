@@ -9,7 +9,13 @@ import { useEffect, useState } from 'react'
 // Atualiza sozinha a cada 30 segundos.
 
 type Cor = 'verde' | 'amarelo' | 'vermelho' | 'cinza'
-interface Item { salao?: string; cor: Cor; texto: string; detalhe?: string }
+interface Item {
+  salao?: string; cor: Cor; texto: string; detalhe?: string
+  // Vem da API para a tela saber em que salão agir (ligar/desligar o CRM,
+  // fechar aba). Ver src/app/api/admin/central/route.ts.
+  salao_id?: string
+  crm_ligado?: boolean
+}
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
 const CORES: Record<Cor, { fundo: string; borda: string; texto: string; ponto: string; rotulo: string }> = {
@@ -24,6 +30,10 @@ const BOTOES: { id: string; titulo: string; reiniciar?: { alvo: string; texto: s
   { id: 'extensao', titulo: 'Extensão', reiniciar: { alvo: 'robo', texto: 'Reiniciar o robô do Avec (extensão)' } },
   { id: 'crm', titulo: 'CRM' },
   { id: 'ponte', titulo: 'Ponte', reiniciar: { alvo: 'ponte', texto: 'Reiniciar a ponte do WhatsApp' } },
+  // Pedido do dono (01/10/2026): duas abas por salao -- a da coleta e a do
+  // relatorio 0051. Mais que isso come o servidor; daqui da para fechar as
+  // que estao sobrando sem encostar nas que estao trabalhando.
+  { id: 'abas', titulo: 'Abas do Chrome' },
   { id: 'servidor', titulo: 'Servidor' },
   { id: 'vigias', titulo: 'Vigias' },
 ]
@@ -52,6 +62,19 @@ export default function CentralServidor() {
     setAviso(r.ok ? `Pedido feito: ${texto.toLowerCase()}. O servidor executa em até 1 minuto.` : 'Não consegui fazer o pedido.')
     carregar()
     setTimeout(() => setAviso(''), 10000)
+  }
+
+  async function mandar(corpo: any, confirmar?: string) {
+    if (confirmar && !confirm(confirmar)) return
+    setAviso('')
+    try {
+      const r = await fetch('/api/admin/central', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
+      })
+      const j = await r.json().catch(() => ({}))
+      setAviso(j.texto || (r.ok ? 'Feito.' : 'Não consegui fazer isso.'))
+      await carregar()
+    } catch { setAviso('Não consegui falar com o servidor.') }
   }
 
   if (!dados) return <div style={{ fontSize: 13, color: '#8f877f', padding: 12 }}>{erro || 'Lendo a situação do servidor...'}</div>
@@ -115,9 +138,29 @@ export default function CentralServidor() {
             {[...atual.itens].sort((a, z) => ['vermelho', 'amarelo', 'verde', 'cinza'].indexOf(a.cor) - ['vermelho', 'amarelo', 'verde', 'cinza'].indexOf(z.cor)).map((it, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 9, background: CORES[it.cor].fundo }}>
                 <span style={{ width: 9, height: 9, borderRadius: 99, background: CORES[it.cor].ponto, marginTop: 5, flexShrink: 0 }} />
-                <div style={{ fontSize: 12.5, color: '#1a1a2e', lineHeight: 1.45 }}>
+                <div style={{ fontSize: 12.5, color: '#1a1a2e', lineHeight: 1.45, flex: 1 }}>
                   {it.salao && <b>{it.salao}: </b>}{it.texto}
                   {it.detalhe && <div style={{ fontSize: 11.5, color: '#6b6860', wordBreak: 'break-word' }}>{it.detalhe}</div>}
+
+                  {aberto === 'crm' && it.salao_id && (
+                    <button
+                      onClick={() => mandar(
+                        { acao: it.crm_ligado ? 'crm_desligar' : 'crm_ligar', salao_id: it.salao_id },
+                        it.crm_ligado
+                          ? `Desligar o CRM de ${it.salao}?
+
+A ponte para de gerar QR Code para este salão. As conversas não são apagadas.`
+                          : `Ligar o CRM de ${it.salao}?
+
+O QR Code volta a aparecer no CRM deste salão.`,
+                      )}
+                      style={{ marginTop: 7, fontSize: 11.5, fontWeight: 800, padding: '5px 10px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                        background: it.crm_ligado ? '#b4322a' : '#2f6b4f', color: '#fff' }}>
+                      {it.crm_ligado ? 'Desligar o CRM deste salão' : 'Ligar o CRM deste salão'}
+                    </button>
+                  )}
+
+                  {aberto === 'abas' && it.salao_id && <PainelAbas salaoId={it.salao_id} dados={atual.extra} mandar={mandar} />}
                 </div>
               </div>
             ))}
@@ -193,6 +236,50 @@ function PainelServidor({ x, reiniciar }: { x: any; reiniciar: (alvo: string, te
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ── As abas de um salão, uma a uma ──────────────────────────────────────────
+//
+// Mostra para que serve cada aba e só oferece o botão de fechar nas que estão
+// sobrando. A da coleta (o robô do relatório pode estar lendo agora) e a da
+// automação (o 0051 da extensão) aparecem marcadas e sem botão -- fechar uma
+// delas no meio do serviço estraga a coleta do dia.
+function PainelAbas({ salaoId, dados, mandar }: { salaoId: string; dados: any; mandar: (c: any, p?: string) => void }) {
+  const r = dados?.porSalao?.[salaoId]
+  if (!r || r.erro) return null
+  const sobrando = (r.abas || []).filter((a: any) => a.pode_fechar)
+
+  return (
+    <div style={{ marginTop: 9, display: 'grid', gap: 5 }}>
+      {(r.abas || []).map((a: any) => (
+        <div key={a.id} style={{
+          display: 'flex', gap: 8, alignItems: 'center', fontSize: 11.5,
+          padding: '5px 8px', borderRadius: 7,
+          background: a.pode_fechar ? '#fdf2f1' : '#eef6f1',
+        }}>
+          <b style={{ flexShrink: 0, color: a.papel === 'automacao' ? '#2f6b4f' : a.papel === 'coleta' ? '#5b4fcf' : '#b4322a' }}>
+            {a.papel === 'automacao' ? 'AUTOMAÇÃO' : a.papel === 'coleta' ? 'COLETA' : 'SOBRANDO'}
+          </b>
+          <span style={{ flex: 1, color: '#4a4540', wordBreak: 'break-all' }}>
+            {a.url || 'aba em branco'}
+            <span style={{ color: '#8f877f' }}> — {a.porque}</span>
+          </span>
+          {a.pode_fechar && (
+            <button onClick={() => mandar({ acao: 'abas_fechar', salao_id: salaoId, aba_id: a.id }, 'Fechar esta aba?')}
+              style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#b4322a', color: '#fff' }}>
+              Fechar
+            </button>
+          )}
+        </div>
+      ))}
+      {sobrando.length > 1 && (
+        <button onClick={() => mandar({ acao: 'abas_limpar', salao_id: salaoId }, `Fechar as ${sobrando.length} abas que estão sobrando?`)}
+          style={{ justifySelf: 'start', marginTop: 3, fontSize: 11.5, fontWeight: 800, padding: '5px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', background: '#b4322a', color: '#fff' }}>
+          Fechar as {sobrando.length} que estão sobrando
+        </button>
+      )}
     </div>
   )
 }
