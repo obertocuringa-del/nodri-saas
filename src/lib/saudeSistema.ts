@@ -76,8 +76,20 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
   }
 
   // ── Ponte do WhatsApp ── (só se o salão usa: canal que já esteve conectado)
-  // Desconectado de propósito (o dono tirou o QR) não é falha da ponte.
-  if (canal && (canal as any).visto_em && (canal as any).situacao !== 'desconectado') {
+  //
+  // Desconectado de propósito (o dono tirou o QR) não é falha da ponte. E
+  // AGUARDANDO_QR também não: o salão está esperando alguém encostar o celular
+  // na tela, e isso pode levar dias. 01/10/2026: o salão "Luan Leal" nunca
+  // chegou a conectar e ficou parado em aguardando_qr -- o vigia leu como
+  // ponte caída e religou a ponte a cada 20 minutos. A ponte é UMA só para
+  // todos os salões, então cada religamento desses derrubava o WhatsApp do
+  // Rouge, que estava funcionando, por causa de um salão que nem começou.
+  //
+  // A ponte só é cobrada de um canal que está CONECTADO. Nos estados de
+  // passagem (conectando) ela ainda está trabalhando; nos de espera
+  // (aguardando_qr, desconectado) quem falta é gente, não programa.
+  const sit = String((canal as any)?.situacao || '')
+  if (canal && (canal as any).visto_em && sit === 'conectado') {
     const visto = new Date((canal as any).visto_em).getTime()
     if (agora - visto > 5 * MIN) {
       problemas.push({ servico: 'ponte', motivo: `ponte do WhatsApp sem sinal desde ${hhmm((canal as any).visto_em)}`, desde: (canal as any).visto_em })
