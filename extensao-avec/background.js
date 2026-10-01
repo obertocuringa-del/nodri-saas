@@ -370,7 +370,8 @@ async function entrarNoAvec(abaId, cfg, dados) {
  */
 async function fecharAbasSobrando() {
   try {
-    const { abaId } = await guardado()
+    const guarda = await guardado()
+    const abaId = guarda.abaId
     const abas = await chrome.tabs.query({ url: ['https://www.avec.app/*', 'https://avec.app/*'] })
     const fechar = abas.filter(t => t.id !== abaId && !t.active && !t.pinned).map(t => t.id)
     // Dentro do grupo "NODRI robô" só pode existir UMA aba: a de trabalho.
@@ -378,6 +379,37 @@ async function fecharAbasSobrando() {
     const grupo = await abasDoGrupo()
     const manter = grupo.some(t => t.id === abaId) ? abaId : grupo[0]?.id
     for (const t of grupo) if (t.id !== manter && !t.active && !fechar.includes(t.id)) fechar.push(t.id)
+
+    // ── As abas que de fato vazavam ──────────────────────────────────────────
+    //
+    // 01/10/2026: o Chrome do servidor estava com 23 abas -- quatro cópias do
+    // relatório 0051 e catorze em branco. Cada cópia do 0051 é uma página
+    // pesada (tabelão, chat do Avec, tutorial) rodando sozinha para sempre.
+    // Somadas, comiam 58% do único núcleo do servidor e 41% da memória: as
+    // telas do NODRI levavam 3 a 5 segundos para abrir.
+    //
+    // A limpeza antiga só olhava `avec.app` e o grupo. Mas o relatório mora em
+    // `admin.avec.beauty`, e aba em branco não estava em lista nenhuma --
+    // então ninguém fechava nem uma nem outra.
+    //
+    // O cuidado aqui é não encostar nas abas do ROBÔ DO RELATÓRIO, que divide
+    // este mesmo Chrome e usa os relatórios 003x. Por isso só se fecha o
+    // endereço que é nosso (o relatório da automação) e as abas em branco.
+    const nosso = String(guarda.url_relatorio || 'admin.avec.beauty/admin/relatorio/0051')
+      .replace(/^https?:\/\//, '')
+    const todas = await chrome.tabs.query({})
+    for (const t of todas) {
+      if (t.id === abaId || t.id === manter || t.active || t.pinned) continue
+      if (fechar.includes(t.id)) continue
+      const u = String(t.url || '')
+      const ehNosso = nosso && u.replace(/^https?:\/\//, '').startsWith(nosso)
+      const ehBranco = u === '' || u === 'about:blank'
+      if (ehNosso || ehBranco) fechar.push(t.id)
+    }
+    // Nunca fechar tudo: Chrome sem aba nenhuma se encerra e o robô precisa
+    // reabrir o navegador inteiro.
+    if (fechar.length >= todas.length) fechar.pop()
+
     if (fechar.length) await chrome.tabs.remove(fechar)
   } catch { /* sem permissão ou sem aba: segue */ }
 }
@@ -449,6 +481,14 @@ async function ciclo() {
     // Agora ela obedece o prazo que o NODRI mandar antes de dormir. O NODRI
     // manda um prazo largo para quem está parada, e o normal para quem
     // trabalha. Virar o interruptor continua acordando a outra em minutos.
+    // Guarda o ritmo e o endereço do relatório: a limpeza de abas e o relógio
+    // do modo servidor precisam deles ANTES da próxima conversa com o NODRI.
+    try {
+      await chrome.storage.local.set({
+        intervalo_seg: Number(cfg.intervalo_seg) || 60,
+        url_relatorio: String(cfg.url_relatorio || ''),
+      })
+    } catch { /* segue */ }
     await reagendar(cfg.intervalo_seg)
     if (cfg.parada) { await saude({ texto: cfg.parada, erro: null }); return }
     if (cfg.limpar_abas) await fecharAbasExtrasDoAvec()
@@ -504,10 +544,45 @@ async function ciclo() {
 async function reagendar(segundos) {
   // O Chrome não aceita alarme abaixo de 30s; o NODRI já limita ao mesmo piso.
   const min = Math.max(0.5, (Number(segundos) || 60) / 60)
+  // No servidor o relógio de verdade é o nosso; o alarme fica de reserva.
+  tocarNoRitmo(segundos)
   const atual = await chrome.alarms.get(ALARME)
   if (atual && Math.abs((atual.periodInMinutes || 0) - min) < 0.01) return
   await chrome.alarms.create(ALARME, { periodInMinutes: min, delayInMinutes: min })
 }
+
+// ── O relógio do Chrome do servidor ────────────────────────────────────────
+//
+// 01/10/2026: o NODRI mandava "volte a cada 30 segundos" e a extensão voltava
+// a cada DEZ MINUTOS. O alarme do Chrome é a causa: numa máquina sem ninguém
+// mexendo -- que é exatamente o servidor, com a tela virtual -- o Chrome
+// entende que está ocioso e segura os alarmes das extensões. Na recepção, com
+// gente usando o computador, isso não aparece.
+//
+// Então, SÓ no servidor, a extensão para de depender do alarme: fica acordada
+// e marca o tempo com o próprio relógio. É aceitável aqui porque esse Chrome
+// existe unicamente para isto; no computador do salão nada muda, e o alarme
+// continua valendo como rede de segurança nos dois casos.
+let relogioServidor = null
+let modoServidor = false
+
+function tocarNoRitmo(segundos) {
+  if (!modoServidor) return
+  const ms = Math.max(30, Number(segundos) || 30) * 1000
+  if (relogioServidor) clearInterval(relogioServidor)
+  relogioServidor = setInterval(() => { ciclo() }, ms)
+}
+
+;(async () => {
+  try {
+    const d = await guardado()
+    if (d.origem !== 'servidor') return
+    modoServidor = true
+    manterAcordado()                 // sem parar: aqui ela não pode dormir
+    tocarNoRitmo(d.intervalo_seg || 30)
+    ciclo()
+  } catch { /* sem nada guardado ainda: o alarme assume */ }
+})()
 
 chrome.alarms.onAlarm.addListener(a => { if (a.name === ALARME) ciclo() })
 chrome.runtime.onInstalled.addListener(() => { reagendar(60); ciclo() })
