@@ -437,9 +437,21 @@ async function ciclo() {
         'x-nodri-origem': dados.origem === 'servidor' ? 'servidor' : 'salao',
       },
     }, dados.chave)
+    // ── Mandada parar: obedece o ritmo ANTES de dormir ──────────────────────
+    //
+    // Quem lê o Avec é um só -- o servidor ou o computador do salão, nunca os
+    // dois. O que fica de fora recebe "fique parada" aqui. Só que o `return`
+    // vinha ANTES do reagendar: a extensão parada continuava perguntando de
+    // minuto em minuto, para sempre. Umas 1.400 perguntas por dia que não
+    // servem para nada -- e que em 01/10/2026 encheram o registro do servidor
+    // e fizeram o diagnóstico de um dia parado apontar para o lugar errado.
+    //
+    // Agora ela obedece o prazo que o NODRI mandar antes de dormir. O NODRI
+    // manda um prazo largo para quem está parada, e o normal para quem
+    // trabalha. Virar o interruptor continua acordando a outra em minutos.
+    await reagendar(cfg.intervalo_seg)
     if (cfg.parada) { await saude({ texto: cfg.parada, erro: null }); return }
     if (cfg.limpar_abas) await fecharAbasExtrasDoAvec()
-    await reagendar(cfg.intervalo_seg)
 
     // ── A tarefa da vez ─────────────────────────────────────────────────────
     // O NODRI é quem tem o relógio. Se ele mandou uma tarefa, ela vem primeiro

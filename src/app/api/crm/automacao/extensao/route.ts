@@ -45,7 +45,14 @@ export async function GET(req: NextRequest) {
   const vez = robo.no_servidor ? 'servidor' : 'salao'
   if (origem !== vez) {
     return NextResponse.json({
-      ligada: false, tarefa: null, limpar_abas: false, intervalo_seg: 60,
+      // 15 minutos, não 1: quem está parada não tem o que fazer, e perguntar
+      // de minuto em minuto são ~1.400 chamadas por dia por extensão à toa.
+      // Em 01/10/2026 esse barulho encheu o registro do servidor e fez o
+      // diagnóstico de um dia inteiro parado apontar para o lugar errado --
+      // o que parecia a extensão do servidor perguntando sem parar era a de
+      // um computador de fora, parada, perguntando sem parar.
+      // Virar o interruptor continua acordando a outra em até 15 minutos.
+      ligada: false, tarefa: null, limpar_abas: false, intervalo_seg: 900,
       parada: vez === 'servidor'
         ? 'Este salão roda no servidor NODRI: esta extensão fica parada.'
         : 'Este salão roda no computador do salão: o robô do servidor fica parado.',
