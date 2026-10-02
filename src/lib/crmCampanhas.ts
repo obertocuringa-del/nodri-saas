@@ -66,6 +66,10 @@ export interface EstadoCampanha {
   horarios_feitos: Record<string, string[]>
   /** quando a campanha de intervalo rodou pela última vez */
   rodou_em: string | null
+  /** 'AAAA-MM-DD HH:MM' → quantas tentativas falhas aquele horário já teve */
+  tentativas_horario?: Record<string, number>
+  /** 'AAAA-MM-DD' → horários que o vigia já liberou para uma segunda rodada */
+  resgatados?: Record<string, string[]>
 }
 
 const num = (v: any, pad: number, min: number, max: number) => {
@@ -133,6 +137,20 @@ export async function carregarEstados(salaoId: string): Promise<Record<string, E
       enviados: e?.enviados && typeof e.enviados === 'object' ? e.enviados : {},
       horarios_feitos: e?.horarios_feitos && typeof e.horarios_feitos === 'object' ? e.horarios_feitos : {},
       rodou_em: e?.rodou_em || null,
+      // ── Estes dois eram perdidos na leitura (02/10/2026) ──────────────────
+      //
+      // Esta função montava um objeto NOVO com quatro campos e devolvia só
+      // eles. `tentativas_horario` ia escrito para o banco e voltava apagado,
+      // então o contador de "cinco tentativas e desiste" renascia zerado a
+      // cada volta: ele nunca passava de 1 e o horário nunca era dado por
+      // perdido -- o Avec fora do ar seria martelado o dia inteiro, que é
+      // exatamente o que aquele limite existe para impedir.
+      //
+      // `resgatados` é a memória do vigia (conferirHorariosDoDia) e tem o
+      // mesmo risco pela frente: sem guardar, ele liberaria a mesma segunda
+      // rodada de minuto em minuto, para sempre.
+      tentativas_horario: e?.tentativas_horario && typeof e.tentativas_horario === 'object' ? e.tentativas_horario : {},
+      resgatados: e?.resgatados && typeof e.resgatados === 'object' ? e.resgatados : {},
     }
   }
   return saida
@@ -146,7 +164,13 @@ export async function gravarEstados(salaoId: string, estados: Record<string, Est
     for (const d of Object.keys(e.enviados).sort().slice(-3)) enviados[d] = e.enviados[d]
     const hf: Record<string, string[]> = {}
     for (const d of Object.keys(e.horarios_feitos).sort().slice(-3)) hf[d] = e.horarios_feitos[d]
-    limpo[k] = { ...e, enviados, horarios_feitos: hf }
+    // Os mesmos 3 dias para os contadores, senão eles crescem para sempre: a
+    // chave de `tentativas_horario` traz a data ('2026-10-02 17:00').
+    const th: Record<string, number> = {}
+    for (const c of Object.keys(e.tentativas_horario || {}).sort().slice(-6)) th[c] = (e.tentativas_horario || {})[c]
+    const rg: Record<string, string[]> = {}
+    for (const d of Object.keys(e.resgatados || {}).sort().slice(-3)) rg[d] = (e.resgatados || {})[d]
+    limpo[k] = { ...e, enviados, horarios_feitos: hf, tentativas_horario: th, resgatados: rg }
   }
   await supabaseAdmin.from('salao_config').upsert({
     salao_id: salaoId, chave: CHAVE_ESTADO,
@@ -199,6 +223,111 @@ export function estaNaHora(c: Campanha, e: EstadoCampanha | undefined, fuso: str
   const seg = c.quando.segundos || 60
   if (!e?.rodou_em) return { sim: true }
   return { sim: Date.now() - new Date(e.rodou_em).getTime() >= seg * 1000 }
+}
+
+/** Minutos entre dois "HH:MM" (negativo se o segundo for mais cedo). */
+function minutosEntre(de: string, ate: string) {
+  const m = (s: string) => {
+    const [h, mi] = String(s || '').split(':').map(Number)
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(mi) ? mi : 0)
+  }
+  return m(ate) - m(de)
+}
+
+export interface HorarioPerdido {
+  campanha_id: string
+  nome: string
+  horario: string
+  /** true = o vigia liberou uma segunda rodada agora. */
+  resgatado: boolean
+  motivo: string
+}
+
+/**
+ * A confirmação que não saiu — o vigia da campanha de horário.
+ *
+ * ── Por que isto existe ────────────────────────────────────────────────────
+ *
+ * O dono foi direto: a confirmação JAMAIS pode falhar. Só que ela podia falhar
+ * em silêncio. `processarCampanha` dá o horário por perdido depois de cinco
+ * tentativas, para não martelar um Avec fora do ar o dia inteiro — e, a partir
+ * daí, ninguém mais tentava e nada aparecia em lugar nenhum. O salão só
+ * descobriria no dia seguinte, pelas clientes que não confirmaram.
+ *
+ * Então este vigia olha os horários que já venceram hoje e separa dois casos:
+ *
+ *   DESISTIU SEM MANDAR NINGUÉM -> libera UMA segunda rodada. É seguro porque
+ *   `enviados` guarda quem já recebeu hoje (cliente|telefone|hora): quem
+ *   recebeu não recebe de novo. E é uma só por horário por dia, senão vira o
+ *   mesmo martelo que a desistência existe para evitar.
+ *
+ *   AINDA NÃO SAIU, e já passou da margem -> só avisa. O sistema continua
+ *   tentando sozinho (`estaNaHora` segue dizendo que sim); avisar duas vezes
+ *   não acelera nada, e liberar rodada aqui seria mexer no que já funciona.
+ *
+ * Devolve o que achou, para o vigia escrever na tela.
+ */
+export async function conferirHorariosDoDia(
+  salaoId: string, fuso = 'America/Sao_Paulo',
+  { margemMin = 15 }: { margemMin?: number } = {},
+): Promise<HorarioPerdido[]> {
+  const campanhas = await carregarCampanhas(salaoId)
+  const estados = await carregarEstados(salaoId)
+  const { hoje } = datasDoSalao(fuso)
+  const agora = horaAgora(fuso)
+  const achados: HorarioPerdido[] = []
+  let mexeu = false
+
+  for (const c of campanhas) {
+    if (!c.ligada || c.quando.tipo !== 'horarios') continue
+    const e = estados[c.id]
+    if (!e) continue
+    const feitos = new Set(e.horarios_feitos?.[hoje.iso] || [])
+    const tent = ((e as any).tentativas_horario || {}) as Record<string, number>
+    // `resgatados` é a memória do próprio vigia: sem ela, toda volta liberaria
+    // a mesma rodada de novo, de minuto em minuto, para sempre.
+    const resgatados = new Set<string>(((e as any).resgatados || {})[hoje.iso] || [])
+
+    for (const h of c.quando.horarios || []) {
+      // Só horário que já venceu com folga: às 17:00 em ponto ainda está indo.
+      if (minutosEntre(h, agora) < margemMin) continue
+      const chave = `${hoje.iso} ${h}`
+
+      if (feitos.has(h)) {
+        // Cumprido de verdade (mandou ou não havia ninguém) não é problema.
+        // Problema é ter sido DADO POR PERDIDO: cinco tentativas falhas.
+        if ((tent[chave] || 0) < 5) continue
+        if (resgatados.has(h)) {
+          achados.push({
+            campanha_id: c.id, nome: c.nome, horario: h, resgatado: false,
+            motivo: `${c.nome}: o horário de ${h} falhou de novo depois da segunda rodada. Conferir à mão.`,
+          })
+          continue
+        }
+        // Libera a segunda rodada: tira de "feitos" e zera o contador.
+        feitos.delete(h)
+        delete tent[chave]
+        resgatados.add(h)
+        ;(e as any).tentativas_horario = tent
+        ;(e as any).resgatados = { ...((e as any).resgatados || {}), [hoje.iso]: [...resgatados] }
+        e.horarios_feitos[hoje.iso] = [...feitos]
+        estados[c.id] = e
+        mexeu = true
+        achados.push({
+          campanha_id: c.id, nome: c.nome, horario: h, resgatado: true,
+          motivo: `${c.nome}: o horário de ${h} foi dado por perdido sem mandar ninguém — liberei uma segunda rodada.`,
+        })
+      } else {
+        achados.push({
+          campanha_id: c.id, nome: c.nome, horario: h, resgatado: false,
+          motivo: `${c.nome}: o horário de ${h} ainda não saiu (${minutosEntre(h, agora)} min atrasado); o robô continua tentando.`,
+        })
+      }
+    }
+  }
+
+  if (mexeu) await gravarEstados(salaoId, estados)
+  return achados
 }
 
 export interface LinhaRel {
@@ -385,7 +514,10 @@ export async function processarCampanha(
   if (opts.horarioCumprido) {
     const chaveTent = `${hoje.iso} ${opts.horarioCumprido}`
     const tent = ((e as any).tentativas_horario?.[chaveTent] || 0) + (falhouSemLer ? 1 : 0)
-    ;(e as any).tentativas_horario = { [chaveTent]: tent }
+    // Guardar só a chave da vez apagava o outro horário do dia: o 17:00 perdia
+    // o contador quando o 20:50 escrevia o dele. A limpeza dos dias velhos é
+    // em gravarEstados, que é o lugar dela.
+    ;(e as any).tentativas_horario = { ...((e as any).tentativas_horario || {}), [chaveTent]: tent }
     if (!falhouSemLer || tent >= TENTATIVAS_MAX) {
       const feitos = new Set(e.horarios_feitos[hoje.iso] || [])
       feitos.add(opts.horarioCumprido)

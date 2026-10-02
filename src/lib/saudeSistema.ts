@@ -27,6 +27,17 @@ export interface Problema {
   servico: Servico
   motivo: string
   desde: string | null
+  // ── Nem todo problema se resolve religando ────────────────────────────────
+  //
+  // Os dois primeiros vigias cuidavam de programa parado, e para isso o
+  // conserto é reiniciar. Os de 02/10/2026 são de outra natureza: a
+  // confirmação do dia que não saiu se conserta liberando outra rodada (feito
+  // aqui mesmo, ver crmCampanhas), não religando nada. Pedir ao script para
+  // reiniciar um serviço que não existe só gasta um reinício do teto diário e
+  // enche o registro de "não achou no pm2".
+  //
+  // Então: 'reiniciar' (o padrão, como sempre foi) ou 'avisar'.
+  acao?: 'reiniciar' | 'avisar'
 }
 
 export interface EstadoSaude {
@@ -95,6 +106,48 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
       problemas.push({ servico: 'ponte', motivo: `ponte do WhatsApp sem sinal desde ${hhmm((canal as any).visto_em)}`, desde: (canal as any).visto_em })
     }
   }
+
+  // ── Mensagem parada na fila, com a ponte dizendo que está conectada ───────
+  //
+  // "Sem sinal" pega a ponte caída. Não pega a ponte VIVA que parou de
+  // entregar -- e para o salão o resultado é o mesmo: a cliente não recebeu. A
+  // fila é a única testemunha honesta disso.
+  //
+  // `criado_em` no futuro é o espaçamento entre mensagens (20 s no feedback e
+  // na confirmação diária), então só conta o que já venceu há mais de 10
+  // minutos. Dez é folgado: a ponte roda de minuto em minuto.
+  //
+  // Esta pede reinício, porque quem está parada é a ponte.
+  if (sit === 'conectado') {
+    const limite = new Date(agora - 10 * MIN).toISOString()
+    const { count } = await supabaseAdmin
+      .from('crm_mensagens').select('id', { count: 'exact', head: true })
+      .eq('salao_id', salaoId).eq('situacao', 'na_fila').lt('criado_em', limite)
+    if ((count || 0) > 0) {
+      problemas.push({
+        servico: 'ponte',
+        motivo: `${count} mensagem(ns) parada(s) na fila há mais de 10 min, com a ponte conectada`,
+        desde: limite,
+      })
+    }
+  }
+
+  // ── A confirmação do dia que não saiu ─────────────────────────────────────
+  //
+  // "A confirmação jamais pode falhar" é a ordem do dono, e ela podia falhar
+  // calada: depois de cinco tentativas o horário era dado por perdido e nada
+  // mais acontecia. Quem decide e conserta é conferirHorariosDoDia (libera UMA
+  // segunda rodada); aqui só se registra o que ele achou, para aparecer na
+  // tela. Por isso 'avisar': não há o que religar.
+  try {
+    const { carregarConfig } = await import('./crmAutomacao')
+    const { conferirHorariosDoDia } = await import('./crmCampanhas')
+    const fuso = (await carregarConfig(salaoId))?.fuso || 'America/Sao_Paulo'
+    for (const a of await conferirHorariosDoDia(salaoId, fuso)) {
+      problemas.push({ servico: 'robo', motivo: a.motivo, desde: null, acao: 'avisar' })
+    }
+  } catch { /* sem campanha configurada: não é problema */ }
+
   return problemas
 }
 
@@ -119,6 +172,10 @@ export async function conferirTudo(): Promise<{ reiniciar: Servico[]; detalhes: 
     const hoje = diaSP(new Date(agora))
     const reinicios = (antes?.reinicios || []).filter(r => diaSP(new Date(r.em)) === hoje)
     for (const p of problemas) {
+      // Aviso não religa nada: aparece na tela e pronto. Sem isto ele gastaria
+      // um dos 8 reinícios do dia e o script procuraria no pm2 um serviço que
+      // não tem culpa nenhuma.
+      if (p.acao === 'avisar') continue
       const doServico = reinicios.filter(r => r.servico === p.servico)
       const ultimo = doServico.length ? new Date(doServico[doServico.length - 1].em).getTime() : 0
       if (doServico.length < 8 && agora - ultimo >= 20 * MIN) {

@@ -276,6 +276,24 @@ export async function GET() {
   const roboProc = procs.find(x => x.nome === 'robo-avec')
   const presasTotal = (presas || []).length
   const aguardando = (coletas || []).filter((c: any) => c.situacao === 'aguardando').length
+
+  // O que os dois vigias novos acharam na última volta. Quem decide e conserta
+  // é o saudeSistema (de minuto em minuto); aqui só se mostra o que ficou
+  // escrito, para a tela não ter uma opinião própria sobre o mesmo assunto.
+  const avisosConfirmacao: string[] = []
+  let filaParada = 0
+  // `nome` já é o mapa dos salões de verdade (sem o MODELO), que é o certo
+  // aqui: o modelo não tem WhatsApp nem confirmação para falhar.
+  for (const [id, nomeSalao] of nome) {
+    for (const p of ((cfg(id, 'nodri_saude') as any)?.problemas || [])) {
+      const motivo = String(p?.motivo || '')
+      if (/hor[áa]rio de \d{2}:\d{2}/i.test(motivo)) {
+        avisosConfirmacao.push(nome.size > 1 ? `${nomeSalao}: ${motivo}` : motivo)
+      }
+      const presa = motivo.match(/^(\d+) mensagem\(ns\) parada/)
+      if (presa) filaParada += Number(presa[1]) || 0
+    }
+  }
   const vigias: Item[] = [
     { cor: vigiaCor, texto: 'Vigia do servidor', detalhe: vigiaVivo ? `Rodando a cada minuto (último ${horaSP(visto)}).` : visto ? `Parou: último sinal ${dataHoraSP(visto)}.` : 'Ainda não instalado: rode o PUBLICAR.' },
     { cor: vigiaCor, texto: 'Vigia do site — evita o site fora do ar', detalhe: 'Se o site não responde 3 vezes seguidas, religa o NODRI e o nginx.' },
@@ -287,6 +305,25 @@ export async function GET() {
     { cor: 'verde', texto: 'Saúde do WhatsApp — evita bloqueio do número', detalhe: 'O envio automático pausa sozinho se o WhatsApp estiver desconectado ou com falhas seguidas.' },
     { cor: aguardando ? 'amarelo' : 'verde', texto: 'Conferência da coleta — evita relatório errado aplicado', detalhe: aguardando ? `${aguardando} coleta(s) esperando a sua aprovação.` : 'Cada relatório baixado é conferido com a tela do Avec antes de aplicar.' },
     { cor: 'cinza', texto: 'Monitor externo (GitHub) — avisa se o site cair', detalhe: 'Roda fora do servidor, em horários irregulares; abre um aviso no GitHub. Não dá para conferir daqui.' },
+    // ── Os dois de 02/10/2026 ───────────────────────────────────────────────
+    //
+    // Pedido do dono: toda automação precisa de autocorreção. Estes dois
+    // fecham os buracos que sobravam -- os dois casos em que o salão ficava
+    // sem a mensagem e nada ficava vermelho em lugar nenhum.
+    {
+      cor: avisosConfirmacao.length ? 'amarelo' : 'verde',
+      texto: 'Vigia da confirmação do dia — evita o disparo das 17:00 falhar calado',
+      detalhe: avisosConfirmacao.length
+        ? avisosConfirmacao.join(' · ')
+        : 'Horário que venceu e não saiu aparece aqui. Se o robô desistir sem mandar ninguém, o vigia libera uma segunda rodada (quem já recebeu não recebe de novo).',
+    },
+    {
+      cor: filaParada ? 'vermelho' : 'verde',
+      texto: 'Vigia da fila do WhatsApp — evita ponte viva que parou de entregar',
+      detalhe: filaParada
+        ? `${filaParada} mensagem(ns) esperando há mais de 10 min com a ponte conectada: o vigia religa a ponte.`
+        : 'Mensagem parada há mais de 10 min com a ponte "conectada" religa a ponte. "Sem sinal" só pega a ponte caída; esta pega a que está de pé e muda.',
+    },
   ]
   const vigiasBloco: Bloco = {
     cor: pior(vigias.filter(v => v.cor !== 'cinza').map(v => v.cor), 'cinza'), itens: vigias,
