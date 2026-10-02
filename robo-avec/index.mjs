@@ -134,6 +134,30 @@ async function fechar(salaoId, motivo) {
   log(`${a.nome}: Chrome fechado (${motivo})`)
 }
 
+/**
+ * Joga fora o código da extensão que o Chrome guardou.
+ *
+ * ── Por que isto existe (02/10/2026, e custou meia noite) ───────────────────
+ *
+ * O Chrome compila o service worker da extensão e guarda o resultado em
+ * `<perfil>/Default/Service Worker/ScriptCache`. Trocar os arquivos da
+ * extensão e reabrir o Chrome NÃO basta: ele relê o `manifest.json` -- por
+ * isso a versão nova aparece certinha no painel, e tudo parece atualizado --
+ * e continua executando o `background.js` VELHO, de dentro do cache.
+ *
+ * Foi assim que três versões seguidas (1.7.1, 1.8.0, 1.8.1) subiram, foram
+ * anunciadas como no ar, e não mudaram nada. A volta continuava levando 47
+ * segundos. Apagado o cache, a MESMA versão passou a levar 5.
+ *
+ * É uma pasta de cache: apagar não perde nada, o Chrome recompila na hora.
+ * Login, cookies e abas ficam noutro lugar do perfil e não são tocados.
+ */
+function limparCacheDaExtensao(dir) {
+  for (const p of ['Default/Service Worker/ScriptCache', 'Default/Service Worker/Database']) {
+    try { fs.rmSync(path.join(dir, p), { recursive: true, force: true }) } catch { /* não existia */ }
+  }
+}
+
 async function volta() {
   const saloes = await listarSaloes()
   const versao = versaoDaExtensao()
@@ -141,7 +165,13 @@ async function volta() {
 
   for (const id of [...abertos.keys()]) {
     if (!ids.has(id)) await fechar(id, 'desligado no NODRI')
-    else if (abertos.get(id).versao !== versao) await fechar(id, `extensão nova ${versao}`)
+    else if (abertos.get(id).versao !== versao) {
+      await fechar(id, `extensão nova ${versao}`)
+      // Fechar o Chrome não troca o código: o cache do service worker tem que
+      // ir junto, senão a versão nova sobe e o código velho continua rodando.
+      limparCacheDaExtensao(path.join(PERFIS, id))
+      log(`${id}: cache da extensão apagado (para a ${versao} valer de verdade)`)
+    }
   }
 
   for (const s of saloes) {
