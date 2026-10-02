@@ -66,9 +66,22 @@ function papelDaAba(
   const alvo = String(urlAutomacao || 'admin.avec.beauty/admin/relatorio/0051').replace(/^https?:\/\//, '')
 
   if (limpa.startsWith(alvo)) {
-    return jaTemAutomacao
-      ? { papel: 'sobrando', porque: 'Cópia repetida do relatório da automação.' }
-      : { papel: 'automacao', porque: 'É daqui que saem feedback, confirmação e aviso ao profissional.' }
+    if (!jaTemAutomacao) {
+      return { papel: 'automacao', porque: 'É daqui que saem feedback, confirmação e aviso ao profissional.' }
+    }
+    // ── A segunda aba no 0051 nem sempre é cópia ───────────────────────────
+    //
+    // O robô da COLETA também lê o 0051 (ele percorre 0017, 0021, 0031, 0032,
+    // 0041, 0042, 0083, 0126 e o 0051). Então, com coleta em andamento, a
+    // segunda aba no mesmo endereço é ela trabalhando -- não sobra.
+    //
+    // 01/10/2026 o dono abriu a tela e viu SOBRANDO, em vermelho, numa aba que
+    // era a coleta que ele mesmo tinha mandado rodar. Vermelho que não é
+    // problema deixa de ser aviso, e é por isso que isto importa.
+    if (coletaRodando && !jaTemColeta) {
+      return { papel: 'coleta', porque: 'O robô da coleta também lê o 0051: é esta aba que ele está usando agora.' }
+    }
+    return { papel: 'sobrando', porque: 'Cópia repetida do relatório da automação.' }
   }
   // Qualquer outro relatório do Avec é do robô da coleta. Só que ele lê UM
   // relatório por vez, numa aba só: se houver duas, uma é sobra de uma coleta

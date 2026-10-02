@@ -50,7 +50,14 @@ git config --global --add safe.directory "$PASTA" 2>/dev/null || true
 # Senão ele vê o site fora do ar no meio da montagem e reinicia tudo.
 touch /var/tmp/nodri-publicando
 ROBO_PAROU=nao
+COLETA_PAROU=nao
+COLETA_NO_MEIO=nao
+LOG_COLETA=/home/nodri/.pm2/logs/robo-relatorio-out.log
 voltar_robo() {
+  if [ "$COLETA_PAROU" = sim ]; then
+    su nodri -c "pm2 start robo-relatorio" >/dev/null 2>&1 && diz "      robô do relatório de volta"
+    [ "$COLETA_NO_MEIO" = sim ] && diz "      ATENÇÃO: havia uma coleta no meio quando a publicação começou -- ela não terminou. Mandar rodar de novo em /admin/robo."
+  fi
   [ "$ROBO_PAROU" = sim ] || return 0
   su nodri -c "pm2 start robo-avec" >/dev/null 2>&1 && diz "      robô do Avec de volta"
 }
@@ -109,6 +116,34 @@ fi
 if su nodri -c "pm2 stop robo-avec" >/dev/null 2>&1; then
   ROBO_PAROU=sim
   diz "      robô do Avec pausado para liberar memória"
+fi
+
+# ── A coleta também sai da frente ───────────────────────────────────────────
+#
+# Até 01/10/2026 só o robo-avec era pausado, e a COLETA ficava rodando por cima
+# da montagem. Duas vezes naquela noite ela morreu feio:
+#
+#   22:39  Cannot find module './chunks/5677.js'   <- o .next trocado embaixo
+#          dela; o erro parece do Avec e é do Next
+#   22:59  TimeoutException: timeout receiving message from renderer: 59.294
+#          <- o Chrome sem CPU, com a montagem comendo o único núcleo
+#
+# O dono leu isso como defeito do relatório 0051 e mandou rodar de novo duas
+# vezes. Não era: era a publicação por cima. A coleta segura 700 MB a 1 GB de
+# Chrome, que é justamente a memória que falta para montar -- então pausá-la
+# ajuda a montagem E evita o erro.
+#
+# Coleta interrompida não recomeça sozinha fora de hora: quando havia uma no
+# meio, o aviso fica escrito no registro, para alguém mandar rodar de novo.
+ULTIMA_COLETA=$(grep -E "coleta iniciada|aplicado|ERRO|aguardando" "$LOG_COLETA" 2>/dev/null | tail -1)
+case "$ULTIMA_COLETA" in *"coleta iniciada"*) COLETA_NO_MEIO=sim;; esac
+if su nodri -c "pm2 stop robo-relatorio" >/dev/null 2>&1; then
+  COLETA_PAROU=sim
+  if [ "$COLETA_NO_MEIO" = sim ]; then
+    diz "      robô do relatório pausado -- ATENÇÃO: tinha coleta rodando, ela foi interrompida"
+  else
+    diz "      robô do relatório pausado para liberar memória"
+  fi
 fi
 
 # ── REGRA: conferir os tipos ANTES de subir ──────────────────────────────────
