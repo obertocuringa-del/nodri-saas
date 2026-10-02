@@ -217,6 +217,16 @@ if [ -f "$PASTA/scripts/vigia-servidor.sh" ]; then
   chmod 644 /etc/cron.d/nodri-vigia
   diz "      vigia reinstalado"
 fi
+# A faxina diária: planilha velha e registro gigante. Instalada aqui junto com
+# o vigia para não se perder numa republicação -- o que é instalado só à mão
+# some na primeira vez que alguém esquece.
+if [ -f "$PASTA/scripts/nodri-faxina.sh" ]; then
+  tr -d '\r' < "$PASTA/scripts/nodri-faxina.sh" > /usr/local/bin/nodri-faxina.sh
+  chmod 755 /usr/local/bin/nodri-faxina.sh
+  printf '# NODRI -- faxina diária\nSHELL=/bin/bash\nCRON_TZ=America/Sao_Paulo\n30 4 * * * root /usr/local/bin/nodri-faxina.sh\n' > /etc/cron.d/nodri-faxina
+  chmod 644 /etc/cron.d/nodri-faxina
+  diz "      faxina diária reinstalada"
+fi
 tr -d '\r' < "$PASTA/scripts/publicar-no-servidor.sh" > /usr/local/bin/nodri-publicar.sh.novo \
   && chmod 755 /usr/local/bin/nodri-publicar.sh.novo \
   && mv /usr/local/bin/nodri-publicar.sh.novo /usr/local/bin/nodri-publicar.sh \

@@ -46,6 +46,10 @@ const ddmm = (iso: string) => new Intl.DateTimeFormat('pt-BR', {
 const diaDoMes = (iso: string) => Number(new Intl.DateTimeFormat('en-CA', {
   timeZone: SP, day: '2-digit',
 }).format(new Date(iso)))
+/** 'AAAA-MM-DD' de um instante, no fuso do salão -- dá para comparar como texto. */
+const diaISO = (iso: string) => new Intl.DateTimeFormat('en-CA', {
+  timeZone: SP, year: 'numeric', month: '2-digit', day: '2-digit',
+}).format(new Date(iso))
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -91,6 +95,20 @@ function avaliar(
   }
 
   const ultimoDia = new Date(ano, mes, 0).getDate()
+  const fimDoMes = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`
+
+  // ── Coleta DEPOIS do mês fechado é o melhor caso, não o pior ─────────────
+  //
+  // A primeira versão só perguntava "a última coleta foi no último dia?". Uma
+  // recoleta feita no mês seguinte (que é exatamente o que este painel manda
+  // fazer) caía no "não foi no último dia" e era marcada como incompleta --
+  // logo depois de ter sido consertada. Foi o que a tela mostrou em 02/10,
+  // minutos depois de setembro voltar ao normal.
+  //
+  // Quem coleta com o mês já encerrado pega o mês inteiro: não há mais nada
+  // para entrar depois.
+  if (diaISO(ultima.inicio) > fimDoMes) return { situacao: 'ok', aviso: null }
+
   if (diaDoMes(ultima.inicio) !== ultimoDia) {
     return {
       situacao: 'furado',
