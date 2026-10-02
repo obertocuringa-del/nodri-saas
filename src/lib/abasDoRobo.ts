@@ -86,6 +86,19 @@ function papelDaAba(
   if (!url || url === 'about:blank') {
     return { papel: 'sobrando', porque: 'Aba em branco, sem uso.' }
   }
+  // ── Qualquer outra página do Avec é trabalho em andamento ────────────────
+  //
+  // A extensão não vive só no 0051: para marcar "Confirmado" ela leva a
+  // PRÓPRIA aba de trabalho para a agenda do Avec, e fica lá até a volta
+  // seguinte trazer de volta. Se a agenda contasse como sobra, a limpeza
+  // automática fecharia a aba da extensão no meio da marcação -- a cliente
+  // mandou "confirmo" e ficaria sem o "Combinado".
+  //
+  // O mesmo vale para a tela de login: sessão caída manda a aba para lá, e é
+  // justamente de lá que a extensão entra de novo sozinha.
+  if (/avec\.(beauty|app)/.test(limpa)) {
+    return { papel: 'automacao', porque: 'A extensão está usando esta aba (agenda ou login do Avec).' }
+  }
   return { papel: 'sobrando', porque: 'Não faz parte do trabalho do robô.' }
 }
 
