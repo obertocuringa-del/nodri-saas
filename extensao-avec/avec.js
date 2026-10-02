@@ -136,11 +136,36 @@
     const buscar = Array.from(document.querySelectorAll('button, a, input[type="submit"]'))
       .find(b => /buscar/i.test(b.textContent || b.value || ''))
     if (!buscar) return { ok: false, erro: 'Não achei o botão Buscar', url: location.href }
+    const t0 = Date.now()
     buscar.click()
-    // Espera a tabela trocar de conteúdo (ou o "Registros" mudar). Se o dia
-    // não tem nada, a tabela fica vazia -- também é resposta.
-    await esperarPor(() => assinatura() !== antes, 12000, 300)
-    await sleep(800)
+
+    // ── Saber que a busca acabou, sem esperar 12 s à toa ────────────────────
+    //
+    // Esperar a ASSINATURA mudar só funciona quando o conteúdo muda. Desde que
+    // a aba deixou de ser recarregada a cada volta (extensão 1.7.1), a leitura
+    // seguinte pede O MESMO DIA: o Avec devolve as mesmas linhas, a assinatura
+    // fica igual e a espera corria os 12 segundos inteiros, toda volta, para
+    // nada. Isso num ciclo que o dono quer em 30 segundos.
+    //
+    // O sinal honesto é o "processando" do próprio DataTables (a tabela do
+    // Avec é uma: tem o select de "por página" e o #tableFilter). Ele acende
+    // quando a consulta sai e apaga quando ela volta.
+    //
+    // Se esse aviso não existir nesta tela, nada se perde: cai na espera por
+    // assinatura de sempre. Por isso os 12 s continuam escritos aqui embaixo.
+    const processando = () => Array.from(
+      document.querySelectorAll('.dataTables_processing, [id$="_processing"], [class*="processing"]'),
+    ).some(e => e.offsetParent !== null)
+
+    const acendeu = await esperarPor(processando, 2500, 100)
+    if (acendeu) {
+      await esperarPor(() => !processando(), 20000, 150)
+      await sleep(250)
+    } else {
+      await esperarPor(() => assinatura() !== antes, 12000, 300)
+      await sleep(800)
+    }
+    const msBusca = Date.now() - t0
 
     // Tudo numa página só: o maior valor do "por página".
     const sel = document.querySelector('select[name$="_length"]')
@@ -176,7 +201,9 @@
       return await lerRelatorio(dia, true)
     }
 
-    return { ok: true, linhas: doDia, total, url: location.href }
+    // `ms_busca` e `busca_por` existem para medir: sem número, "está lento"
+    // vira chute. Aparecem no painel de saúde da extensão.
+    return { ok: true, linhas: doDia, total, url: location.href, ms_busca: msBusca, busca_por: acendeu ? 'processando' : 'assinatura' }
   }
 
   // ── Marcar um agendamento como Confirmado ─────────────────────────────────

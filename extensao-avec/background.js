@@ -682,8 +682,15 @@ async function executarTarefa(cfg, dados) {
     // ── Campanha: ler o relatório de um dia e devolver as linhas ────────────
     if (t.tipo === 'campanha') {
       const url = urlAvec(t.url_relatorio || cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
+      // Três relógios, porque "está lento" sem número é chute. O aviso ao
+      // profissional tem gente esperando, e daqui sai onde o tempo foi parar:
+      // preparar a aba (abrir/logar), ler o relatório, e falar com o NODRI.
+      const tAba = Date.now()
       const abaId = await prepararAba(cfg, dados, url)
+      const msAba = Date.now() - tAba
+      const tLer = Date.now()
       const lido = await lerComSegundaChance(abaId, t.data)
+      const msLer = Date.now() - tLer
       if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
 
       const r = await nodri('/api/crm/automacao/extensao', {
@@ -704,9 +711,13 @@ async function executarTarefa(cfg, dados) {
           porque = ' — todos já receberam hoje'
         }
       }
+      const seg = ms => (ms / 1000).toFixed(1).replace('.', ',')
       await saude({
-        texto: `${t.nome}: ${lido.linhas.length} linha(s) de ${t.data}; ${r.elegiveis || 0} no filtro; enfileirou ${r.enviadas || 0}${porque}.`,
+        texto: `${t.nome}: ${lido.linhas.length} linha(s) de ${t.data}; ${r.elegiveis || 0} no filtro; enfileirou ${r.enviadas || 0}${porque}.`
+          + ` [aba ${seg(msAba)}s · ler ${seg(msLer)}s`
+          + (lido.ms_busca != null ? ` (busca ${seg(lido.ms_busca)}s por ${lido.busca_por})` : '') + ']',
         lidas: r.lidas, elegiveis: r.elegiveis, enviadas: r.enviadas, erro: r.erro || null,
+        tempos: { aba_ms: msAba, ler_ms: msLer, busca_ms: lido.ms_busca ?? null, busca_por: lido.busca_por || null },
       })
       return
     }

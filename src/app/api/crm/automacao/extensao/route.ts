@@ -113,25 +113,43 @@ export async function GET(req: NextRequest) {
     horario_cumprido: q.horario || null,
   })
 
-  // 1ª: a campanha de HORÁRIO que venceu -- a confirmação do dia seguinte, às
-  // 17:00 e 20:50. Acontece duas vezes por dia e a cliente conta com ela: meia
-  // hora atrasada é o mesmo que não ter mandado. Esta fura até a fila.
   const porHorario = naHora.find(x => x.c.quando.tipo === 'horarios')
-  if (porHorario) tarefa = tarefaDeCampanha(porHorario.c, porHorario.q)
+  const porIntervalo = naHora.find(x => x.c.quando.tipo === 'intervalo')
 
-  // 2ª: marcar Confirmado no Avec -- em LOTE, e nunca duas voltas seguidas.
+  // ── A REGRA QUE MANDA EM TODAS AS OUTRAS ──────────────────────────────────
+  //
+  // Nunca duas voltas seguidas sem olhar o dia de HOJE.
+  //
+  // Ordem do dono, 02/10/2026: quem tem alguém esperando do outro lado é o
+  // aviso ao profissional -- a cliente já está sentada na cadeira e ele ainda
+  // não sabe. A confirmação do dia seguinte é automática e tem a noite inteira;
+  // a marcação no Avec tem minutos. O profissional tem segundos.
+  //
+  // Então toda tarefa que não seja o dia de hoje cede a vez na volta seguinte.
+  // O pior caso para o profissional passa a ser uma volta de atraso, e a
+  // confirmação das 17:00 sai no máximo uma volta depois do horário -- o que,
+  // para ela, não muda nada.
+  //
+  // É isto que impede o que já aconteceu: a fila de confirmação segurando o
+  // salão inteiro (01/10, 15 pedidos, meia hora sem aviso nenhum).
+  const olhouHoje = anterior === 'campanha' || anterior === 'feedback'
+  if (!olhouHoje && porIntervalo) tarefa = tarefaDeCampanha(porIntervalo.c, porIntervalo.q)
+
+  // 2ª: a campanha de HORÁRIO que venceu -- a confirmação do dia seguinte, às
+  // 17:00 e 20:50. Acontece duas vezes por dia e a cliente conta com ela: meia
+  // hora atrasada é o mesmo que não ter mandado. Fura a fila de marcação.
+  if (!tarefa && porHorario) tarefa = tarefaDeCampanha(porHorario.c, porHorario.q)
+
+  // 3ª: marcar Confirmado no Avec, em LOTE.
   //
   // 01/10/2026, 21h: 15 pedidos na fila, entregues de um em um, e enquanto
   // houvesse pedido esta era a ÚNICA tarefa que saía daqui. Meia hora de salão
-  // sem avisar profissional nenhum. São duas correções, não uma:
+  // sem avisar profissional nenhum. O lote resolve o represamento; quem garante
+  // a vez do profissional é a regra do dia de hoje, logo acima.
   //
-  //   LOTE -- a extensão já abriu a aba, já logou e já leu o 0051; casar cinco
-  //   telefones contra as linhas que ela tem na mão custa quase o mesmo que
-  //   casar um. O caro é a volta, não o pedido.
-  //
-  //   INTERCALAÇÃO -- depois de uma volta de confirmação, a próxima é sempre
-  //   do dia de hoje. É isto que garante a ordem que o dono pediu: o
-  //   profissional nunca espera atrás da fila, por maior que ela esteja.
+  // LOTE -- a extensão já abriu a aba, já logou e já leu o 0051; casar cinco
+  // telefones contra as linhas que ela tem na mão custa quase o mesmo que casar
+  // um. O caro é a volta, não o pedido.
   //
   // ── O pedido que a extensão pega e nunca devolve ──────────────────────────
   //
@@ -146,7 +164,7 @@ export async function GET(req: NextRequest) {
   // mão. O que não pode é a fila segurar o salão inteiro em silêncio.
   const conf = await cfgConfirmacao(salaoId)
   const LOTE = 5
-  if (!tarefa && conf.ligada && anterior !== 'confirmacao') {
+  if (!tarefa && conf.ligada) {
     const fila = await carregarFila(salaoId)
     const ESPERA_MS = 10 * 60_000
     const agoraMs = Date.now()
@@ -187,17 +205,20 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 3ª: a volta do dia de hoje -- o aviso ao profissional. O feedback vem de
-  // carona no POST desta mesma leitura, então não precisa de vez aqui.
-  if (!tarefa) {
-    const porIntervalo = naHora.find(x => x.c.quando.tipo === 'intervalo')
-    if (porIntervalo) tarefa = tarefaDeCampanha(porIntervalo.c, porIntervalo.q)
-  }
+  // 4ª: a volta do dia de hoje -- o aviso ao profissional. É a volta padrão: o
+  // feedback vem de carona no POST desta mesma leitura, sem vez própria.
+  if (!tarefa && porIntervalo) tarefa = tarefaDeCampanha(porIntervalo.c, porIntervalo.q)
 
   // Sem tarefa nenhuma, a volta é do feedback sozinho: é o caso de quem
   // desligou o aviso ao profissional e só usa o feedback.
+  //
+  // 'horario' é separado de 'campanha' de propósito: a regra lá em cima quer
+  // saber se a última volta olhou o dia de HOJE, e a confirmação do dia
+  // seguinte lê AMANHÃ. Juntar os dois faria a campanha das 17:00 passar por
+  // "já olhei hoje" e roubar a vez do profissional.
   est.ultima_tarefa = tarefa?.tipo === 'confirmar_avec' ? 'confirmacao'
-    : tarefa?.tipo === 'campanha' ? 'campanha' : 'feedback'
+    : tarefa?.tipo === 'campanha' ? (tarefa.horario_cumprido ? 'horario' : 'campanha')
+    : 'feedback'
   await gravarEstado(salaoId, est)
 
   // ── O batimento é o MENOR intervalo entre o que está ligado ───────────────

@@ -49,7 +49,7 @@ export interface EstadoAutomacao {
   /** 'AAAA-MM-DD' → celulares que já receberam naquele dia */
   enviados: Record<string, string[]>
   /** o que o último ciclo da extensão fez: revezamento entre campanha e feedback */
-  ultima_tarefa?: 'campanha' | 'feedback' | 'confirmacao' | null
+  ultima_tarefa?: 'campanha' | 'feedback' | 'confirmacao' | 'horario' | null
   /** quantas abas do Avec o Chrome do salão tem abertas (a extensão conta) */
   abas_avec?: number | null
   /** versão da extensão instalada no salão */
