@@ -194,6 +194,50 @@ async function guardarNoGrupo(abaId) {
   } catch { /* sem permissão de grupo (versão antiga): segue sem grupo */ }
 }
 
+// ── Não recarregar o que já está na tela ────────────────────────────────────
+//
+// Até 01/10/2026 a aba era RECARREGADA a cada volta, mesmo já estando no
+// endereço pedido. Era esse o custo da volta inteira: recarregar o 0051 faz o
+// Avec remontar a aplicação do zero -- de 30 s a 3 min --, contra 5 a 15 s da
+// leitura em si (escrever as duas datas, clicar Buscar, esperar a tabela).
+// Medido no nginx em 01/10: voltas de 39 s a 195 s, com a leitura sendo a
+// menor parte.
+//
+// Isso importa porque o aviso ao profissional tem alguém esperando do outro
+// lado: a cliente já está sentada e ele ainda não sabe. Aproveitar a aba que
+// já está aberta e logada é o que transforma a volta em segundos.
+//
+// Duas rédeas, para a página não apodrecer na tela:
+//   - a cada 15 minutos ela é recarregada de qualquer jeito (sessão do Avec,
+//     memória da aplicação, tela que envelhece);
+//   - quem chama ainda pergunta "onde-estou" logo em seguida e cai no caminho
+//     do login se a sessão tiver vencido; e `lerComSegundaChance` recarrega a
+//     página sozinho se a leitura não vier.
+const RECARGA_MS = 15 * 60_000
+
+/** Mesma página? Compara origem e caminho; busca e âncora não contam. */
+function mesmaPagina(a, b) {
+  try {
+    const x = new URL(String(a)), y = new URL(String(b))
+    const limpo = p => String(p || '').replace(/\/+$/, '')
+    return x.origin === y.origin && limpo(x.pathname) === limpo(y.pathname)
+  } catch { return false }
+}
+
+async function aproveitaAba(aba, url) {
+  if (!aba || aba.status !== 'complete') return false
+  if (!mesmaPagina(aba.url, url)) return false
+  const { carregadaEm } = await chrome.storage.local.get('carregadaEm')
+  return !!carregadaEm && Date.now() - carregadaEm < RECARGA_MS
+}
+
+/** Navega e anota a hora, que é o que segura a recarga dos 15 minutos. */
+async function navegarEAnotar(abaId, url) {
+  const ok = await navegar(abaId, url)
+  await chrome.storage.local.set({ carregadaEm: Date.now() })
+  return ok
+}
+
 /** A aba de trabalho: a mesma de sempre, a do grupo, ou uma nova se sumiu. */
 async function abaDeTrabalho(url) {
   const { abaId } = await guardado()
@@ -207,7 +251,8 @@ async function abaDeTrabalho(url) {
     // inclusive): o grupo prova que é nossa.
     if (existe && (grupos.includes(existe.groupId) || /avec\.(beauty|app)/.test(String(existe.url || '')))) {
       await guardarNoGrupo(abaId)
-      await navegar(abaId, url)
+      if (await aproveitaAba(existe, url)) return abaId
+      await navegarEAnotar(abaId, url)
       return abaId
     }
   }
@@ -215,11 +260,11 @@ async function abaDeTrabalho(url) {
   const doGrupo = (await abasDoGrupo())[0]
   if (doGrupo) {
     await chrome.storage.local.set({ abaId: doGrupo.id })
-    await navegar(doGrupo.id, url)
+    await navegarEAnotar(doGrupo.id, url)
     return doGrupo.id
   }
   const nova = await chrome.tabs.create({ url, active: false })
-  await chrome.storage.local.set({ abaId: nova.id })
+  await chrome.storage.local.set({ abaId: nova.id, carregadaEm: Date.now() })
   await saude({ aba_nova: { em: new Date().toISOString(), antiga: abaId || null } })
   await guardarNoGrupo(nova.id)
   await esperarCarregar(nova.id)
@@ -331,8 +376,8 @@ async function chegarLogado(abaId, cfg, dados, url) {
     await entrarNoAvec(abaId, cfg, dados)
     await sleep(5000)
     for (let volta = 1; volta <= 3; volta++) {
-      await navegar(abaId, url)
-    await esperarCarregar(abaId)
+      await navegarEAnotar(abaId, url)
+      await esperarCarregar(abaId)
       let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' }, 15)
       if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
       if (onde && !onde.login) return onde
@@ -348,7 +393,7 @@ async function entrarNoAvec(abaId, cfg, dados) {
   const urlLogin = urlAvec(cfg.url_login, '')
   if (!urlLogin) throw new Error('Avec deslogado e sem endereço de login configurado no NODRI')
   // 1) o endereço de login, e espera a tela carregar de verdade
-  await navegar(abaId, urlLogin)
+  await navegarEAnotar(abaId, urlLogin)
   await sleep(1500)
   // 2) e-mail, senha e o botão -- o content script faz os três
   const r = await perguntarComPaciencia(abaId, { tipo: 'logar', email: dados.email, senha: dados.senha }, 12)
@@ -625,7 +670,7 @@ async function lerComSegundaChance(abaId, data) {
   if (lido && lido.ok) return lido
   await saude({ texto: 'O relatório não estava pronto — recarregando para tentar de novo…' })
   const aba = await infoDaAba(abaId)
-  await navegar(abaId, String(aba?.url || AVEC + 'admin/relatorio/0051'))
+  await navegarEAnotar(abaId, String(aba?.url || AVEC + 'admin/relatorio/0051'))
   await sleep(3000)
   lido = await perguntarComPaciencia(abaId, { tipo: 'ler-0051', data }, 3, 30000)
   return lido
@@ -710,7 +755,7 @@ async function executarTarefa(cfg, dados) {
       let naAgenda = false
       const irParaAgenda = async () => {
         if (naAgenda) return
-        await navegar(abaId, AVEC + 'admin/agenda')
+        await navegarEAnotar(abaId, AVEC + 'admin/agenda')
         await sleep(2000)
         naAgenda = true
       }
