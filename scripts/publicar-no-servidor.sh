@@ -52,7 +52,6 @@ touch /var/tmp/nodri-publicando
 ROBO_PAROU=nao
 COLETA_PAROU=nao
 COLETA_NO_MEIO=nao
-LOG_COLETA=/home/nodri/.pm2/logs/robo-relatorio-out.log
 voltar_robo() {
   if [ "$COLETA_PAROU" = sim ]; then
     su nodri -c "pm2 start robo-relatorio" >/dev/null 2>&1 && diz "      robô do relatório de volta"
@@ -81,6 +80,36 @@ ANTES=$(git rev-parse --short HEAD 2>/dev/null || echo nenhum)
 git reset -q --hard origin/main || { diz "ERRO ao trocar o código"; exit 1; }
 AGORA=$(git rev-parse --short HEAD)
 diz "      $ANTES -> $AGORA  $(git log -1 --pretty=%s)"
+
+# ── A coleta em andamento tem a vez ──────────────────────────────────────────
+#
+# Pausar o `robo-relatorio` NÃO para a coleta que já começou: ela roda em
+# sessão própria (start_new_session) justamente para sobreviver a um
+# reinício do agendador. Então ela continuava de pé durante a montagem, sem
+# CPU, e morria sozinha:
+#
+#   02/10 01:47  coleta iniciada (rodar_agora, mês 09/2026)
+#   02/10 01:48  [publicação começa]
+#   02/10 01:49  ERRO -- TimeoutException: timeout receiving message from
+#                renderer: 59.262
+#
+# Era uma recoleta de mês que o dono tinha acabado de pedir, e foi perdida
+# porque eu publiquei por cima. Uma coleta leva uns 25 minutos; esperar é
+# muito mais barato do que jogar fora o trabalho dela e o tempo dele.
+esperou=0
+while pgrep -f "[c]oleta_servidor.py" >/dev/null 2>&1 && [ "$esperou" -lt 1800 ]; do
+  [ "$esperou" = 0 ] && diz "      tem coleta do Avec rodando: esperando ela terminar (até 30 min)"
+  sleep 20; esperou=$((esperou + 20))
+done
+if pgrep -f "[c]oleta_servidor.py" >/dev/null 2>&1; then
+  # Meia hora é mais que o dobro do normal: aqui ela está travada, e segurar a
+  # publicação para sempre por causa disso seria pior.
+  diz "      a coleta passou de 30 min -- derrubando para poder montar"
+  pkill -f "[c]oleta_servidor.py" 2>/dev/null || true
+  sleep 3
+elif [ "$esperou" -gt 0 ]; then
+  diz "      a coleta terminou; seguindo"
+fi
 
 # ── 2. Pacotes ───────────────────────────────────────────────────────────────
 diz "[2/4] conferindo os pacotes"
@@ -135,12 +164,16 @@ fi
 #
 # Coleta interrompida não recomeça sozinha fora de hora: quando havia uma no
 # meio, o aviso fica escrito no registro, para alguém mandar rodar de novo.
-ULTIMA_COLETA=$(grep -E "coleta iniciada|aplicado|ERRO|aguardando" "$LOG_COLETA" 2>/dev/null | tail -1)
-case "$ULTIMA_COLETA" in *"coleta iniciada"*) COLETA_NO_MEIO=sim;; esac
+# Uma coleta pode ter começado entre a espera lá de cima e este ponto (o
+# agendador olha de 30 em 30 segundos). Se começou agora, perde-se pouco.
+if pgrep -f "[c]oleta_servidor.py" >/dev/null 2>&1; then COLETA_NO_MEIO=sim; fi
 if su nodri -c "pm2 stop robo-relatorio" >/dev/null 2>&1; then
   COLETA_PAROU=sim
   if [ "$COLETA_NO_MEIO" = sim ]; then
-    diz "      robô do relatório pausado -- ATENÇÃO: tinha coleta rodando, ela foi interrompida"
+    # Derruba junto: deixá-la viva sem CPU é o que a fazia morrer de timeout no
+    # meio da montagem, e aí o erro aparecia como se fosse do Avec.
+    pkill -f "[c]oleta_servidor.py" 2>/dev/null || true
+    diz "      robô do relatório pausado -- ATENÇÃO: uma coleta tinha acabado de começar e foi interrompida"
   else
     diz "      robô do relatório pausado para liberar memória"
   fi
