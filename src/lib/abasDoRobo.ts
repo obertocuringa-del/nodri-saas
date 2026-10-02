@@ -131,6 +131,24 @@ export async function abasDoSalao(salaoId: string, urlAutomacao: string, coletaR
       pode_fechar: papel === 'sobrando',
     })
   }
+  // ── Coleta rodando: não se fecha NADA ────────────────────────────────────
+  //
+  // O robô da coleta percorre uma LISTA de relatórios, um de cada vez -- 0017,
+  // 0021, 0031, 0032, 0041, 0042, 0083, 0126 -- e nessa lista está também o
+  // 0051, o mesmo da extensão. Com uma coleta em andamento não há como saber,
+  // de fora, se um 0051 aberto é o da extensão ou o que o coletor está lendo
+  // agora. Fechar o errado estraga a coleta do dia inteiro.
+  //
+  // Como a coleta leva uns 15 minutos e roda de hora em hora, sobra tempo de
+  // sobra para limpar depois. Então: enquanto está coletando, ninguém encosta.
+  if (coletaRodando) {
+    for (const a of abas) {
+      if (!a.pode_fechar) continue
+      a.pode_fechar = false
+      a.porque = 'Tem coleta rodando agora: só dá para fechar quando ela terminar.'
+    }
+  }
+
   // Nunca deixar o Chrome sem aba nenhuma: ele se encerra e o robô precisa
   // reabrir o navegador inteiro.
   if (abas.length && abas.every(a => a.pode_fechar)) abas[0].pode_fechar = false
