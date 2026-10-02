@@ -300,6 +300,7 @@ export async function POST(req: NextRequest) {
       horarioCumprido: body?.horario_cumprido ? String(body.horario_cumprido) : undefined,
       // `simular` faz a conta e mostra quem receberia, sem mandar nem marcar.
       simular: body?.simular === true,
+      tempos: body?.tempos && typeof body.tempos === 'object' ? body.tempos : null,
     })
 
     // ── O feedback de carona ────────────────────────────────────────────────

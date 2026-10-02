@@ -698,6 +698,13 @@ async function executarTarefa(cfg, dados) {
         body: JSON.stringify({
           campanha_id: t.campanha_id, linhas: lido.linhas,
           horario_cumprido: t.horario_cumprido || undefined,
+          // Os relógios vão JUNTO: o `saude()` so grava dentro da extensão, e
+          // de fora do servidor ninguém lê aquilo. Sem isto, "está lento" não
+          // tem como virar número.
+          tempos: {
+            aba_ms: msAba, ler_ms: msLer,
+            busca_ms: lido.ms_busca ?? null, busca_por: lido.busca_por || null,
+          },
         }),
       }, dados.chave)
       // Quando nada sai, a tela tem que dizer POR QUE. "enfileirou 0" sozinho

@@ -339,7 +339,11 @@ async function montarAlvos(
  */
 export async function processarCampanha(
   salaoId: string, campanhaId: string, linhas: LinhaRel[],
-  opts: { erro?: string | null; horarioCumprido?: string; fuso?: string; simular?: boolean } = {},
+  opts: {
+    erro?: string | null; horarioCumprido?: string; fuso?: string; simular?: boolean
+    /** Quanto cada parte da volta levou, medido pela extensão (1.8.0+). */
+    tempos?: Record<string, unknown> | null
+  } = {},
 ) {
   const fuso = opts.fuso || 'America/Sao_Paulo'
   const campanhas = await carregarCampanhas(salaoId)
@@ -354,6 +358,10 @@ export async function processarCampanha(
     // passa uma hora procurando.
     sem_telefone: 0, sem_cadastro: [] as string[],
     erro: opts.erro || null,
+    // Quanto a volta levou, por parte. Fica no estado da campanha para a tela
+    // (e para quem for investigar) poder dizer ONDE o tempo foi, em vez de
+    // "está lento".
+    tempos: opts.tempos || null,
   }
   if (!c) return { ...resumo, ok: false, erro: 'Campanha não encontrada' }
 
