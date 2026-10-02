@@ -186,7 +186,10 @@ export async function GET() {
     const robo = lerRobo(cfg(id, CHAVE_ROBO))
     if (!robo.no_servidor) continue
     const urlRel = String((cfg(id, 'crm_automacao_feedback') || {}).url_relatorio || '')
-    const r = await abasDoSalao(id, urlRel)
+    // Coleta rodando AGORA? Se não houver, toda aba de relatório que não seja
+    // a da automação é sobra -- o robô lê um relatório por vez, numa aba só.
+    const rodando = (coletas || []).some((c: any) => c.salao_id === id && c.situacao === 'rodando')
+    const r = await abasDoSalao(id, urlRel, rodando)
     abasPorSalao[id] = r
     if (r.erro) {
       abasItens.push({ salao: n, salao_id: id, cor: 'cinza', texto: r.erro })
@@ -348,11 +351,14 @@ export async function POST(req: NextRequest) {
     const { data } = await supabaseAdmin.from('salao_config').select('valor')
       .eq('salao_id', salaoId).eq('chave', 'crm_automacao_feedback').maybeSingle()
     const urlRel = String((data?.valor as any)?.url_relatorio || '')
+    const { data: emCurso } = await supabaseAdmin.from('robo_coletas')
+      .select('salao_id').eq('salao_id', salaoId).eq('situacao', 'rodando').limit(1)
+    const rodando = !!(emCurso && emCurso.length)
     if (b.acao === 'abas_limpar') {
-      const r = await fecharSobrando(salaoId, urlRel)
+      const r = await fecharSobrando(salaoId, urlRel, rodando)
       return NextResponse.json({ ok: r.fechadas > 0, texto: r.motivo })
     }
-    const r = await fecharAba(salaoId, urlRel, String(b.aba_id || ''))
+    const r = await fecharAba(salaoId, urlRel, String(b.aba_id || ''), rodando)
     return NextResponse.json({ ok: r.ok, texto: r.motivo })
   }
 

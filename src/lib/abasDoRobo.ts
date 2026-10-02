@@ -58,7 +58,10 @@ export async function portaDoSalao(salaoId: string): Promise<number | null> {
   } catch { return null }
 }
 
-function papelDaAba(url: string, urlAutomacao: string, jaTemAutomacao: boolean): { papel: PapelAba; porque: string } {
+function papelDaAba(
+  url: string, urlAutomacao: string, jaTemAutomacao: boolean,
+  coletaRodando: boolean, jaTemColeta: boolean,
+): { papel: PapelAba; porque: string } {
   const limpa = String(url || '').replace(/^https?:\/\//, '')
   const alvo = String(urlAutomacao || 'admin.avec.beauty/admin/relatorio/0051').replace(/^https?:\/\//, '')
 
@@ -67,10 +70,18 @@ function papelDaAba(url: string, urlAutomacao: string, jaTemAutomacao: boolean):
       ? { papel: 'sobrando', porque: 'Cópia repetida do relatório da automação.' }
       : { papel: 'automacao', porque: 'É daqui que saem feedback, confirmação e aviso ao profissional.' }
   }
-  // Qualquer outro relatório do Avec é do robô da coleta -- e coleta em
-  // andamento não se interrompe pela metade.
+  // Qualquer outro relatório do Avec é do robô da coleta. Só que ele lê UM
+  // relatório por vez, numa aba só: se houver duas, uma é sobra de uma coleta
+  // anterior que não fechou. E se NENHUMA coleta estiver rodando agora, todas
+  // são sobra -- o NODRI sabe disso porque registra cada coleta em
+  // `robo_coletas` (situação "rodando").
   if (/admin\.avec\.beauty\/admin\/relatorio\//.test(limpa)) {
-    return { papel: 'coleta', porque: 'O robô do relatório está usando esta aba.' }
+    if (!coletaRodando) {
+      return { papel: 'sobrando', porque: 'Sobra de uma coleta que já terminou (não há coleta rodando agora).' }
+    }
+    return jaTemColeta
+      ? { papel: 'sobrando', porque: 'O robô lê um relatório por vez: esta é sobra de uma coleta anterior.' }
+      : { papel: 'coleta', porque: 'O robô do relatório está usando esta aba agora.' }
   }
   if (!url || url === 'about:blank') {
     return { papel: 'sobrando', porque: 'Aba em branco, sem uso.' }
@@ -79,7 +90,7 @@ function papelDaAba(url: string, urlAutomacao: string, jaTemAutomacao: boolean):
 }
 
 /** Lê as abas de um salão. Não fecha nada. */
-export async function abasDoSalao(salaoId: string, urlAutomacao: string): Promise<AbasDoSalao> {
+export async function abasDoSalao(salaoId: string, urlAutomacao: string, coletaRodando = false): Promise<AbasDoSalao> {
   const porta = await portaDoSalao(salaoId)
   if (!porta) return { salao_id: salaoId, porta: null, erro: 'Este salão não roda no servidor.', abas: [], sobrando: 0 }
 
@@ -94,9 +105,11 @@ export async function abasDoSalao(salaoId: string, urlAutomacao: string): Promis
   const paginas = (Array.isArray(lista) ? lista : []).filter((t: any) => t?.type === 'page')
   const abas: Aba[] = []
   let jaTemAutomacao = false
+  let jaTemColeta = false
   for (const t of paginas) {
-    const { papel, porque } = papelDaAba(t.url, urlAutomacao, jaTemAutomacao)
+    const { papel, porque } = papelDaAba(t.url, urlAutomacao, jaTemAutomacao, coletaRodando, jaTemColeta)
     if (papel === 'automacao') jaTemAutomacao = true
+    if (papel === 'coleta') jaTemColeta = true
     abas.push({
       id: String(t.id || ''),
       titulo: String(t.title || '').slice(0, 80),
@@ -113,8 +126,8 @@ export async function abasDoSalao(salaoId: string, urlAutomacao: string): Promis
 }
 
 /** Fecha UMA aba, e só se ela estiver sobrando. Devolve o que aconteceu. */
-export async function fecharAba(salaoId: string, urlAutomacao: string, abaId: string): Promise<{ ok: boolean; motivo: string }> {
-  const estado = await abasDoSalao(salaoId, urlAutomacao)
+export async function fecharAba(salaoId: string, urlAutomacao: string, abaId: string, coletaRodando = false): Promise<{ ok: boolean; motivo: string }> {
+  const estado = await abasDoSalao(salaoId, urlAutomacao, coletaRodando)
   if (estado.erro) return { ok: false, motivo: estado.erro }
   const alvo = estado.abas.find(a => a.id === abaId)
   if (!alvo) return { ok: false, motivo: 'Essa aba não existe mais.' }
@@ -130,8 +143,8 @@ export async function fecharAba(salaoId: string, urlAutomacao: string, abaId: st
 }
 
 /** Fecha TODAS as que estão sobrando, de uma vez. */
-export async function fecharSobrando(salaoId: string, urlAutomacao: string): Promise<{ fechadas: number; motivo: string }> {
-  const estado = await abasDoSalao(salaoId, urlAutomacao)
+export async function fecharSobrando(salaoId: string, urlAutomacao: string, coletaRodando = false): Promise<{ fechadas: number; motivo: string }> {
+  const estado = await abasDoSalao(salaoId, urlAutomacao, coletaRodando)
   if (estado.erro) return { fechadas: 0, motivo: estado.erro }
   let fechadas = 0
   for (const a of estado.abas) {
