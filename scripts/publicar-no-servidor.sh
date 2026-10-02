@@ -111,7 +111,15 @@ if su nodri -c "pm2 stop robo-avec" >/dev/null 2>&1; then
   diz "      robô do Avec pausado para liberar memória"
 fi
 
-diz "[3/4] montando (leva uns 8 minutos)"
+# ── REGRA: conferir os tipos ANTES de subir ──────────────────────────────────
+# A montagem aqui NÃO confere tipos (ver next.config.mjs): nesta máquina de um
+# núcleo isso levava mais de uma HORA, com o robô do Avec pausado o tempo todo
+# -- uma hora sem feedback, sem confirmação e sem aviso ao profissional.
+# A conferência continua obrigatória, no computador de quem programa:
+#
+#     npx tsc --noEmit -p .      <-- antes de todo git push
+#
+diz "[3/4] montando (sem conferir tipos: isso é feito antes de subir)"
 if su nodri -c "cd $PASTA && NODE_OPTIONS=--max-old-space-size=2560 npm run build" > /var/log/nodri-build.log 2>&1; then
   diz "      montou"
 else

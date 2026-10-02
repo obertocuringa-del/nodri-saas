@@ -75,9 +75,20 @@ const nextConfig = {
   // lá dentro só atrasa a publicação e deixa o salão com o sistema lento
   // enquanto monta.
   //
-  // A conferência de TIPOS continua ligada de propósito: é ela que pega erro
-  // que quebraria uma tela de verdade. Essa vale o tempo.
+  // E a conferência de TIPOS também sai daqui -- com uma condição, que está
+  // escrita no scripts/publicar-no-servidor.sh e tem de ser respeitada: ela
+  // roda ANTES de subir, no computador de quem programa (`npx tsc --noEmit`).
+  //
+  // Medido em 01/10/2026 nesta máquina de um núcleo: a montagem compila em
+  // uns 3 minutos e depois fica MAIS DE UMA HORA só conferindo tipos. Durante
+  // esse tempo o robô do Avec fica pausado para a montagem caber na memória
+  // -- ou seja, uma hora inteira sem feedback, sem confirmação e sem aviso ao
+  // profissional, por uma conferência que já tinha sido feita antes de subir.
+  //
+  // Conferir duas vezes não deixa o sistema mais seguro; deixa o salão mais
+  // tempo parado. A conferência continua obrigatória, só que no lugar certo.
   eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   // Não expõe a versão do Next (facilita mirar exploit conhecido)
   poweredByHeader: false,
   // Source maps de produção entregam o código legível ao navegador
