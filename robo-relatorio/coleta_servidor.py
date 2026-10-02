@@ -18,8 +18,10 @@ Excel e as configurações do robô ficarem separados por salão.
 Entrada (variáveis de ambiente): SALAO_ID, PORTA, AVEC_URL, AVEC_EMAIL, AVEC_SENHA
 Saída: imprime uma linha JSON {"ok":..., "arquivo":..., "erro":...}
 """
+import calendar
 import json
 import os
+import re
 import sys
 import time
 
@@ -247,6 +249,35 @@ def garantir_login(coleta) -> bool:
     return False
 
 
+def periodo_pedido():
+    """
+    O mês a coletar: o escolhido na tela, ou o de hoje.
+
+    ── Por que isto existe ───────────────────────────────────────────────────
+
+    O robô sempre coletou "o mês de hoje" (R._periodo_mes_atual). Isso tem um
+    buraco no último dia do mês: se a coleta das 21h e 22h não acontecer e
+    ninguém perceber antes da meia-noite, aquele dia fica pela metade PARA
+    SEMPRE -- a partir do dia 01 o robô já só enxerga o mês novo.
+
+    Aconteceu em 31/08/2026, e de novo em 30/09/2026: a última coleta de
+    setembro foi às 20:00 do dia 30, o salão fechou às 22:00, e as comandas
+    dessas duas horas não existem no NODRI.
+
+    MES_ALVO ('MM/AAAA') vem do agendador só quando o dono escolheu um mês na
+    Central. Sem ele, nada muda: é o mesmo caminho de sempre.
+    """
+    bruto = str(os.environ.get("MES_ALVO") or "").strip()
+    m = re.fullmatch(r"(\d{2})/(\d{4})", bruto)
+    if not m:
+        return R._periodo_mes_atual()
+    mes, ano = int(m.group(1)), int(m.group(2))
+    if not (1 <= mes <= 12) or not (2020 <= ano <= 2100):
+        return R._periodo_mes_atual()
+    ultimo = calendar.monthrange(ano, mes)[1]
+    return ano, mes, f"01/{mes:02d}/{ano}", f"{ultimo:02d}/{mes:02d}/{ano}"
+
+
 def main():
     coleta = None
     try:
@@ -257,7 +288,7 @@ def main():
         if not garantir_login(coleta):
             print(json.dumps({"ok": False, "erro": "Não consegui entrar no sistema de agenda (login recusado ou tela não saiu)."}))
             return
-        ano, mes, di, dfim = R._periodo_mes_atual()
+        ano, mes, di, dfim = periodo_pedido()
         dados = coleta.coletar_mes_completo(ano, mes, di, dfim)
         if dados:
             base.substituir_mes(ano, mes, dados)

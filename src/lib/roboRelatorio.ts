@@ -23,13 +23,67 @@ export interface AgendaRobo {
   ligado: boolean
   horarios: string[]          // 'HH:MM', um por execução no dia
   rodar_agora_em?: string | null
+  // ── O mês que o "rodar agora" deve coletar ────────────────────────────────
+  //
+  // 'MM/AAAA', e só existe quando o dono escolheu um mês na tela. Vazio é o
+  // caminho de sempre: o robô coleta o mês corrente, como fez a vida toda.
+  //
+  // Existe porque o robô só enxerga o mês de HOJE. Se o último dia do mês
+  // falhar e ninguém perceber antes da meia-noite, aquele dia fica pela
+  // metade para sempre -- a partir do dia 01 o robô já só pega o mês novo.
+  // Aconteceu em 31/08/2026 e de novo em 30/09/2026, quando a coleta parou às
+  // 20:00 e o salão fechou às 22:00.
+  rodar_mes?: string | null
+  // ── A que horas o pedido deve entrar na fila ──────────────────────────────
+  //
+  // 'HH:MM' ou vazio (= agora). Serve para o dono mandar uma recoleta pesada
+  // para a madrugada, quando o servidor está vazio.
+  //
+  // NÃO serve para evitar que dois salões se atropelem: isso a fila já resolve
+  // sozinha (o agendador roda um salão por vez e os outros esperam a vez).
+  // Esta máquina tem UM núcleo: duas coletas ao mesmo tempo não vão mais
+  // rápido, vão mais devagar, e levam o site junto.
+  rodar_as?: string | null
 }
 
 export function lerAgenda(v: any): AgendaRobo {
   const horarios = Array.isArray(v?.horarios)
     ? v.horarios.map((h: any) => String(h || '').trim()).filter((h: string) => /^\d{2}:\d{2}$/.test(h)).sort()
     : []
-  return { ligado: v?.ligado === true, horarios, rodar_agora_em: v?.rodar_agora_em || null }
+  const mes = String(v?.rodar_mes || '').trim()
+  const as = String(v?.rodar_as || '').trim()
+  return {
+    ligado: v?.ligado === true, horarios, rodar_agora_em: v?.rodar_agora_em || null,
+    rodar_mes: /^\d{2}\/\d{4}$/.test(mes) ? mes : null,
+    rodar_as: /^\d{2}:\d{2}$/.test(as) ? as : null,
+  }
+}
+
+/**
+ * Já chegou a hora marcada do pedido? Sem hora marcada, a hora é agora.
+ *
+ * Contar pelo relógio ("passou das 02:00?") erra o caso mais comum: pedido
+ * feito às 10:00 para rodar às 02:00 sairia às 10:01, porque "10:01" é maior
+ * que "02:00". O que vale é quanto falta DO PEDIDO até a próxima vez que o
+ * relógio marcar aquela hora -- e esperar isso.
+ */
+export function pedidoNaHora(a: AgendaRobo, agora = new Date()): boolean {
+  if (!a.rodar_agora_em) return false
+  if (!a.rodar_as) return true
+  const minutos = (d: Date) => {
+    const [h, m] = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).format(d).split(':').map(Number)
+    return h * 60 + m
+  }
+  const [ah, am] = a.rodar_as.split(':').map(Number)
+  const pedido = new Date(a.rodar_agora_em)
+  let faltam = (ah * 60 + am) - minutos(pedido)
+  if (faltam <= 0) faltam += 24 * 60          // é para amanhã
+  // Contar o tempo CORRIDO desde o pedido já resolve o pedido que perdeu a
+  // hora: se o servidor estava fora às 02:00, na volta seguinte o tempo
+  // corrido já passou do alvo e ele entra na fila -- não espera outro dia.
+  return (agora.getTime() - pedido.getTime()) / 60_000 >= faltam
 }
 
 export async function carregarAgenda(salaoId: string): Promise<AgendaRobo> {

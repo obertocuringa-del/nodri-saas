@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PainelMeses from './PainelMeses'
 
 // ── Central do servidor ─────────────────────────────────────────────────────
 // Pedido do dono (01/10/2026): seis botões -- coleta, extensão, CRM, ponte,
@@ -36,12 +37,17 @@ const BOTOES: { id: string; titulo: string; reiniciar?: { alvo: string; texto: s
   { id: 'abas', titulo: 'Abas do Chrome' },
   { id: 'servidor', titulo: 'Servidor' },
   { id: 'vigias', titulo: 'Vigias' },
+  // Pedido do dono (02/10/2026). O robo so coleta o mes de HOJE: se a coleta
+  // do ultimo dia do mes falhar e ninguem perceber antes da meia-noite,
+  // aquele dia fica pela metade para sempre. Aconteceu em 31/08 e em 30/09.
+  { id: 'meses', titulo: 'Meses do relatório' },
 ]
 
 const mb = (v: number | null | undefined) => (v == null ? '—' : v >= 1024 ? `${(v / 1024).toFixed(1).replace('.', ',')} GB` : `${v} MB`)
 
 export default function CentralServidor() {
   const [dados, setDados] = useState<any>(null)
+  const [meses, setMeses] = useState<any>(null)
   const [aberto, setAberto] = useState<string | null>(null)
   const [aviso, setAviso] = useState('')
   const [erro, setErro] = useState('')
@@ -52,6 +58,12 @@ export default function CentralServidor() {
       if (!r.ok) { setErro('Não consegui ler a situação do servidor.'); return }
       setDados(await r.json()); setErro('')
     } catch { setErro('Sem conexão com o NODRI.') }
+    // Em chamada própria: a conta dos meses passa por todo o histórico de
+    // coletas e não precisa travar o resto da tela se demorar.
+    try {
+      const m = await fetch('/api/admin/coleta-mes', { cache: 'no-store' })
+      if (m.ok) setMeses(await m.json())
+    } catch { /* o cartão fica cinza */ }
   }
   useEffect(() => { carregar(); const t = setInterval(carregar, 30000); return () => clearInterval(t) }, [])
 
@@ -78,7 +90,26 @@ export default function CentralServidor() {
   }
 
   if (!dados) return <div style={{ fontSize: 13, color: '#8f877f', padding: 12 }}>{erro || 'Lendo a situação do servidor...'}</div>
-  const b: Record<string, Bloco> = dados.blocos
+
+  // ── O cartão dos meses ────────────────────────────────────────────────────
+  //
+  // Vem de outra rota, então o bloco é montado aqui no mesmo formato dos
+  // outros. Vermelho quando algum salão tem mês furado ou coleta esperando
+  // aprovação -- que são justamente os dois casos em que alguém precisa
+  // decidir alguma coisa.
+  const r = meses?.resumo
+  const blocoMeses: Bloco = !meses
+    ? { cor: 'cinza', resumo: 'Lendo...', itens: [] }
+    : {
+      cor: r.saloes_com_problema || r.esperando_aprovacao ? 'vermelho' : 'verde',
+      resumo: r.saloes_com_problema || r.esperando_aprovacao
+        ? [r.saloes_com_problema ? `${r.saloes_com_problema} salão(ões) com mês incompleto` : '',
+          r.esperando_aprovacao ? `${r.esperando_aprovacao} coleta(s) esperando aprovação` : '']
+          .filter(Boolean).join('; ') + '.'
+        : 'Todos os meses fechados estão completos.',
+      itens: [],
+    }
+  const b: Record<string, Bloco> = { ...dados.blocos, meses: blocoMeses }
   const atual = aberto ? b[aberto] : null
   const botao = BOTOES.find(x => x.id === aberto)
 
@@ -126,6 +157,7 @@ export default function CentralServidor() {
             )}
           </div>
 
+          {aberto === 'meses' ? <PainelMeses dados={meses} recarregar={carregar} avisar={setAviso} errar={setErro} /> : null}
           {aberto === 'servidor' ? <PainelServidor x={atual.extra} reiniciar={reiniciar} /> : null}
           {aberto === 'ponte' && atual.extra && (
             <p style={{ fontSize: 12.5, color: '#4a4540', margin: '0 0 10px' }}>
@@ -133,7 +165,7 @@ export default function CentralServidor() {
             </p>
           )}
 
-          {atual.itens.length === 0 && aberto !== 'servidor' && <p style={{ fontSize: 12.5, color: '#8f877f', margin: 0 }}>Nada para mostrar.</p>}
+          {atual.itens.length === 0 && aberto !== 'servidor' && aberto !== 'meses' && <p style={{ fontSize: 12.5, color: '#8f877f', margin: 0 }}>Nada para mostrar.</p>}
           <div style={{ display: 'grid', gap: 6 }}>
             {[...atual.itens].sort((a, z) => ['vermelho', 'amarelo', 'verde', 'cinza'].indexOf(a.cor) - ['vermelho', 'amarelo', 'verde', 'cinza'].indexOf(z.cor)).map((it, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 9, background: CORES[it.cor].fundo }}>

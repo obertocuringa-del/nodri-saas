@@ -59,12 +59,19 @@ def iniciar(s, origem):
     if not porta:
         log(s["nome"], ": Chrome do salão sem porta (salão não está na nuvem?) -- pulando")
         return
-    r = nodri_post({"acao": "inicio", "salao_id": s["salao_id"], "origem": origem})
+    # Mês escolhido na tela ('MM/AAAA'), quando houver. Vazio é o caminho de
+    # sempre: a coleta pega o mês corrente e nada muda. Vai no "inicio" também,
+    # porque a linha do histórico precisa nascer no mês que será coletado -- é
+    # por ela que a conferência compara e a importação apaga antes de inserir.
+    mes_alvo = str(s.get("mes_alvo") or "").strip()
+    r = nodri_post({"acao": "inicio", "salao_id": s["salao_id"], "origem": origem, "mes_alvo": mes_alvo})
     cid = r.get("id")
     casa = os.path.join(CASAS, s["salao_id"])
     os.makedirs(casa, exist_ok=True)
     env = {**os.environ, "HOME": casa, "SALAO_ID": s["salao_id"], "PORTA": str(porta),
            "AVEC_URL": s.get("url_login") or "", "AVEC_EMAIL": s.get("email") or "", "AVEC_SENHA": s.get("senha") or ""}
+    if mes_alvo:
+        env["MES_ALVO"] = mes_alvo
     env.pop("APPDATA", None)
     # Tudo que o robô escreve vai para um arquivo (o log do robô é longo; num
     # "pipe" ele enche e a coleta trava no meio). A resposta é a última linha JSON.
@@ -76,7 +83,7 @@ def iniciar(s, origem):
                          stdout=saida, stderr=subprocess.STDOUT, text=True, start_new_session=True)
     p.comecou = time.time()
     rodando[s["salao_id"]] = (p, cid, s["nome"], arq_log)
-    log(s["nome"], f": coleta iniciada ({origem}), porta {porta}")
+    log(s["nome"], f": coleta iniciada ({origem}{', mês ' + mes_alvo if mes_alvo else ''}), porta {porta}")
 
 
 def terminar(salao_id, erro=None):
