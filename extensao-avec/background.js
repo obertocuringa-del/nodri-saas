@@ -666,10 +666,23 @@ async function executarTarefa(cfg, dados) {
       return
     }
 
-    // ── Marcar Confirmado no Avec ───────────────────────────────────────────
+    // ── Marcar Confirmado no Avec (uma ou VÁRIAS numa volta) ────────────────
+    //
+    // O NODRI manda `t.pedidos` com até cinco. O caro aqui nunca foi o pedido:
+    // é a VOLTA -- abrir a aba, logar, esperar o 0051 montar a tabela. Isso
+    // custa de 40 s a 3 min e era pago uma vez por cliente, com a fila andando
+    // de um em um (01/10/2026: 15 na fila, meia hora de salão em silêncio).
+    //
+    // Lendo cada dia UMA vez e guardando as linhas, casar o 2º, o 3º e o 4º
+    // telefone é instantâneo; só a marcação na agenda se repete. `t.pedido_id`
+    // sozinho continua funcionando, para não depender da ordem da atualização.
     if (t.tipo === 'confirmar_avec') {
       const url = urlAvec(t.url_relatorio || cfg.url_relatorio, AVEC + 'admin/relatorio/0051')
       const abaId = await prepararAba(cfg, dados, url)
+
+      const pedidos = Array.isArray(t.pedidos) && t.pedidos.length
+        ? t.pedidos
+        : [{ pedido_id: t.pedido_id, telefone: t.telefone, nome: t.nome, data: t.data }]
 
       // 1) achar pela PLANILHA (telefone é único; o quadro pagina e corta nome)
       //
@@ -680,53 +693,83 @@ async function executarTarefa(cfg, dados) {
       // Cancelado não conta: se o único agendamento dela está cancelado, não
       // há o que confirmar.
       const so = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
-      const alvo = so(t.telefone)
-      const valida = l => so(l.celular) === alvo && !/cancelad|faltou/i.test(l.status || '')
-      const datas = [...new Set([t.data, cfg.amanha, cfg.hoje].filter(Boolean))]
-      let linha = null
-      for (const data of datas) {
+      const datas = [...new Set([...pedidos.map(p => p.data), cfg.amanha, cfg.hoje].filter(Boolean))]
+
+      // Cada dia é lido UMA vez e as linhas ficam na mão para todos os pedidos.
+      const porDia = new Map()
+      const lerDia = async (data) => {
+        if (porDia.has(data)) return porDia.get(data)
         const lido = await lerComSegundaChance(abaId, data)
         if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
-        linha = (lido.linhas || []).find(valida)
-        if (linha) break
-      }
-      if (!linha) throw new Error('Não achei agendamento dela em ' + datas.join(' nem '))
-      if (/confirmad/i.test(linha.status || '')) {
-        // Já estava confirmado: para o NODRI isso é sucesso, e a cliente recebe
-        // o retorno do mesmo jeito.
-        await nodri('/api/crm/automacao/extensao', {
-          method: 'POST',
-          body: JSON.stringify({ pedido_id: t.pedido_id, marcado: true, data: linha.data, hora: linha.hora, profissional: linha.profissional }),
-        }, dados.chave)
-        await saude({ texto: `Confirmação: ${linha.cliente} já estava confirmada.`, erro: null })
-        return
+        const linhas = lido.linhas || []
+        porDia.set(data, linhas)
+        return linhas
       }
 
-      // 2) ir à agenda daquele dia e marcar
-      const urlAgenda = AVEC + 'admin/agenda'
-      await navegar(abaId, urlAgenda)
-      await sleep(2000)
-      const marcou = await perguntarComPaciencia(abaId, {
-        tipo: 'marcar-confirmado',
-        data: linha.data, hora: linha.hora,
-        profissional: linha.profissional, telefone: t.telefone,
-      }, 3)
+      // 2) a agenda é aberta UMA vez, e só se sobrar alguém para marcar.
+      let naAgenda = false
+      const irParaAgenda = async () => {
+        if (naAgenda) return
+        await navegar(abaId, AVEC + 'admin/agenda')
+        await sleep(2000)
+        naAgenda = true
+      }
 
-      await nodri('/api/crm/automacao/extensao', {
-        method: 'POST',
-        body: JSON.stringify({
-          pedido_id: t.pedido_id, marcado: !!(marcou && marcou.ok),
-          erro: marcou && marcou.ok ? null : (marcou?.erro || 'A agenda não respondeu'),
-          data: linha.data, hora: linha.hora, profissional: linha.profissional,
-        }),
-      }, dados.chave)
+      const feitos = []
+      for (const p of pedidos) {
+        if (!p || !p.pedido_id) continue
+        // Um pedido que falha não derruba os outros da volta: cada um responde
+        // por si ao NODRI, que é quem conta as tentativas.
+        try {
+          const alvo = so(p.telefone)
+          const valida = l => so(l.celular) === alvo && !/cancelad|faltou/i.test(l.status || '')
+          // O dia do próprio pedido primeiro; depois os outros já lidos.
+          const ordem = [...new Set([p.data, ...datas].filter(Boolean))]
+          let linha = null
+          for (const data of ordem) {
+            linha = (await lerDia(data)).find(valida)
+            if (linha) break
+          }
+          if (!linha) throw new Error('Não achei agendamento dela em ' + ordem.join(' nem '))
 
-      await saude({
-        texto: marcou?.ok
-          ? `Confirmado no Avec: ${linha.cliente} ${linha.data} ${linha.hora}.`
-          : `Não consegui confirmar ${linha.cliente}: ${marcou?.erro || 'sem resposta'}`,
-        erro: marcou?.ok ? null : (marcou?.erro || 'sem resposta'),
-      })
+          if (/confirmad/i.test(linha.status || '')) {
+            // Já estava confirmado: para o NODRI isso é sucesso, e a cliente
+            // recebe o retorno do mesmo jeito.
+            await nodri('/api/crm/automacao/extensao', {
+              method: 'POST',
+              body: JSON.stringify({ pedido_id: p.pedido_id, marcado: true, data: linha.data, hora: linha.hora, profissional: linha.profissional }),
+            }, dados.chave)
+            feitos.push(`${linha.cliente} (já estava)`)
+            continue
+          }
+
+          await irParaAgenda()
+          const marcou = await perguntarComPaciencia(abaId, {
+            tipo: 'marcar-confirmado',
+            data: linha.data, hora: linha.hora,
+            profissional: linha.profissional, telefone: p.telefone,
+          }, 3)
+
+          await nodri('/api/crm/automacao/extensao', {
+            method: 'POST',
+            body: JSON.stringify({
+              pedido_id: p.pedido_id, marcado: !!(marcou && marcou.ok),
+              erro: marcou && marcou.ok ? null : (marcou?.erro || 'A agenda não respondeu'),
+              data: linha.data, hora: linha.hora, profissional: linha.profissional,
+            }),
+          }, dados.chave)
+          feitos.push(marcou?.ok ? `${linha.cliente} ${linha.hora}` : `${linha.cliente}: ${marcou?.erro || 'sem resposta'}`)
+        } catch (e) {
+          const msg = String(e?.message || e)
+          await nodri('/api/crm/automacao/extensao', {
+            method: 'POST',
+            body: JSON.stringify({ pedido_id: p.pedido_id, marcado: false, erro: msg }),
+          }, dados.chave).catch(() => {})
+          feitos.push(`${p.nome || p.telefone}: ${msg}`)
+        }
+      }
+
+      await saude({ texto: `Confirmação no Avec (${feitos.length}): ${feitos.join('; ')}`, erro: null })
       return
     }
 
@@ -735,14 +778,28 @@ async function executarTarefa(cfg, dados) {
     const msg = String(e?.message || e)
     await saude({ texto: `Falhou em "${t.nome || t.tipo}".`, erro: msg })
     try {
-      await nodri('/api/crm/automacao/extensao', {
-        method: 'POST',
-        body: JSON.stringify(
-          t.tipo === 'confirmar_avec'
-            ? { pedido_id: t.pedido_id, marcado: false, erro: msg }
-            : { campanha_id: t.campanha_id, linhas: [], erro: msg, horario_cumprido: t.horario_cumprido || undefined },
-        ),
-      }, dados.chave)
+      if (t.tipo === 'confirmar_avec') {
+        // Falhou antes do laço (a aba não abriu, o login não passou): TODOS os
+        // pedidos da volta foram entregues e nenhum respondeu. Cada um precisa
+        // da sua resposta, senão ficam parados até o prazo de 10 minutos do
+        // NODRI vencer -- e aí levam uma tentativa falha sem terem sido
+        // tentados de verdade.
+        const ids = Array.isArray(t.pedidos) && t.pedidos.length
+          ? t.pedidos.map(p => p.pedido_id)
+          : [t.pedido_id]
+        for (const id of ids) {
+          if (!id) continue
+          await nodri('/api/crm/automacao/extensao', {
+            method: 'POST',
+            body: JSON.stringify({ pedido_id: id, marcado: false, erro: msg }),
+          }, dados.chave).catch(() => {})
+        }
+      } else {
+        await nodri('/api/crm/automacao/extensao', {
+          method: 'POST',
+          body: JSON.stringify({ campanha_id: t.campanha_id, linhas: [], erro: msg, horario_cumprido: t.horario_cumprido || undefined }),
+        }, dados.chave)
+      }
     } catch { /* sem rede: fica no painel da extensão */ }
   }
 }

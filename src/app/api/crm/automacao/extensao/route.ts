@@ -73,96 +73,131 @@ export async function GET(req: NextRequest) {
   const versao = String(req.headers.get('x-nodri-versao') || '').slice(0, 20)
   if (versao) est.versao_ext = versao
   await gravarEstado(salaoId, est)
-  // ── A tarefa da vez ───────────────────────────────────────────────────────
+  // ── A ORDEM DAS TAREFAS ───────────────────────────────────────────────────
   //
   // A extensão não tem relógio: ela pergunta e o NODRI responde o que fazer
   // agora. Assim horário e intervalo se mudam na tela, sem tocar no computador
-  // da recepção. Uma tarefa por vez, porque as três dividem a mesma aba do
-  // Avec -- duas juntas trocariam a data uma da outra.
+  // da recepção. Uma tarefa por vez, porque todas dividem a mesma aba do Avec
+  // -- duas juntas trocariam a data uma da outra.
+  //
+  // A ordem é a de quem está ESPERANDO (ordem do dono, 02/10/2026):
+  //
+  //   1º  o profissional, que está com a cliente parada na frente dele;
+  //   2º  a cliente que respondeu "confirmo" e espera o "Combinado";
+  //   3º  o feedback, que pode sair a qualquer hora do dia.
+  //
+  // Só que o que dissolveu a disputa não foi uma fila de prioridade: foi uma
+  // descoberta. A extensão lê o 0051 INTEIRO e devolve todas as linhas -- o
+  // filtro de status é feito aqui dentro (ver o POST). Aviso ao profissional
+  // (Aguardando/Em Atendimento) e feedback (Pago/Finalizado) são o MESMO
+  // relatório, do MESMO dia. Então saem da MESMA leitura: o POST da campanha
+  // de hoje processa os dois. O feedback deixou de custar uma volta e, com
+  // isso, deixou de disputar lugar com quem tem gente esperando.
+  //
+  // O revezamento que existia aqui (uma volta para a campanha, uma para o
+  // feedback) foi embora junto: não há mais o que revezar.
   const d = datasDoSalao(cfg.fuso)
   let tarefa: any = null
-
-  // 1ª prioridade: marcar Confirmado no Avec. A cliente já respondeu e está
-  // esperando o "Combinado".
-  const conf = await cfgConfirmacao(salaoId)
-  if (conf.ligada) {
-    const fila = await carregarFila(salaoId)
-    const p = fila[0]
-    if (p) {
-      // ── O pedido que a extensão pega e nunca devolve ────────────────────
-      //
-      // 01/10/2026: o robô ficou um dia inteiro sem mandar NADA -- nem
-      // feedback, nem confirmação, nem aviso ao profissional. A causa era
-      // este bloco: a marcação no Avec é a 1ª prioridade e, enquanto houver
-      // pedido na fila, é a ÚNICA tarefa que sai daqui.
-      //
-      // As três tentativas que existem logo abaixo (em concluirConfirmacao)
-      // só contam quando a extensão RESPONDE. E ela pode não responder: a
-      // tarefa abre aba, lê o relatório, vai à agenda e marca -- se o Chrome
-      // travar no meio, o service worker da extensão morre sem chegar nem no
-      // catch. O pedido ficou com "tentativas: 0" e foi entregue de novo a
-      // cada 30 segundos, para sempre. Dois pedidos presos pararam o salão.
-      //
-      // Então o relógio passa a correr aqui também: entregou e não teve
-      // resposta em 10 minutos, conta como uma tentativa falha. Dez minutos é
-      // folgado de sobra -- a marcação inteira leva menos de um -- e, na
-      // terceira, o caminho é o mesmo de sempre: a conversa vai para "Preciso
-      // agir" com o motivo e a recepção marca na mão. O que não pode é a fila
-      // segurar o salão inteiro em silêncio.
-      const ESPERA_MS = 10 * 60_000
-      const entregue = (p as any).entregue_em
-      if (entregue && Date.now() - new Date(entregue).getTime() > ESPERA_MS) {
-        await concluirConfirmacao(
-          salaoId, p.id, false,
-          'A extensão pegou a tarefa e não respondeu em 10 minutos', {},
-        )
-        // Sem tarefa neste ciclo de propósito: as outras automações, que
-        // estavam atrás desta na fila, voltam a rodar já na volta seguinte.
-      } else {
-        if (!entregue) {
-          ;(p as any).entregue_em = new Date().toISOString()
-          await gravarFila(salaoId, fila)
-        }
-        tarefa = {
-          tipo: 'confirmar_avec', pedido_id: p.id,
-          url_relatorio: conf.url_relatorio,
-          telefone: p.telefone, nome: p.nome, data: p.data || d.amanha.br,
-        }
-      }
-    }
-  }
-
-  // 2ª: as campanhas que estão na hora.
-  //
-  // ── Revezamento com o feedback ────────────────────────────────────────────
-  //
-  // Uma tarefa por ciclo, e o feedback não é "tarefa": ele roda quando NÃO há
-  // tarefa. Com o aviso ao profissional a cada 15 s e a extensão perguntando a
-  // cada 30 s, o aviso estava SEMPRE na hora -- e o feedback nunca rodava
-  // (18/09/2026: aviso falhando a cada ciclo, feedback parado o dia todo).
-  // Então: se o ciclo anterior levou uma campanha de intervalo, este ciclo é
-  // do feedback. Horário fixo (17:00) e a confirmação no Avec não entram no
-  // revezamento -- uma acontece duas vezes por dia, a outra tem cliente
-  // esperando.
   const anterior = est.ultima_tarefa || null
-  if (!tarefa) {
-    const campanhas = await carregarCampanhas(salaoId)
-    const estados = await carregarEstados(salaoId)
-    for (const c of campanhas) {
-      const q = estaNaHora(c, estados[c.id], cfg.fuso)
-      if (!q.sim) continue
-      if (c.quando.tipo === 'intervalo' && cfg.ligada && anterior === 'campanha') continue
+  const campanhas = await carregarCampanhas(salaoId)
+  const estados = await carregarEstados(salaoId)
+  const naHora = campanhas
+    .map(c => ({ c, q: estaNaHora(c, estados[c.id], cfg.fuso) }))
+    .filter(x => x.q.sim)
+
+  const tarefaDeCampanha = (c: (typeof campanhas)[number], q: { horario?: string | null }) => ({
+    tipo: 'campanha', campanha_id: c.id, nome: c.nome,
+    url_relatorio: cfg.url_relatorio,
+    data: c.dia === 'amanha' ? d.amanha.br : d.hoje.br,
+    statuses: c.statuses,
+    horario_cumprido: q.horario || null,
+  })
+
+  // 1ª: a campanha de HORÁRIO que venceu -- a confirmação do dia seguinte, às
+  // 17:00 e 20:50. Acontece duas vezes por dia e a cliente conta com ela: meia
+  // hora atrasada é o mesmo que não ter mandado. Esta fura até a fila.
+  const porHorario = naHora.find(x => x.c.quando.tipo === 'horarios')
+  if (porHorario) tarefa = tarefaDeCampanha(porHorario.c, porHorario.q)
+
+  // 2ª: marcar Confirmado no Avec -- em LOTE, e nunca duas voltas seguidas.
+  //
+  // 01/10/2026, 21h: 15 pedidos na fila, entregues de um em um, e enquanto
+  // houvesse pedido esta era a ÚNICA tarefa que saía daqui. Meia hora de salão
+  // sem avisar profissional nenhum. São duas correções, não uma:
+  //
+  //   LOTE -- a extensão já abriu a aba, já logou e já leu o 0051; casar cinco
+  //   telefones contra as linhas que ela tem na mão custa quase o mesmo que
+  //   casar um. O caro é a volta, não o pedido.
+  //
+  //   INTERCALAÇÃO -- depois de uma volta de confirmação, a próxima é sempre
+  //   do dia de hoje. É isto que garante a ordem que o dono pediu: o
+  //   profissional nunca espera atrás da fila, por maior que ela esteja.
+  //
+  // ── O pedido que a extensão pega e nunca devolve ──────────────────────────
+  //
+  // 01/10/2026: o robô ficou um dia inteiro sem mandar NADA. As três
+  // tentativas de concluirConfirmacao só contam quando a extensão RESPONDE --
+  // e ela pode não responder: a tarefa abre aba, lê o relatório, vai à agenda
+  // e marca; se o Chrome travar no meio, o service worker morre sem chegar nem
+  // no catch. O pedido ficava com "tentativas: 0" e era reentregue a cada 30
+  // segundos, para sempre. Então o relógio corre aqui também: entregue sem
+  // resposta em 10 minutos conta como uma tentativa falha, e na terceira a
+  // conversa vai para "Preciso agir" com o motivo, para a recepção marcar na
+  // mão. O que não pode é a fila segurar o salão inteiro em silêncio.
+  const conf = await cfgConfirmacao(salaoId)
+  const LOTE = 5
+  if (!tarefa && conf.ligada && anterior !== 'confirmacao') {
+    const fila = await carregarFila(salaoId)
+    const ESPERA_MS = 10 * 60_000
+    const agoraMs = Date.now()
+    const vencidos = fila.filter(p => {
+      const e = (p as any).entregue_em
+      return e && agoraMs - new Date(e).getTime() > ESPERA_MS
+    })
+    for (const p of vencidos) {
+      await concluirConfirmacao(
+        salaoId, p.id, false,
+        'A extensão pegou a tarefa e não respondeu em 10 minutos', {},
+      )
+    }
+    // Quem venceu saiu da fila (ou voltou para ela com uma tentativa a mais):
+    // reler é mais simples, e mais seguro, do que remendar a lista na mão.
+    const atual = vencidos.length ? await carregarFila(salaoId) : fila
+    // Lote só para quem sabe marcar vários. A 1.6.0 e anteriores pegam o
+    // primeiro e ignoram o resto -- mandar cinco para elas carimbaria
+    // `entregue_em` nos quatro que ninguém ia tocar, e em 10 minutos cada um
+    // ganharia uma tentativa falha de graça.
+    const sabeLote = !!versao && versao.localeCompare('1.7.0', undefined, { numeric: true }) >= 0
+    const lote = atual.filter(p => !(p as any).entregue_em).slice(0, sabeLote ? LOTE : 1)
+    if (lote.length) {
+      const marca = new Date().toISOString()
+      for (const p of lote) (p as any).entregue_em = marca
+      await gravarFila(salaoId, atual)
       tarefa = {
-        tipo: 'campanha', campanha_id: c.id, nome: c.nome,
-        url_relatorio: cfg.url_relatorio,
-        data: c.dia === 'amanha' ? d.amanha.br : d.hoje.br,
-        statuses: c.statuses,
-        horario_cumprido: q.horario || null,
+        tipo: 'confirmar_avec',
+        // `pedido_id` e companhia continuam aqui para a extensão antiga, que
+        // não conhece `pedidos`.
+        pedido_id: lote[0].id,
+        telefone: lote[0].telefone, nome: lote[0].nome, data: lote[0].data || d.amanha.br,
+        pedidos: lote.map(p => ({
+          pedido_id: p.id, telefone: p.telefone, nome: p.nome, data: p.data || d.amanha.br,
+        })),
+        url_relatorio: conf.url_relatorio,
       }
-      break
     }
   }
-  est.ultima_tarefa = tarefa?.tipo === 'campanha' ? 'campanha' : 'feedback'
+
+  // 3ª: a volta do dia de hoje -- o aviso ao profissional. O feedback vem de
+  // carona no POST desta mesma leitura, então não precisa de vez aqui.
+  if (!tarefa) {
+    const porIntervalo = naHora.find(x => x.c.quando.tipo === 'intervalo')
+    if (porIntervalo) tarefa = tarefaDeCampanha(porIntervalo.c, porIntervalo.q)
+  }
+
+  // Sem tarefa nenhuma, a volta é do feedback sozinho: é o caso de quem
+  // desligou o aviso ao profissional e só usa o feedback.
+  est.ultima_tarefa = tarefa?.tipo === 'confirmar_avec' ? 'confirmacao'
+    : tarefa?.tipo === 'campanha' ? 'campanha' : 'feedback'
   await gravarEstado(salaoId, est)
 
   // ── O batimento é o MENOR intervalo entre o que está ligado ───────────────
@@ -176,7 +211,7 @@ export async function GET(req: NextRequest) {
   // mesma mentira de antes, só que menor.
   const ritmos: number[] = []
   if (cfg.ligada) ritmos.push(cfg.intervalo_seg)
-  for (const c of await carregarCampanhas(salaoId)) {
+  for (const c of campanhas) {
     if (!c.ligada) continue
     // Horário fixo não pede pressa: basta a extensão passar por ali no minuto.
     ritmos.push(c.quando.tipo === 'intervalo' ? (c.quando.segundos || 60) : 60)
@@ -203,6 +238,16 @@ export async function GET(req: NextRequest) {
     amanha: d.amanha.br,
     tarefa,
   })
+}
+
+/**
+ * A campanha é do dia de HOJE? Só nessas o feedback pega carona: a confirmação
+ * do dia seguinte lê o 0051 de AMANHÃ, e quem fechou a comanda amanhã ainda
+ * não existe.
+ */
+function campanhaDeHoje(campanhas: Awaited<ReturnType<typeof carregarCampanhas>>, id: string) {
+  const c = campanhas.find(x => x.id === id)
+  return c && c.dia !== 'amanha' ? c : null
 }
 
 export async function POST(req: NextRequest) {
@@ -235,7 +280,25 @@ export async function POST(req: NextRequest) {
       // `simular` faz a conta e mostra quem receberia, sem mandar nem marcar.
       simular: body?.simular === true,
     })
-    return NextResponse.json({ ...r, ok: true })
+
+    // ── O feedback de carona ────────────────────────────────────────────────
+    //
+    // Estas linhas são o 0051 INTEIRO de um dia: a extensão não filtra nada, o
+    // filtro de status é daqui. Então, quando a campanha é de HOJE, as mesmas
+    // linhas que trouxeram quem chegou (Aguardando, Em Atendimento) trazem
+    // também quem fechou a comanda (Pago, Finalizado) -- é o mesmo relatório.
+    //
+    // Processar o feedback aqui custa ZERO volta. É isto que tira o feedback
+    // da disputa por prioridade sem deixar de mandá-lo: ele deixa de ser uma
+    // tarefa que pede vez e passa a ser consequência da volta do profissional.
+    // Quem decide se manda, para quem e quantas vezes continua sendo o
+    // processarRelatorio -- inclusive a regra de um por telefone por dia.
+    let feedback: Awaited<ReturnType<typeof processarRelatorio>> | null = null
+    if (!body?.simular && linhas.length) {
+      const c = campanhaDeHoje(await carregarCampanhas(salaoId), String(body.campanha_id))
+      if (c) feedback = await processarRelatorio(salaoId, linhas, erroExt)
+    }
+    return NextResponse.json({ ...r, feedback, ok: true })
   }
 
   // Resultado da MARCAÇÃO no Avec

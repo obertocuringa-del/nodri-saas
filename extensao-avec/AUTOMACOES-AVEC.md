@@ -110,3 +110,46 @@ Escreve na agenda. Roteiro ditado pelo dono em 14/09/2026:
 
 A IA **interpreta** a mensagem da cliente. A IA **não inventa dado**: preço,
 horário e duração vêm sempre das fontes acima.
+
+---
+
+## A ordem das tarefas *(02/10/2026)*
+
+Ordem do dono: **quem está esperando vem primeiro.**
+
+1. **Confirmação do dia seguinte** (17:00 e 20:50) — duas vezes por dia, a
+   cliente conta com ela. Fura até a fila de marcação.
+2. **Marcar Confirmado no Avec** — a cliente respondeu e espera o "Combinado".
+   Vai em **lote de até 5** por volta, e **nunca duas voltas seguidas**: depois
+   de uma volta de confirmação, a próxima é sempre do dia de hoje, para o
+   profissional nunca esperar atrás da fila.
+3. **Aviso ao profissional** — a volta padrão, o dia de hoje.
+4. **Feedback** — sem vez própria: vem **de carona** na volta do aviso.
+
+### Por que o feedback não disputa mais
+
+A extensão lê o **0051 inteiro** e devolve todas as linhas; o filtro de status é
+feito no NODRI. Aviso ao profissional (Aguardando, Em Atendimento) e feedback
+(Pago, Finalizado) são **o mesmo relatório, do mesmo dia** — então saem da
+**mesma leitura**. O feedback deixou de custar uma volta e, com isso, deixou de
+disputar lugar com quem tem gente esperando. O revezamento antigo (uma volta
+para a campanha, uma para o feedback) foi removido: não há mais o que revezar.
+
+### Por que o lote
+
+O caro nunca foi o pedido: é a **volta** — abrir a aba, logar, esperar o 0051
+montar a tabela, de 40 s a 3 min. Isso era pago uma vez por cliente. Lendo cada
+dia uma vez e guardando as linhas, casar o 2º e o 3º telefone é instantâneo; só
+a marcação na agenda se repete. Em 01/10/2026 havia 15 pedidos na fila, andando
+de um em um — e, enquanto houvesse fila, nenhuma outra automação saía.
+
+**Lote só da 1.7.0 em diante.** A 1.6.0 pega o primeiro e ignora o resto, então
+o NODRI manda um só para ela: mandar cinco carimbaria `entregue_em` em quatro
+pedidos que ninguém ia tocar, e em 10 minutos cada um levaria uma tentativa
+falha sem ter sido tentado.
+
+### Espaçamento do feedback
+
+20 segundos entre uma cliente e a próxima (o mesmo da confirmação diária). Antes
+não havia nenhum: dez comandas fechadas juntas viravam vinte mensagens no mesmo
+instante. Com o feedback rodando em toda volta, isso passou a importar.

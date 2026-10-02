@@ -49,7 +49,7 @@ export interface EstadoAutomacao {
   /** 'AAAA-MM-DD' → celulares que já receberam naquele dia */
   enviados: Record<string, string[]>
   /** o que o último ciclo da extensão fez: revezamento entre campanha e feedback */
-  ultima_tarefa?: 'campanha' | 'feedback' | null
+  ultima_tarefa?: 'campanha' | 'feedback' | 'confirmacao' | null
   /** quantas abas do Avec o Chrome do salão tem abertas (a extensão conta) */
   abas_avec?: number | null
   /** versão da extensão instalada no salão */
@@ -239,6 +239,22 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
   const jaHoje = new Set(est.enviados[hoje.iso] || [])
   const vistosNesteCiclo = new Set<string>()
 
+  // ── Uma de cada vez, não todas de uma vez ─────────────────────────────────
+  //
+  // As campanhas sempre tiveram `espacamento_seg` (crmCampanhas.ts); o
+  // feedback não tinha nenhum: as duas mensagens de uma cliente nasciam com um
+  // segundo de diferença, mas DEZ clientes que fecharam a comanda juntas viram
+  // vinte mensagens no mesmo instante. Até 01/10/2026 isso quase não aparecia,
+  // porque o feedback só rodava de vez em quando -- agora ele pega carona em
+  // toda volta do aviso ao profissional, e um sábado de movimento junta gente.
+  //
+  // Vinte segundos entre uma cliente e a próxima, o mesmo da confirmação
+  // diária. O espaçamento entra no `criado_em`: a ponte entrega em ordem e só
+  // pega o que já venceu (`lte criado_em`, ver a rota da ponte), então isto
+  // atrasa o envio sem segurar nada aqui.
+  const ESPACAMENTO_SEG = 20
+  let posicao = 0
+
   for (const l of linhas) {
     if (!statusOk.has(semAcento(l.status))) continue
     if (String(l.data || '').trim() !== hoje.br) continue
@@ -321,12 +337,14 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
     if (!conversa) { resumo.puladas++; continue }
 
     // Duas mensagens, nesta ordem. A ponte manda por criado_em, então a
-    // segunda nasce um segundo depois da primeira.
+    // segunda nasce um segundo depois da primeira -- e a próxima cliente, um
+    // espaçamento depois desta.
+    const base = agora.getTime() + posicao * ESPACAMENTO_SEG * 1000
     const fila = [m1, m2].filter(Boolean).map((texto, i) => ({
       salao_id: salaoId, conversa_id: conversa!.id,
       direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',
       autor_nome: 'Automação de feedback', em_massa: false,
-      criado_em: new Date(agora.getTime() + i * 1000).toISOString(),
+      criado_em: new Date(base + i * 1000).toISOString(),
     }))
     const { error } = await supabaseAdmin.from('crm_mensagens').insert(fila)
     if (error) { resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); continue }
@@ -339,6 +357,8 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
 
     jaHoje.add(k)
     resumo.enviadas++
+    // Só quem entrou na fila empurra a próxima: pulada não gasta espaçamento.
+    posicao++
   }
 
   est.enviados[hoje.iso] = [...jaHoje]
