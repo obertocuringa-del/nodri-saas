@@ -82,7 +82,13 @@ export async function POST(req: NextRequest) {
     catch (e: any) { return NextResponse.json({ error: String(e?.message || e) }, { status: 400 }) }
   }
   if (b.acao === 'descartar') {
-    await supabaseAdmin.from('robo_coletas').update({ situacao: 'descartado' }).eq('id', b.id).eq('situacao', 'aguardando')
+    // Descartar não encosta no mês nem na planilha guardada: só diz que esta
+    // coleta não vai ser usada, e tira ela da fila de decisão. O motivo fica
+    // escrito para o histórico não virar um "descartado" sem explicação.
+    const { data: c } = await supabaseAdmin.from('robo_coletas').select('motivo').eq('id', b.id).maybeSingle()
+    await supabaseAdmin.from('robo_coletas')
+      .update({ situacao: 'descartado', motivo: `Não aprovada pelo dono. ${c?.motivo || ''}`.trim().slice(0, 1000) })
+      .eq('id', b.id).eq('situacao', 'aguardando')
     return NextResponse.json({ ok: true })
   }
   return NextResponse.json({ error: 'Ação desconhecida' }, { status: 400 })

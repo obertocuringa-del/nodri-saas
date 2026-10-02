@@ -61,20 +61,24 @@ export default function PainelMeses({ dados, recarregar, avisar, errar }: {
     } finally { setOcupado('') }
   }
 
-  async function aprovar(id: string, rotulo: string, nome: string) {
-    const texto = `Aprovar a coleta de ${rotulo} de ${nome}?`
-      + '\n\nO sistema segurou esta coleta porque ela veio pior do que o que já está salvo.'
-      + ' Aprovando, o mês inteiro é substituído pelo que ela trouxe.'
+  async function decidir(acao: 'aprovar' | 'descartar', id: string, rotulo: string, nome: string) {
+    const texto = acao === 'aprovar'
+      ? `Aprovar a coleta de ${rotulo} de ${nome}?`
+        + '\n\nO sistema segurou esta coleta porque ela veio pior do que o que já está salvo.'
+        + ' Aprovando, o mês inteiro é substituído pelo que ela trouxe.'
+      : `Não aprovar a coleta de ${rotulo} de ${nome}?`
+        + '\n\nEla sai da lista e não será usada. Nada do mês é apagado:'
+        + ' o que já está salvo continua como está.'
     if (!window.confirm(texto)) return
     setOcupado(id)
     try {
       const r = await fetch('/api/admin/robo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao: 'aprovar', id }),
+        body: JSON.stringify({ acao, id }),
       })
       const j = await r.json().catch(() => ({}))
-      if (!r.ok) { errar(j.error || 'Não consegui aprovar.'); return }
-      avisar('Coleta aprovada e aplicada.')
+      if (!r.ok) { errar(j.error || `Não consegui ${acao}.`); return }
+      avisar(acao === 'aprovar' ? 'Coleta aprovada e aplicada.' : 'Coleta descartada; nada do mês foi alterado.')
       errar('')
       recarregar()
     } catch {
@@ -115,13 +119,27 @@ export default function PainelMeses({ dados, recarregar, avisar, errar }: {
                   {c.motivo || 'A conferência não aprovou automaticamente.'}
                   {c.antes != null && <> Trouxe <b>{c.linhas}</b> atendimentos; o sistema tem <b>{c.antes}</b>.</>}
                 </div>
-                <button onClick={() => aprovar(c.id, c.rotulo, s.nome)} disabled={ocupado === c.id}
-                  style={{
-                    fontSize: 12, fontWeight: 800, padding: '6px 11px', borderRadius: 7, border: 'none',
-                    cursor: ocupado === c.id ? 'default' : 'pointer', background: '#8a6a24', color: '#fff',
-                  }}>
-                  {ocupado === c.id ? 'Aprovando...' : 'Aprovar e aplicar'}
-                </button>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  <button onClick={() => decidir('aprovar', c.id, c.rotulo, s.nome)} disabled={ocupado === c.id}
+                    style={{
+                      fontSize: 12, fontWeight: 800, padding: '6px 11px', borderRadius: 7, border: 'none',
+                      cursor: ocupado === c.id ? 'default' : 'pointer', background: '#8a6a24', color: '#fff',
+                    }}>
+                    {ocupado === c.id ? 'Aguarde...' : 'Aprovar e aplicar'}
+                  </button>
+                  {/* Pedido do dono (02/10/2026): só havia "aprovar". Coleta que
+                      ninguém quer aplicar ficava ali para sempre deixando a
+                      Central vermelha, e vermelho que vive aceso deixa de ser
+                      aviso. Descartar não encosta no mês. */}
+                  <button onClick={() => decidir('descartar', c.id, c.rotulo, s.nome)} disabled={ocupado === c.id}
+                    style={{
+                      fontSize: 12, fontWeight: 800, padding: '6px 11px', borderRadius: 7,
+                      border: '1px solid #d8cfc0', cursor: ocupado === c.id ? 'default' : 'pointer',
+                      background: '#fff', color: '#8a6a24',
+                    }}>
+                    Não aprovar
+                  </button>
+                </div>
               </div>
             ))}
 

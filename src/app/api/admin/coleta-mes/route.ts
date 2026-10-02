@@ -119,32 +119,44 @@ export async function GET() {
   }
   const maisAntigo = janela[janela.length - 1]
 
-  const [{ data: saloes }, { data: agendas }, { data: coletas }, { data: raw }, { data: esperando }] = await Promise.all([
+  const [{ data: saloes }, { data: agendas }, { data: coletas }, { data: esperando }] = await Promise.all([
     supabaseAdmin.from('saloes').select('id, nome, is_modelo'),
     supabaseAdmin.from('salao_config').select('salao_id, valor').eq('chave', CHAVE_AGENDA),
     supabaseAdmin.from('robo_coletas').select('salao_id, ano, mes, inicio, situacao')
       .eq('situacao', 'aplicado')
       .gte('inicio', new Date(maisAntigo.ano, maisAntigo.mes - 1, 1).toISOString())
       .order('inicio', { ascending: true }),
-    supabaseAdmin.from('atendimentos_raw').select('salao_id, ano, mes'),
     // Coleta que a conferência segurou: veio pior do que o que já existe, e o
-    // sistema não aplicou. É a que o dono aprova ou manda rodar de novo.
+    // sistema não aplicou. É a que o dono aprova ou descarta.
     supabaseAdmin.from('robo_coletas').select('id, salao_id, ano, mes, inicio, linhas, faturamento, anterior, motivo')
       .eq('situacao', 'aguardando').order('inicio', { ascending: false }).limit(50),
   ])
 
-  // A última coleta aplicada de cada salão+mês, e quantas linhas existem hoje.
+  // A última coleta aplicada de cada salão+mês.
   const ultimaDe = new Map<string, { inicio: string }>()
   for (const c of coletas || []) ultimaDe.set(`${c.salao_id}|${c.ano}|${c.mes}`, { inicio: c.inicio as string })
-  const linhasDe = new Map<string, number>()
-  for (const r of raw || []) {
-    const k = `${r.salao_id}|${r.ano}|${r.mes}`
-    linhasDe.set(k, (linhasDe.get(k) || 0) + 1)
-  }
 
   const agendaDe = new Map((agendas || []).map((a: any) => [a.salao_id, lerAgenda(a.valor)]))
-  const lista = (saloes || [])
-    .filter((s: any) => !s.is_modelo && agendaDe.has(s.id))
+  const comRobo = (saloes || []).filter((s: any) => !s.is_modelo && agendaDe.has(s.id))
+
+  // ── Quantos atendimentos cada mês tem, contados NO BANCO ──────────────────
+  //
+  // A primeira versão disto trazia `atendimentos_raw` inteira e contava aqui.
+  // A tabela tem 131 mil linhas e o PostgREST entrega no máximo MIL, calado:
+  // a tela mostrou "0 atendimento(s)" em todo mês recente, porque as mil que
+  // vieram eram de meses antigos. Nenhum erro, nenhum aviso -- é a armadilha
+  // de sempre do Supabase.
+  //
+  // `head: true` conta no banco e não traz linha nenhuma. São poucos salões
+  // vezes seis meses, tudo em paralelo e por índice.
+  const linhasDe = new Map<string, number>()
+  await Promise.all(comRobo.flatMap((s: any) => janela.map(async ({ ano, mes }) => {
+    const { count } = await supabaseAdmin.from('atendimentos_raw')
+      .select('id', { count: 'exact', head: true })
+      .eq('salao_id', s.id).eq('ano', ano).eq('mes', mes)
+    linhasDe.set(`${s.id}|${ano}|${mes}`, count || 0)
+  })))
+  const lista = comRobo
     .map((s: any) => {
       const ag = agendaDe.get(s.id)!
       const ultimoHorario = ag.horarios.length ? ag.horarios[ag.horarios.length - 1] : null
