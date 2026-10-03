@@ -25,6 +25,8 @@ interface Item {
   // Para a tela poder agir no salão certo (ligar/desligar o CRM, fechar aba).
   salao_id?: string
   crm_ligado?: boolean
+  /** Quantas mensagens estão esperando a ponte neste salão (fila inteira). */
+  fila?: number
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -59,7 +61,7 @@ export async function GET() {
   const expediente = h >= '07:30' && h <= '21:30'
   const inicioDoDia = new Date(`${hoje}T00:00:00-03:00`).toISOString()
 
-  const [{ data: saloes }, { data: cfgs }, { data: canais }, { data: coletas }, servidor, pedidos, { data: msgsHoje }, { data: falhas }, { data: presas }] = await Promise.all([
+  const [{ data: saloes }, { data: cfgs }, { data: canais }, { data: coletas }, servidor, pedidos, { data: msgsHoje }, { data: falhas }, { data: presas }, { data: naFila }] = await Promise.all([
     supabaseAdmin.from('saloes').select('id, nome, is_modelo'),
     supabaseAdmin.from('salao_config').select('salao_id, chave, valor').in('chave', [
       CHAVE_AGENDA, CHAVE_ROBO, 'crm_automacao_feedback', 'crm_automacao_feedback_estado', 'crm_campanhas', 'crm_campanhas_estado', 'nodri_saude',
@@ -74,6 +76,11 @@ export async function GET() {
       .limit(10000),
     supabaseAdmin.from('crm_mensagens').select('salao_id').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).limit(5000),
     supabaseAdmin.from('crm_mensagens').select('salao_id').in('situacao', ['na_fila', 'enviando']).lt('criado_em', new Date(agora - 20 * MIN).toISOString()).limit(5000),
+    // A fila INTEIRA de cada salão (não só a parada há 20 min). É o número que
+    // importa quando o WhatsApp cai: enquanto ele está fora, o que estiver
+    // aqui sai TUDO junto na reconexão -- a ponte pede a fila a cada segundo e
+    // leva 20 por vez. Foi o que quase aconteceu em 03/10/2026, com 243.
+    supabaseAdmin.from('crm_mensagens').select('salao_id').eq('situacao', 'na_fila').limit(5000),
   ])
 
   const nome = new Map((saloes || []).filter((s: any) => !s.is_modelo).map((s: any) => [s.id, s.nome as string]))
@@ -227,8 +234,9 @@ export async function GET() {
     if (!n) continue
     const vis = c.visto_em ? new Date(c.visto_em).getTime() : 0
     const f = conta(falhas, c.salao_id), p = conta(presas, c.salao_id)
+    const naFilaDele = conta(naFila, c.salao_id)
     if (c.situacao === 'desconectado') {
-      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'cinza', texto: 'WhatsApp desconectado (o salão não usa ou tirou o QR).' })
+      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'cinza', texto: 'WhatsApp desconectado (o salão não usa ou tirou o QR).' })
       continue
     }
     // ── Esperando o QR não é defeito ─────────────────────────────────────────
@@ -242,14 +250,14 @@ export async function GET() {
     // E a ponte é UMA só para todos: cobrar sinal de um canal que nunca
     // conectou é acusar a ponte de todo mundo por causa de quem não começou.
     if (c.situacao === 'aguardando_qr' && !c.numero) {
-      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'cinza', texto: 'Esperando ler o QR Code (o salão ainda não conectou).' })
+      crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'cinza', texto: 'Esperando ler o QR Code (o salão ainda não conectou).' })
       continue
     }
-    if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
-    else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
-    else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
-    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'No CRM, a mensagem que falhou tem o botão Reenviar.' })
-    else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
+    if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
+    else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
+    else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
+    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'No CRM, a mensagem que falhou tem o botão Reenviar.' })
+    else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
 
     ponteItens.push(!vis || agora - vis > 5 * MIN
       ? { salao: n, cor: 'vermelho', texto: `Sem sinal da ponte há ${vis ? ha(agora - vis) : 'muito tempo'}.`, detalhe: 'Mensagens podem não estar chegando nem saindo.' }
@@ -375,6 +383,42 @@ export async function POST(req: NextRequest) {
       texto: ligar
         ? 'CRM ligado: o QR Code volta a aparecer no CRM deste salão.'
         : 'CRM desligado: a ponte para de gerar QR para este salão.',
+    })
+  }
+
+  // ── Esvaziar a fila do WhatsApp de um salão ──────────────────────────────
+  //
+  // Pedido do dono (03/10/2026), depois do bloqueio do número do Rouge: ele
+  // quer resolver sozinho se acontecer de novo com outro salão.
+  //
+  // Por que isto existe: com o WhatsApp fora, o que está na fila NÃO sai -- e
+  // quando a ponte reconecta, sai TUDO de uma vez, porque ela pede a fila a
+  // cada segundo e leva 20 por vez. Em 02/10 eram 243 mensagens esperando;
+  // soltar aquilo junto repetiria o disparo que causou o bloqueio, e o
+  // conteúdo já estava vencido (confirmação de um dia que passou, feedback de
+  // dois dias, aviso de cliente que já foi embora).
+  //
+  // NÃO apaga nada: a mensagem vira `cancelada`, com o motivo escrito, e
+  // aparece na conversa como "não enviada". O histórico fica inteiro.
+  if (b.acao === 'crm_esvaziar_fila') {
+    const salaoId = String(b.salao_id || '')
+    if (!salaoId) return NextResponse.json({ error: 'Salão não informado' }, { status: 400 })
+    const porQuem = (quem as any)?.email || 'o dono'
+    const agoraBR = dataHoraSP(Date.now())
+    const { data, error } = await supabaseAdmin.from('crm_mensagens')
+      .update({
+        situacao: 'cancelada',
+        erro: `Fila esvaziada por ${porQuem} em ${agoraBR}, pela Central. Mensagem de automação só vale se puder sair na hora; soltar a fila acumulada de uma vez é o caminho mais curto para o WhatsApp bloquear o número.`,
+      })
+      .eq('salao_id', salaoId).eq('situacao', 'na_fila')
+      .select('id')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const n = (data || []).length
+    return NextResponse.json({
+      ok: true,
+      texto: n
+        ? `${n} mensagem(ns) saíram da fila e aparecem na conversa como "não enviada". Nada foi apagado.`
+        : 'A fila deste salão já estava vazia.',
     })
   }
 

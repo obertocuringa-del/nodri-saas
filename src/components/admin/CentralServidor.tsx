@@ -16,6 +16,8 @@ interface Item {
   // fechar aba). Ver src/app/api/admin/central/route.ts.
   salao_id?: string
   crm_ligado?: boolean
+  /** Mensagens esperando a ponte neste salão (fila inteira, não só as presas). */
+  fila?: number
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -190,6 +192,34 @@ O QR Code volta a aparecer no CRM deste salão.`,
                         background: it.crm_ligado ? '#b4322a' : '#2f6b4f', color: '#fff' }}>
                       {it.crm_ligado ? 'Desligar o CRM deste salão' : 'Ligar o CRM deste salão'}
                     </button>
+                  )}
+
+                  {/* ── Esvaziar a fila do WhatsApp ────────────────────────
+                      Pedido do dono (03/10/2026), para ele resolver sozinho se
+                      acontecer com outro salão. Só aparece quando há fila: com
+                      o WhatsApp fora, o que está aqui sai TUDO junto na
+                      reconexão -- a ponte pede a fila a cada segundo e leva 20
+                      por vez. Em 02/10 eram 243 esperando. */}
+                  {aberto === 'crm' && it.salao_id && (it.fila ?? 0) > 0 && (
+                    <div style={{ marginTop: 7 }}>
+                      <div style={{ fontSize: 11.5, color: '#8a6a24', fontWeight: 700, marginBottom: 4 }}>
+                        {it.fila} mensagem(ns) esperando a ponte.
+                        {!it.crm_ligado && ' Com o WhatsApp fora, elas saem todas juntas quando ele voltar.'}
+                      </div>
+                      <button
+                        onClick={() => mandar(
+                          { acao: 'crm_esvaziar_fila', salao_id: it.salao_id },
+                          `Esvaziar a fila de ${it.salao} (${it.fila} mensagem(ns))?
+
+Elas NÃO serão enviadas e NÃO serão apagadas: ficam na conversa marcadas como "não enviada", com o motivo.
+
+Faça isso quando o WhatsApp estiver fora do ar. Soltar a fila acumulada de uma vez é o caminho mais curto para o número ser bloqueado — e o conteúdo já venceu (confirmação de um dia que passou, feedback atrasado, aviso de cliente que já foi embora).`,
+                        )}
+                        style={{ fontSize: 11.5, fontWeight: 800, padding: '5px 10px', borderRadius: 7,
+                          border: '1px solid #d8cfc0', cursor: 'pointer', background: '#fff', color: '#8a6a24' }}>
+                        Esvaziar a fila deste salão
+                      </button>
+                    </div>
                   )}
 
                   {aberto === 'abas' && it.salao_id && <PainelAbas salaoId={it.salao_id} dados={atual.extra} mandar={mandar} />}
