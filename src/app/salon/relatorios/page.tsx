@@ -308,6 +308,13 @@ export default function RelatoriosPage() {
   const isMobile = useIsMobile()
   const [dados, setDados] = useState<DadosBase | null>(null)
   const [profsCadastrados, setProfsCadastrados] = useState<ProfCadastrado[]>([])
+  // ── Trava das metas do mês (pedido do dono, 03/10/2026) ───────────────────
+  // Depois que as metas estão como ele quer -- umas automáticas, outras que
+  // ele trocou à mão no perfil --, a chave tranca o mês e o número vira o
+  // combinado da corrida. Quem manda de verdade é o servidor; isto aqui é a
+  // chave e o aviso.
+  const [trava, setTrava] = useState<{ travada: boolean; em: string | null; por: string | null; pode_mudar: boolean } | null>(null)
+  const [travando, setTravando] = useState(false)
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const { pode: podePerm, carregado: permCarregado } = usePermissoes()
@@ -415,6 +422,15 @@ export default function RelatoriosPage() {
   // Período 1 (atual) — selecionado por mês/ano
   const [p1Mes, setP1Mes] = useState(new Date().getMonth() + 1)
   const [p1Ano, setP1Ano] = useState(new Date().getFullYear())
+
+  // A trava é por MÊS: trocar o período relê, porque outubro pode estar
+  // travado e novembro não.
+  useEffect(() => {
+    fetch(`/api/relatorios/metas-travadas?ano=${p1Ano}&mes=${p1Mes}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setTrava(d))
+      .catch(() => setTrava(null))
+  }, [p1Ano, p1Mes])
 
   useEffect(() => {
     if (!profsCadastrados.length) return
@@ -2239,6 +2255,71 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
 
               if (aba === 'redistribuicao') return (
                 <div>
+                  {/* ── A chave que tranca as metas do mês ──────────────────
+                      Pedido do dono (03/10/2026), para a corrida da equipe.
+                      Fluxo: gera as metas aqui, entra nos profissionais em que
+                      não concorda com a conta e põe a meta manual, volta e
+                      LIGA. Dali em diante o número é o combinado.
+
+                      Quem tranca de verdade é o servidor (a rota PUT de metas
+                      recusa com 423). Isto é a chave e o aviso -- e precisa
+                      existir porque, sem ela, a própria profissional pode
+                      mudar a meta DELA: a rota autoriza isso explicitamente. */}
+                  {trava && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14,
+                      padding: '10px 14px', borderRadius: 10,
+                      background: trava.travada ? '#fdf5e9' : '#f3f1ee',
+                      border: `1px solid ${trava.travada ? '#f0dfc0' : '#e0ddd8'}`,
+                    }}>
+                      <div style={{ flex: 1, minWidth: 240 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: trava.travada ? '#8a6a24' : '#4a4540' }}>
+                          {trava.travada ? 'Metas travadas' : 'Metas abertas para edição'}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#6b6860', lineHeight: 1.4, marginTop: 2 }}>
+                          {trava.travada
+                            ? `Ninguém consegue mudar a meta de ${MESES_PT_FULL[p1Mes]}/${p1Ano} — nem a própria profissional. Destrave para editar.`
+                            : `Depois de ajustar as metas manuais, trave ${MESES_PT_FULL[p1Mes]}/${p1Ano} para o número não mudar durante a corrida.`}
+                        </div>
+                      </div>
+                      {trava.pode_mudar !== false && (
+                        <button
+                          disabled={travando}
+                          onClick={async () => {
+                            const ligar = !trava.travada
+                            if (!window.confirm(ligar
+                              ? `Travar as metas de ${MESES_PT_FULL[p1Mes]}/${p1Ano}?\n\nNinguém mais consegue mudar a meta deste mês — nem você, nem a recepção, nem a profissional. Para editar de novo, é só destravar aqui.`
+                              : `Destravar as metas de ${MESES_PT_FULL[p1Mes]}/${p1Ano}?\n\nAs metas voltam a poder ser editadas, inclusive pela própria profissional.`)) return
+                            setTravando(true)
+                            try {
+                              const r = await fetch('/api/relatorios/metas-travadas', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ano: p1Ano, mes: p1Mes, travar: ligar }),
+                              })
+                              const j = await r.json().catch(() => ({}))
+                              if (r.ok) setTrava(t => t ? { ...t, travada: !!j.travada, em: j.em, por: j.por } : t)
+                              else alert(j.error || 'Não consegui mudar a trava.')
+                            } catch { alert('Sem conexão com o NODRI.') } finally { setTravando(false) }
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderRadius: 999,
+                            border: 'none', cursor: travando ? 'default' : 'pointer', fontSize: 12.5, fontWeight: 800,
+                            background: trava.travada ? '#8a6a24' : '#2f6b4f', color: '#fff',
+                          }}>
+                          <span style={{
+                            width: 30, height: 16, borderRadius: 999, background: 'rgba(255,255,255,.35)',
+                            position: 'relative', display: 'inline-block', flexShrink: 0,
+                          }}>
+                            <span style={{
+                              position: 'absolute', top: 2, left: trava.travada ? 16 : 2,
+                              width: 12, height: 12, borderRadius: 999, background: '#fff', transition: 'left .15s',
+                            }} />
+                          </span>
+                          {travando ? 'Aguarde...' : trava.travada ? 'Destravar' : 'Travar metas'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {btnSalvarIA}
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                     <button onClick={() => {

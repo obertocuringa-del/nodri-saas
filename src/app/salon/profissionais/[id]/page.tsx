@@ -3070,6 +3070,8 @@ export default function PerfilProfissionalPage() {
   // ── Metas ──
   const [metaInfo, setMetaInfo] = useState<{
     ano:number; mes:number; meta_redistribuida:number; meta_manual:number|null; meta_final:number
+    // Mes travado na aba Redistribuicao: ninguem muda a meta ate destravar.
+    travada?:boolean; travada_em?:string|null
     realizado:number; faltam:number; dias_restantes:number; necessario_por_dia:number
     ticket_atual:number; ocupacao_atual:number; ticket_medio_historico:number; ocupacao_media_historico:number
     taxa_media_crescimento:number|null; principal_gargalo:string
@@ -3346,7 +3348,13 @@ Use os dados reais e cite números. Proibido sugestão genérica.`
         body: JSON.stringify({ ano: metaInfo.ano, mes: metaInfo.mes, meta_manual: metaManualInput })
       })
       if (res.ok) { toast.success('Meta atualizada!'); await buscarMeta() }
-      else toast.error('Erro ao salvar meta')
+      else {
+        // 423 = mes travado. Dizer o motivo, senao vira "erro ao salvar" sem
+        // explicacao e a pessoa fica tentando de novo.
+        const j = await res.json().catch(() => ({}))
+        toast.error(j?.error || 'Erro ao salvar meta')
+        if (res.status === 423) await buscarMeta()
+      }
     } catch { toast.error('Erro ao salvar meta') }
     setSalvandoMeta(false)
   }
@@ -4529,14 +4537,31 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                       </div>
                       <div>
                         <label className={labelCls}>Meta manual (opcional)</label>
+                        {/* ── Mês travado ────────────────────────────────────
+                            O dono tranca o mês na aba Redistribuição depois de
+                            acertar as metas, para o número não mudar durante a
+                            corrida. Travado, o campo não aceita digitação e o
+                            Salvar fica apagado -- e o servidor recusa de
+                            qualquer jeito (423), que é o que realmente vale:
+                            sem isso, a própria profissional pode mudar a meta
+                            DELA, porque a rota autoriza. */}
                         <div className="flex gap-2 mt-1">
                           <input type="number" value={metaManualInput} onChange={e=>setMetaManualInput(e.target.value)}
-                            placeholder="Deixe vazio para usar a automática" className={inputCls} />
-                          <button onClick={salvarMetaManual} disabled={salvandoMeta}
-                            className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50 whitespace-nowrap">
+                            readOnly={!!metaInfo.travada}
+                            title={metaInfo.travada ? 'As metas deste mês estão travadas' : undefined}
+                            placeholder={metaInfo.travada ? 'Travada' : 'Deixe vazio para usar a automática'}
+                            className={`${inputCls}${metaInfo.travada ? ' opacity-60 cursor-not-allowed' : ''}`} />
+                          <button onClick={salvarMetaManual} disabled={salvandoMeta || !!metaInfo.travada}
+                            title={metaInfo.travada ? 'Destrave em Relatórios > Redistribuição para poder editar' : undefined}
+                            className="px-3 py-2 rounded-lg bg-nodri-cyan text-nodri-dark text-[11px] font-bold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
                             {salvandoMeta ? <Loader2 size={12} className="animate-spin"/> : 'Salvar'}
                           </button>
                         </div>
+                        {metaInfo.travada && (
+                          <p className="text-[11px] mt-1" style={{ color: '#8a6a24', fontWeight: 600 }}>
+                            Metas do mês travadas. Para mudar, destrave em Relatórios &gt; Redistribuição.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { calcularIndicadoresMeta } from '@/lib/metasAnalitico'
 import { getSessao } from '@/lib/apiAuth'
+import { travaDoMes } from '@/lib/metasTravadas'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -43,8 +44,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const indicadores = await calcularIndicadoresMeta(params.id, salaoId, ano, mes, metaFinal)
 
+  // A tela precisa saber para travar o campo e explicar por quê.
+  const trava = await travaDoMes(salaoId, ano, mes)
+
   return NextResponse.json({
     ano, mes,
+    travada: !!trava,
+    travada_em: trava?.em || null,
     meta_redistribuida: meta?.meta_redistribuida || 0,
     meta_manual: meta?.meta_manual ?? null,
     meta_final: metaFinal,
@@ -70,6 +76,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const meta_manual = body.meta_manual === '' || body.meta_manual === null || body.meta_manual === undefined
     ? null
     : Number(body.meta_manual)
+
+  // ── Mês travado: ninguém mexe, nem o dono ────────────────────────────────
+  //
+  // A trava é ligada na aba Redistribuição depois que as metas estão como o
+  // dono quer (umas automáticas, outras manuais). A partir dali o número é o
+  // combinado da corrida.
+  //
+  // Esta checagem é a que vale: desabilitar o campo na tela só esconde o
+  // botão, e esta rota continuaria aceitando qualquer PUT -- inclusive o da
+  // própria profissional, que a regra acima autoriza a mexer na meta DELA. Com
+  // a corrida valendo, é quem está competindo mexendo no próprio alvo.
+  const trava = await travaDoMes(salaoId, ano, mes)
+  if (trava) {
+    return NextResponse.json({
+      error: 'As metas deste mês estão travadas. Para mudar, destrave em Relatórios > Redistribuição.',
+      travada_em: trava.em,
+    }, { status: 423 })
+  }
 
   const { data, error } = await supabaseAdmin
     .from('metas_profissionais')
