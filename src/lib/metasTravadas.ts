@@ -17,9 +17,21 @@ import { supabaseAdmin } from '@/lib/supabase'
 // A trava é por MÊS, não global: travar outubro não atrapalha novembro, e no
 // mês seguinte tudo nasce destravado sem ninguém precisar lembrar de nada.
 //
-// Vale para TODO MUNDO, inclusive o dono. Quem quiser mudar destrava, muda e
-// trava de novo -- assim a mudança é sempre uma decisão consciente, e não um
-// campo que alguém editou sem perceber.
+// ── E trava SÓ QUEM O DONO DEFINIU À MÃO (ordem dele, 03/10) ───────────────
+//
+// Ele deixa de propósito uma parte da equipe na meta automática, e essa parte
+// CONTINUA podendo definir a própria meta -- ele não tem opinião sobre aquele
+// número, então não há o que proteger. O que a trava protege é a decisão DELE:
+// o profissional em que ele entrou e trocou a conta por um valor escolhido.
+//
+// Por isso a lista de quem fica travado é CONGELADA no instante em que a chave
+// é ligada: são os que tinham meta manual naquele momento. Se fosse "quem tem
+// meta manual agora", o profissional que definisse a própria meta depois da
+// trava se trancaria sozinho sem entender por quê -- ele mesmo acabou de
+// escrever o número e de repente não pode mais mexer.
+//
+// Vale inclusive para o dono: para mudar, ele destrava, muda e trava de novo.
+// Assim a mudança é sempre consciente, nunca um campo editado sem perceber.
 
 export const CHAVE_METAS_TRAVADAS = 'metas_travadas'
 
@@ -29,6 +41,8 @@ export const chaveMes = (ano: number, mes: number) => `${ano}-${String(mes).padS
 export interface TravaDoMes {
   em: string            // quando travou (ISO)
   por: string           // quem travou (e-mail), para a tela poder dizer
+  /** Ids dos profissionais que tinham meta manual quando a chave foi ligada. */
+  profissionais: string[]
 }
 
 export async function carregarTravas(salaoId: string): Promise<Record<string, TravaDoMes>> {
@@ -37,7 +51,12 @@ export async function carregarTravas(salaoId: string): Promise<Record<string, Tr
   const v = (data?.valor as any) || {}
   const saida: Record<string, TravaDoMes> = {}
   for (const [k, t] of Object.entries<any>(v)) {
-    if (/^\d{4}-\d{2}$/.test(k) && t?.em) saida[k] = { em: String(t.em), por: String(t.por || '') }
+    if (/^\d{4}-\d{2}$/.test(k) && t?.em) {
+      saida[k] = {
+        em: String(t.em), por: String(t.por || ''),
+        profissionais: Array.isArray(t.profissionais) ? t.profissionais.map(String) : [],
+      }
+    }
   }
   return saida
 }
@@ -49,7 +68,34 @@ export async function travaDoMes(salaoId: string, ano: number, mes: number): Pro
 }
 
 /**
+ * Este profissional está travado neste mês?
+ *
+ * Só quem estava na lista no momento em que a chave foi ligada -- ou seja, só
+ * quem tinha meta MANUAL, posta pelo dono. Quem ficou na automática continua
+ * livre para definir a própria meta, porque ali não há decisão dele a proteger.
+ */
+export async function metaTravadaPara(
+  salaoId: string, profissionalId: string, ano: number, mes: number,
+): Promise<TravaDoMes | null> {
+  const t = await travaDoMes(salaoId, ano, mes)
+  if (!t) return null
+  return t.profissionais.includes(String(profissionalId)) ? t : null
+}
+
+/** Quem tem meta manual neste mês -- a lista que a trava congela. */
+export async function comMetaManual(salaoId: string, ano: number, mes: number): Promise<string[]> {
+  const { data } = await supabaseAdmin.from('metas_profissionais')
+    .select('profissional_id, meta_manual')
+    .eq('salao_id', salaoId).eq('ano', ano).eq('mes', mes)
+    .not('meta_manual', 'is', null)
+  return (data || []).map((m: any) => String(m.profissional_id))
+}
+
+/**
  * Liga ou desliga a trava de um mês.
+ *
+ * Ao LIGAR, congela quem tinha meta manual naquele instante: são esses, e só
+ * esses, que ficam travados.
  *
  * Guarda só os 12 meses mais recentes: o registro existe para dizer o que vale
  * agora, não para virar histórico de anos.
@@ -59,8 +105,12 @@ export async function travarMes(
 ): Promise<Record<string, TravaDoMes>> {
   const todas = await carregarTravas(salaoId)
   const k = chaveMes(ano, mes)
-  if (travar) todas[k] = { em: new Date().toISOString(), por: quem }
-  else delete todas[k]
+  if (travar) {
+    todas[k] = {
+      em: new Date().toISOString(), por: quem,
+      profissionais: await comMetaManual(salaoId, ano, mes),
+    }
+  } else delete todas[k]
 
   const limpo: Record<string, TravaDoMes> = {}
   for (const key of Object.keys(todas).sort().slice(-12)) limpo[key] = todas[key]

@@ -4,7 +4,7 @@ import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { calcularIndicadoresMeta } from '@/lib/metasAnalitico'
 import { getSessao } from '@/lib/apiAuth'
-import { travaDoMes } from '@/lib/metasTravadas'
+import { metaTravadaPara } from '@/lib/metasTravadas'
 
 async function getSalaoId() {
   const token = cookies().get('nodri_token')?.value
@@ -44,8 +44,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const indicadores = await calcularIndicadoresMeta(params.id, salaoId, ano, mes, metaFinal)
 
-  // A tela precisa saber para travar o campo e explicar por quê.
-  const trava = await travaDoMes(salaoId, ano, mes)
+  // A tela precisa saber para travar o campo e explicar por quê. A trava é
+  // por profissional: só quem tinha meta manual quando a chave foi ligada.
+  const trava = await metaTravadaPara(salaoId, params.id, ano, mes)
 
   return NextResponse.json({
     ano, mes,
@@ -87,10 +88,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   // botão, e esta rota continuaria aceitando qualquer PUT -- inclusive o da
   // própria profissional, que a regra acima autoriza a mexer na meta DELA. Com
   // a corrida valendo, é quem está competindo mexendo no próprio alvo.
-  const trava = await travaDoMes(salaoId, ano, mes)
+  const trava = await metaTravadaPara(salaoId, params.id, ano, mes)
   if (trava) {
     return NextResponse.json({
-      error: 'As metas deste mês estão travadas. Para mudar, destrave em Relatórios > Redistribuição.',
+      error: 'A meta deste profissional foi definida pelo salão e está travada. Para mudar, destrave em Relatórios > Redistribuição.',
       travada_em: trava.em,
     }, { status: 423 })
   }

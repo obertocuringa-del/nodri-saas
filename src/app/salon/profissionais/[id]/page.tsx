@@ -4559,7 +4559,7 @@ ${section('Status',row('Status do Profissional',form.ativo!==false?'Profissional
                         </div>
                         {metaInfo.travada && (
                           <p className="text-[11px] mt-1" style={{ color: '#8a6a24', fontWeight: 600 }}>
-                            Metas do mês travadas. Para mudar, destrave em Relatórios &gt; Redistribuição.
+                            Meta definida pelo salão e travada para este mês. Para mudar, destrave em Relatórios &gt; Redistribuição.
                           </p>
                         )}
                       </div>

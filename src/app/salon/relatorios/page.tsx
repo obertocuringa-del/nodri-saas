@@ -313,7 +313,7 @@ export default function RelatoriosPage() {
   // ele trocou à mão no perfil --, a chave tranca o mês e o número vira o
   // combinado da corrida. Quem manda de verdade é o servidor; isto aqui é a
   // chave e o aviso.
-  const [trava, setTrava] = useState<{ travada: boolean; em: string | null; por: string | null; pode_mudar: boolean } | null>(null)
+  const [trava, setTrava] = useState<{ travada: boolean; em: string | null; por: string | null; pode_mudar: boolean; quantos: number; com_meta_manual: number } | null>(null)
   const [travando, setTravando] = useState(false)
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
@@ -2274,12 +2274,19 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                     }}>
                       <div style={{ flex: 1, minWidth: 240 }}>
                         <div style={{ fontSize: 13, fontWeight: 800, color: trava.travada ? '#8a6a24' : '#4a4540' }}>
-                          {trava.travada ? 'Metas travadas' : 'Metas abertas para edição'}
+                          {trava.travada
+                            ? `Metas manuais travadas (${trava.quantos} profissional${trava.quantos === 1 ? '' : 'is'})`
+                            : 'Metas abertas para edição'}
                         </div>
+                        {/* A chave alcança SÓ quem o dono definiu à mão. Quem
+                            ficou na meta automática segue podendo definir a
+                            própria -- ali não há decisão dele a proteger. */}
                         <div style={{ fontSize: 11.5, color: '#6b6860', lineHeight: 1.4, marginTop: 2 }}>
                           {trava.travada
-                            ? `Ninguém consegue mudar a meta de ${MESES_PT_FULL[p1Mes]}/${p1Ano} — nem a própria profissional. Destrave para editar.`
-                            : `Depois de ajustar as metas manuais, trave ${MESES_PT_FULL[p1Mes]}/${p1Ano} para o número não mudar durante a corrida.`}
+                            ? `Em ${MESES_PT_FULL[p1Mes]}/${p1Ano}, quem recebeu meta manual não consegue mais mudá-la. Quem ficou na meta automática continua podendo definir a própria.`
+                            : trava.com_meta_manual > 0
+                              ? `Travar ${MESES_PT_FULL[p1Mes]}/${p1Ano} vai proteger as metas manuais de ${trava.com_meta_manual} profissional${trava.com_meta_manual === 1 ? '' : 'is'}. Quem está na meta automática não é afetado.`
+                              : `Nenhuma meta manual definida em ${MESES_PT_FULL[p1Mes]}/${p1Ano} ainda. Ajuste as metas nos profissionais e volte aqui para travar.`}
                         </div>
                       </div>
                       {trava.pode_mudar !== false && (
@@ -2297,7 +2304,7 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
                                 body: JSON.stringify({ ano: p1Ano, mes: p1Mes, travar: ligar }),
                               })
                               const j = await r.json().catch(() => ({}))
-                              if (r.ok) setTrava(t => t ? { ...t, travada: !!j.travada, em: j.em, por: j.por } : t)
+                              if (r.ok) setTrava(t => t ? { ...t, travada: !!j.travada, em: j.em, por: j.por, quantos: j.quantos ?? 0 } : t)
                               else alert(j.error || 'Não consegui mudar a trava.')
                             } catch { alert('Sem conexão com o NODRI.') } finally { setTravando(false) }
                           }}

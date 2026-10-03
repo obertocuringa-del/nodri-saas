@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessao } from '@/lib/apiAuth'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
-import { travaDoMes, travarMes } from '@/lib/metasTravadas'
+import { travaDoMes, travarMes, comMetaManual } from '@/lib/metasTravadas'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,9 +37,15 @@ export async function GET(req: NextRequest) {
   const mes = parseInt(searchParams.get('mes') || '') || hoje.getMonth() + 1
 
   const t = await travaDoMes(salaoId, ano, mes)
+  // Quantos SERIAM travados (os que têm meta manual agora) -- a tela precisa
+  // disso para dizer, antes de ligar, quem a chave vai alcançar. Travada, o
+  // que vale é a lista congelada no momento em que foi ligada.
+  const manuaisAgora = await comMetaManual(salaoId, ano, mes)
   return NextResponse.json({
     ano, mes,
     travada: !!t, em: t?.em || null, por: t?.por || null,
+    quantos: t ? t.profissionais.length : manuaisAgora.length,
+    com_meta_manual: manuaisAgora.length,
     // A tela mostra a chave só para quem pode usar.
     pode_mudar: sess?.role !== 'sub' && sess?.role !== 'profissional',
   })
@@ -66,8 +72,9 @@ export async function POST(req: NextRequest) {
   const t = await travaDoMes(salaoId, ano, mes)
   return NextResponse.json({
     ok: true, travada: !!t, em: t?.em || null, por: t?.por || null,
+    quantos: t ? t.profissionais.length : 0,
     texto: travar
-      ? 'Metas travadas: ninguém consegue mudar a meta deste mês até você destravar.'
+      ? `${t?.profissionais.length || 0} profissional(is) com meta manual estão travados. Quem ficou na meta automática continua podendo definir a própria.`
       : 'Metas destravadas: a meta manual volta a poder ser editada.',
   })
 }
