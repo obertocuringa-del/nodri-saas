@@ -44,7 +44,50 @@ interface ItemProduto { ano: number; mes: number; produto: string; quantidade: n
 interface ProfPag { ano: number; mes: number; profissional: string; categoria: string; valor_a_pagar: number }
 interface MetaRow { ano: number; mes: number; meta_faturamento: number; meta_clientes: number; meta_ticket: number; alcancado_faturamento: number; alcancado_clientes: number; alcancado_ticket: number }
 interface Feedback { ano: number; mes: number; profissional: string; tipo: string; oque_houve: string; comentario: string; data: string }
-interface ProfCadastrado { id: string; nome_completo: string; apelido?: string; cargo?: string; vinculo?: string }
+interface ProfCadastrado {
+  id: string; nome_completo: string; apelido?: string; cargo?: string; vinculo?: string
+  ativo?: boolean
+  /** 'AAAA-MM-DD' */
+  data_admissao?: string | null
+  data_demissao?: string | null
+}
+
+// ─── QUEM ESTAVA NA EQUIPE NAQUELE MÊS ──────────────────────────────────────
+//
+// Meta e redistribuição são de UM mês. Quem já tinha saído não pode receber
+// meta nesse mês -- e a parte dele tem que sobrar para os outros, senão o
+// salão inteiro persegue um número que ninguém vai fazer.
+//
+// 02/10/2026, pedido do dono: o Patrick saiu em 29/09 e continuava com meta em
+// outubro. A lista chamava-se `profsAtivos` mas NUNCA olhava o campo `ativo` --
+// filtrava departamento, cargo administrativo e CLT, e parava aí.
+//
+// QUEM MANDA É O "INATIVO", não a data de demissão (ordem do dono, 02/10).
+// Existe gente ativa com data de saída preenchida -- a Kaleane está assim, e
+// ele foi explícito: ela continua na lista. Ou seja, data preenchida é
+// anotação de RH; quem decide se o profissional conta é o interruptor
+// ativo/inativo, que é o que ele usa de verdade.
+//
+// A data entra só DEPOIS de o profissional estar inativo, e serve para acertar
+// o MÊS: inativo que saiu em 29/09 ainda aparece na meta de setembro (ele
+// trabalhou o mês quase inteiro) e some a partir de outubro. Sem data, não dá
+// para saber desde quando, e ele sai de tudo.
+//
+// `data_admissao` vale sempre: quem entrou em julho não tem meta em junho.
+function estavaNaEquipe(p: ProfCadastrado, ano: number, mes: number): boolean {
+  const mm = String(mes).padStart(2, '0')
+  const primeiroDia = `${ano}-${mm}-01`
+  // Dia 0 do mês seguinte é o último dia deste. Só o número do dia é usado,
+  // então não há conversão de fuso para errar.
+  const ultimoDia = `${ano}-${mm}-${String(new Date(ano, mes, 0).getDate()).padStart(2, '0')}`
+  if (p.data_admissao && p.data_admissao > ultimoDia) return false
+  if (p.ativo === false) {
+    if (!p.data_demissao) return false
+    // Saiu antes de o mês começar: não tem meta neste mês.
+    if (p.data_demissao < primeiroDia) return false
+  }
+  return true
+}
 
 // ─── RESOLVER NOME/APELIDO ──────────────────────────────────────────────────
 // Normaliza string: maiúsculo, sem acento, sem espaço extra
@@ -1795,7 +1838,16 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
               // Cargos administrativos não recebem meta de produção — sua parcela é redistribuída aos demais
               const CARGOS_SEM_META = ['ADMINISTRATIVO', 'FINANCEIRO', 'GERENCIA', 'RECEPCAO']
               // Meta Prof. e Redistribuição são só para PJ — profissionais CLT não entram
-              const profsAtivos = profsCadastrados.filter(p => p.nome_completo && !(p as any).is_departamento && !CARGOS_SEM_META.includes(norm(p.cargo || '')) && norm(p.vinculo || '') !== 'CLT')
+              const profsAtivos = profsCadastrados.filter(p =>
+                p.nome_completo
+                && !(p as any).is_departamento
+                && !CARGOS_SEM_META.includes(norm(p.cargo || ''))
+                && norm(p.vinculo || '') !== 'CLT'
+                // Quem não estava na equipe NESTE mês não recebe meta, e a parte
+                // dele sobra para os outros na redistribuição. Até 02/10/2026 esta
+                // lista se chamava "ativos" e não olhava o campo `ativo`: o Patrick
+                // saiu em 29/09 e continuava com meta em outubro.
+                && estavaNaEquipe(p, p1Ano, p1Mes))
               const totalProfsAtivos = profsAtivos.length || 1
 
               // 3. Todos os períodos disponíveis (para média histórica)
