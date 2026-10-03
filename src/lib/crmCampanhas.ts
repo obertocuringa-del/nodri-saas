@@ -27,6 +27,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO, podeReceber, tipoDaMensagemDoSalao, type TipoAutomatico } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
+import { canalPronto } from '@/lib/crmCanalPronto'
 
 export const CHAVE_CAMPANHAS = 'crm_campanhas'
 export const CHAVE_ESTADO = 'crm_campanhas_estado'
@@ -493,6 +494,27 @@ export async function processarCampanha(
     tempos: opts.tempos || null,
   }
   if (!c) return { ...resumo, ok: false, erro: 'Campanha não encontrada' }
+
+  // WhatsApp fora do ar: não enfileira. Ver crmCanalPronto -- em 02/10/2026 o
+  // número foi bloqueado e confirmação e aviso ao profissional passaram 24 h
+  // empilhando mensagens que ninguém podia entregar.
+  //
+  // A simulação passa direto: ela não enfileira nada, só mostra quem receberia,
+  // e é justamente o que o dono usa para conferir com o WhatsApp fora.
+  if (!opts.simular) {
+    const canalFora = await canalPronto(salaoId)
+    if (canalFora) {
+      const e0: EstadoCampanha = estados[c.id] || { ultimo: null, enviados: {}, horarios_feitos: {}, rodou_em: null }
+      // `rodou_em` NÃO é tocado de propósito: a campanha de intervalo não pode
+      // "gastar" a vez dela num ciclo em que não fez nada. E o horário fixo
+      // também não é marcado como cumprido -- quando o WhatsApp voltar, o
+      // disparo das 17:00 ainda está de pé para sair.
+      e0.ultimo = { ...resumo, erro: `Pausado: ${canalFora}` }
+      estados[c.id] = e0
+      await gravarEstados(salaoId, estados)
+      return { ...resumo, ok: true, ligada: true, erro: `Pausado: ${canalFora}` }
+    }
+  }
 
   const e: EstadoCampanha = estados[c.id] || { ultimo: null, enviados: {}, horarios_feitos: {}, rodou_em: null }
   e.rodou_em = agoraIso

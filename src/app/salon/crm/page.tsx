@@ -2373,6 +2373,16 @@ function Balao({ m, onCitar, citada, onEditar, onApagar, onReagir, reagindo, onE
           {(m as any).editada_em && ' · editada'}
           {meu && m.situacao === 'na_fila' && ' · na fila'}
           {meu && m.situacao === 'falhou' && ' · falhou'}
+          {/* Mensagem que ficou na fila e NÃO vai mais sair. Sem esta palavra
+              ela aparece igual a uma enviada, e quem lê a conversa acha que a
+              cliente recebeu. Nasceu em 03/10/2026: o WhatsApp do salão foi
+              bloqueado às 17:10 de 02/10 e 243 mensagens ficaram presas --
+              soltar tudo junto na reconexão repetiria o disparo que causou o
+              bloqueio, e o conteúdo já estava vencido. O motivo de cada uma
+              fica no `erro`, à vista no título. */}
+          {meu && m.situacao === 'cancelada' && (
+            <span title={m.erro || 'Não foi enviada'} style={{ color: '#b4322a', fontWeight: 700 }}> · não enviada</span>
+          )}
           {meu && m.situacao === 'falhou' && onReenviar && (
             <button type="button" onClick={onReenviar} title={m.erro || 'Tentar mandar de novo'}
               className="ml-1.5 px-1.5 rounded font-bold" style={{ background: '#b4322a', color: '#fff', opacity: 1 }}>Reenviar</button>

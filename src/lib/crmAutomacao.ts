@@ -18,6 +18,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { normalizarTelefone, chaveTelefone, proximaAcaoPadrao, PASSIVAS_DO_DISPARO, podeReceber } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
+import { canalPronto } from '@/lib/crmCanalPronto'
 
 export const CHAVE_CFG = 'crm_automacao_feedback'
 export const CHAVE_ESTADO = 'crm_automacao_feedback_estado'
@@ -230,6 +231,16 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
     est.ultimo = { ...resumo, erro: erroExtensao || 'Automação desligada' }
     await gravarEstado(salaoId, est)
     return { ligada: false, ...resumo }
+  }
+
+  // WhatsApp fora do ar: não enfileira. Ver crmCanalPronto -- em 02/10/2026 o
+  // número foi bloqueado e o feedback passou 24 h empilhando mensagens que
+  // ninguém podia entregar, para soltar todas de uma vez na reconexão.
+  const canalFora = await canalPronto(salaoId)
+  if (canalFora) {
+    est.ultimo = { ...resumo, erro: `Pausado: ${canalFora}` }
+    await gravarEstado(salaoId, est)
+    return { ligada: true, ...resumo, erro: `Pausado: ${canalFora}` }
   }
 
   const { data: salao } = await supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle()
