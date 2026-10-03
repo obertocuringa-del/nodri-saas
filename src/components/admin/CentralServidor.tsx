@@ -196,17 +196,30 @@ O QR Code volta a aparecer no CRM deste salão.`,
 
                   {/* ── Esvaziar a fila do WhatsApp ────────────────────────
                       Pedido do dono (03/10/2026), para ele resolver sozinho se
-                      acontecer com outro salão. Só aparece quando há fila: com
-                      o WhatsApp fora, o que está aqui sai TUDO junto na
-                      reconexão -- a ponte pede a fila a cada segundo e leva 20
-                      por vez. Em 02/10 eram 243 esperando. */}
-                  {aberto === 'crm' && it.salao_id && (it.fila ?? 0) > 0 && (
+                      acontecer com outro salão.
+
+                      APARECE SEMPRE, mesmo com a fila vazia. A primeira versão
+                      só mostrava havendo fila, e o dono não achou o botão --
+                      com razão: recurso que só existe na hora do aperto é
+                      recurso que ninguém sabe que tem. Vazio, o botão fica
+                      apagado e dizendo que não há o que esvaziar.
+
+                      Por que importa: com o WhatsApp fora, o que está na fila
+                      sai TUDO junto na reconexão -- a ponte pede a fila a cada
+                      segundo e leva 20 por vez. Em 02/10 eram 243. */}
+                  {aberto === 'crm' && it.salao_id && (
                     <div style={{ marginTop: 7 }}>
-                      <div style={{ fontSize: 11.5, color: '#8a6a24', fontWeight: 700, marginBottom: 4 }}>
-                        {it.fila} mensagem(ns) esperando a ponte.
-                        {!it.crm_ligado && ' Com o WhatsApp fora, elas saem todas juntas quando ele voltar.'}
+                      <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 4,
+                        color: (it.fila ?? 0) > 0 ? '#8a6a24' : '#8f877f' }}>
+                        {(it.fila ?? 0) > 0
+                          ? `${it.fila} mensagem(ns) esperando a ponte.${!it.crm_ligado ? ' Com o WhatsApp fora, elas saem todas juntas quando ele voltar.' : ''}`
+                          : 'Fila vazia: nenhuma mensagem esperando a ponte.'}
                       </div>
                       <button
+                        disabled={(it.fila ?? 0) === 0}
+                        title={(it.fila ?? 0) === 0
+                          ? 'Use quando o WhatsApp do salão estiver fora do ar e houver mensagem acumulada: evita que tudo saia de uma vez na reconexão.'
+                          : 'Tira as mensagens da fila sem enviar e sem apagar'}
                         onClick={() => mandar(
                           { acao: 'crm_esvaziar_fila', salao_id: it.salao_id },
                           `Esvaziar a fila de ${it.salao} (${it.fila} mensagem(ns))?
@@ -216,7 +229,11 @@ Elas NÃO serão enviadas e NÃO serão apagadas: ficam na conversa marcadas com
 Faça isso quando o WhatsApp estiver fora do ar. Soltar a fila acumulada de uma vez é o caminho mais curto para o número ser bloqueado — e o conteúdo já venceu (confirmação de um dia que passou, feedback atrasado, aviso de cliente que já foi embora).`,
                         )}
                         style={{ fontSize: 11.5, fontWeight: 800, padding: '5px 10px', borderRadius: 7,
-                          border: '1px solid #d8cfc0', cursor: 'pointer', background: '#fff', color: '#8a6a24' }}>
+                          border: '1px solid #d8cfc0',
+                          cursor: (it.fila ?? 0) === 0 ? 'default' : 'pointer',
+                          background: '#fff',
+                          color: (it.fila ?? 0) === 0 ? '#b0a89e' : '#8a6a24',
+                          opacity: (it.fila ?? 0) === 0 ? 0.7 : 1 }}>
                         Esvaziar a fila deste salão
                       </button>
                     </div>
