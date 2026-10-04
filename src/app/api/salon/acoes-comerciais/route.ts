@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { verifyJWT } from '@/lib/auth'
+import { statusCampanha } from '@/lib/acoesComerciais'
 import { registrarAuditoria } from '@/lib/audit'
 import type { Campanha } from '@/lib/acoesComerciais'
 
@@ -44,7 +45,10 @@ export async function GET() {
   if (!sess) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const lista = await ler(sess.salaoId)
   if (sess.role === 'profissional') {
-    return NextResponse.json({ campanhas: lista.filter(c => c.ativa) })
+    // Só o que está VALENDO. `c.ativa` sozinho deixava passar campanha ligada
+    // com a data de fim já vencida -- o profissional divulgaria para a cliente
+    // uma promoção que acabou. Mesma correção da página pública (04/10/2026).
+    return NextResponse.json({ campanhas: lista.filter(c => statusCampanha(c) === 'ativa') })
   }
   return NextResponse.json({ campanhas: lista })
 }

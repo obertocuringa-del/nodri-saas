@@ -38,9 +38,20 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
 
   const campanhas: Campanha[] = Array.isArray((campRow as any)?.valor) ? (campRow as any).valor : []
 
-  // Rascunho não publicado não vaza: o cliente vê o que o salão ligou.
+  // ── O cliente vê só o que está VALENDO HOJE ──────────────────────────────
+  //
+  // Aqui era `.filter(c => c.ativa)`, que só tira o que o salão desligou. Uma
+  // campanha ligada com `dataFim` no passado continuava na vitrine, marcada
+  // como ENCERRADA -- e com o botão "Quero agendar" funcionando. A cliente
+  // pedia uma promoção que acabou, com preço antigo, e a briga sobrava para o
+  // balcão (04/10/2026: o dono tinha deixado UMA campanha valendo e viu três
+  // na página).
+  //
+  // `statusCampanha` resolve os três casos de uma vez: desligada (rascunho),
+  // agendada (começa depois) e encerrada. Promoção agendada também não pode
+  // aparecer antes da hora -- a data de início existe para ser respeitada.
   const acoes: AcaoPublica[] = campanhas
-    .filter(c => c.ativa)
+    .filter(c => statusCampanha(c) === 'ativa')
     .map(c => ({
       id: c.id,
       titulo: c.titulo,

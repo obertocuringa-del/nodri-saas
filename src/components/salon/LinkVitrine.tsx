@@ -295,9 +295,13 @@ export default function LinkVitrine() {
         </div>
       )}
 
+      {/* O texto dizia só "publicadas", e isso enganava: campanha publicada
+          com a data de fim vencida continuava na página (04/10/2026). Agora a
+          regra é a data, e o aviso precisa dizer exatamente isso. */}
       <p className="text-[10px] text-nodri-t3 mt-2.5 leading-relaxed">
-        A página mostra as promoções <b>publicadas</b>, a tabela de preços e os
-        profissionais habilitados em cada serviço. Rascunho não aparece.
+        A página mostra as promoções que estão <b>valendo hoje</b>, a tabela de preços e os
+        profissionais habilitados em cada serviço. Rascunho, campanha encerrada e
+        campanha agendada para depois não aparecem.
       </p>
 
       </div>
