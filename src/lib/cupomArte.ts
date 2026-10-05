@@ -101,35 +101,68 @@ export async function desenharCupom(d: DadosArte): Promise<Blob | null> {
 
   // ── Topo: a identidade é do salão, nunca do sistema ──
   //
-  // A logo entra como SILHUETA creme, não como imagem crua.
+  // A logo entra recolorida em creme, e o recorte é feito pela LUMINÂNCIA,
+  // não pelo canal alfa.
   //
-  // A logo do salão é feita para papel branco: cores claras e often um
-  // "hair" em cinza escuro que, sobre este fundo quase preto, sumiria. A
-  // saída anterior foi pôr uma placa branca atrás -- e a placa virou um
-  // retângulo duro no meio de uma arte que não tem nenhum outro.
+  // Esta é a segunda tentativa. A primeira usava `source-in`, que pinta onde
+  // o pixel é opaco -- e funcionou no PNG da pasta de artes, mas a logo que
+  // o salão tem cadastrada é JPEG. JPEG não tem transparência: TODO pixel é
+  // opaco, inclusive o fundo branco. O resultado foi uma tarja creme sólida
+  // no lugar da marca, que foi para o WhatsApp antes de alguém ver.
   //
-  // Recolorir resolve os dois: a marca aparece inteira, na cor da arte, e
-  // sem moldura. É o mesmo tratamento que as artes do salão já dão à logo.
+  // Pela luminância, o fundo claro vira transparente e o desenho fica, em
+  // qualquer um dos dois formatos. A faixa de corte é generosa (0,72 a 0,96)
+  // porque a logo do salão pode ser clara -- a do Rouge é laranja, perto de
+  // 0,6 -- e um limiar apertado a apagaria junto com o fundo.
   const logo = d.logo ? await carregarLogo(d.logo) : null
+  let marcaDesenhada = false
+
   if (logo && logo.width && logo.height) {
     const lg = Math.min((logo.width / logo.height) * 104, 560)
     const al = lg * (logo.height / logo.width)
 
-    // Canvas à parte: `source-in` pinta só onde a logo tem pixel, e usar o
-    // canvas principal apagaria o fundo já desenhado.
     const aux = document.createElement('canvas')
-    aux.width = Math.ceil(lg); aux.height = Math.ceil(al)
+    aux.width = Math.max(1, Math.round(lg))
+    aux.height = Math.max(1, Math.round(al))
     const ax = aux.getContext('2d')
+
     if (ax) {
-      ax.drawImage(logo, 0, 0, lg, al)
-      ax.globalCompositeOperation = 'source-in'
-      ax.fillStyle = CREME
-      ax.fillRect(0, 0, lg, al)
-      ctx.drawImage(aux, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
-    } else {
-      ctx.drawImage(logo, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
+      ax.drawImage(logo, 0, 0, aux.width, aux.height)
+      try {
+        const img = ax.getImageData(0, 0, aux.width, aux.height)
+        const px = img.data
+        const [cr, cg, cb] = [243, 235, 227]      // CREME em rgb
+        const CLARO = 0.96, ESCURO = 0.72
+        let visiveis = 0
+        for (let i = 0; i < px.length; i += 4) {
+          const lum = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255
+          // Degrau suave entre as duas marcas: evita serrilhado na borda.
+          let k = (CLARO - lum) / (CLARO - ESCURO)
+          k = k < 0 ? 0 : k > 1 ? 1 : k
+          const a = Math.round((px[i + 3] / 255) * k * 255)
+          px[i] = cr; px[i + 1] = cg; px[i + 2] = cb; px[i + 3] = a
+          if (a > 40) visiveis++
+        }
+        // Se quase nada sobrou, a logo era clara demais para este tratamento
+        // e insistir desenharia um borrão. Melhor cair no nome do salão.
+        if (visiveis > aux.width * aux.height * 0.01) {
+          ax.putImageData(img, 0, 0)
+          ctx.drawImage(aux, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
+          marcaDesenhada = true
+        }
+      } catch {
+        // getImageData falha se a imagem veio de outro domínio sem CORS.
+        // Nesse caso a logo original ainda serve: ela é feita para fundo
+        // claro, então entra sobre uma placa, como último recurso.
+        ctx.fillStyle = CREME
+        ctx.fillRect((L - lg) / 2 - 28, Y_MARCA - al / 2 - 18, lg + 56, al + 36)
+        ctx.drawImage(logo, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
+        marcaDesenhada = true
+      }
     }
-  } else {
+  }
+
+  if (!marcaDesenhada) {
     centro(ctx, d.nomeSalao.toUpperCase().slice(0, 30), Y_MARCA, `500 36px ${SANS}`, CREME, 6)
   }
 
