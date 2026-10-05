@@ -144,6 +144,8 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
       ativo: cuponsNoAr,
       percentual: cfgCupons.percentual,
       validoAte: cfgCupons.validoAte,
+      destaques: cfgCupons.destaques || '',
+      endereco: cfgCupons.endereco || '',
     },
   })
 }

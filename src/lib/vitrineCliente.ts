@@ -38,7 +38,7 @@ export interface DadosVitrine {
   /** Faixa de atendimento do salão; null usa o padrão. */
   horario?: HorarioAtendimento | null
   /** Aba de cupom de indicação ligada? Desligada, ela nem aparece. */
-  cupons?: { ativo: boolean; percentual: number; validoAte: string | null }
+  cupons?: { ativo: boolean; percentual: number; validoAte: string | null; destaques?: string; endereco?: string }
 }
 
 /** Preço como o cliente lê. Serviço sem preço não mostra "—" para ele: some. */

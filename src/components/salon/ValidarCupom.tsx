@@ -56,7 +56,7 @@ function fone(v: string): string {
 
 export default function ValidarCupom() {
   const [aberto, setAberto] = useState(false)
-  const [cfg, setCfg] = useState<{ ativo: boolean; validoAte: string | null; percentual: number } | null>(null)
+  const [cfg, setCfg] = useState<{ ativo: boolean; validoAte: string | null; percentual: number; destaques?: string; endereco?: string } | null>(null)
   const [mostrandoCfg, setMostrandoCfg] = useState(false)
 
   const [busca, setBusca] = useState('')
@@ -238,6 +238,25 @@ export default function ValidarCupom() {
             A data trava gerar e validar cupom. O crédito que a cliente já juntou
             não vence junto: ela usa depois do prazo.
           </p>
+
+          {/* Rodapé da arte que a cliente compartilha. Vazio não desenha nada:
+              o salão escreve o que é dele, e nenhum exemplo fica no código. */}
+          <div className="border-t border-nodri-border pt-2.5 space-y-2">
+            <p className="text-[11.5px] font-bold text-nodri-t2">Rodapé da arte do cupom</p>
+            <input value={cfg.destaques || ''}
+              onChange={e => setCfg({ ...cfg, destaques: e.target.value })}
+              onBlur={() => salvarCfg(cfg)}
+              placeholder="Destaques — ex.: Até 21h todo dia · Domingo aberto · Estacionamento"
+              className={campo} />
+            <input value={cfg.endereco || ''}
+              onChange={e => setCfg({ ...cfg, endereco: e.target.value })}
+              onBlur={() => salvarCfg(cfg)}
+              placeholder="Endereço do salão"
+              className={campo} />
+            <p className="text-[11px] text-nodri-t3">
+              Aparecem no pé da imagem que a cliente envia. Em branco, não aparece nada.
+            </p>
+          </div>
         </div>
       )}
 

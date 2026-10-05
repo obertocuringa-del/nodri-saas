@@ -163,6 +163,8 @@ export async function PUT(req: NextRequest) {
     ativo: body?.ativo === true,
     validoAte: /^\d{4}-\d{2}-\d{2}$/.test(validoAte) ? validoAte : null,
     percentual: Math.min(100, Math.max(1, Number(body?.percentual) || 10)),
+    destaques: String(body?.destaques || '').slice(0, 140),
+    endereco: String(body?.endereco || '').slice(0, 120),
   }
   const { error } = await salvarCfg(sess.salaoId, cfg)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

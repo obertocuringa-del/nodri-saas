@@ -62,6 +62,9 @@ export interface DadosArte {
   logo: string | null
   percentual: number
   validoAte: string | null
+  /** "Até 21h todo dia · Domingo aberto · Estacionamento no local" */
+  destaques?: string
+  endereco?: string
 }
 
 export async function desenharCupom(d: DadosArte): Promise<Blob | null> {
@@ -217,10 +220,55 @@ export async function desenharCupom(d: DadosArte): Promise<Blob | null> {
   centro(ctx, d.codigo, Y_CAIXA + 168, `700 ${tam}px ${SANS}`, CREME, 5)
 
   // ── Pé ──
-  centro(ctx, 'Apresente este cupom na recepção', Y_RECEP, `400 31px ${SANS}`, 'rgba(243,235,227,.74)')
-  centro(ctx, d.validoAte
-    ? `Válido até ${d.validoAte.split('-').reverse().join('/')}`
-    : d.nomeSalao, Y_VAL, `400 27px ${SANS}`, 'rgba(243,235,227,.46)')
+  //
+  // Mesma estrutura dos stories do salão: os destaques numa linha, separados
+  // por ponto médio, e o endereço embaixo. Os dois saem do painel -- nada
+  // disso é escrito aqui, porque um endereço errado numa arte que circula no
+  // WhatsApp manda cliente para a porta errada.
+  const destaques = String(d.destaques || '').trim()
+  const endereco = String(d.endereco || '').trim()
+
+  // O bloco encolhe quando o salão não preencheu: sem destaque e sem
+  // endereço, o pé continua sendo só o que já era.
+  let y = A - (destaques || endereco ? 268 : 196)
+
+  centro(ctx, 'Apresente este cupom na recepção', y, `400 31px ${SANS}`, 'rgba(243,235,227,.74)')
+  y += 46
+  if (d.validoAte) {
+    centro(ctx, `Válido até ${d.validoAte.split('-').reverse().join('/')}`, y,
+      `400 27px ${SANS}`, 'rgba(243,235,227,.46)')
+    y += 52
+  }
+
+  if (destaques || endereco) {
+    ctx.strokeStyle = 'rgba(243,235,227,.18)'
+    ctx.lineWidth = 1
+    ctx.beginPath(); ctx.moveTo(190, y - 14); ctx.lineTo(L - 190, y - 14); ctx.stroke()
+    y += 30
+  }
+
+  if (destaques) {
+    // Encolhe para caber na largura em vez de vazar pela borda: salão com
+    // três destaques longos escreveria fora da arte.
+    let tam = 26
+    ctx.font = `400 ${tam}px ${SANS}`
+    while (ctx.measureText(destaques).width > L - 150 && tam > 17) {
+      tam -= 1
+      ctx.font = `400 ${tam}px ${SANS}`
+    }
+    centro(ctx, destaques, y, `400 ${tam}px ${SANS}`, ACENTO, 1.5)
+    y += 44
+  }
+
+  if (endereco) {
+    let tam = 27
+    ctx.font = `400 ${tam}px ${SANS}`
+    while (ctx.measureText(endereco).width > L - 140 && tam > 17) {
+      tam -= 1
+      ctx.font = `400 ${tam}px ${SANS}`
+    }
+    centro(ctx, endereco, y, `400 ${tam}px ${SANS}`, 'rgba(243,235,227,.7)')
+  }
 
   return new Promise(resolve => cv.toBlob(b => resolve(b), 'image/png', 0.95))
 }

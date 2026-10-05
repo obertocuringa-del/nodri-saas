@@ -34,9 +34,21 @@ export interface CfgCupons {
   validoAte: string | null
   /** Quanto a arte promete. Guardado para a tela não mentir se mudar. */
   percentual: number
+  /**
+   * Rodapé da arte: os destaques do salão e o endereço.
+   *
+   * Vazios por padrão, e preenchidos no painel de cada salão. Nenhum
+   * exemplo fica no código: modelo com dado de um salão já nasceu em salão
+   * novo uma vez, e endereço errado numa arte que circula no WhatsApp é
+   * cliente batendo na porta errada.
+   */
+  destaques?: string
+  endereco?: string
 }
 
-export const CFG_PADRAO: CfgCupons = { ativo: false, validoAte: null, percentual: 10 }
+export const CFG_PADRAO: CfgCupons = {
+  ativo: false, validoAte: null, percentual: 10, destaques: '', endereco: '',
+}
 
 export async function getCfg(salaoId: string): Promise<CfgCupons> {
   const { data } = await supabaseAdmin

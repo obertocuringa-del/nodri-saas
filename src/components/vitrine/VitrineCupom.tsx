@@ -20,6 +20,8 @@ interface Props {
   /** Identidade de QUEM compartilha a arte — do salão, nunca do sistema. */
   nomeSalao: string
   logo: string | null
+  destaques?: string
+  endereco?: string
 }
 
 type Tela = 'telefone' | 'nome' | 'pronto'
@@ -37,7 +39,7 @@ function dataCurta(iso: string | null): string {
   return `${d}/${m}/${a}`
 }
 
-export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, logo }: Props) {
+export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, logo, destaques, endereco }: Props) {
   const [tela, setTela] = useState<Tela>('telefone')
   const [telefone, setTelefone] = useState('')
   const [nome, setNome] = useState('')
@@ -83,11 +85,11 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
   useEffect(() => {
     if (!cupom) { setArte(null); return }
     let valido = true
-    desenharCupom({ codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte })
+    desenharCupom({ codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte, destaques, endereco })
       .then(b => { if (valido) setArte(b) })
       .catch(() => null)
     return () => { valido = false }
-  }, [cupom, nomeSalao, logo, percentual, validoAte])
+  }, [cupom, nomeSalao, logo, percentual, validoAte, destaques, endereco])
 
   async function copiar() {
     if (!cupom) return
