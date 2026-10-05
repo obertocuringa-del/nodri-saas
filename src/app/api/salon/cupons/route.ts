@@ -6,7 +6,7 @@ import { normalizarTelefone } from '@/lib/crm'
 import {
   getCfg, salvarCfg, CFG_PADRAO, campanhaVencida, hojeISO,
   acharCupomPorCodigo, acharCupomPorTelefone, conferirUso, registrarUso,
-  saldoDoCupom, gastarCredito, sincronizar,
+  saldoDoCupom, gastarCredito, sincronizar, removerUso,
 } from '@/lib/cuponsIndicacao'
 
 export const dynamic = 'force-dynamic'
@@ -31,7 +31,7 @@ async function painel(salaoId: string, cupomId: string) {
   const saldo = await saldoDoCupom(salaoId, cupomId)
   const { data: usos } = await supabaseAdmin
     .from('cupom_indicacao_usos')
-    .select('indicada_nome, indicada_telefone, situacao, validado_em, atendida_em')
+    .select('id, indicada_nome, indicada_telefone, situacao, validado_em, atendida_em')
     .eq('salao_id', salaoId).eq('cupom_id', cupomId)
     .order('validado_em', { ascending: false }).limit(200)
   const { data: creditos } = await supabaseAdmin
@@ -121,6 +121,18 @@ export async function POST(req: NextRequest) {
       dono: cupom.dono_nome,
       ...(r.ok ? await painel(sess.salaoId, cupom.id) : {}),
     })
+  }
+
+  // ── Desfazer uma validacao ──
+  //
+  // A cliente desistiu na hora, ou o caixa errou o telefone. Sem isto o cupom
+  // dela ficaria queimado para sempre -- a trava e de uma vez por pessoa.
+  if (acao === 'remover') {
+    const ok = await removerUso(sess.salaoId, String(body?.usoId || ''))
+    if (!ok) return NextResponse.json({ ok: false, motivo: 'Nao foi possivel desfazer.' })
+    registrarAuditoria('Desfez', 'Cupom de indicacao', `uso ${String(body?.usoId || '').slice(0, 8)}`)
+    const cupom = await acharCupomPorCodigo(sess.salaoId, body?.codigo)
+    return NextResponse.json({ ok: true, ...(cupom ? await painel(sess.salaoId, cupom.id) : {}) })
   }
 
   // ── A dona usou o desconto dela hoje ──

@@ -9,8 +9,10 @@ export const maxDuration = 100
 //
 // Duas contas que ninguém deveria precisar fazer à mão:
 //
-//  a) a indicada apresentou o cupom e depois foi atendida → o crédito da dona
-//     nasce agora, e não no balcão. Quem apresenta e vai embora não faturou;
+//  a) conferir contra a comanda quem a recepção validou. O crédito já nasceu
+//     no balcão, com a cliente na frente dela; aqui só se checa. Quem
+//     apareceu vira confirmada, quem validou e foi embora sem se atender
+//     perde o crédito depois do prazo;
 //  b) a dona foi ao salão tendo saldo → o crédito é baixado, mesmo que a
 //     recepção tenha esquecido de marcar.
 //
@@ -33,7 +35,7 @@ export async function GET(req: Request) {
     .from('cupom_indicacao').select('salao_id').limit(5000)
   const saloes = [...new Set((comCupom || []).map((r: any) => r.salao_id))]
 
-  const resultado: Record<string, { atendidas: number; creditosBaixados: number }> = {}
+  const resultado: Record<string, { confirmadas: number; revogadas: number; creditosBaixados: number }> = {}
   for (const salaoId of saloes) {
     try {
       resultado[salaoId] = await sincronizar(salaoId)
@@ -43,8 +45,12 @@ export async function GET(req: Request) {
   }
 
   const soma = Object.values(resultado).reduce(
-    (s, r) => ({ atendidas: s.atendidas + r.atendidas, creditosBaixados: s.creditosBaixados + r.creditosBaixados }),
-    { atendidas: 0, creditosBaixados: 0 },
+    (s, r) => ({
+      confirmadas: s.confirmadas + r.confirmadas,
+      revogadas: s.revogadas + r.revogadas,
+      creditosBaixados: s.creditosBaixados + r.creditosBaixados,
+    }),
+    { confirmadas: 0, revogadas: 0, creditosBaixados: 0 },
   )
   return NextResponse.json({ ok: true, saloes: saloes.length, ...soma })
 }

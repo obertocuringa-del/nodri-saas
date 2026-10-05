@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Ticket, Loader2, Check, X, Search, UserCheck, Calendar, Settings2, AlertTriangle,
+  Ticket, Loader2, Check, X, Search, UserCheck, Settings2, AlertTriangle, Undo2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -18,6 +18,7 @@ import toast from 'react-hot-toast'
 // Quem segura a regra é o servidor. Aqui só se mostra o que ele respondeu.
 
 interface Uso {
+  id: string
   indicada_nome: string
   indicada_telefone: string
   situacao: string
@@ -122,6 +123,19 @@ export default function ValidarCupom() {
     if (!j.ok) { toast.error(j.motivo || 'Não deu certo.'); }
     else toast.success('Desconto de hoje registrado')
     if (j.saldo) setDados({ ...dados, saldo: j.saldo, usos: j.usos, creditos: j.creditos })
+  }
+
+  async function desfazer(usoId: string, nome: string) {
+    if (!dados?.cupom) return
+    if (!confirm(`Desfazer a validacao de ${nome}? O cupom volta a valer para ela.`)) return
+    const r = await fetch('/api/salon/cupons', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'remover', usoId, codigo: dados.cupom.codigo }),
+    })
+    const j = await r.json()
+    if (!j.ok) { toast.error(j.motivo || 'Nao deu certo.'); return }
+    toast.success('Validacao desfeita')
+    setDados({ ...dados, saldo: j.saldo, usos: j.usos, creditos: j.creditos })
   }
 
   async function salvarCfg(novo: any) {
@@ -247,17 +261,20 @@ export default function ValidarCupom() {
             </p>
           )}
 
-          {/* ── Placar ── */}
-          <div className="grid grid-cols-4 gap-2 text-center">
+          {/* ── Placar ──
+              Eram quatro quadros, com "Indicou" e "Vieram" sempre iguais: o
+              sistema so conhece quem APARECEU no balcao -- nao existe lugar
+              onde a dona cadastre as pessoas para quem mandou o codigo. Dois
+              numeros iguais lado a lado so fazem duvidar dos dois. */}
+          <div className="grid grid-cols-3 gap-2 text-center">
             {[
-              ['Indicou', dados.saldo.indicadas],
               ['Vieram', dados.saldo.compareceram],
               ['Usados', dados.saldo.usados],
               ['Saldo', dados.saldo.saldo],
             ].map(([rot, n], i) => (
               <div key={rot as string}
-                className={'rounded-lg py-2 ' + (i === 3 ? 'bg-nodri-cyan/10 border border-nodri-cyan/30' : 'bg-nodri-surface')}>
-                <p className={'font-bold text-[18px] ' + (i === 3 ? 'text-nodri-cyan' : '')}>{n as number}</p>
+                className={'rounded-lg py-2.5 ' + (i === 2 ? 'bg-nodri-cyan/10 border border-nodri-cyan/30' : 'bg-nodri-surface')}>
+                <p className={'font-bold text-[21px] ' + (i === 2 ? 'text-nodri-cyan' : '')}>{n as number}</p>
                 <p className="text-[10.5px] text-nodri-t3">{rot as string}</p>
               </div>
             ))}
@@ -302,38 +319,61 @@ export default function ValidarCupom() {
             </div>
           )}
 
-          {/* ── Histórico ── */}
-          {!!dados.usos?.length && (
+          {/* ── Extrato ──
+              Uma linha do tempo so, no lugar de duas listas. E o que a
+              recepcao mostra quando a dona diz "indiquei dez e voce nao
+              contou nenhuma": da para ler o que entrou e o que saiu, em
+              ordem, com data. */}
+          {(!!dados.usos?.length || !!dados.creditos?.length) && (
             <div className="border-t border-nodri-border pt-3">
-              <p className="text-[11.5px] text-nodri-t3 mb-1.5">Indicadas</p>
+              <p className="text-[11.5px] text-nodri-t3 mb-1.5">Extrato</p>
               <div className="space-y-1">
-                {dados.usos.map((u, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[12px] bg-nodri-surface rounded px-2.5 py-1.5">
-                    <span className="flex-1 min-w-0 truncate">{u.indicada_nome}</span>
-                    <span className="text-nodri-t3 text-[11px] shrink-0">
-                      {dataBR(u.atendida_em || u.validado_em)}
-                    </span>
-                    <span className={'text-[10px] px-1.5 py-0.5 rounded shrink-0 '
-                      + (u.situacao === 'atendida' ? 'bg-green-500/15 text-green-500' : 'bg-nodri-border text-nodri-t3')}>
-                      {u.situacao === 'atendida' ? 'veio' : 'não voltou'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!!dados.creditos?.length && (
-            <div className="border-t border-nodri-border pt-3">
-              <p className="text-[11.5px] text-nodri-t3 mb-1.5">Descontos já usados por {dados.cupom.nome.split(' ')[0]}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {dados.creditos.map((c, i) => (
-                  <span key={i} className="flex items-center gap-1 text-[11px] bg-nodri-surface rounded px-2 py-1">
-                    <Calendar size={11} className="text-nodri-t3" />
-                    {dataBR(c.usado_em)}
-                    {c.origem === 'automatico' && <span className="text-nodri-t3">· auto</span>}
-                  </span>
-                ))}
+                {[
+                  ...(dados.usos || []).map(u => ({
+                    tipo: 'veio' as const,
+                    data: String(u.atendida_em || u.validado_em || '').slice(0, 10),
+                    texto: `${u.indicada_nome} veio com o cupom`,
+                    situacao: u.situacao,
+                    id: u.id,
+                    nome: u.indicada_nome,
+                  })),
+                  ...(dados.creditos || []).map(c => ({
+                    tipo: 'usou' as const,
+                    data: String(c.usado_em).slice(0, 10),
+                    texto: `${dados.cupom!.nome.split(' ')[0]} usou o desconto`,
+                    situacao: c.origem,
+                    id: '',
+                    nome: '',
+                  })),
+                ]
+                  .sort((a, b) => b.data.localeCompare(a.data))
+                  .map((l, i) => {
+                    const fora = l.tipo === 'veio' && l.situacao === 'nao_compareceu'
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-[12px] bg-nodri-surface rounded px-2.5 py-1.5">
+                        <span className="text-nodri-t3 text-[11px] shrink-0 w-[42px]">{dataBR(l.data).slice(0, 5)}</span>
+                        <span className={'flex-1 min-w-0 truncate ' + (fora ? 'line-through text-nodri-t3' : '')}>
+                          {l.texto}
+                        </span>
+                        {l.tipo === 'veio' && l.situacao === 'presumida' && (
+                          <span className="text-[10px] text-nodri-t3 shrink-0" title="Ainda nao conferido com a comanda">
+                            a conferir
+                          </span>
+                        )}
+                        {l.tipo === 'usou' && l.situacao === 'automatico' && (
+                          <span className="text-[10px] text-nodri-t3 shrink-0">auto</span>
+                        )}
+                        <span className={'font-bold text-[12px] shrink-0 w-[22px] text-right '
+                          + (fora ? 'text-nodri-t3' : l.tipo === 'veio' ? 'text-green-500' : 'text-nodri-t2')}>
+                          {fora ? '0' : l.tipo === 'veio' ? '+1' : '\u22121'}
+                        </span>
+                        {l.tipo === 'veio' && !fora && (
+                          <button onClick={() => desfazer(l.id, l.nome)} title="Desfazer esta validacao"
+                            className="text-nodri-t3 hover:text-red-400 shrink-0"><Undo2 size={13} /></button>
+                        )}
+                      </div>
+                    )
+                  })}
               </div>
             </div>
           )}

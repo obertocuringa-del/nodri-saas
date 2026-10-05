@@ -256,18 +256,38 @@ export async function registrarUso(
   const conferido = await conferirUso(salaoId, cupom, telefone)
   if (!conferido.ok) return conferido
 
+  // Validar JA conta como veio, e o credito da dona nasce aqui.
+  //
+  // Antes isto nascia como 'apresentou' e so virava credito quando o robo
+  // achasse a comanda -- o que deixava a tela zerada logo depois de a
+  // recepcao validar. Mas a recepcao valida com a cliente na frente dela, no
+  // atendimento: esperar o robo confirmar e desconfiar do proprio caixa.
+  //
+  // A protecao nao se perde, so muda de lugar: nasce PRESUMIDA e
+  // `sincronizar` confere depois contra a comanda. Quem apareceu vira
+  // confirmada; quem validou e foi embora sem se atender perde o credito.
   const { error } = await supabaseAdmin.from('cupom_indicacao_usos').insert({
     salao_id: salaoId,
     cupom_id: cupom.id,
     indicada_nome: String(nome || '').trim().slice(0, 80) || 'Cliente',
     indicada_telefone: normalizarTelefone(telefone),
     indicada_chave: chaveTelefone(telefone),
+    situacao: 'presumida',
+    atendida_em: hojeISO(),
     validado_por: String(por || '').slice(0, 60),
   })
   // O índice único é a palavra final: entre conferir e gravar, outro caixa
   // pode ter registrado a mesma pessoa.
   if (error) return { ok: false, motivo: 'Esta cliente já usou cupom de indicação.' }
   return { ok: true }
+}
+
+/** Desfaz uma validacao. Para quando a cliente desistiu na hora, ou o caixa
+ *  errou o telefone -- sem isto o cupom dela ficaria queimado para sempre. */
+export async function removerUso(salaoId: string, usoId: string): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('cupom_indicacao_usos')
+    .delete().eq('salao_id', salaoId).eq('id', usoId)
+  return !error
 }
 
 // ── Sincronizar com o que o Avec já trouxe ──────────────────────────────────
@@ -282,31 +302,78 @@ export async function registrarUso(
 //
 // Roda sob demanda (sempre que a tela de validação abre) e também por cron.
 // Sob demanda porque a Central já mostrou que confiar só no cron custa caro.
-export async function sincronizar(salaoId: string): Promise<{ atendidas: number; creditosBaixados: number }> {
-  let atendidas = 0
+/**
+ * Dias de tolerancia antes de revogar um credito presumido.
+ *
+ * 3 porque a coleta do Avec roda por dia e pode atrasar: revogar no dia
+ * seguinte castigaria quem compareceu so porque o dado ainda nao chegou.
+ */
+const DIAS_PARA_CONFERIR = 3
+
+function somarDias(iso: string, n: number): string {
+  const d = new Date(iso + 'T12:00:00Z')
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Ate que dia a coleta do Avec ja trouxe comanda deste salao.
+ *
+ * E a prova de que o silencio sobre uma cliente significa "nao veio", e nao
+ * "o robo ainda nao coletou". Sem isto, robo parado viraria credito revogado
+ * de quem compareceu -- e o robo ja ficou parado aqui.
+ */
+async function coletaAte(salaoId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('atendimentos_raw').select('data_comanda')
+    .eq('salao_id', salaoId)
+    .order('data_comanda', { ascending: false }).limit(1)
+  const d = String((data || [])[0]?.data_comanda || '').slice(0, 10)
+  return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d) ? d : null
+}
+
+export async function sincronizar(salaoId: string): Promise<{
+  confirmadas: number; revogadas: number; creditosBaixados: number
+}> {
+  let confirmadas = 0
+  let revogadas = 0
   let creditosBaixados = 0
 
-  // (a) quem apresentou e ainda não consta como atendida
-  const { data: pendentes } = await supabaseAdmin
+  // ── (a) conferir quem a recepcao validou ─────────────────────────────────
+  //
+  // O credito ja nasceu no balcao. Aqui so se confere contra a comanda.
+  const cobertura = await coletaAte(salaoId)
+
+  const { data: presumidas } = await supabaseAdmin
     .from('cupom_indicacao_usos')
     .select('id, indicada_telefone, validado_em')
-    .eq('salao_id', salaoId).eq('situacao', 'apresentou').limit(500)
+    .eq('salao_id', salaoId).eq('situacao', 'presumida').limit(500)
 
-  for (const u of pendentes || []) {
-    const visitas = await visitasDoTelefone(salaoId, (u as any).indicada_telefone)
-    // Só conta visita a partir do dia em que ela apresentou o cupom. Uma
-    // comanda anterior seria justamente o caso que a regra de primeira visita
-    // deveria ter barrado.
+  for (const u of presumidas || []) {
     const desde = String((u as any).validado_em || '').slice(0, 10)
-    const valida = visitas.filter(d => !desde || d >= desde).pop()
-    if (valida) {
+    const visitas = await visitasDoTelefone(salaoId, (u as any).indicada_telefone)
+    // Comanda anterior a validacao nao serve: seria justamente o caso que a
+    // regra de primeira visita deveria ter barrado.
+    const achou = visitas.filter(d => !desde || d >= desde).pop()
+
+    if (achou) {
       await supabaseAdmin.from('cupom_indicacao_usos')
-        .update({ situacao: 'atendida', atendida_em: valida }).eq('id', (u as any).id)
-      atendidas++
+        .update({ situacao: 'confirmada', atendida_em: achou }).eq('id', (u as any).id)
+      confirmadas++
+      continue
+    }
+
+    // Revogar SO quando o banco ja tem os dias daquele periodo. Sem esta
+    // conferencia, atraso de coleta tiraria credito de quem compareceu.
+    const limite = somarDias(desde, DIAS_PARA_CONFERIR)
+    if (cobertura && cobertura >= limite) {
+      await supabaseAdmin.from('cupom_indicacao_usos')
+        .update({ situacao: 'nao_compareceu' }).eq('id', (u as any).id)
+      revogadas++
     }
   }
 
-  // (b) donas com saldo que foram ao salão depois de ganhar o crédito
+  // ── (b) donas com saldo que foram ao salao depois de ganhar o credito ────
   const { data: cupons } = await supabaseAdmin
     .from('cupom_indicacao').select('id, dono_telefone').eq('salao_id', salaoId).limit(2000)
 
@@ -315,8 +382,6 @@ export async function sincronizar(salaoId: string): Promise<{ atendidas: number;
     if (saldo.saldo <= 0) continue
 
     const visitas = await visitasDoTelefone(salaoId, (c as any).dono_telefone)
-    // Visitas que ainda não têm crédito baixado, e só as que aconteceram
-    // depois de existir crédito para gastar: não se desconta retroativo.
     const { data: jaUsados } = await supabaseAdmin
       .from('cupom_indicacao_creditos').select('usado_em').eq('cupom_id', (c as any).id)
     const usadas = new Set((jaUsados || []).map((r: any) => String(r.usado_em).slice(0, 10)))
@@ -334,7 +399,7 @@ export async function sincronizar(salaoId: string): Promise<{ atendidas: number;
     }
   }
 
-  return { atendidas, creditosBaixados }
+  return { confirmadas, revogadas, creditosBaixados }
 }
 
 export interface Saldo {
@@ -354,16 +419,18 @@ export async function saldoDoCupom(salaoId: string, cupomId: string): Promise<Sa
     .from('cupom_indicacao_creditos').select('usado_em')
     .eq('salao_id', salaoId).eq('cupom_id', cupomId).limit(2000)
 
-  const atendidas = (usos || []).filter((u: any) => u.situacao === 'atendida')
-  const datas = atendidas.map((u: any) => String(u.atendida_em || '').slice(0, 10)).filter(Boolean).sort()
-  const compareceram = atendidas.length
+  // 'presumida' vale credito desde o clique da recepcao; 'confirmada' e a
+  // mesma coisa ja checada contra a comanda. So 'nao_compareceu' fica de
+  // fora -- quem validou e foi embora sem se atender.
+  const valem = (usos || []).filter((u: any) => u.situacao !== 'nao_compareceu')
+  const datas = valem.map((u: any) => String(u.atendida_em || '').slice(0, 10)).filter(Boolean).sort()
   const usados = (creditos || []).length
 
   return {
     indicadas: (usos || []).length,
-    compareceram,
+    compareceram: valem.length,
     usados,
-    saldo: Math.max(0, compareceram - usados),
+    saldo: Math.max(0, valem.length - usados),
     primeiroCreditoEm: datas[0] || null,
   }
 }
