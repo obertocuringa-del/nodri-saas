@@ -27,6 +27,18 @@ export interface VitrineConfig {
    * "yZc1ffjtrYwx" no meio ninguém digita nem lê em voz alta.
    */
   slug?: string
+  /**
+   * Nome que o CLIENTE vê, quando diferente da razão social.
+   *
+   * `saloes.nome` guarda a razão social, que é o que vale no contrato e na
+   * cobrança -- "OLIVEIRA E SCHNEIDER INTITUTO DE BELEZA LTDA". Mas quem
+   * abre o link conhece o salão por outro nome, e ler a razão social no
+   * título da página, no rodapé e no convite que ela compartilha não diz
+   * nada a ela: parece até outro estabelecimento.
+   *
+   * Vazio, continua valendo a razão social -- nenhum salão perde nome.
+   */
+  nomePublico?: string
   /** Link no ar? Desligar tira do ar sem perder o token. */
   ativo: boolean
   criadoEm: number
@@ -188,7 +200,9 @@ export async function getSalaoPorToken(token: string): Promise<SalaoDaVitrine | 
 
   return {
     salaoId: data.salao_id,
-    nome: salao.nome || 'Salão',
+    // O nome de vitrine manda; a razão social é o que sobra quando ele
+    // não foi preenchido.
+    nome: String(cfg?.nomePublico || '').trim() || salao.nome || 'Salão',
     telefone: salao.telefone || null,
     logo: (logoRow as any)?.valor?.logo || null,
     config: cfg,

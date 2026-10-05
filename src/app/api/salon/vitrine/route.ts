@@ -81,6 +81,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ config: cfg })
   }
 
+  // Nome que o cliente vê, no lugar da razão social.
+  //
+  // `saloes.nome` é a razão social, que vale no contrato e na cobrança. Mas
+  // ela aparecia no título da página, no rodapé e no convite que a cliente
+  // compartilha -- e ninguém conhece o salão por ela.
+  //
+  // Em branco volta a razão social: apagar o campo não pode deixar a página
+  // sem nome nenhum.
+  if (acao === 'nome') {
+    const nome = String(body?.nome || '').trim().slice(0, 60)
+    const cfg = { ...atual, nomePublico: nome || undefined }
+    await salvarConfig(sess.salaoId, cfg)
+    return NextResponse.json({ ok: true, config: cfg })
+  }
+
   // Faixa de atendimento: fora dela a cliente não consegue pedir horário.
   // Guarda 'HH:MM' cru — quem valida é `horariosDoDia`, que cai no padrão se a
   // faixa vier invertida. Melhor abrir demais do que ficar sem horário nenhum

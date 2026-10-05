@@ -9,7 +9,7 @@ import VitrineOcultar from './VitrineOcultar'
 // Fica aqui de propósito: é desta tela que sai o conteúdo que o cliente vê, e
 // quem acabou de cadastrar uma promoção é quem quer mandar o link.
 
-interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number; horario?: { abertura: string; fechamento: string } }
+interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number; nomePublico?: string; horario?: { abertura: string; fechamento: string } }
 
 export default function LinkVitrine() {
   const [cfg, setCfg] = useState<Cfg | null>(null)
@@ -20,6 +20,8 @@ export default function LinkVitrine() {
   const [confirmandoVotos, setConfirmandoVotos] = useState(false)
   const [resumoVotos, setResumoVotos] = useState<{ itens: number; votos: number; sugestoes: number } | null>(null)
   const [editandoSlug, setEditandoSlug] = useState(false)
+  const [editandoNome, setEditandoNome] = useState(false)
+  const [novoNome, setNovoNome] = useState('')
   const [novoSlug, setNovoSlug] = useState('')
   const [escolhendo, setEscolhendo] = useState(false)
   const [editandoHora, setEditandoHora] = useState(false)
@@ -80,6 +82,22 @@ export default function LinkVitrine() {
     const texto = `Confira nossas promoções e agende pelo link:\n${url}`
     if (navigator.share) navigator.share({ text: texto }).catch(() => { /* cancelou */ })
     else window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+  }
+
+  async function salvarNomePublico() {
+    setOcupado(true)
+    try {
+      const r = await fetch('/api/salon/vitrine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'nome', nome: novoNome }),
+      })
+      const j = await r.json()
+      if (!r.ok) { toast.error(j?.error || 'Nao deu para salvar.'); return }
+      setCfg(j.config); setEditandoNome(false); setNovoNome('')
+      toast.success('Nome atualizado')
+    } finally {
+      setOcupado(false)
+    }
   }
 
   if (carregando) {
@@ -250,6 +268,55 @@ export default function LinkVitrine() {
           </p>
         </div>
       )}
+
+      {/* Nome que o cliente vê.
+
+          A razão social aparecia no título da página, no rodapé e no convite
+
+          que a cliente compartilha -- e ninguém conhece o salão por ela. */}
+
+      {editandoNome && (
+
+        <div className="bg-nodri-surface border border-nodri-border rounded-lg p-3 mb-2">
+
+          <p className="text-[12px] font-bold mb-1.5">Nome que o cliente vê</p>
+
+          <div className="flex gap-2">
+
+            <input value={novoNome} onChange={e => setNovoNome(e.target.value)}
+
+              placeholder={cfg?.nomePublico || 'Ex.: Rouge Hair'}
+
+              className="flex-1 bg-nodri-card border border-nodri-border rounded px-2.5 py-1.5 text-[12.5px] outline-none focus:border-nodri-cyan" />
+
+            <button onClick={() => salvarNomePublico()} disabled={ocupado}
+
+              className="bg-nodri-cyan text-black px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-50">
+
+              Salvar
+
+            </button>
+
+            <button onClick={() => setEditandoNome(false)}
+
+              className="border border-nodri-border px-3 py-1.5 rounded text-[12px] text-nodri-t2">
+
+              Cancelar
+
+            </button>
+
+          </div>
+
+          <p className="text-[11px] text-nodri-t3 mt-1.5 leading-relaxed">
+
+            Em branco, aparece a razão social do cadastro.
+
+          </p>
+
+        </div>
+
+      )}
+
 
       {editandoSlug && (
         <div className="mt-3 p-3 rounded-lg bg-nodri-surface border border-nodri-border">

@@ -1,28 +1,29 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Megaphone, ThumbsUp, Tag, CalendarPlus, Ticket } from 'lucide-react'
+import { Loader2, Megaphone, Tag, CalendarPlus, Ticket } from 'lucide-react'
 import type { DadosVitrine } from '@/lib/vitrineCliente'
 import VitrineAcoes from '@/components/vitrine/VitrineAcoes'
 import VitrinePrecos from '@/components/vitrine/VitrinePrecos'
-import VitrineVotacao from '@/components/vitrine/VitrineVotacao'
 import VitrineAgendar from '@/components/vitrine/VitrineAgendar'
 import VitrineCupom from '@/components/vitrine/VitrineCupom'
+import BoasVindasCupom from '@/components/vitrine/BoasVindasCupom'
 
 // Página pública do salão, aberta por link. Quem chega aqui é cliente, não
 // usuário do sistema: nada de menu, sidebar ou termo interno. Fundo claro e
 // alvos grandes porque ela é aberta no celular, com uma mão, quase sempre a
 // partir de um link no WhatsApp.
 
-type Aba = 'acoes' | 'cupom' | 'sugestao' | 'precos' | 'agendar'
+type Aba = 'acoes' | 'cupom' | 'precos' | 'agendar'
 
-const ABAS: Array<{ id: Aba; label: string; icone: any }> = [
-  { id: 'acoes', label: 'Promoções', icone: Megaphone },
-  // A de cupom entra depois de Promoções, e só quando o salão liga: com ela
-  // fixa, todo salão que não usa indicação mostraria uma aba morta.
-  { id: 'cupom', label: 'Cupom de indicação', icone: Ticket },
-  { id: 'sugestao', label: 'Sugerir ação comercial', icone: ThumbsUp },
-  { id: 'precos', label: 'Tabela de preços', icone: Tag },
-  { id: 'agendar', label: 'Agendar procedimento', icone: CalendarPlus },
+const ABAS: Array<{ id: Aba; label: string; curto: string; icone: any }> = [
+  { id: 'acoes', label: 'Promoções', curto: 'Promoções', icone: Megaphone },
+  { id: 'cupom', label: 'Cupom de indicação', curto: 'Cupom', icone: Ticket },
+  { id: 'precos', label: 'Tabela de preços', curto: 'Preços', icone: Tag },
+  { id: 'agendar', label: 'Agendar procedimento', curto: 'Agendar', icone: CalendarPlus },
+  // "Sugerir ação comercial" saiu da barra por decisão do dono: no celular,
+  // cinco abas dividindo 375px deixavam os nomes em três linhas, e essa era
+  // a que menos gente usava. A enquete continua inteira no sistema, só não
+  // ocupa mais espaço na barra de quem chega pelo WhatsApp.
 ]
 
 export default function PromocoesPage({ params }: { params: { slug: string } }) {
@@ -81,19 +82,22 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
           )}
         </div>
 
-        <nav className="max-w-5xl mx-auto px-2 flex">
-          {ABAS.filter(a => a.id !== 'cupom' || dados.cupons?.ativo).map(({ id, label, icone: Icone }) => (
+        {/* Quatro abas cabem em 375px sem quebrar linha, desde que o rótulo
+            encolha: no celular vai o nome curto, no computador o inteiro. */}
+        <nav className="max-w-5xl mx-auto px-1 sm:px-2 flex" aria-label="Seções">
+          {ABAS.map(({ id, label, curto, icone: Icone }) => (
             <button key={id} onClick={() => setAba(id)}
-              className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 border-b-2 transition '
+              aria-current={aba === id ? 'page' : undefined}
+              className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center '
+                + 'gap-0.5 sm:gap-2 py-2.5 sm:py-3 border-b-2 transition '
                 + (aba === id
                   ? 'border-[var(--vt-cor)] text-[var(--vt-cor)]'
                   : 'border-transparent text-gray-400 hover:text-gray-600')}>
-              <Icone size={18} />
-              {/* Os nomes por extenso não cabem numa linha no celular, com
-                  quatro abas dividindo a largura. Quebram em duas e ficam um
-                  ponto menores; cortar com reticências esconderia justamente a
-                  palavra que diferencia ("ação comercial", "procedimento"). */}
-              <span className="text-[9.5px] sm:text-[13px] font-semibold text-center leading-tight px-0.5">{label}</span>
+              <Icone size={18} className="shrink-0" />
+              <span className="text-[11px] sm:text-[13px] font-semibold leading-tight">
+                <span className="sm:hidden">{curto}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </span>
             </button>
           ))}
         </nav>
@@ -110,9 +114,6 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
             nomeSalao={salao.nome} logo={salao.logo}
             destaques={dados.cupons.destaques} endereco={dados.cupons.endereco} />
         )}
-        {aba === 'sugestao' && (
-          <VitrineVotacao servicos={dados.servicos} token={params.slug} />
-        )}
         {aba === 'precos' && (
           <VitrinePrecos servicos={dados.servicos} />
         )}
@@ -126,6 +127,15 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
           />
         )}
       </main>
+
+      {/* Só quando o salão ligou os cupons: anunciar algo que a pessoa não
+          encontra na tela seria pior do que não anunciar. */}
+      {dados.cupons?.ativo && (
+        <BoasVindasCupom
+          percentual={dados.cupons.percentual}
+          nomeSalao={salao.nome}
+          onAbrirCupom={() => setAba('cupom')} />
+      )}
 
       <footer className="max-w-5xl mx-auto px-4 pb-8 pt-2 text-center">
         <p className="text-[11px] text-gray-400">{salao.nome}</p>
