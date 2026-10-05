@@ -39,7 +39,10 @@ export interface DefEstado {
 }
 
 export const ESTADOS: DefEstado[] = [
-  { chave: 'acao_necessaria', rotulo: 'Ação necessária', cor: '#B4322A', fundo: '#FBEAE6',
+  // "Preciso agir" e nao "Acao necessaria": sao a mesma coisa, mas a aba do
+  // CRM sempre se chamou "Preciso agir" e a etiqueta dizia outra coisa. O
+  // dono procurou a cliente pela etiqueta e nao achou a pasta.
+  { chave: 'acao_necessaria', rotulo: 'Preciso agir', cor: '#B4322A', fundo: '#FBEAE6',
     naFila: true,  contaTempo: true,
     explica: 'A cliente falou por último. Alguém precisa responder.' },
   { chave: 'aguardando', rotulo: 'Aguardando cliente', cor: '#9A6B12', fundo: '#FBF2E0',

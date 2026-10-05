@@ -499,9 +499,19 @@ export default function CrmPage() {
     const min = c.aguardando_desde
       ? minutosUteis(new Date(c.aguardando_desde), new Date(agora))
       : 0
-    // Passou de tres dias sem resposta, deixou de ser a fila de hoje: vai
-    // para "Sem resposta". Continua sendo trabalho, mas nao pode enterrar
-    // quem escreveu agora de manha.
+    // ── "Antiga" marca, mas NAO ESCONDE MAIS ────────────────────────────
+    //
+    // Ate 05/10/2026, passar de tres dias tirava a conversa de "Preciso
+    // agir" e mandava para uma aba "Sem resposta". A intencao era nao deixar
+    // o velho enterrar quem escreveu hoje de manha; o efeito foi o contrario
+    // -- virou esconderijo.
+    //
+    // Medido no dia em que o dono reclamou: 22 das 23 clientes que esperavam
+    // resposta estavam FORA da fila. Uma esperava ha 40 dias, doze ha mais de
+    // 19. Some da fila, some da cabeca, e o atraso so cresce.
+    //
+    // Agora a marca so serve para pintar de vermelho e empurrar para o TOPO:
+    // quem espera ha mais tempo e o primeiro trabalho do dia, nao o escondido.
     const antiga = c.estado === 'acao_necessaria' && min > 3 * 24 * 60
     // Conversa ja decidida ("Agendou", "Nao fechou") em que a cliente
     // escreveu depois. A decisao fica; a mensagem nao pode ficar escondida
@@ -517,7 +527,9 @@ export default function CrmPage() {
     // propria: sao trabalhos diferentes -- um e responder quem falou agora, o
     // outro e correr atras de quem sumiu -- e misturar os dois faz a fila do
     // dia parecer maior do que e, ate a pessoa desistir de olhar.
-    if (filtro === 'fila') lista = lista.filter(c => (c.estado === 'acao_necessaria' && !c._antiga) || c._depois)
+    // Sem `!c._antiga`: quem escreveu e nao foi respondida precisa de
+    // resposta com tres dias ou com quarenta.
+    if (filtro === 'fila') lista = lista.filter(c => c.estado === 'acao_necessaria' || c._depois)
     else if (filtro === 'antigas') lista = lista.filter(c => c._antiga)
     else if (filtro === 'novas') lista = lista.filter(ehNova)
     else if (filtro === 'naoperturbe') lista = lista.filter(ehNaoPerturbe)
@@ -539,6 +551,11 @@ export default function CrmPage() {
       const fa = (estadoPor(a.estado).naFila || a._depois) ? 0 : 1
       const fb = (estadoPor(b.estado).naFila || b._depois) ? 0 : 1
       if (fa !== fb) return fa - fb
+      // Parada ha mais de tres dias vem antes de tudo: e a divida mais
+      // velha com a cliente, e foi o que ficou invisivel ate 05/10.
+      const aa = a._antiga ? 0 : 1
+      const ab = b._antiga ? 0 : 1
+      if (aa !== ab) return aa - ab
       // Cliente nova na frente: e a que nao volta se ficar sem resposta.
       const na = ehNova(a) ? 0 : 1
       const nb = ehNova(b) ? 0 : 1
@@ -549,7 +566,7 @@ export default function CrmPage() {
   }, [comTempo, filtro, busca, motivoFiltro])
 
   const contagem = useMemo(() => {
-    const naFila = comTempo.filter(c => (c.estado === 'acao_necessaria' && !c._antiga) || c._depois)
+    const naFila = comTempo.filter(c => c.estado === 'acao_necessaria' || c._depois)
     return {
       fila: naFila.length,
       antigas: comTempo.filter(c => c._antiga).length,
@@ -1229,16 +1246,17 @@ export default function CrmPage() {
               ? { background: '#fff', border: '1px solid #e9ddd6', boxShadow: '0 10px 30px rgba(26,22,20,.12)' }
               : { overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'thin' }}
             onClick={() => { if (noCelular) setAbasAbertas(false) }}>
+            {/* Pisca com QUALQUER pessoa esperando, nao so com as criticas:
+                o pedido do dono foi ver de longe que ha alguem na fila. */}
             <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
-              texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.criticas > 0} />
+              texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.fila > 0} />
             {contagem.novas > 0 && (
               <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
                 texto={`Clientes novas (${contagem.novas})`} />
             )}
-            {contagem.antigas > 0 && (
-              <Aba ativo={filtro === 'antigas'} onClick={() => setFiltro('antigas')}
-                texto={`Sem resposta (${contagem.antigas})`} />
-            )}
+            {/* A aba "Sem resposta" saiu: ela era o esconderijo. As paradas
+                ha mais tempo agora abrem "Preciso agir", marcadas em
+                vermelho com os dias a vista. */}
             <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
               texto={`${nomePasta('aguardando')} (${contagem.aguardando})`} />
             {/* As pastas que o salão criou (Profissionais, ...) vêm logo aqui,
