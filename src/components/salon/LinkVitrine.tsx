@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Link2, Copy, Check, ExternalLink, Loader2, RefreshCw, Eye, EyeOff, Share2, Pencil, SlidersHorizontal, ChevronDown, Clock, Eraser } from 'lucide-react'
 import toast from 'react-hot-toast'
 import VitrineOcultar from './VitrineOcultar'
+import { usePermissoes } from '@/lib/usePermissoes'
 
 // Painel do link público do cliente, no topo de Ações Comerciais.
 //
@@ -12,6 +13,7 @@ import VitrineOcultar from './VitrineOcultar'
 interface Cfg { token: string; slug?: string; ativo: boolean; criadoEm: number; nomePublico?: string; horario?: { abertura: string; fechamento: string } }
 
 export default function LinkVitrine() {
+  const { pode, carregado } = usePermissoes()
   const [cfg, setCfg] = useState<Cfg | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [ocupado, setOcupado] = useState(false)
@@ -99,6 +101,14 @@ export default function LinkVitrine() {
       setOcupado(false)
     }
   }
+
+  // O card do link do cliente é decisão do dono: quem pode copiar, tirar do
+  // ar ou trocar o endereço mexe no que a cliente vê. Sem a permissão, a
+  // recepção nem sabe que ele existe.
+  //
+  // Espera `carregado` de propósito: mostrar e esconder em seguida daria o
+  // vislumbre do que deveria estar oculto.
+  if (!carregado || !pode('ac_link_cliente')) return null
 
   if (carregando) {
     return <div className="nodri-card p-4 mb-4 flex items-center gap-2 text-nodri-t3 text-[12px]">

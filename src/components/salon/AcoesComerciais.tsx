@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { usePermissoes } from '@/lib/usePermissoes'
 import toast from 'react-hot-toast'
 import {
   Loader2, Plus, Search, Copy, MessageCircle, Images, Pencil, Trash2, X, Star,
@@ -58,6 +59,13 @@ const dataURLparaBlob = (url: string): Blob => {
 const fmtData = (iso?: string) => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : ''
 
 export default function AcoesComerciais({ soLeitura = false }: { soLeitura?: boolean }) {
+  // `soLeitura` continua valendo (portal do profissional). Em cima dele, duas
+  // permissões SEPARADAS: o dono pode deixar a recepção criar campanha sem
+  // deixar mexer no que já está publicado, ou o contrário. Antes era um
+  // interruptor só para as duas coisas.
+  const { pode } = usePermissoes()
+  const podeCriar = !soLeitura && pode('ac_criar_campanha')
+  const podeEditar = !soLeitura && pode('ac_editar_campanha')
   const [campanhas, setCampanhas] = useState<Campanha[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
@@ -229,7 +237,7 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
             {soLeitura ? 'Campanhas prontas para você divulgar aos clientes.' : 'Crie campanhas e materiais para toda a equipe divulgar.'}
           </p>
         </div>
-        {!soLeitura && (
+        {podeCriar && (
           <button onClick={novaCampanha} className="ac-nova" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 18px', borderRadius: 12, border: 'none', background: `linear-gradient(135deg,${ROXO},${ROSA})`, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
             <Plus size={17} /> Nova Campanha
           </button>
@@ -303,7 +311,7 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
         </div>
       ) : (
         <div className="ac-cards">
-          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura}
+          {filtradas.map(c => <CardCampanha key={c.id} c={c} soLeitura={soLeitura} podeEditar={podeEditar}
             vendidos={vendidos[c.id]} modoSel={modoSel} selecionada={selec.has(c.id)}
             onToggleSel={() => toggleSel(c.id)}
             onAbrir={() => modoSel ? toggleSel(c.id) : abrir(c)}
@@ -332,8 +340,8 @@ async function converterImagens(lista: Campanha[], aplicar: (l: Campanha[]) => v
         <MiniStat icon={<Eye size={17} />} n={totalViews} label="Visualiz." cor={ROXO} />
       </div>
 
-      {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} vendidos={vendidos[aberta.id]} onClose={() => setAberta(null)} onEditar={() => { setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} onVerShares={() => setVerShares(aberta)} />}
-      {editando && !soLeitura && <ModalEditar inicial={editando} onSalvar={salvarCampanha} onClose={() => setEditando(null)} />}
+      {aberta && <PainelCampanha c={aberta} soLeitura={soLeitura} vendidos={vendidos[aberta.id]} onClose={() => setAberta(null)} onEditar={() => { if (!podeEditar) return; setEditando(aberta); setAberta(null) }} onShare={() => bumpMetrica(aberta.id, 'shares')} onVerShares={() => setVerShares(aberta)} />}
+      {editando && podeEditar && <ModalEditar inicial={editando} onSalvar={salvarCampanha} onClose={() => setEditando(null)} />}
       {verShares && <ModalPlacarShares c={verShares} onClose={() => setVerShares(null)} />}
       {arqModal && <ModalArquivos c={arqModal} onClose={() => setArqModal(null)} onShare={() => bumpMetrica(arqModal.id, 'shares')} />}
     </div>
@@ -374,7 +382,8 @@ function ModalPlacarShares({ c, onClose }: { c: Campanha; onClose: () => void })
 }
 
 /* ─────────────── Card ─────────────── */
-function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSel, onAbrir, onEditar, onExcluir, onCopiar, onWhats, onSelecArquivos, onTudo, onVerShares }: {
+function CardCampanha({ c, soLeitura, podeEditar = true, vendidos, modoSel, selecionada, onToggleSel, onAbrir, onEditar, onExcluir, onCopiar, onWhats, onSelecArquivos, onTudo, onVerShares }: {
+  podeEditar?: boolean
   c: Campanha; soLeitura: boolean; vendidos?: number; modoSel?: boolean; selecionada?: boolean; onToggleSel?: () => void
   onAbrir: () => void; onEditar: () => void; onExcluir: () => void; onCopiar: () => void; onWhats: () => void
   onSelecArquivos: () => void; onTudo: () => void; onVerShares?: () => void
@@ -492,7 +501,9 @@ function CardCampanha({ c, soLeitura, vendidos, modoSel, selecionada, onToggleSe
         </div>
       )}
 
-      {!soLeitura && (
+      {/* Editar e excluir: campanha publicada é material que a equipe já
+          está divulgando -- mexer nela é decisão do dono. */}
+      {!soLeitura && podeEditar && (
         <div style={{ display: 'flex', gap: 8, padding: '0 12px 12px' }}>
           <button title="Editar" onClick={onEditar} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 0', borderRadius: 10, border: 'none', background: '#f4f3f8', color: '#4b5563', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Pencil size={14} /> Editar</button>
           <button title="Excluir" onClick={onExcluir} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 0', borderRadius: 10, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><Trash2 size={14} /> Excluir</button>

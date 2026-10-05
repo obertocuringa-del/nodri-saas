@@ -114,6 +114,17 @@ export const CATALOGO_PERMISSOES: PermGrupo[] = [
     ]
   },
   {
+    // Partes de Ações Comerciais. A página inteira continua governada por
+    // `acoes_comerciais`; estas três recortam o que a recepção faz DENTRO
+    // dela -- o link do cliente e as campanhas são decisão do dono, não de
+    // quem está no balcão.
+    grupo: 'Ações Comerciais — partes', itens: [
+      { chave: 'ac_link_cliente', label: 'Card do link do cliente (copiar, tirar do ar, endereço)' },
+      { chave: 'ac_criar_campanha', label: 'Criar campanha nova' },
+      { chave: 'ac_editar_campanha', label: 'Editar e excluir campanha' },
+    ]
+  },
+  {
     grupo: 'Dados sensíveis (ocultar informação)', itens: [
       { chave: 'dado_financeiro', label: 'Valores e faturamento' },
       { chave: 'dado_comissoes', label: 'Comissões / rateio / vales' },

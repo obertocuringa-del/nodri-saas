@@ -33,6 +33,11 @@ import { acharOuCriarContato, grafiasDoTelefone } from '@/lib/crmContatos'
 import { carregarCampanhas } from '@/lib/crmCampanhas'
 import { assinaturaAtendimentos } from '@/lib/atendimentosCache'
 
+import {
+  chavesComConversa, TETO_SEM_CONVERSA_DIA, pediuParaSair, porEmNaoPerturbe,
+  termometroDoEnvio,
+} from '@/lib/crmDisparosSeguranca'
+
 export const CHAVE_DISPAROS = 'crm_disparos'
 export const CHAVE_ESTADO_DISPAROS = 'crm_disparos_estado'
 export const AUTOR_DISPARO = 'Envio automático'
@@ -116,6 +121,14 @@ export interface EstadoDisparo {
   proximo_em: string | null
   dia: string
   enviados_dia: number
+  /**
+   * Quantas foram hoje para quem NUNCA escreveu ao salão.
+   *
+   * Separado do total de propósito: o limite da tela governa o envio inteiro,
+   * este governa só a parte arriscada dele. Foi esse público -- 48 das 52 --
+   * que derrubou o número em 02/10.
+   */
+  enviados_dia_sem_conversa?: number
   ultimo_envio_em: string | null
   ultimo_cliente: string | null
   /** o que a tela mostra: "Enviando", "Esperando a confirmação terminar"... */
@@ -567,11 +580,6 @@ function memo<T>(chave: string, segundos: number, fn: () => Promise<T>): Promise
   return v
 }
 
-const PEDIU_PARA_SAIR = [
-  /^\s*(parar|pare|para|sair|stop|cancelar|remover|descadastrar)\s*[.!]*\s*$/i,
-  /n[aã]o quero (mais )?receber/i,
-  /(me )?(tira|tire|remove|remova) (da|dessa|desta) lista/i,
-]
 
 /**
  * O que este envio já mandou. `feitos`: quem NÃO pode receber agora (já
@@ -945,7 +953,7 @@ async function conferirConversa(salaoId: string, x: PerfilCliente): Promise<{ pu
     .in('conversa_id', conv).order('criado_em', { ascending: false }).limit(60)
   const agora = Date.now()
   for (const m of msgs || []) {
-    if (m.direcao === 'entrada' && PEDIU_PARA_SAIR.some(r => r.test(String(m.texto || '')))) return { bloquear: 'pediu para sair' }
+    if (m.direcao === 'entrada' && pediuParaSair(String(m.texto || ''))) return { bloquear: 'pediu para sair' }
   }
   const ultEntrada = (msgs || []).find((m: any) => m.direcao === 'entrada')
   if (ultEntrada && agora - new Date(ultEntrada.criado_em).getTime() < 48 * 3600e3) return { pular: 'em conversa' }
@@ -1106,7 +1114,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   const disparos = await carregarDisparos(salaoId)
   const estados = await carregarEstadosDisparo(salaoId)
   const agora = agoraNoSalao()
-  const est = (x: Disparo) => { const e = { ...ESTADO_VAZIO, ...(estados[x.id] || {}) }; if (e.dia !== agora.dia) { e.dia = agora.dia; e.enviados_dia = 0 } return e }
+  const est = (x: Disparo) => { const e = { ...ESTADO_VAZIO, ...(estados[x.id] || {}) }; if (e.dia !== agora.dia) { e.dia = agora.dia; e.enviados_dia = 0; e.enviados_dia_sem_conversa = 0 } return e }
   const marcar = (x: Disparo, situacao: string, e = est(x)) => { e.situacao = situacao; estados[x.id] = e }
 
   // Passou do último dia: desliga sozinho, com o aviso de quanto faltou.
@@ -1145,6 +1153,8 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
   let ocupada: string | null | undefined
   let perfis: PerfilCliente[] | null = null
   let comuns: [Set<string>, Set<string>, Set<string>, { tel: string; disparo: string }[]] | null = null
+  // Quem já trocou mensagem com o salão. Uma vez por volta, não por cliente.
+  let comConversa: Set<string> | null = null
 
   for (const d of candidatos) {
     const e = est(d)
@@ -1167,9 +1177,23 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     if (ocupada === undefined) ocupada = (await saudeDoWhatsapp(salaoId)) || (await filaOcupada(salaoId))
     if (ocupada) { if (!soDaSegunda) marcar(d, ocupada, e); continue }
 
+    // ── Termômetro: a lista está conversando ou incomodando? ──
+    //
+    // Passadas as primeiras 50, menos de 15% de resposta significa que o
+    // WhatsApp está vendo o que viu em 02/10. A lista se DESLIGA -- não só
+    // pausa --, porque pausa volta sozinha amanhã e o problema não some com o
+    // tempo: ele está na mensagem ou no público.
+    const termo = await termometroDoEnvio(salaoId, d.id)
+    if (termo.travar) {
+      d.ligado = false; mudou = true
+      marcar(d, termo.travar, e)
+      continue
+    }
+
     perfis = perfis || await perfisDoSalao(salaoId)
     comuns = comuns || await Promise.all([bloqueados(salaoId), telefonesDeProfissionais(salaoId), emRecuperacao(salaoId, disparos, perfis), enviosDaSemana(salaoId)])
     const [bloq, profs, recuperando, semana] = comuns
+    comConversa = comConversa || await chavesComConversa(salaoId)
     const retorno = d.tipo === 'retorno'
     const naRecuperacao = (x: PerfilCliente) => !ehRecuperacao(d) && recuperando.has(x.chave)
     const recebeuOutro = deOutros(semana, d)
@@ -1178,12 +1202,37 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     // por volta: quem está em conversa ou travada fica para depois.
     const tentar = async (fila: PerfilCliente[], segunda: boolean, trava?: { chaves: Set<string>; nomes: Set<string> }, indice = 0) => {
       let olhadas = 0
-      for (const x of fila) {
+      // ── Quem já conversou com o salão vai na frente ──
+      //
+      // Não é preferência de gosto: é o que separa conversa de abordagem aos
+      // olhos do WhatsApp. Das 52 que derrubaram o número em 02/10, 48 nunca
+      // tinham escrito. A fila continua a mesma, só muda a ordem -- quem não
+      // tem conversa não é excluída, vai para o fim.
+      const ordenada = segunda ? fila : [
+        ...fila.filter(x => comConversa!.has(x.chave)),
+        ...fila.filter(x => !comConversa!.has(x.chave)),
+      ]
+
+      for (const x of ordenada) {
         if (trava && (trava.chaves.has(x.chave) || trava.nomes.has(x.cliente_nome))) continue
         if (++olhadas > 25) break
+
+        // ── Teto próprio para quem nunca escreveu ──
+        //
+        // Vale mesmo com o envio configurado para 100 por dia: o limite da
+        // tela governa o total, este governa a parte arriscada dele. Sem o
+        // teto, uma lista grande esgota as conhecidas num dia e passa o resto
+        // da semana só em números frios -- exatamente o padrão que bloqueia.
+        const nova = !comConversa!.has(x.chave)
+        if (nova && (e.enviados_dia_sem_conversa || 0) >= TETO_SEM_CONVERSA_DIA) continue
+
         const c = await conferirConversa(salaoId, x)
         if (c.bloquear) {
           await supabaseAdmin.from('crm_disparo_bloqueios').upsert({ salao_id: salaoId, chave: x.chave, motivo: c.bloquear })
+          // Pediu para sair: além de nunca mais receber lista, entra em "não
+          // perturbe" e segue recebendo o que é serviço -- a confirmação do
+          // horário dela e o pedido de opinião.
+          if (c.bloquear === 'pediu para sair') await porEmNaoPerturbe(salaoId, x.celular).catch(() => null)
           continue
         }
         if (c.pular) continue
@@ -1191,6 +1240,7 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
         if (!pacote.length) continue
         const conv = await enviarPara(salaoId, d, x, pacote)
         if (!conv) continue
+        if (nova) e.enviados_dia_sem_conversa = (e.enviados_dia_sem_conversa || 0) + 1
         e.enviados_dia++
         e.ultimo_envio_em = new Date().toISOString()
         e.ultimo_cliente = x.cliente_nome
@@ -1345,11 +1395,50 @@ export async function rodarDisparos() {
 }
 
 // ── Números para a tela ──────────────────────────────────────────────────────
+/**
+ * Os números de um envio, guardados por 3 minutos.
+ *
+ * A página abre oito cartões de uma vez e cada um custa várias leituras
+ * grandes (alvos, envios, respostas, receita). Sem guardar, trocar de aba e
+ * voltar refaz tudo -- e era o que deixava a tela lenta.
+ *
+ * Três minutos porque o que ela mostra muda no ritmo do envio, que manda uma
+ * mensagem a cada alguns minutos. Mexer num envio limpa a marca dele na hora
+ * (`esquecerResumo`), então salvar e ver o número novo continua imediato.
+ */
+const _resumo = new Map<string, { em: number; dados: any }>()
+const VALIDADE_RESUMO = 3 * 60_000
+
+export function esquecerResumo(salaoId: string, disparoId?: string) {
+  if (disparoId) { _resumo.delete(`${salaoId}:${disparoId}`); return }
+  for (const k of _resumo.keys()) if (k.startsWith(`${salaoId}:`)) _resumo.delete(k)
+}
+
 export async function resumoDoDisparo(salaoId: string, d: Disparo) {
+  const marca = `${salaoId}:${d.id}`
+  const guardado = _resumo.get(marca)
+  if (guardado && Date.now() - guardado.em < VALIDADE_RESUMO) return guardado.dados
+  const dados = await calcularResumo(salaoId, d)
+  _resumo.set(marca, { em: Date.now(), dados })
+  return dados
+}
+
+async function calcularResumo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
-  const alvos = await alvosDoDisparo(salaoId, d, perfis)
+  // Tudo o que não depende um do outro sai junto. `alvosDoDisparo` e a
+  // leitura dos envios eram sequenciais sem precisar.
+  const [alvos, env, bloq, recuperando, termo, comConversa, enviosRaw] = await Promise.all([
+    alvosDoDisparo(salaoId, d, perfis),
+    enviosDoDisparo(salaoId, d),
+    bloqueados(salaoId),
+    foraPorRecuperacao(salaoId, d, perfis),
+    termometroDoEnvio(salaoId, d.id).catch(() => null),
+    chavesComConversa(salaoId).catch(() => new Set<string>()),
+    paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
+      .select('chave, cliente_nome, conversa_id, enviado_em')
+      .eq('salao_id', salaoId).eq('disparo_id', d.id).range(de, ate)),
+  ])
   const { semCelular, repetidos, sem_ciclo } = alvos
-  const [env, bloq, recuperando] = await Promise.all([enviosDoDisparo(salaoId, d), bloqueados(salaoId), foraPorRecuperacao(salaoId, d, perfis)])
   const lista = env.alinhar(alvos.lista)
   const na_recuperacao = lista.filter(x => recuperando.has(x.chave) && !env.feitos.has(x.envio_chave!)).length
   const naLista = lista.filter(x => !bloq.has(x.chave) && (env.feitos.has(x.envio_chave!) || !recuperando.has(x.chave)))
@@ -1358,8 +1447,7 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   const repetindo = naLista.filter(x => !env.feitos.has(x.envio_chave!) && env.ult.has(x.envio_chave!)).length
 
   // Respostas e retornos: do ciclo atual, contados em cima das envios gravados.
-  const { dados: envios } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_disparo_envios')
-    .select('chave, cliente_nome, conversa_id, enviado_em').eq('salao_id', salaoId).eq('disparo_id', d.id).range(de, ate))
+  const envios = enviosRaw.dados
   let responderam = 0
   const porConversa = new Map<string, number>()
   for (const v of envios) if (v.conversa_id) porConversa.set(v.conversa_id, Math.min(porConversa.get(v.conversa_id) ?? Infinity, new Date(v.enviado_em).getTime()))
@@ -1400,6 +1488,12 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
     sem_celular: semCelular, repetidos, sem_ciclo, na_recuperacao, repetindo, bloqueados: lista.length - naLista.length,
     responderam, voltaram, receita: Math.round(receita), envios_total: envios.length - segundas,
     por_dia: cabemPorDia(d),
+    // ── O que as travas novas enxergam ──
+    // Mostrado na tela para o dono ver o risco ANTES de o WhatsApp ver.
+    sem_conversa: naLista.filter(x => !comConversa.has(x.chave)).length,
+    com_conversa: naLista.filter(x => comConversa.has(x.chave)).length,
+    teto_sem_conversa: TETO_SEM_CONVERSA_DIA,
+    taxa_resposta: termo && termo.enviadas >= 50 ? Math.round(termo.taxa * 100) : null,
   }
 }
 

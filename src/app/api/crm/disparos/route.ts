@@ -6,6 +6,7 @@ import { normalizarTelefone } from '@/lib/crm'
 import {
   carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
   servicosDoSalao, perfisDoSalao, alvosDoDisparo, foraPorRecuperacao, dividirDia, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
+  esquecerResumo,
   type Disparo,
 } from '@/lib/crmDisparos'
 
