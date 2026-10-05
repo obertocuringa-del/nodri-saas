@@ -156,8 +156,13 @@ export default function ValidarCupom() {
       <div className="flex items-center gap-2 mb-3">
         <Ticket size={16} className="text-nodri-cyan shrink-0" />
         <h3 className="font-bold text-[13px] flex-1">Cupom de indicação</h3>
-        <button onClick={() => setMostrandoCfg(v => !v)} title="Configurar"
-          className="text-nodri-t3 hover:text-nodri-cyan p-1"><Settings2 size={15} /></button>
+        <button onClick={() => setMostrandoCfg(v => !v)}
+          className={'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] font-bold border transition '
+            + (mostrandoCfg
+              ? 'border-nodri-cyan text-nodri-cyan'
+              : 'border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan')}>
+          <Settings2 size={13} /> Configurar
+        </button>
         <button onClick={() => setAberto(false)} className="text-nodri-t3 hover:text-nodri-t1 p-1"><X size={15} /></button>
       </div>
 
@@ -186,6 +191,22 @@ export default function ValidarCupom() {
             A data trava gerar e validar cupom. O crédito que a cliente já juntou
             não vence junto: ela usa depois do prazo.
           </p>
+        </div>
+      )}
+
+      {/* Desligado, nada do que esta abaixo serve para a cliente -- ela nem
+          consegue tirar cupom. Entao o aviso vem antes da busca, com o
+          proprio botao que resolve. */}
+      {cfg && !cfg.ativo && (
+        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2.5 mb-3">
+          <AlertTriangle size={15} className="text-amber-500 shrink-0" />
+          <p className="text-[12px] text-nodri-t2 flex-1">
+            A aba de cupom ainda <b>não aparece</b> para a cliente.
+          </p>
+          <button onClick={() => salvarCfg({ ...cfg, ativo: true })}
+            className="bg-nodri-cyan text-black px-3 py-1.5 rounded-lg text-[11.5px] font-bold shrink-0">
+            Ligar agora
+          </button>
         </div>
       )}
 
