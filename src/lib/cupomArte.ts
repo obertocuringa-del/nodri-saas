@@ -100,25 +100,35 @@ export async function desenharCupom(d: DadosArte): Promise<Blob | null> {
   const Y_VAL = A - 150
 
   // ── Topo: a identidade é do salão, nunca do sistema ──
+  //
+  // A logo entra como SILHUETA creme, não como imagem crua.
+  //
+  // A logo do salão é feita para papel branco: cores claras e often um
+  // "hair" em cinza escuro que, sobre este fundo quase preto, sumiria. A
+  // saída anterior foi pôr uma placa branca atrás -- e a placa virou um
+  // retângulo duro no meio de uma arte que não tem nenhum outro.
+  //
+  // Recolorir resolve os dois: a marca aparece inteira, na cor da arte, e
+  // sem moldura. É o mesmo tratamento que as artes do salão já dão à logo.
   const logo = d.logo ? await carregarLogo(d.logo) : null
   if (logo && logo.width && logo.height) {
-    const lg = Math.min((logo.width / logo.height) * 96, 520)
+    const lg = Math.min((logo.width / logo.height) * 104, 560)
     const al = lg * (logo.height / logo.width)
-    // A logo do salão costuma ser escura, feita para fundo claro. Num fundo
-    // quase preto ela sumiria, então vai numa placa clara arredondada.
-    const px = 34, py = 22
-    const cx = (L - lg) / 2
-    const rx = cx - px, ry = Y_MARCA - al / 2 - py, rw = lg + px * 2, rh = al + py * 2
-    const r = 18
-    ctx.fillStyle = CREME
-    ctx.beginPath()
-    ctx.moveTo(rx + r, ry)
-    ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, r)
-    ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, r)
-    ctx.arcTo(rx, ry + rh, rx, ry, r)
-    ctx.arcTo(rx, ry, rx + rw, ry, r)
-    ctx.closePath(); ctx.fill()
-    ctx.drawImage(logo, cx, Y_MARCA - al / 2, lg, al)
+
+    // Canvas à parte: `source-in` pinta só onde a logo tem pixel, e usar o
+    // canvas principal apagaria o fundo já desenhado.
+    const aux = document.createElement('canvas')
+    aux.width = Math.ceil(lg); aux.height = Math.ceil(al)
+    const ax = aux.getContext('2d')
+    if (ax) {
+      ax.drawImage(logo, 0, 0, lg, al)
+      ax.globalCompositeOperation = 'source-in'
+      ax.fillStyle = CREME
+      ax.fillRect(0, 0, lg, al)
+      ctx.drawImage(aux, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
+    } else {
+      ctx.drawImage(logo, (L - lg) / 2, Y_MARCA - al / 2, lg, al)
+    }
   } else {
     centro(ctx, d.nomeSalao.toUpperCase().slice(0, 30), Y_MARCA, `500 36px ${SANS}`, CREME, 6)
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2, Check, Copy, Ticket, Share2, ImageDown } from 'lucide-react'
 import { desenharCupom } from '@/lib/cupomArte'
 
@@ -44,7 +44,15 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [copiado, setCopiado] = useState(false)
-  const [montandoArte, setMontandoArte] = useState(false)
+  const [avisoArte, setAvisoArte] = useState(false)
+  /**
+   * A arte fica pronta ANTES de a pessoa clicar.
+   *
+   * Nao e so velocidade: o navegador so deixa abrir uma aba nova durante o
+   * gesto do clique. Se a arte fosse desenhada depois do clique, o `await`
+   * encerraria o gesto e o WhatsApp seria bloqueado como pop-up.
+   */
+  const [arte, setArte] = useState<Blob | null>(null)
   const [cupom, setCupom] = useState<{
     codigo: string; nome: string; indicadas: number; compareceram: number
   } | null>(null)
@@ -70,6 +78,17 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
     }
   }
 
+  // Desenha assim que o cupom aparece na tela, enquanto a pessoa ainda le o
+  // codigo. Quando ela clicar em Enviar, ja esta pronto.
+  useEffect(() => {
+    if (!cupom) { setArte(null); return }
+    let valido = true
+    desenharCupom({ codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte })
+      .then(b => { if (valido) setArte(b) })
+      .catch(() => null)
+    return () => { valido = false }
+  }, [cupom, nomeSalao, logo, percentual, validoAte])
+
   async function copiar() {
     if (!cupom) return
     try {
@@ -87,58 +106,52 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
   }
 
   /**
-   * Compartilhar levando a ARTE junto.
+   * Compartilhar levando a ARTE, nunca so o texto.
    *
-   * Texto solto some no meio da conversa; a imagem a pessoa olha e às vezes
-   * reposta -- que é o que faz a indicação circular. A arte é desenhada aqui
-   * no aparelho, então não custa nada ao servidor.
+   * O dono: "gostei mais da imagem do que o texto". No celular o
+   * compartilhamento do sistema aceita arquivo e a imagem vai junto. No
+   * computador ele nao aceita -- e antes disso caia no texto puro, que e
+   * justamente o que ele nao quer. Agora, nesse caso, a imagem e BAIXADA e o
+   * WhatsApp Web abre em seguida: ela anexa o arquivo que acabou de cair.
    *
-   * Três caminhos, nessa ordem, porque nem todo navegador faz o primeiro:
-   * compartilhar com arquivo, compartilhar só o texto, abrir o WhatsApp Web.
-   * Em todos eles o código continua grande na tela -- nada se perde.
+   * Tudo sincrono, sem `await` antes do `window.open`: a arte ja foi
+   * desenhada no `useEffect`, e um await aqui encerraria o gesto do clique e
+   * o navegador bloquearia a aba.
    */
-  async function compartilhar() {
+  function compartilhar() {
     if (!cupom) return
     const texto = textoDoConvite(cupom.codigo)
-    setMontandoArte(true)
-    try {
-      const blob = await desenharCupom({
-        codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte,
-      })
-      if (blob && navigator.canShare) {
-        const arquivo = new File([blob], `cupom-${cupom.codigo}.png`, { type: 'image/png' })
-        if (navigator.canShare({ files: [arquivo] })) {
-          await navigator.share({ files: [arquivo], text: texto })
-          return
-        }
+
+    if (arte && navigator.canShare) {
+      const arquivo = new File([arte], `cupom-${cupom.codigo}.png`, { type: 'image/png' })
+      if (navigator.canShare({ files: [arquivo] })) {
+        navigator.share({ files: [arquivo], text: texto }).catch(() => null)
+        return
       }
-      if (navigator.share) { await navigator.share({ text: texto }); return }
-      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
-    } catch {
-      // Cancelar o compartilhamento cai aqui e não é erro: a pessoa desistiu.
-    } finally {
-      setMontandoArte(false)
     }
+
+    // Sem compartilhamento de arquivo: entrega a imagem e abre a conversa.
+    if (arte) {
+      salvarArte(arte, cupom.codigo)
+      setAvisoArte(true)
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
   }
 
-  /** No computador o compartilhar do sistema quase nunca existe. Baixar a
-   *  arte resolve: ela anexa no WhatsApp Web como faria com qualquer foto. */
-  async function baixarArte() {
+  function salvarArte(blob: Blob, codigo: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `cupom-${codigo}.png`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+
+  /** Baixar sozinho, para quem quer so a imagem (postar no story, por
+   *  exemplo) sem abrir conversa nenhuma. */
+  function baixarArte() {
     if (!cupom) return
-    setMontandoArte(true)
-    try {
-      const blob = await desenharCupom({
-        codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte,
-      })
-      if (!blob) { setErro('Não deu para montar a imagem neste aparelho.'); return }
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url; a.download = `cupom-${cupom.codigo}.png`
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 10_000)
-    } finally {
-      setMontandoArte(false)
-    }
+    if (!arte) { setErro('A imagem ainda esta sendo montada. Tente de novo em um instante.'); return }
+    salvarArte(arte, cupom.codigo)
   }
 
   const botao = 'w-full py-3.5 rounded-xl font-semibold text-[15px] text-white bg-[var(--vt-cor)] disabled:opacity-50 transition'
@@ -227,14 +240,24 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
                 className="flex-1 py-3 rounded-xl border border-gray-300 font-semibold text-[14px] text-gray-700 flex items-center justify-center gap-2">
                 {copiado ? <><Check size={16} className="text-green-600" /> Copiado</> : <><Copy size={16} /> Copiar</>}
               </button>
-              <button onClick={compartilhar} disabled={montandoArte}
+              {/* Desabilitado enquanto a arte nao ficou pronta -- sao poucos
+                  milissegundos, mas clicar antes mandaria so o texto. */}
+              <button onClick={compartilhar} disabled={!arte}
                 className="flex-1 py-3 rounded-xl font-semibold text-[14px] text-white bg-[var(--vt-cor)] flex items-center justify-center gap-2 disabled:opacity-60">
-                {montandoArte
+                {!arte
                   ? <Loader2 size={16} className="animate-spin" />
                   : <><Share2 size={16} /> Enviar</>}
               </button>
             </div>
-            <button onClick={baixarArte} disabled={montandoArte}
+
+            {avisoArte && (
+              <p className="text-[12px] text-gray-500 bg-gray-50 rounded-lg px-3 py-2.5 mb-2 leading-relaxed">
+                A imagem foi baixada. No WhatsApp, anexe o arquivo
+                <b> cupom-{cupom.codigo}.png</b> que acabou de cair em Downloads.
+              </p>
+            )}
+
+            <button onClick={baixarArte} disabled={!arte}
               className="w-full py-2.5 mb-5 text-[13px] text-gray-500 flex items-center justify-center gap-1.5 disabled:opacity-50">
               <ImageDown size={15} /> Baixar a arte do cupom
             </button>
@@ -251,7 +274,7 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
 
             {erro && <p className="text-[13px] text-amber-600 mt-3">{erro}</p>}
 
-            <button onClick={() => { setTela('telefone'); setCupom(null); setTelefone(''); setNome(''); setErro('') }}
+            <button onClick={() => { setTela('telefone'); setCupom(null); setTelefone(''); setNome(''); setErro(''); setAvisoArte(false) }}
               className="text-[13px] text-gray-400 mt-4 py-1">
               Consultar outro número
             </button>
