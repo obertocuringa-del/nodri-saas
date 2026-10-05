@@ -117,7 +117,16 @@ function salvarPrompts(prompts: Prompt[]) {
   localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts))
 }
 
-export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissionalId?: string; modoEmbarcado?: boolean } = {}) {
+export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: {
+  profissionalId?: string
+  modoEmbarcado?: boolean
+  /**
+   * Esconde a bolha flutuante: quem abre o chat é outro botão, em outro
+   * lugar. No painel ela virou um botão na barra de cima -- flutuando, ela
+   * tapava o canto da tela no celular, bem onde ficam os cards.
+   */
+  semBotao?: boolean
+} = {}) {
   const [aberto, setAberto] = useState(!!modoEmbarcado)
   const [telaCheia, setTelaCheia] = useState(false)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
@@ -152,6 +161,15 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
     recognitionRef.current = rec
     rec.start()
   }
+
+  // Abrir de fora, por evento -- mesma ideia da busca global (Ctrl+K). Assim
+  // qualquer botão da tela abre o chat sem precisar de prop atravessando
+  // meia árvore de componentes.
+  useEffect(() => {
+    const abrir = () => { setAberto(true); setTelaCheia(true) }
+    window.addEventListener('nodri-abrir-ia', abrir)
+    return () => window.removeEventListener('nodri-abrir-ia', abrir)
+  }, [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024)
@@ -514,7 +532,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado }: { profissi
   return (
     <>
       {/* Botão flutuante — apenas no modo normal (não embutido) */}
-      {!modoEmbarcado && !aberto && (
+      {!modoEmbarcado && !semBotao && !aberto && (
         <button
           onClick={() => { setAberto(true); setTelaCheia(true) }}
           className="fixed flex items-center justify-center transition duration-300 hover:scale-110"

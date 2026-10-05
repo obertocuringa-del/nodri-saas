@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye, Sparkles, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
@@ -736,14 +736,22 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
                 <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivosExibidos}</span>/{totalModulosExibidos}</span>
               </div>
-              {/* Iniciar CRM — fica ANTES do bloco de "Baixar Programa" de propósito.
-                  Ao lado dele mora o botão de Atualização, que aparece e some conforme
-                  a configuração; um botão fixo grudado num que oscila muda de lugar
-                  sozinho e a pessoa perde a referência de onde clicar. */}
-              <a href="/salon/crm"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 mr-1"
+              {/* IA e CRM na barra, e não flutuando.
+                  No celular vão só com o ícone: três rótulos escritos mais a
+                  busca não cabem em 375px, e cortar texto em botão parece
+                  defeito. No computador, onde sobra espaço, o nome aparece. */}
+              <button onClick={() => window.dispatchEvent(new Event('nodri-abrir-ia'))}
+                title="NODRI IA" aria-label="Abrir a NODRI IA"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 shrink-0"
+                style={{ background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(245,158,11,0.40)', color: '#b45309' }}>
+                <Sparkles size={13} className="shrink-0" />
+                <span className="hidden sm:inline">NODRI IA</span>
+              </button>
+              <a href="/salon/crm" title="Abrir o CRM"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 shrink-0 mr-0.5"
                 style={{ background: 'rgba(91,79,207,0.12)', border: '1px solid rgba(91,79,207,0.35)', color: '#5b4fcf' }}>
-                Iniciar CRM
+                <MessageSquare size={13} className="shrink-0" />
+                <span className="hidden sm:inline">CRM</span>
               </a>
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
@@ -763,9 +771,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               )}
               {/* Busca ultra inteligente (a mesma de todas as páginas — Ctrl+K) */}
               <button onClick={() => window.dispatchEvent(new Event('nodri-abrir-busca'))} title="Buscar em todo o sistema (Ctrl+K)"
-                className="flex items-center gap-2 bg-nodri-card border border-nodri-border rounded-lg pl-2.5 pr-3 py-1.5 text-[11px] text-nodri-t3 w-36 sm:w-56 hover:border-nodri-cyan/40 transition-colors">
+                className="flex items-center gap-2 bg-nodri-card border border-nodri-border rounded-lg px-2 sm:pl-2.5 sm:pr-3 py-1.5 text-[11px] text-nodri-t3 w-auto sm:w-56 shrink-0 hover:border-nodri-cyan/40 transition-colors">
                 <Search size={13} className="text-nodri-t3 shrink-0" />
-                <span className="flex-1 text-left truncate">Buscar tudo...</span>
+                <span className="hidden sm:block flex-1 text-left truncate">Buscar tudo...</span>
                 <span className="hidden sm:inline text-[9px] border border-nodri-border rounded px-1 text-nodri-t3">Ctrl+K</span>
               </button>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-nodri-cyan/7 border border-nodri-cyan/17 rounded-lg text-[10.5px] text-nodri-cyan font-bold">
@@ -889,7 +897,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
           )}
 
           {/* MODULES GRID */}
-          <div className="flex-1 px-3 sm:px-5 py-4 pb-6">
+          {/* Sem `flex-1`: a div esticava para preencher a altura toda do
+            main, e com poucos cards sobrava uma faixa vazia que ainda
+            rolava. Agora ela tem a altura do que há dentro. */}
+        <div className="px-3 sm:px-5 py-4 pb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {modulosFiltrados.map(modulo => {
             const emManutencao = !!modulo.em_manutencao
@@ -969,7 +980,9 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       </div>
       {/* Chat da IA: voltou a pedido. A bolha do WhatsApp segue escondida pela
           classe nodri-sem-whats no container — sao dois botoes diferentes. */}
-      <ChatWidget />
+      {/* Sem a bolha: quem abre é o botão da barra de cima. Flutuando, ela
+          tapava o canto inferior direito no celular, em cima dos cards. */}
+      <ChatWidget semBotao />
     </div>
   )
 }
