@@ -92,35 +92,66 @@ function sufixo(n = 4): string {
 // Procura por todas as grafias do mesmo celular (com 55 e sem, com nono
 // dígito e sem), que é como o Avec devolve: nunca igual duas vezes.
 export async function jaEhCliente(salaoId: string, telefone: string): Promise<boolean> {
-  const grafias = grafiasDoTelefone(normalizarTelefone(telefone))
-  if (!grafias.length) return false
-
-  // Duas colunas guardam telefone em `atendimentos_raw`, e nem toda planilha
-  // preenche as duas. Conferir só uma deixa passar metade dos casos.
-  for (const col of ['celular', 'telefone'] as const) {
-    const { count } = await supabaseAdmin
-      .from('atendimentos_raw')
-      .select('id', { count: 'exact', head: true })
-      .eq('salao_id', salaoId)
-      .in(col, grafias)
-    if ((count || 0) > 0) return true
-  }
-  return false
+  return !!(await ultimaVisita(salaoId, telefone))
 }
 
-/** Datas em que esse telefone foi atendido, da mais nova para a mais velha. */
+/**
+ * A ÚLTIMA vez que esse telefone foi atendido, ou null.
+ *
+ * Separada de `visitasDoTelefone` porque é ela que roda no balcão, com a
+ * recepção e a cliente esperando: pede uma linha, não o histórico inteiro.
+ * Para por telefone porque nome repete -- o salão tem homônimas.
+ *
+ * Depende de `idx_atend_celular` e `idx_atend_telefone`. Sem o segundo, a
+ * consulta na coluna `telefone` varria as 131 mil linhas: 4,2 segundos
+ * medidos em 04/10/2026, contra 0,14 ms com o índice.
+ */
+export async function ultimaVisita(salaoId: string, telefone: string): Promise<string | null> {
+  const grafias = grafiasDoTelefone(normalizarTelefone(telefone))
+  if (!grafias.length) return null
+
+  // SEM `order by` de propósito.
+  //
+  // Com `order by data_comanda desc limit 1`, o planner prefere o índice de
+  // DATA e varre as comandas do salão de trás para frente filtrando telefone
+  // -- 99 ms descartando 865 linhas, e muito pior para quem veio há um ano,
+  // porque a varredura só para quando acha. Sem a ordenação ele usa o índice
+  // composto de telefone, devolve só as comandas daquela pessoa (Index Only
+  // Scan, nenhuma linha descartada) e quem escolhe a mais recente é o JS.
+  //
+  // Medido em 04/10/2026 contra 131 mil linhas.
+  const [c, f] = await Promise.all(['celular', 'telefone'].map(col =>
+    supabaseAdmin
+      .from('atendimentos_raw').select('data_comanda')
+      .eq('salao_id', salaoId).in(col, grafias)
+      .limit(400),
+  ))
+
+  let maior: string | null = null
+  for (const r of [...(c.data || []), ...(f.data || [])]) {
+    const d = String((r as any).data_comanda || '').slice(0, 10)
+    if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d) && (!maior || d > maior)) maior = d
+  }
+  return maior
+}
+
+/** Datas em que esse telefone foi atendido, da mais nova para a mais velha.
+ *  Usada pela sincronização, que precisa do histórico; no balcão use
+ *  `ultimaVisita`, que pede uma linha só. */
 export async function visitasDoTelefone(salaoId: string, telefone: string): Promise<string[]> {
   const grafias = grafiasDoTelefone(normalizarTelefone(telefone))
   if (!grafias.length) return []
   const datas = new Set<string>()
+  // Mesma razão de `ultimaVisita`: sem `order by`, o índice composto de
+  // telefone é usado e nenhuma linha é descartada.
   for (const col of ['celular', 'telefone'] as const) {
     const { data } = await supabaseAdmin
       .from('atendimentos_raw').select('data_comanda')
       .eq('salao_id', salaoId).in(col, grafias)
-      .order('data_comanda', { ascending: false }).limit(400)
+      .limit(400)
     for (const r of data || []) {
       const d = String((r as any).data_comanda || '').slice(0, 10)
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) datas.add(d)
+      if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) datas.add(d)
     }
   }
   return [...datas].sort().reverse()
@@ -204,8 +235,19 @@ export async function criarCupom(salaoId: string, nome: string, telefone: string
 export interface ResultadoValidacao {
   ok: boolean
   motivo?: string
+  /** Por que recusou, em uma palavra: a tela muda o texto conforme o caso. */
+  causa?: 'proprio' | 'ja_usou' | 'ja_cliente' | 'telefone'
   /** Quando já usou: quando foi e por quem tinha sido indicada. */
   detalhe?: { data: string; donoNome: string }
+  /**
+   * Última vez que essa pessoa foi atendida no salão.
+   *
+   * É o que encerra a conversa no balcão: dizer "você já é cliente" sem a
+   * data vira discussão; com a data, não há o que discutir.
+   */
+  ultimaVisita?: string | null
+  /** Nome que o salão já tem para esse telefone, para a tela preencher. */
+  nomeConhecido?: string | null
 }
 
 /**
@@ -216,24 +258,27 @@ export async function conferirUso(
   salaoId: string, cupom: Cupom, telefoneIndicada: string,
 ): Promise<ResultadoValidacao> {
   const chave = chaveTelefone(telefoneIndicada)
-  if (!chave) return { ok: false, motivo: 'Telefone inválido.' }
+  if (!chave) return { ok: false, causa: 'telefone', motivo: 'Telefone inválido.' }
 
   // 1. Ninguém usa o próprio cupom. É o furo mais óbvio e o mais tentado.
   if (chave === cupom.dono_chave) {
-    return { ok: false, motivo: 'Este é o cupom da própria pessoa — não dá para usar em si mesma.' }
+    return {
+      ok: false, causa: 'proprio',
+      motivo: 'Este é o cupom da própria pessoa — não dá para usar em si mesma.',
+    }
   }
 
   // 2. Uma vez por pessoa, valendo para QUALQUER cupom. Se a Maria já veio
   //    com o código da Ana, não volta com o da Joana.
   const { data: uso } = await supabaseAdmin
     .from('cupom_indicacao_usos')
-    .select('validado_em, atendida_em, cupom_id')
+    .select('validado_em, atendida_em, cupom_id, situacao')
     .eq('salao_id', salaoId).eq('indicada_chave', chave).maybeSingle()
   if (uso) {
     const { data: antigo } = await supabaseAdmin
       .from('cupom_indicacao').select('dono_nome').eq('id', (uso as any).cupom_id).maybeSingle()
     return {
-      ok: false,
+      ok: false, causa: 'ja_usou',
       motivo: 'Esta cliente já usou cupom de indicação.',
       detalhe: {
         data: String((uso as any).atendida_em || (uso as any).validado_em || '').slice(0, 10),
@@ -242,12 +287,26 @@ export async function conferirUso(
     }
   }
 
-  // 3. A promoção é de primeira visita — é o que a arte promete.
-  if (await jaEhCliente(salaoId, telefoneIndicada)) {
-    return { ok: false, motivo: 'Esta cliente já tem atendimento no salão. O cupom vale só na primeira visita.' }
+  // 3. A promoção é de primeira visita — é o que a arte promete. A data da
+  //    última visita vai junto: a recepção precisa poder mostrar.
+  //
+  // As duas perguntas em paralelo, e a da visita pede uma linha só. Isto roda
+  // com a cliente parada no balcão: encadear as consultas somaria a espera de
+  // cada uma.
+  const [visita, nomeConhecido] = await Promise.all([
+    ultimaVisita(salaoId, telefoneIndicada),
+    nomeNoCrm(salaoId, telefoneIndicada),
+  ])
+  if (visita) {
+    return {
+      ok: false, causa: 'ja_cliente',
+      motivo: 'Esta cliente já tem atendimento no salão. O cupom vale só na primeira visita.',
+      ultimaVisita: visita,
+      nomeConhecido,
+    }
   }
 
-  return { ok: true }
+  return { ok: true, ultimaVisita: null, nomeConhecido }
 }
 
 export async function registrarUso(

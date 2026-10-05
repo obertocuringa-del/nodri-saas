@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Ticket, Loader2, Check, X, Search, UserCheck, Settings2, AlertTriangle, Undo2,
+  Ticket, Loader2, Check, X, Search, UserCheck, Settings2, AlertTriangle, Undo2, UserX,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -67,6 +67,15 @@ export default function ValidarCupom() {
   const [foneNovo, setFoneNovo] = useState('')
   const [validando, setValidando] = useState(false)
   const [recusa, setRecusa] = useState<{ motivo: string; detalhe?: any } | null>(null)
+  // Segunda etapa da validação: o cupom bate, mas a PESSOA precisa ser nova.
+  // Conferido enquanto digita, não só no clique -- a recepção tem que saber
+  // antes de prometer desconto à cliente que está na frente dela.
+  const [conferindo, setConferindo] = useState(false)
+  const [pessoa, setPessoa] = useState<{
+    ok: boolean; motivo?: string; causa?: string
+    ultimaVisita?: string | null; nomeConhecido?: string | null
+    detalhe?: { data: string; donoNome: string }
+  } | null>(null)
 
   useEffect(() => {
     if (!aberto || cfg) return
@@ -79,7 +88,7 @@ export default function ValidarCupom() {
   async function buscar() {
     const v = busca.trim()
     if (!v) return
-    setBuscando(true); setRecusa(null); setDados(null)
+    setBuscando(true); setRecusa(null); setDados(null); setPessoa(null)
     try {
       // Dígito é telefone; o resto é código. Assim a recepção usa um campo só,
       // seja para conferir o cupom que a cliente trouxe ou para achar o da
@@ -95,6 +104,30 @@ export default function ValidarCupom() {
     }
   }
 
+  // Confere a PESSOA assim que o telefone fica completo. Sem debounce porque
+  // só dispara quando o número tem tamanho de telefone -- não a cada tecla.
+  async function conferirPessoa(fone: string) {
+    if (!dados?.cupom) return
+    const dig = fone.replace(/\D+/g, '')
+    if (dig.length < 10) { setPessoa(null); return }
+    setConferindo(true)
+    try {
+      const r = await fetch('/api/salon/cupons', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'conferir', codigo: dados.cupom.codigo, telefone: fone }),
+      })
+      const j = await r.json()
+      setPessoa(j)
+      // O salão já conhece o nome desse telefone: poupa a recepção de digitar
+      // e evita grafia diferente da que já está na ficha.
+      if (j.nomeConhecido && !nomeNovo.trim()) setNomeNovo(j.nomeConhecido)
+    } catch {
+      setPessoa(null)
+    } finally {
+      setConferindo(false)
+    }
+  }
+
   async function validar() {
     if (!dados?.cupom) return
     setValidando(true); setRecusa(null)
@@ -106,7 +139,7 @@ export default function ValidarCupom() {
       const j = await r.json()
       if (!j.ok) { setRecusa({ motivo: j.motivo || 'Não foi possível validar.', detalhe: j.detalhe }); return }
       toast.success('Cupom validado')
-      setNomeNovo(''); setFoneNovo('')
+      setNomeNovo(''); setFoneNovo(''); setPessoa(null)
       setDados({ ...dados, saldo: j.saldo, usos: j.usos, creditos: j.creditos })
     } finally {
       setValidando(false)
@@ -296,9 +329,58 @@ export default function ValidarCupom() {
               <div className="grid sm:grid-cols-2 gap-2 mb-2">
                 <input value={nomeNovo} onChange={e => setNomeNovo(e.target.value)}
                   placeholder="Nome completo da cliente" className={campo} />
-                <input value={foneNovo} onChange={e => setFoneNovo(e.target.value)}
+                <input value={foneNovo}
+                  onChange={e => { setFoneNovo(e.target.value); setPessoa(null) }}
+                  onBlur={e => conferirPessoa(e.target.value)}
                   placeholder="Celular com DDD" inputMode="tel" className={campo} />
               </div>
+
+              {/* ── Segunda etapa: a PESSOA ──
+                  O cupom bater não basta. A regra é primeira visita, então
+                  quem decide é a ficha da cliente -- e a resposta precisa
+                  trazer a DATA, que é o que encerra a conversa no balcão. */}
+              {conferindo && (
+                <p className="flex items-center gap-2 text-[12px] text-nodri-t3 mb-2">
+                  <Loader2 size={13} className="animate-spin" /> Conferindo a cliente…
+                </p>
+              )}
+              {pessoa && !conferindo && (
+                pessoa.ok ? (
+                  <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2.5 mb-2">
+                    <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[13px] font-bold text-green-500">Primeira vez no salão</p>
+                      <p className="text-[11.5px] text-nodri-t3">
+                        Nenhum atendimento no histórico. O desconto vale.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2.5 mb-2">
+                    <UserX size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[13px] font-bold text-red-400">
+                        {pessoa.causa === 'ja_cliente' ? 'Cliente já cadastrada' : 'Cupom inválido para esta cliente'}
+                      </p>
+                      <p className="text-[11.5px] text-nodri-t2">{pessoa.motivo}</p>
+                      {pessoa.nomeConhecido && (
+                        <p className="text-[11.5px] text-nodri-t3 mt-0.5">Na ficha: {pessoa.nomeConhecido}</p>
+                      )}
+                      {pessoa.ultimaVisita && (
+                        <p className="text-[11.5px] text-nodri-t3">
+                          Última visita em <b>{dataBR(pessoa.ultimaVisita)}</b>
+                        </p>
+                      )}
+                      {pessoa.detalhe?.data && (
+                        <p className="text-[11.5px] text-nodri-t3">
+                          Usou cupom em {dataBR(pessoa.detalhe.data)}
+                          {pessoa.detalhe.donoNome && <> · indicada por {pessoa.detalhe.donoNome}</>}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
 
               {recusa && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2.5 mb-2">
@@ -312,7 +394,12 @@ export default function ValidarCupom() {
                 </div>
               )}
 
-              <button onClick={validar} disabled={validando || nomeNovo.trim().length < 3 || foneNovo.replace(/\D+/g, '').length < 10}
+              {/* Travado enquanto a pessoa não passa na conferência: deixar
+                  clicável só para o servidor recusar seria ensinar a recepção
+                  a tentar e ver no que dá, na frente da cliente. */}
+              <button onClick={validar}
+                disabled={validando || conferindo || nomeNovo.trim().length < 3
+                  || foneNovo.replace(/\D+/g, '').length < 10 || (!!pessoa && !pessoa.ok)}
                 className="w-full border border-nodri-cyan text-nodri-cyan py-2.5 rounded-lg text-[12.5px] font-bold disabled:opacity-40">
                 {validando ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Validar e dar o desconto'}
               </button>
