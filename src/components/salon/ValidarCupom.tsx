@@ -396,13 +396,35 @@ export default function ValidarCupom() {
 
               {/* Travado enquanto a pessoa não passa na conferência: deixar
                   clicável só para o servidor recusar seria ensinar a recepção
-                  a tentar e ver no que dá, na frente da cliente. */}
-              <button onClick={validar}
-                disabled={validando || conferindo || nomeNovo.trim().length < 3
-                  || foneNovo.replace(/\D+/g, '').length < 10 || (!!pessoa && !pessoa.ok)}
-                className="w-full border border-nodri-cyan text-nodri-cyan py-2.5 rounded-lg text-[12.5px] font-bold disabled:opacity-40">
-                {validando ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Validar e dar o desconto'}
-              </button>
+                  a tentar e ver no que dá, na frente da cliente.
+                  
+                  Mas botão apagado sem dizer o motivo prende quem está no
+                  balcão: o dono ficou com a tela verde, o botão morto e
+                  nenhuma pista de que faltava o nome. Então o próprio botão
+                  diz o que falta. */}
+              {(() => {
+                const semNome = nomeNovo.trim().length < 3
+                const semFone = foneNovo.replace(/\D+/g, '').length < 10
+                const recusada = !!pessoa && !pessoa.ok
+                const travado = validando || conferindo || semNome || semFone || recusada
+                const rotulo =
+                  validando ? null
+                  : conferindo ? 'Conferindo…'
+                  : recusada ? 'Esta cliente não pode usar o cupom'
+                  : semFone && semNome ? 'Preencha o nome e o celular da cliente'
+                  : semFone ? 'Falta o celular da cliente'
+                  : semNome ? 'Falta o nome da cliente'
+                  : 'Validar e dar o desconto'
+                return (
+                  <button onClick={validar} disabled={travado}
+                    className={'w-full py-2.5 rounded-lg text-[12.5px] font-bold border transition '
+                      + (travado
+                        ? 'border-nodri-border text-nodri-t3'
+                        : 'border-nodri-cyan text-nodri-cyan hover:bg-nodri-cyan/10')}>
+                    {validando ? <Loader2 size={14} className="animate-spin mx-auto" /> : rotulo}
+                  </button>
+                )
+              })()}
             </div>
           )}
 
