@@ -139,6 +139,17 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
   const [sidebarChatAberta, setSidebarChatAberta] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  /**
+   * A pessoa está lendo o fim, ou subiu para reler?
+   *
+   * Guardado num ref alimentado pelo evento de rolagem, e não calculado na
+   * hora de descer. Calcular na hora não funcionava: durante a resposta o
+   * efeito roda dezenas de vezes por segundo, e a conta caía NO MEIO de uma
+   * rolagem suave ainda em curso -- o scrollTop estava a caminho do fim,
+   * então a distância parecia pequena e o auto-scroll continuava. Na prática
+   * o dedo brigava com a tela e ela parecia travada.
+   */
+  const noFim = useRef(true)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const recognitionRef = useRef<any>(null)
 
@@ -247,15 +258,27 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
   // volta ao rodapé a cada pedaço de texto que chegava — a tela parecia
   // travada, quando na verdade estava brigando com o dedo. Rolar para cima é
   // um pedido explícito de ficar ali.
+  // Acompanha a rolagem do dedo. `passive` porque só observa.
   useEffect(() => {
-    const fim = bottomRef.current
-    if (!fim) return
-    const caixa = fim.parentElement
-    if (caixa) {
-      const distanciaDoFim = caixa.scrollHeight - caixa.scrollTop - caixa.clientHeight
-      if (distanciaDoFim > 120) return   // leu para cima de propósito: respeita
+    const caixa = bottomRef.current?.parentElement
+    if (!caixa) return
+    const olhar = () => {
+      noFim.current = caixa.scrollHeight - caixa.scrollTop - caixa.clientHeight < 120
     }
-    fim.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    olhar()
+    caixa.addEventListener('scroll', olhar, { passive: true })
+    return () => caixa.removeEventListener('scroll', olhar)
+  }, [aberto, telaCheia])
+
+  useEffect(() => {
+    if (!noFim.current) return          // subiu para reler: fica onde está
+    const fim = bottomRef.current
+    const caixa = fim?.parentElement
+    if (!caixa) return
+    // `scrollTop` direto, não `scrollIntoView({ behavior: 'smooth' })`:
+    // enquanto a resposta chega, uma rolagem suave nova cancela a anterior a
+    // cada pedaço de texto, e o resultado é uma tela que nunca para quieta.
+    caixa.scrollTop = caixa.scrollHeight
   }, [mensagens, carregando])
 
   useEffect(() => {

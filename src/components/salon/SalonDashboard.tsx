@@ -511,8 +511,14 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     .normalize('NFD').replace(/[̀-ͯ]/g, '').includes('PROCESSO DE ATENDIMENTO')
   const TODAS_CATEGORIAS = [...CATEGORIAS_CONTEUDO, ...tabsExtras].filter(c => !ehProcessoAtendimento(c))
 
+  // `h-[100dvh]`, e não `h-screen`.
+  //
+  // `h-screen` é 100vh, e no celular 100vh conta a altura COM a barra de
+  // endereço recolhida: a tela fica mais alta que o visível e sobra um pedaço
+  // que rola sem ter nada dentro. `dvh` acompanha a barra aparecendo e
+  // sumindo. O chat desta mesma tela já usava dvh; o painel não.
   return (
-    <div className="nodri-salon-bg nodri-sem-whats h-screen flex flex-col overflow-hidden">
+    <div className="nodri-salon-bg nodri-sem-whats h-[100dvh] flex flex-col overflow-hidden">
       <TituloDaAba nome={salaoNome} />
 
       {/* ANÚNCIO — compromissos dos DOIS calendários chegando (faltam até 2 dias) */}
