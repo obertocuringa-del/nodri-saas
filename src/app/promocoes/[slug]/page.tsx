@@ -1,21 +1,25 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Megaphone, ThumbsUp, Tag, CalendarPlus } from 'lucide-react'
+import { Loader2, Megaphone, ThumbsUp, Tag, CalendarPlus, Ticket } from 'lucide-react'
 import type { DadosVitrine } from '@/lib/vitrineCliente'
 import VitrineAcoes from '@/components/vitrine/VitrineAcoes'
 import VitrinePrecos from '@/components/vitrine/VitrinePrecos'
 import VitrineVotacao from '@/components/vitrine/VitrineVotacao'
 import VitrineAgendar from '@/components/vitrine/VitrineAgendar'
+import VitrineCupom from '@/components/vitrine/VitrineCupom'
 
 // Página pública do salão, aberta por link. Quem chega aqui é cliente, não
 // usuário do sistema: nada de menu, sidebar ou termo interno. Fundo claro e
 // alvos grandes porque ela é aberta no celular, com uma mão, quase sempre a
 // partir de um link no WhatsApp.
 
-type Aba = 'acoes' | 'sugestao' | 'precos' | 'agendar'
+type Aba = 'acoes' | 'cupom' | 'sugestao' | 'precos' | 'agendar'
 
 const ABAS: Array<{ id: Aba; label: string; icone: any }> = [
   { id: 'acoes', label: 'Promoções', icone: Megaphone },
+  // A de cupom entra depois de Promoções, e só quando o salão liga: com ela
+  // fixa, todo salão que não usa indicação mostraria uma aba morta.
+  { id: 'cupom', label: 'Cupom de indicação', icone: Ticket },
   { id: 'sugestao', label: 'Sugerir ação comercial', icone: ThumbsUp },
   { id: 'precos', label: 'Tabela de preços', icone: Tag },
   { id: 'agendar', label: 'Agendar procedimento', icone: CalendarPlus },
@@ -78,7 +82,7 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
         </div>
 
         <nav className="max-w-5xl mx-auto px-2 flex">
-          {ABAS.map(({ id, label, icone: Icone }) => (
+          {ABAS.filter(a => a.id !== 'cupom' || dados.cupons?.ativo).map(({ id, label, icone: Icone }) => (
             <button key={id} onClick={() => setAba(id)}
               className={'flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 border-b-2 transition '
                 + (aba === id
@@ -99,6 +103,10 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
         {aba === 'acoes' && (
           <VitrineAcoes acoes={dados.acoes} servicos={dados.servicos}
             profissionais={dados.profissionais} whatsapp={salao.whatsapp} horario={dados.horario} />
+        )}
+        {aba === 'cupom' && dados.cupons?.ativo && (
+          <VitrineCupom slug={params.slug}
+            percentual={dados.cupons.percentual} validoAte={dados.cupons.validoAte} />
         )}
         {aba === 'sugestao' && (
           <VitrineVotacao servicos={dados.servicos} token={params.slug} />

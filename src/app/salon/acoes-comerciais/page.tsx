@@ -5,6 +5,7 @@ import { ArrowLeft, Home } from 'lucide-react'
 import { voltar } from '@/lib/historicoNav'
 import AcoesComerciais from '@/components/salon/AcoesComerciais'
 import LinkVitrine from '@/components/salon/LinkVitrine'
+import ValidarCupom from '@/components/salon/ValidarCupom'
 
 export default function AcoesComerciaisPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function AcoesComerciaisPage() {
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
         <LinkVitrine />
+        <ValidarCupom />
         <AcoesComerciais />
       </main>
     </div>

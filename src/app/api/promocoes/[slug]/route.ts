@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSalaoPorToken, whatsappDoSalao } from '@/lib/vitrineConfig'
 import { statusCampanha, capaDaCampanha, precoDaCampanha } from '@/lib/acoesComerciais'
+import { getCfg as getCfgCupons, campanhaVencida } from '@/lib/cuponsIndicacao'
 import type { Campanha } from '@/lib/acoesComerciais'
 
 export const dynamic = 'force-dynamic'
@@ -120,6 +121,14 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
       servicos: Array.isArray(p.servicos_habilitados) ? (p.servicos_habilitados as string[]) : [],
     }))
 
+  // ── Cupom de indicação ──
+  //
+  // A aba só existe quando o salão ligou E a campanha ainda vale. Deixar a
+  // aba no ar depois do prazo seria a mesma armadilha da promoção encerrada
+  // que continuava na vitrine com o botão de agendar funcionando.
+  const cfgCupons = await getCfgCupons(salao.salaoId)
+  const cuponsNoAr = cfgCupons.ativo && !campanhaVencida(cfgCupons)
+
   return NextResponse.json({
     salao: {
       nome: salao.nome,
@@ -131,5 +140,10 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
     horario: salao.config.horario || null,
     servicos: servicosPublicos,
     profissionais,
+    cupons: {
+      ativo: cuponsNoAr,
+      percentual: cfgCupons.percentual,
+      validoAte: cfgCupons.validoAte,
+    },
   })
 }

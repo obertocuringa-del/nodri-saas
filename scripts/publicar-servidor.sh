@@ -42,7 +42,7 @@ SEG=$(grep -E "^CRON_SECRET=" /home/nodri/nodri-novo/.env.production.local | hea
 if [ -n "$SEG" ]; then
   { echo "# NODRI -- tarefas diárias (gerado por scripts/publicar-servidor.sh)"
     echo "SHELL=/bin/sh"
-    for t in "0 8 check-licencas" "0 9 check-trials" "0 10 lembretes-pix" "0 3 reprocessar-bloqueios" "0 4 limpar-compras"; do
+    for t in "0 8 check-licencas" "0 9 check-trials" "0 10 lembretes-pix" "0 3 reprocessar-bloqueios" "0 4 limpar-compras" "20 7 cupons"; do
       set -- $t; echo "$1 $2 * * * root curl -s -m 110 -H \"Authorization: Bearer $SEG\" https://www.nodri.com.br/api/cron/$3 >/dev/null 2>&1"
     done; } > /etc/cron.d/nodri-diarias && chmod 644 /etc/cron.d/nodri-diarias && echo "tarefas diárias agendadas"
 else
