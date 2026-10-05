@@ -685,7 +685,9 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
           </div>
 
           {/* ── Área do chat ── */}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* `position: relative` para a lista de mensagens se ancorar nela.
+              A altura da lista deixa de depender da cadeia de flex. */}
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
           {/* Mensagens */}
           {/* overscrollBehavior: contain — no celular, chegar ao topo das
@@ -695,7 +697,18 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
               rolagem travada: ela terminava, o gesto vazava e a tela recarregava.
               `contain` prende o gesto dentro da lista.
               touchAction pan-y deixa claro que so a rolagem vertical vale ali. */}
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', padding: isMobile ? '16px 12px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {/* ── Por que esta caixa é `absolute`, e não `flex: 1` ──
+              Ela rolava no computador e NÃO rolava no celular: nem subia nem
+              descia, e a conversa ficava presa.
+              `flex: 1` só vira altura se TODA a cadeia acima -- container,
+              corpo, coluna -- souber a própria altura. São três níveis; basta
+              um deles crescer com o conteúdo para esta caixa crescer junto, e
+              uma caixa do tamanho do conteúdo não tem o que rolar. O excesso
+              some atrás do `overflow: hidden` do pai e o dedo não acha nada.
+              Com `absolute` + `inset: 0` a altura vem do pai direto, que é
+              `relative` e tem tamanho garantido. Nada mais a herdar.
+              O respiro embaixo é do campo de digitar, que fica por cima. */}
+          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overscrollBehavior: 'contain', touchAction: 'pan-y', padding: isMobile ? '16px 12px 92px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
@@ -771,7 +784,10 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
 
 
           {/* Input */}
-          <div style={{ padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #f0ede8', background: '#faf9f7', flexShrink: 0 }}>
+          {/* Fica no rodapé, POR CIMA da lista -- que agora ocupa a coluna
+              inteira. O respiro de 92px no pé da lista é o lugar dele: sem
+              isso a última mensagem ficaria escondida atrás do campo. */}
+          <div style={{ position: 'relative', zIndex: 2, marginTop: 'auto', padding: isMobile ? '10px 12px' : '16px max(24px, calc(50% - 400px))', borderTop: '1px solid #f0ede8', background: '#faf9f7', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#ffffff', border: '1px solid #e0ddd8', borderRadius: 14, padding: '10px 14px', transition: 'border-color 0.2s' }}
               onFocus={() => {}} >
               <textarea
