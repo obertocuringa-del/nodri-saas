@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Check, Copy, Ticket, Share2 } from 'lucide-react'
+import { Loader2, Check, Copy, Ticket, Share2, ImageDown } from 'lucide-react'
+import { desenharCupom } from '@/lib/cupomArte'
 
 // ── A cliente pega o cupom dela ─────────────────────────────────────────────
 //
@@ -16,6 +17,9 @@ interface Props {
   slug: string
   percentual: number
   validoAte: string | null
+  /** Identidade de QUEM compartilha a arte — do salão, nunca do sistema. */
+  nomeSalao: string
+  logo: string | null
 }
 
 type Tela = 'telefone' | 'nome' | 'pronto'
@@ -33,13 +37,14 @@ function dataCurta(iso: string | null): string {
   return `${d}/${m}/${a}`
 }
 
-export default function VitrineCupom({ slug, percentual, validoAte }: Props) {
+export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, logo }: Props) {
   const [tela, setTela] = useState<Tela>('telefone')
   const [telefone, setTelefone] = useState('')
   const [nome, setNome] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [copiado, setCopiado] = useState(false)
+  const [montandoArte, setMontandoArte] = useState(false)
   const [cupom, setCupom] = useState<{
     codigo: string; nome: string; indicadas: number; compareceram: number
   } | null>(null)
@@ -77,11 +82,63 @@ export default function VitrineCupom({ slug, percentual, validoAte }: Props) {
     }
   }
 
-  function compartilhar() {
+  function textoDoConvite(codigo: string) {
+    return `Use meu cupom ${codigo} e ganhe ${percentual}% de desconto na sua primeira visita no ${nomeSalao}!`
+  }
+
+  /**
+   * Compartilhar levando a ARTE junto.
+   *
+   * Texto solto some no meio da conversa; a imagem a pessoa olha e às vezes
+   * reposta -- que é o que faz a indicação circular. A arte é desenhada aqui
+   * no aparelho, então não custa nada ao servidor.
+   *
+   * Três caminhos, nessa ordem, porque nem todo navegador faz o primeiro:
+   * compartilhar com arquivo, compartilhar só o texto, abrir o WhatsApp Web.
+   * Em todos eles o código continua grande na tela -- nada se perde.
+   */
+  async function compartilhar() {
     if (!cupom) return
-    const texto = `Use meu cupom ${cupom.codigo} e ganhe ${percentual}% de desconto na sua primeira visita!`
-    if (navigator.share) { navigator.share({ text: texto }).catch(() => null); return }
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    const texto = textoDoConvite(cupom.codigo)
+    setMontandoArte(true)
+    try {
+      const blob = await desenharCupom({
+        codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte,
+      })
+      if (blob && navigator.canShare) {
+        const arquivo = new File([blob], `cupom-${cupom.codigo}.png`, { type: 'image/png' })
+        if (navigator.canShare({ files: [arquivo] })) {
+          await navigator.share({ files: [arquivo], text: texto })
+          return
+        }
+      }
+      if (navigator.share) { await navigator.share({ text: texto }); return }
+      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    } catch {
+      // Cancelar o compartilhamento cai aqui e não é erro: a pessoa desistiu.
+    } finally {
+      setMontandoArte(false)
+    }
+  }
+
+  /** No computador o compartilhar do sistema quase nunca existe. Baixar a
+   *  arte resolve: ela anexa no WhatsApp Web como faria com qualquer foto. */
+  async function baixarArte() {
+    if (!cupom) return
+    setMontandoArte(true)
+    try {
+      const blob = await desenharCupom({
+        codigo: cupom.codigo, nomeSalao, logo, percentual, validoAte,
+      })
+      if (!blob) { setErro('Não deu para montar a imagem neste aparelho.'); return }
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `cupom-${cupom.codigo}.png`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    } finally {
+      setMontandoArte(false)
+    }
   }
 
   const botao = 'w-full py-3.5 rounded-xl font-semibold text-[15px] text-white bg-[var(--vt-cor)] disabled:opacity-50 transition'
@@ -165,15 +222,22 @@ export default function VitrineCupom({ slug, percentual, validoAte }: Props) {
               </p>
             </div>
 
-            <div className="flex gap-2 mb-5">
+            <div className="flex gap-2 mb-2">
               <button onClick={copiar}
                 className="flex-1 py-3 rounded-xl border border-gray-300 font-semibold text-[14px] text-gray-700 flex items-center justify-center gap-2">
                 {copiado ? <><Check size={16} className="text-green-600" /> Copiado</> : <><Copy size={16} /> Copiar</>}
               </button>
-              <button onClick={compartilhar} className="flex-1 py-3 rounded-xl font-semibold text-[14px] text-white bg-[var(--vt-cor)] flex items-center justify-center gap-2">
-                <Share2 size={16} /> Enviar
+              <button onClick={compartilhar} disabled={montandoArte}
+                className="flex-1 py-3 rounded-xl font-semibold text-[14px] text-white bg-[var(--vt-cor)] flex items-center justify-center gap-2 disabled:opacity-60">
+                {montandoArte
+                  ? <Loader2 size={16} className="animate-spin" />
+                  : <><Share2 size={16} /> Enviar</>}
               </button>
             </div>
+            <button onClick={baixarArte} disabled={montandoArte}
+              className="w-full py-2.5 mb-5 text-[13px] text-gray-500 flex items-center justify-center gap-1.5 disabled:opacity-50">
+              <ImageDown size={15} /> Baixar a arte do cupom
+            </button>
 
             {cupom.indicadas > 0 && (
               <div className="border-t border-gray-100 pt-4 text-[13px] text-gray-600">
