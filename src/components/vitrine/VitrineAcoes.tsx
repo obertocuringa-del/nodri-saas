@@ -9,15 +9,20 @@ import ModalAgendarAcao from './ModalAgendarAcao'
 // categoria. O texto de "como lançar no sistema" é instrução para a equipe e
 // não chega aqui.
 //
-// Os filtros são "Todas" e "Encerradas", só. Havia também "Ativas" e
-// "Futuras": a cliente abria o link, caía num filtro e não achava a promoção
-// que tinha visto no story, porque ela estava na outra aba. Em "Todas" ela vê
-// tudo o que o salão publicou — que é o ponto de mandar o link.
-
-const FILTROS = [
-  { id: 'todas', label: 'Todas' },
-  { id: 'encerrada', label: 'Encerradas' },
-] as const
+// Sem filtro de situação nenhum.
+//
+// Já foram quatro ("Ativas", "Futuras", "Todas", "Encerradas") e a cliente
+// abria o link, caía num filtro e não achava a promoção que tinha visto no
+// story, porque estava em outra aba.
+//
+// Agora nem isso: a rota pública entrega SÓ o que está valendo hoje --
+// rascunho, agendada e encerrada não saem do servidor. Então "Encerradas"
+// abria uma lista sempre vazia, e "Todas" era o único botão de um grupo de
+// um. Dois botões que não escolhem nada só ocupam a primeira dobra do
+// celular, antes da primeira promoção.
+//
+// A cliente não tem o que fazer com promoção encerrada: ela veio ver o que
+// pode comprar hoje.
 
 const CORES: Record<string, { bg: string; cor: string; label: string }> = {
   ativa: { bg: '#ec489922', cor: '#db2777', label: 'Ativa' },
@@ -33,10 +38,6 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
   /** Faixa de atendimento do salão; ausente cai no padrão. */
   horario?: { abertura: string; fechamento: string } | null
 }) {
-  // Abre em "Todas". Era 'ativa', que com a aba de Ativas removida deixaria a
-  // cliente presa: nenhum botão apareceria marcado e ela não teria como voltar
-  // a ver tudo.
-  const [filtro, setFiltro] = useState<string>('todas')
   const [categoria, setCategoria] = useState('')
   const [selecionadas, setSelecionadas] = useState<string[]>([])
   // Uma descricao aberta por vez — varias abertas devolvem o muro de texto.
@@ -49,9 +50,8 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
     [acoes])
 
   const lista = useMemo(() => acoes.filter(a =>
-    (filtro === 'todas' || a.status === filtro) &&
     (!categoria || a.categoria === categoria)
-  ), [acoes, filtro, categoria])
+  ), [acoes, categoria])
 
   function alternar(id: string) {
     setSelecionadas(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
@@ -76,18 +76,6 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
 
   return (
     <div>
-      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
-        {FILTROS.map(f => (
-          <button key={f.id} onClick={() => setFiltro(f.id)}
-            className={'shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition border '
-              + (filtro === f.id
-                ? 'bg-[var(--vt-cor)] text-white border-transparent'
-                : 'bg-white text-gray-600 border-gray-200')}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
       {categorias.length > 0 && (
         <select value={categoria} onChange={e => setCategoria(e.target.value)}
           className="w-full mb-4 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-gray-700 outline-none">
@@ -195,7 +183,13 @@ export default function VitrineAcoes({ acoes, servicos, profissionais, whatsapp,
                   <button onClick={() => agendar(a)}
                     className="flex-1 min-w-0 flex items-center justify-center gap-1 bg-[var(--vt-cor)] text-white py-2.5 rounded-xl text-[11.5px] sm:text-[13px] font-semibold">
                     <CalendarCheck size={14} className="shrink-0" />
-                    <span className="truncate">Quero agendar</span>
+                    {/* No celular são dois cards por linha: "Quero agendar"
+                        não cabe e o `truncate` cortava em "Quero agen...".
+                        Encurtar o rótulo diz a mesma coisa e cabe inteiro --
+                        reticências num botão parecem defeito, não economia
+                        de espaço. */}
+                    <span className="sm:hidden">Agendar</span>
+                    <span className="hidden sm:inline truncate">Quero agendar</span>
                   </button>
                   <button onClick={() => compartilhar(a)} title="Compartilhar"
                     className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500">

@@ -3,6 +3,7 @@ import { getSalaoPorToken } from '@/lib/vitrineConfig'
 import { normalizarTelefone } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 import { supabaseAdmin } from '@/lib/supabase'
+import { podePassar, origemDaChamada } from '@/lib/freioPublico'
 import {
   getCfg, campanhaVencida, acharCupomPorTelefone, criarCupom, nomeNoCrm, saldoDoCupom,
 } from '@/lib/cuponsIndicacao'
@@ -66,6 +67,20 @@ async function extrato(salaoId: string, cupomId: string) {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+  // ── Freio ──
+  //
+  // Esta rota cria registro sem login: basta um telefone. E cada cupom
+  // criado tambem cria contato no CRM, entao um script com numeros
+  // inventados sujaria a agenda do salao, nao so uma tabela.
+  //
+  // 20 em 10 minutos por origem. Uma pessoa de verdade consulta o proprio
+  // numero e talvez o de alguem da familia; vinte e folga para erro de
+  // digitacao e para uma casa inteira na mesma rede.
+  const origem = origemDaChamada(req)
+  if (!podePassar(`cupom:${params.slug}:${origem}`, 20)) {
+    return erro('Muitas tentativas. Aguarde alguns minutos e tente de novo.', 429)
+  }
+
   const salao = await getSalaoPorToken(params.slug)
   if (!salao) return erro('Link indisponível', 404)
 
