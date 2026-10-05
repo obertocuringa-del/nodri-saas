@@ -66,6 +66,10 @@ async function roteador(request: NextRequest) {
     pathname === '/api/cron/limpar-compras' ||
     pathname === '/api/cron/reprocessar-bloqueios' ||
     pathname === '/api/cron/saude' ||
+    // Cupom de indicacao: cruza o que o Avec trouxe com quem apresentou cupom.
+    // Faltava aqui e o cron levava 307 para /login -- a rota nunca rodava, e o
+    // credito da cliente so sairia quando a recepcao abrisse a tela.
+    pathname === '/api/cron/cupons' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
