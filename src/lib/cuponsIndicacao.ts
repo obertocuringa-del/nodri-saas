@@ -53,6 +53,27 @@ export async function salvarCfg(salaoId: string, cfg: CfgCupons) {
   )
 }
 
+/**
+ * `data_comanda` para 'AAAA-MM-DD'.
+ *
+ * ATENÇÃO: em `atendimentos_raw` a data é TEXTO em DD/MM/AAAA -- as 131.505
+ * linhas da base, sem exceção. Tratar esse campo como ISO foi o que deixou a
+ * regra de primeira visita sem funcionar nenhuma vez: o filtro de formato
+ * descartava toda data, a lista voltava vazia, e QUALQUER cliente antiga
+ * passava como "primeira vez no salão". Pego em 04/10/2026 com uma cliente
+ * que tinha comanda desde 2024.
+ *
+ * Pelo mesmo motivo nunca se ordena esse campo no banco: como texto, 31/01
+ * vem depois de 30/09, porque a comparação começa pelo DIA.
+ */
+export function dataComandaISO(bruto: string | null | undefined): string | null {
+  const s = String(bruto || '').trim()
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null
+}
+
 /** Hoje em São Paulo, 'AAAA-MM-DD'. O servidor roda em UTC: depois das 21h
  *  ele já virou o dia, e um crédito usado à noite cairia na data de amanhã. */
 export function hojeISO(): string {
@@ -129,8 +150,8 @@ export async function ultimaVisita(salaoId: string, telefone: string): Promise<s
 
   let maior: string | null = null
   for (const r of [...(c.data || []), ...(f.data || [])]) {
-    const d = String((r as any).data_comanda || '').slice(0, 10)
-    if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d) && (!maior || d > maior)) maior = d
+    const d = dataComandaISO((r as any).data_comanda)
+    if (d && (!maior || d > maior)) maior = d
   }
   return maior
 }
@@ -150,8 +171,8 @@ export async function visitasDoTelefone(salaoId: string, telefone: string): Prom
       .eq('salao_id', salaoId).in(col, grafias)
       .limit(400)
     for (const r of data || []) {
-      const d = String((r as any).data_comanda || '').slice(0, 10)
-      if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) datas.add(d)
+      const d = dataComandaISO((r as any).data_comanda)
+      if (d) datas.add(d)
     }
   }
   return [...datas].sort().reverse()
@@ -383,12 +404,30 @@ function somarDias(iso: string, n: number): string {
  * de quem compareceu -- e o robo ja ficou parado aqui.
  */
 async function coletaAte(salaoId: string): Promise<string | null> {
+  // NAO ordena por `data_comanda`: o campo e texto DD/MM/AAAA e ordenar
+  // assim compara o DIA primeiro -- 31/01/2023 sairia na frente de
+  // 01/10/2026. As colunas `ano` e `mes` sao numericas e tem indice proprio,
+  // entao o mes mais novo sai por elas; so dentro dele e que se olha o dia.
+  const { data: topo } = await supabaseAdmin
+    .from('atendimentos_raw').select('ano, mes')
+    .eq('salao_id', salaoId)
+    .order('ano', { ascending: false }).order('mes', { ascending: false })
+    .limit(1)
+  const ano = Number((topo || [])[0]?.ano)
+  const mes = Number((topo || [])[0]?.mes)
+  if (!ano || !mes) return null
+
   const { data } = await supabaseAdmin
     .from('atendimentos_raw').select('data_comanda')
-    .eq('salao_id', salaoId)
-    .order('data_comanda', { ascending: false }).limit(1)
-  const d = String((data || [])[0]?.data_comanda || '').slice(0, 10)
-  return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d) ? d : null
+    .eq('salao_id', salaoId).eq('ano', ano).eq('mes', mes)
+    .limit(5000)
+
+  let maior: string | null = null
+  for (const r of data || []) {
+    const d = dataComandaISO((r as any).data_comanda)
+    if (d && (!maior || d > maior)) maior = d
+  }
+  return maior
 }
 
 export async function sincronizar(salaoId: string): Promise<{
