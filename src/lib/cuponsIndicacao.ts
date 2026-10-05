@@ -210,7 +210,10 @@ export async function acharCupomPorTelefone(salaoId: string, telefone: string): 
 }
 
 export async function acharCupomPorCodigo(salaoId: string, codigo: string): Promise<Cupom | null> {
-  const limpo = String(codigo || '').trim().toUpperCase().replace(/\s+/g, '')
+  // So o que o codigo pode conter. Sem esta limpeza, `%` e `_` chegavam ao
+  // `ilike` como CURINGAS: digitar "%" na busca da recepcao traria um cupom
+  // que ninguem pediu -- o de outra cliente.
+  const limpo = String(codigo || '').toUpperCase().replace(/[^A-Z0-9-]/g, '')
   if (!limpo) return null
   const { data } = await supabaseAdmin
     .from('cupom_indicacao').select('id, codigo, dono_nome, dono_telefone, dono_chave')
@@ -429,15 +432,21 @@ async function coletaAte(salaoId: string): Promise<string | null> {
   const mes = Number((topo || [])[0]?.mes)
   if (!ano || !mes) return null
 
-  const { data } = await supabaseAdmin
-    .from('atendimentos_raw').select('data_comanda')
-    .eq('salao_id', salaoId).eq('ano', ano).eq('mes', mes)
-    .limit(5000)
-
+  // Em paginas, nao num `limit` chutado. O maior mes da base ja tem 4.207
+  // linhas; com teto de 5.000 bastava um mes cheio para a leitura cortar
+  // antes do ultimo dia -- e a cobertura voltaria menor do que e, segurando
+  // revogacoes para sempre.
   let maior: string | null = null
-  for (const r of data || []) {
-    const d = dataComandaISO((r as any).data_comanda)
-    if (d && (!maior || d > maior)) maior = d
+  for (let de = 0; de < 40_000; de += 1000) {
+    const { data } = await supabaseAdmin
+      .from('atendimentos_raw').select('data_comanda')
+      .eq('salao_id', salaoId).eq('ano', ano).eq('mes', mes)
+      .range(de, de + 999)
+    for (const r of data || []) {
+      const d = dataComandaISO((r as any).data_comanda)
+      if (d && (!maior || d > maior)) maior = d
+    }
+    if (!data || data.length < 1000) break
   }
   return maior
 }

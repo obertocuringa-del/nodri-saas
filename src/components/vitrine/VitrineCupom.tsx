@@ -55,8 +55,10 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
    * encerraria o gesto e o WhatsApp seria bloqueado como pop-up.
    */
   const [arte, setArte] = useState<Blob | null>(null)
+  interface Linha { tipo: 'veio' | 'usou'; nome: string; data: string; valeu: boolean }
   const [cupom, setCupom] = useState<{
     codigo: string; nome: string; indicadas: number; compareceram: number
+    usados: number; saldo: number; extrato: Linha[]
   } | null>(null)
 
   async function buscar(comNome?: string) {
@@ -71,7 +73,12 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
       if (!r.ok) { setErro(j?.error || 'Não deu certo. Tente de novo.'); return }
 
       if (j.situacao === 'precisa_nome') { setTela('nome'); return }
-      setCupom({ codigo: j.codigo, nome: j.nome, indicadas: j.indicadas || 0, compareceram: j.compareceram || 0 })
+      setCupom({
+        codigo: j.codigo, nome: j.nome,
+        indicadas: j.indicadas || 0, compareceram: j.compareceram || 0,
+        usados: j.usados || 0, saldo: j.saldo || 0,
+        extrato: Array.isArray(j.extrato) ? j.extrato : [],
+      })
       setTela('pronto')
     } catch {
       setErro('Sem conexão. Tente de novo.')
@@ -265,11 +272,56 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
             </button>
 
             {cupom.indicadas > 0 && (
-              <div className="border-t border-gray-100 pt-4 text-[13px] text-gray-600">
-                Você já indicou <b>{cupom.indicadas}</b>
-                {cupom.compareceram > 0 && <> · <b>{cupom.compareceram}</b> já {cupom.compareceram === 1 ? 'veio' : 'vieram'}</>}
-                <p className="text-[12px] text-gray-400 mt-1">
-                  Peça o seu desconto na recepção, na sua próxima visita.
+              <div className="border-t border-gray-100 pt-4 text-left">
+                {/* O placar do esforço dela: quantas vieram, quanto já gastou
+                    e quanto ainda tem para usar. */}
+                <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                  {[
+                    ['Vieram', cupom.compareceram],
+                    ['Usados', cupom.usados],
+                    ['A usar', cupom.saldo],
+                  ].map(([rot, n], i) => (
+                    <div key={rot as string}
+                      className={'rounded-xl py-2.5 ' + (i === 2 ? 'bg-[var(--vt-cor)]/8' : 'bg-gray-50')}>
+                      <p className={'font-bold text-[20px] ' + (i === 2 ? 'text-[var(--vt-cor)]' : 'text-gray-900')}>
+                        {n as number}
+                      </p>
+                      <p className="text-[11px] text-gray-500">{rot as string}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {!!cupom.extrato.length && (
+                  <>
+                    <p className="text-[12px] font-semibold text-gray-500 mb-2">Seu histórico</p>
+                    <div className="space-y-1.5">
+                      {cupom.extrato.map((l, i) => (
+                        <div key={i}
+                          className="flex items-center gap-2 text-[13px] bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400 text-[11.5px] shrink-0 w-[38px]">
+                            {l.data.slice(8, 10)}/{l.data.slice(5, 7)}
+                          </span>
+                          <span className={'flex-1 min-w-0 truncate '
+                            + (l.valeu ? 'text-gray-700' : 'text-gray-400 line-through')}>
+                            {l.tipo === 'veio'
+                              ? `${l.nome} usou seu cupom`
+                              : `Você usou ${percentual}% de desconto`}
+                          </span>
+                          <span className={'font-bold text-[12.5px] shrink-0 '
+                            + (!l.valeu ? 'text-gray-300'
+                              : l.tipo === 'veio' ? 'text-green-600' : 'text-gray-400')}>
+                            {!l.valeu ? '—' : l.tipo === 'veio' ? '+1' : '\u22121'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <p className="text-[12px] text-gray-500 mt-3.5 text-center leading-relaxed">
+                  {cupom.saldo > 0
+                    ? `Peça o seu desconto na recepção, na sua próxima visita.`
+                    : 'Compartilhe o seu cupom para ganhar desconto.'}
                 </p>
               </div>
             )}
