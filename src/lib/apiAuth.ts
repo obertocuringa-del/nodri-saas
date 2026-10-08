@@ -131,6 +131,11 @@ export function permDaGrade(chave: string): string {
   const c = (chave || '').replace(/^grid_/, '')
   if (c === 'checklist') return 'checklist'
   if (c === 'materiais_trabalho') return 'prof_materiais'
+  // Documentos escritos do setor (descricao de cargo, POPs proprios). Antes
+  // do `pop*` generico: `pop_correcoes` cairia nele e pediria `adm_pop`,
+  // enquanto a sidebar do setor pede `profissionais` -- o sub veria o item e
+  // levaria "Sem acesso" ao abrir.
+  if (c.startsWith('pop_correcoes')) return 'profissionais'
   if (c.startsWith('pop')) return 'adm_pop'
   if (c === 'senhas') return 'adm_senhas'
   if (c === 'pacotes') return 'adm_pacotes'

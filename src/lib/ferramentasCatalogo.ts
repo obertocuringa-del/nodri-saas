@@ -101,8 +101,8 @@ export const CATALOGO: Record<string, Ferramenta> = {
   // Documentos escritos do setor: a descricao do cargo e os POPs proprios.
   // Moram na sidebar do SETOR, e nao na ficha de um profissional: o cargo
   // fica mesmo quando quem o ocupa muda.
-  doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'checklist', grupo: 'DOCUMENTOS' },
-  doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'checklist', grupo: 'DOCUMENTOS' },
+  doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais', grupo: 'DOCUMENTOS' },
+  doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'profissionais', grupo: 'DOCUMENTOS' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
