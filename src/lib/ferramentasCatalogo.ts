@@ -101,8 +101,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   // Documentos escritos do setor: a descricao do cargo e os POPs proprios.
   // Moram na sidebar do SETOR, e nao na ficha de um profissional: o cargo
   // fica mesmo quando quem o ocupa muda.
-  doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais', grupo: 'DOCUMENTOS' },
-  doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'profissionais', grupo: 'DOCUMENTOS' },
+  doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
+  doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'profissionais' },
+  doc_cargo_processos: { id: 'doc_cargo_processos', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
@@ -148,7 +149,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // dava para receber nem enviar demanda dos outros setores.
   { chave: ['FINANCEIRO', 'CONTABIL'], itens: ['ck_financeiro', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
-  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
+  { chave: ['PROCESSO', 'QUALIDADE'], itens: ['doc_cargo_processos', 'ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['ck_comercial', 'lojistas'] },
   { chave: ['MARKETING'], itens: ['ck_marketing'] },
   { chave: ['RESPONSAVEL TECNICA', 'TECNICA'], itens: ['ck_tecnica'] },
@@ -159,7 +160,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['CAFE', 'COPA'], itens: ['ck_cafe', 'compras_cafe'] },
   // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
   // CHECK LIST — COORDENAÇÃO (52 categorias). A categoria antiga segue no banco.
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'man_coordenacao', 'doc_cargo_coord', 'doc_pop_correcoes'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['doc_cargo_coord', 'doc_pop_correcoes', 'pr_horarios', 'ck_coordenacao', 'man_coordenacao'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()
