@@ -30,6 +30,7 @@ interface Dados {
   avaliado: string | null
   aberta: boolean
   salao_nome: string
+  salao_logo?: string | null
   ficha: FichaAval
 }
 
@@ -156,11 +157,15 @@ export default function AvaliarPublico() {
         <div style={{ height: 4, background: `linear-gradient(90deg,${COR},#a855f7,#06b6d4)` }} />
 
         <div style={{ background: 'white', borderBottom: '1px solid #f3e8ff', padding: '22px 20px', textAlign: 'center' }}>
-          {dados.salao_nome && (
+          {/* A logo do salão manda; sem logo, o nome escrito. */}
+          {dados.salao_logo ? (
+            <img src={dados.salao_logo} alt={dados.salao_nome}
+              style={{ maxHeight: 54, maxWidth: 190, objectFit: 'contain', margin: '0 auto 11px', display: 'block' }} />
+          ) : dados.salao_nome ? (
             <p style={{ fontSize: 11.5, fontWeight: 700, color: COR, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 7 }}>
               {dados.salao_nome}
             </p>
-          )}
+          ) : null}
           <h1 style={{ fontSize: 21, fontWeight: 800, color: '#1a1a1a', lineHeight: 1.25 }}>
             {dados.cargo || 'Avaliação de cargo'}
           </h1>

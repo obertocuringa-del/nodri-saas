@@ -21,15 +21,25 @@ export async function GET(_: NextRequest, { params }: { params: { token: string 
 
   if (!rodada) return NextResponse.json({ error: 'Link inválido' }, { status: 404 })
 
-  const { data: salao } = await supabaseAdmin
-    .from('saloes').select('nome').eq('id', rodada.salao_id).maybeSingle()
+  // O nome que a pessoa conhece, nao a razao social. A tela publica do cupom
+  // ja tinha mostrado "OLIVEIRA E SCHNEIDER INTITUTO DE BELEZA LTDA" para a
+  // cliente: o nome de vitrine manda, e `saloes.nome` e o que sobra. A logo
+  // mora na chave com prefixo `grid_`, gravada pela rota /api/salon/grid.
+  const [{ data: salao }, { data: cfgRow }, { data: logoRow }] = await Promise.all([
+    supabaseAdmin.from('saloes').select('nome').eq('id', rodada.salao_id).maybeSingle(),
+    supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', rodada.salao_id).eq('chave', 'vitrine_config').maybeSingle(),
+    supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', rodada.salao_id).eq('chave', 'grid_logo_salao').maybeSingle(),
+  ])
 
   return NextResponse.json({
     cargo: rodada.cargo,
     titulo: rodada.titulo,
     avaliado: rodada.avaliado,
     aberta: rodada.aberta,
-    salao_nome: salao?.nome || '',
+    salao_nome: String((cfgRow as any)?.valor?.nomePublico || '').trim() || salao?.nome || '',
+    salao_logo: (logoRow as any)?.valor?.logo || null,
     ficha: lerFicha(rodada.ficha, rodada.cargo || ''),
   })
 }
