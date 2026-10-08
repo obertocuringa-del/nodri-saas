@@ -635,7 +635,8 @@ export default function DepartamentoPage() {
               return <DocEditavel key={ferramentaAberta} chave={`demanda_${slug}`} tituloPadrao={titulo.toUpperCase()}
                 blocosPadrao={[{ titulo: 'Como fazer', corpo: '' }, { titulo: 'Registro / andamento', corpo: '' }]} comData />
             })()}
-            <ConteudoFerramenta id={ferramentaAberta} profsSalao={profsParaListas} abaPop={abaPopSetor} />
+            <ConteudoFerramenta id={ferramentaAberta} profsSalao={profsParaListas} abaPop={abaPopSetor}
+              setorId={id} setorNome={dep?.nome_completo} />
           </>
         ) : (<>
 

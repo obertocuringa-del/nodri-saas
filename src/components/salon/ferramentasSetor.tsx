@@ -66,17 +66,40 @@ const D_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [
 // Os dados do catálogo moram em @/lib/ferramentasCatalogo — arquivo sem
 // componentes, para a busca global poder lê-los sem arrastar as telas junto.
 // Reexportados aqui para que quem já importava daqui continue funcionando.
+import DescricaoCargoSetor from '@/components/salon/DescricaoCargoSetor'
+
 export type { Ferramenta } from '@/lib/ferramentasCatalogo'
 export { CATALOGO, FERRAMENTAS_POR_SETOR, ferramentasDoSetor } from '@/lib/ferramentasCatalogo'
 
 /** Renderiza o conteúdo de uma ferramenta — o mesmo componente do Administrativo. */
-export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe' }: { id: string; profsSalao: ProfSalao[]; abaPop?: string }) {
+export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe', setorId, setorNome }: {
+  id: string
+  profsSalao: ProfSalao[]
+  abaPop?: string
+  /** Quem e o setor: os documentos escritos sao guardados por setor. */
+  setorId?: string
+  setorNome?: string
+}) {
   // Áreas de compra: mesma página para todas, muda só a área (por isso fica
   // fora do switch, que precisaria de uma linha para cada).
   if (id.startsWith('compras_')) {
     const area = AREAS_COMPRAS.find(a => `compras_${a.id}` === id)
     if (area) return <ListaCompras key={id} area={area.id} titulo={area.titulo} />
   }
+  // ── Documentos escritos do setor ──
+  // Mesmo editor para todos; o que muda e o arquivo no banco. Sem o id do
+  // setor nao ha onde guardar, entao nao desenha.
+  if (id === 'doc_cargo_coord' || id === 'doc_pop_correcoes') {
+    if (!setorId) return null
+    const ehCargo = id === 'doc_cargo_coord'
+    return <DescricaoCargoSetor key={id} profId={setorId}
+      docId={ehCargo ? 'descricao_cargo' : 'pop_correcoes'}
+      rotulo={ehCargo ? 'Descrição de cargo' : 'Procedimento Operacional Padrão'}
+      nomeSetor={ehCargo
+        ? (setorNome || 'Descrição de cargo')
+        : 'CORREÇÕES OPERACIONAIS (POP-COORD-005)'} />
+  }
+
   switch (id) {
     case 'lista_realinhamento': return <ListaServico key="realinhamento" servico="realinhamento" label="Realinhamento" profsSalao={profsSalao} />
     case 'lista_corte':         return <ListaServico key="corte" servico="corte" label="Corte" profsSalao={profsSalao} />

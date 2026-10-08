@@ -98,6 +98,11 @@ export const CATALOGO: Record<string, Ferramenta> = {
   pontos_ebulicao: { id: 'pontos_ebulicao', label: 'PONTOS DE EBULIÇÃO',          perm: 'checklist' },
   // Procedimentos (como lidar com a demanda): abrem como sub-itens na sidebar
   man_coordenacao: { id: 'man_coordenacao', label: 'PROCEDIMENTOS — COORDENAÇÃO', perm: 'checklist', conteudoSlug: 'manual:coordenacao' },
+  // Documentos escritos do setor: a descricao do cargo e os POPs proprios.
+  // Moram na sidebar do SETOR, e nao na ficha de um profissional: o cargo
+  // fica mesmo quando quem o ocupa muda.
+  doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'checklist', grupo: 'DOCUMENTOS' },
+  doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'checklist', grupo: 'DOCUMENTOS' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
@@ -154,7 +159,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['CAFE', 'COPA'], itens: ['ck_cafe', 'compras_cafe'] },
   // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
   // CHECK LIST — COORDENAÇÃO (52 categorias). A categoria antiga segue no banco.
-  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'man_coordenacao'] },
+  { chave: ['COORDENADOR', 'COORDENACAO'], itens: ['pr_horarios', 'ck_coordenacao', 'man_coordenacao', 'doc_cargo_coord', 'doc_pop_correcoes'] },
 ]
 
 const norm = (s: string) => (s || '').toUpperCase().trim()

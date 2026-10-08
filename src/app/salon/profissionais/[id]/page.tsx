@@ -7,7 +7,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, TrendingUp, TrendingDown, BarChart2,
   MessageSquare, CheckSquare, Square, AlertTriangle } from 'lucide-react'
 import ChatWidget from '@/components/salon/ChatWidget'
-import DescricaoCargoSetor from '@/components/salon/DescricaoCargoSetor'
 import WhatsPendencia from '@/components/salon/WhatsPendencia'
 import AvaliarProfissional from '@/components/salon/AvaliarProfissional'
 import { PopsEAvaliacao } from '@/components/salon/PopsProfissional'
@@ -2725,7 +2724,7 @@ export default function PerfilProfissionalPage() {
   // Enquanto carrega, o hook responde `true` para tudo — de propósito, para não
   // piscar "contrate o plano X" na cara de quem já contratou.
   const { tem: temModulo } = useModulos()
-  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'|'cargo'|'pop005'>('cadastro')
+  const [tab, setTab] = useState<'inicio'|'cadastro'|'avaliar'|'pops'|'avaliacaopop'|'desempenho'|'faturamento'|'metas'|'ia'|'dependencia'|'oportunidades'|'bundle'|'clientes-perdidos'|'agendamentos'|'calendario'|'corrida'|'acoes'|'esterilizacao'|'kits'|'ester_fluxo'|'carreira'|'demandas'>('cadastro')
   // Tirar a aba da barra não basta: dá para cair nela por link direto
   // (?aba=faturamento) ou por um link antigo salvo. Sem esta guarda, a aba
   // some do menu mas o conteúdo continua sendo desenhado — vazio, que é
@@ -3563,8 +3562,6 @@ Use os dados reais e cite números. Proibido sugestão genérica.`
         const TABS_ALL: [typeof tab, string][] = [
           ['inicio','INÍCIO'],
           ['cadastro','CADASTRO'],
-          ['cargo','DESCRIÇÃO DE CARGO'],
-          ['pop005','CORREÇÕES OPERACIONAIS'],
           ['demandas','DEMANDAS'],
           ['avaliar','AVALIAR'],
           ['pops','POPS'],
@@ -3586,9 +3583,6 @@ Use os dados reais e cite números. Proibido sugestão genérica.`
         // Profissional logado: esconde a aba IA e o que o salão marcou para ocultar
         const TABS = TABS_ALL.filter(([t]) => {
           if (t === 'inicio') return souProf // aba Início (resumo bonito) só para o profissional
-          // Descricao de cargo e do SETOR: quem ocupa a funcao muda, o cargo
-          // fica. Para profissional de cadeira a descricao segue na aba Cadastro.
-          if (t === 'cargo' || t === 'pop005') return !!prof?.is_departamento
           if (t === 'carreira') return !prof?.is_departamento && podeVer(t) // plano de carreira não se aplica a departamentos
           if (t === 'demandas') return !prof?.is_departamento && podeVer(t) // demandas do profissional (departamento tem página própria)
           // Sem o módulo Relatórios não há planilha importada, e estas abas
@@ -3622,22 +3616,6 @@ Use os dados reais e cite números. Proibido sugestão genérica.`
       })()}
 
       {/*  INÍCIO — resumo bonito (só profissional) */}
-      {tab === 'cargo' && prof?.is_departamento && (
-        <div className="px-4 py-5 max-w-4xl mx-auto">
-          <DescricaoCargoSetor profId={id} docId="descricao_cargo"
-            rotulo="Descrição de cargo"
-            nomeSetor={form.nome_completo || prof?.nome_completo || 'Cargo'} />
-        </div>
-      )}
-
-      {tab === 'pop005' && prof?.is_departamento && (
-        <div className="px-4 py-5 max-w-4xl mx-auto">
-          <DescricaoCargoSetor profId={id} docId="pop_correcoes"
-            rotulo="Procedimento Operacional Padrão"
-            nomeSetor="CORREÇÕES OPERACIONAIS (POP-COORD-005)" />
-        </div>
-      )}
-
       {tab === 'inicio' && (
         <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
           <PainelResumoProf pid={id} prof={prof} onIrAba={(a) => setTab(a as any)} />
