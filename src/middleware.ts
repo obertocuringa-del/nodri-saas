@@ -91,6 +91,11 @@ async function roteador(request: NextRequest) {
     // pública, mas a PÁGINA não estava aqui — o cliente caía no login e não
     // tinha como responder.
     pathname.startsWith('/avaliacao') ||
+    // Avaliacao 360 de cargo: quem responde pode ser a colega de equipe, que
+    // nao tem conta no NODRI. A rota publica valida o token e so devolve os
+    // pontos a avaliar -- nunca o que os outros responderam.
+    pathname.startsWith('/avaliar/') ||
+    pathname.startsWith('/api/avaliacao-cargo/public') ||
     pathname.startsWith('/api/feedback/public') ||
     pathname.startsWith('/api/feedback-prof/public') ||
     // Recuperação de senha: as APIs já eram públicas, mas as telas não —

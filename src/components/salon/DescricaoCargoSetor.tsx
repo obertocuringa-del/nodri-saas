@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import {
   Loader2, Save, Printer, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Eye, X,
-  Settings2,
+  Settings2, BarChart3,
 } from 'lucide-react'
+import AvaliacaoCargoPainel from '@/components/salon/AvaliacaoCargoPainel'
 import {
   type DocCargo, type BlocoCargo,
   TIPOS_BLOCO, blocoVazio, docVazio, lerDoc, novoId,
@@ -45,6 +46,10 @@ export default function DescricaoCargoSetor({ profId, nomeSetor, docId = 'descri
 }) {
   const [impr, setImpr] = useState<OpcoesImpressao>(IMPRESSAO_PADRAO)
   const [painelImpr, setPainelImpr] = useState(false)
+  const [avaliando, setAvaliando] = useState(false)
+  // Só descrição de cargo se avalia. Um POP é procedimento: cumpre-se ou não
+  // se cumpre, não há nota de 0 a 10 para dar nele.
+  const podeAvaliar = docId === 'descricao_cargo'
   const [doc, setDoc] = useState<DocCargo>(() => docVazio(nomeSetor))
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -135,6 +140,20 @@ export default function DescricaoCargoSetor({ profId, nomeSetor, docId = 'descri
           )}
         </div>
 
+        {/* ── Avaliar ──
+            A regua da avaliacao e a propria descricao: os pontos nascem dos
+            deveres escritos aqui. Por isso o botao mora nesta pagina, e nao
+            numa tela separada que precisaria repetir o documento. */}
+        {podeAvaliar && (
+          <button onClick={() => setAvaliando(v => !v)}
+            className={'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border transition shrink-0 '
+              + (avaliando
+                ? 'border-nodri-cyan text-nodri-cyan bg-nodri-cyan/10'
+                : 'border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan')}>
+            <BarChart3 size={14} /> Avaliar
+          </button>
+        )}
+
         <button onClick={() => setEditando(v => !v)}
           className={'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border transition shrink-0 '
             + (editando
@@ -164,6 +183,11 @@ export default function DescricaoCargoSetor({ profId, nomeSetor, docId = 'descri
           </button>
         )}
       </div>
+
+      {podeAvaliar && avaliando && (
+        <AvaliacaoCargoPainel setorId={profId} doc={doc} salao={salao}
+          onFechar={() => setAvaliando(false)} />
+      )}
 
       {/* ── Ajustes da folha ──
           Impressão é outro meio: não tem rolagem, a página tem borda física,

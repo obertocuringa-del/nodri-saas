@@ -156,6 +156,9 @@ export function permDaGrade(chave: string): string {
   if (c.startsWith('esterilizacao')) return 'adm_esterilizacao'
   if (c.startsWith('enxovais')) return 'adm_enxovais'
   if (c.startsWith('descricao_cargo')) return 'profissionais'
+  // Ficha de criterios da avaliacao 360 do cargo: mora junto do documento e
+  // pede a mesma permissao dele.
+  if (c.startsWith('aval_cargo')) return 'profissionais'
   if (c === 'tabela_precos_arquivos') return 'adm_tabela_precos'
   if (c === 'arquivos_envio_lista') return 'adm_arquivos_envio'
   if (c === 'exame_admissional') return 'clt_exame'

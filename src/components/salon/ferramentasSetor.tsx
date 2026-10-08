@@ -89,9 +89,9 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe', setorId, s
   // ── Documentos escritos do setor ──
   // Mesmo editor para todos; o que muda e o arquivo no banco. Sem o id do
   // setor nao ha onde guardar, entao nao desenha.
-  if (id === 'doc_cargo_coord' || id === 'doc_cargo_processos' || id === 'doc_pop_correcoes') {
+  if (id === 'doc_cargo' || id === 'doc_cargo_coord' || id === 'doc_cargo_processos' || id === 'doc_pop_correcoes') {
     if (!setorId) return null
-    const ehCargo = id.startsWith('doc_cargo_')
+    const ehCargo = id.startsWith('doc_cargo')
     return <DescricaoCargoSetor key={id} profId={setorId}
       docId={ehCargo ? 'descricao_cargo' : 'pop_correcoes'}
       rotulo={ehCargo ? 'Descrição de cargo' : 'Procedimento Operacional Padrão'}

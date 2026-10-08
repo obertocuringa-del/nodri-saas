@@ -104,6 +104,9 @@ export const CATALOGO: Record<string, Ferramenta> = {
   doc_cargo_coord: { id: 'doc_cargo_coord', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
   doc_pop_correcoes: { id: 'doc_pop_correcoes', label: 'CORREÇÕES OPERACIONAIS (POP-COORD-005)', perm: 'profissionais' },
   doc_cargo_processos: { id: 'doc_cargo_processos', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
+  // Um id serve a qualquer setor: o arquivo no banco e por SETOR, e nao por
+  // item de sidebar. Os dois de cima ficam porque os links ja circulam.
+  doc_cargo: { id: 'doc_cargo', label: 'DESCRIÇÃO DE CARGO', perm: 'profissionais' },
   man_processos:   { id: 'man_processos',   label: 'PROCEDIMENTOS — PROCESSOS & QUALIDADE', perm: 'checklist', conteudoSlug: 'manual:processos' },
   ck_gerente:      { id: 'ck_gerente',      label: 'CHECK LIST — GERENTE',        perm: 'checklist' },
   ck_coordenado:   { id: 'ck_coordenado',   label: 'CHECK LIST — COORDENADO',     perm: 'checklist' },
@@ -137,7 +140,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
 // normalizado (sem acento/maiúsculas) — casamos por "contém".
 export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // "Arquivos para Envio" saiu da sidebar da Recepção. Segue no catálogo/banco.
-  { chave: ['RECEPCAO'], itens: ['ck_abertura', 'ck_intermediario', 'ck_fechamento', 'escala_consulta', 'feriados_consulta', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
+  { chave: ['RECEPCAO'], itens: ['doc_cargo', 'ck_abertura', 'ck_intermediario', 'ck_fechamento', 'escala_consulta', 'feriados_consulta', 'lista_realinhamento', 'lista_corte', 'lista_mechas', 'lista_pigmentacao', 'pontos_ebulicao', 'msgs_listas', 'bebidas', 'valores_pacotes'] },
   { chave: ['DOSAGEM'], itens: ['ck_dosagem', 'produtos', 'servinterno', 'servicos_valores', 'tratamentos', 'esterilizacao_fluxo', 'kits', 'enxovais', 'produtos_vencidos'] },
   // Uma página por área de compra (lista de reposição + pedidos ao Financeiro)
   { chave: ['COMPRAS', 'ESTOQUE'], itens: AREAS_COMPRAS.map(a => `compras_${a.id}`) },
@@ -148,14 +151,14 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   // O Financeiro era o unico setor sem check list de tarefas — e sem ele nao
   // dava para receber nem enviar demanda dos outros setores.
   { chave: ['FINANCEIRO', 'CONTABIL'], itens: ['ck_financeiro', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
-  { chave: ['GERENCIA', 'GERENTE'], itens: ['ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
+  { chave: ['GERENCIA', 'GERENTE'], itens: ['doc_cargo', 'ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['doc_cargo_processos', 'ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['ck_comercial', 'lojistas'] },
-  { chave: ['MARKETING'], itens: ['ck_marketing'] },
+  { chave: ['MARKETING'], itens: ['doc_cargo', 'ck_marketing'] },
   { chave: ['RESPONSAVEL TECNICA', 'TECNICA'], itens: ['ck_tecnica'] },
   { chave: ['PROFISSIONAIS'], itens: ['ck_profissionais'] },
   { chave: ['RH', 'GESTAO DE PESSOAS', 'RECURSOS HUMANOS'], itens: ['ck_rh', 'pr_lista', 'pr_cadastrar', 'pj_cnpj', 'pj_contratacao', 'pj_desligamento', 'clt_profs', 'clt_contratacao', 'clt_carta_conta', 'pr_acesso', 'pr_categorias', 'pr_entrevista', 'pr_perfil', 'pr_materiais', 'pr_distrato', 'pr_contrato', 'pr_conduta', 'pr_certificados', 'pr_carreira'] },
-  { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['ck_manutencao'] },
+  { chave: ['SERVICOS GERAIS', 'LIMPEZA'], itens: ['doc_cargo', 'ck_manutencao'] },
   { chave: ['MANUTENCAO'], itens: ['ck_manut_predial'] },
   { chave: ['CAFE', 'COPA'], itens: ['ck_cafe', 'compras_cafe'] },
   // O CHECK LIST — COORDENADO saiu da sidebar: quem cobre a rotina agora é o
