@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const { data: rodadas } = await supabaseAdmin
     .from('avaliacao_cargo_rodada')
-    .select('id, cargo, titulo, avaliado, token, aberta, ficha, criado_em')
+    .select('id, cargo, titulo, avaliado, token_auto, token_gerente, token_equipe, aberta, ficha, criado_em')
     .eq('salao_id', salaoId).eq('setor_id', setorId)
     .order('criado_em', { ascending: false })
 
@@ -71,13 +71,18 @@ export async function POST(req: NextRequest) {
     cargo: String(cargo || '').slice(0, 120),
     titulo: String(titulo || '').slice(0, 160),
     avaliado: avaliado ? String(avaliado).slice(0, 120) : null,
+    // Um link por papel, sorteados em separado: saber o link do gerente nao
+    // pode ensinar o link da equipe.
     token: novoToken(),
+    token_auto: novoToken(),
+    token_gerente: novoToken(),
+    token_equipe: novoToken(),
     ficha: limpa,
-  }).select('id, token').single()
+  }).select('id').single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   registrarAuditoria('Abriu', 'Avaliação de cargo', `${cargo || setorId} — ${titulo || ''}`)
-  return NextResponse.json({ ok: true, id: data.id, token: data.token })
+  return NextResponse.json({ ok: true, id: data.id })
 }
 
 /** Fecha ou reabre uma rodada. Fechada, o link público deixa de aceitar. */

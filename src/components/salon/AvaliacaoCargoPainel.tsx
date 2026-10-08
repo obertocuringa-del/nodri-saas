@@ -585,8 +585,16 @@ function CartaoRodada({ r, onVer, onTrancar, onApagar }: {
   onApagar: () => void
 }) {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
-  const link = (como?: TipoAvaliador) =>
-    `${base}/avaliar/${r.token}${como ? `?como=${como}` : ''}`
+  // Um link por papel, cada um com o seu token sorteado. Não existe link
+  // "geral" de propósito: se a pessoa pudesse escolher na tela de onde está
+  // avaliando, o gerente responderia em nome da equipe e a média do grupo
+  // viraria o que ele quisesse.
+  const LINKS: Array<{ tipo: TipoAvaliador; rotulo: string; token: string }> = [
+    { tipo: 'auto', rotulo: 'Autoavaliação', token: r.token_auto },
+    { tipo: 'gerente', rotulo: 'Gerente', token: r.token_gerente },
+    { tipo: 'equipe', rotulo: 'Equipe', token: r.token_equipe },
+  ]
+  const link = (token: string) => `${base}/avaliar/${token}`
 
   function copiar(url: string, oque: string) {
     navigator.clipboard?.writeText(url)
@@ -614,28 +622,30 @@ function CartaoRodada({ r, onVer, onTrancar, onApagar }: {
       </div>
 
       {r.aberta && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 bg-nodri-surface border border-nodri-border rounded-lg px-2.5 py-1.5">
-            <Link2 size={12} className="text-nodri-t3 shrink-0" />
-            <input readOnly value={link()} onClick={e => e.currentTarget.select()}
-              className="flex-1 min-w-0 bg-transparent text-[11.5px] text-nodri-t2 outline-none" />
-            <button onClick={() => copiar(link(), 'geral')} title="Copiar"
-              className="text-nodri-t3 hover:text-nodri-cyan p-0.5 shrink-0"><Copy size={13} /></button>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-nodri-t3">Link direto:</span>
-            {TIPOS_AVALIADOR.map(t => (
-              <button key={t.tipo} onClick={() => copiar(link(t.tipo), t.rotulo.toLowerCase())}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border border-nodri-border text-nodri-t2 hover:border-nodri-cyan hover:text-nodri-cyan">
-                <Copy size={10} /> {t.rotulo}
-              </button>
-            ))}
-          </div>
-          <p className="text-[10.5px] text-nodri-t3 leading-relaxed">
-            No link geral a pessoa escolhe se está avaliando como ela mesma,
-            como gerente ou como equipe. No link direto já vem escolhido —
-            é o que se manda para cada um. Nenhum dos dois pede login.
+        <div className="space-y-2">
+          <p className="text-[11px] text-nodri-t3 leading-relaxed">
+            Um link para cada um. Mande o de baixo para quem vai responder
+            naquele papel — o link já diz ao sistema de onde a resposta vem,
+            e quem recebe não escolhe nem precisa de login.
           </p>
+          {LINKS.map(l => (
+            <div key={l.tipo}>
+              <p className="text-[10.5px] font-bold text-nodri-cyan uppercase tracking-wide mb-1">
+                {l.rotulo}
+              </p>
+              <div className="flex items-center gap-1.5 bg-nodri-surface border border-nodri-border rounded-lg px-2.5 py-1.5">
+                <Link2 size={12} className="text-nodri-t3 shrink-0" />
+                <input readOnly value={l.token ? link(l.token) : 'gerando…'}
+                  onClick={e => e.currentTarget.select()}
+                  className="flex-1 min-w-0 bg-transparent text-[11.5px] text-nodri-t2 outline-none" />
+                <button onClick={() => copiar(link(l.token), l.rotulo.toLowerCase())}
+                  title={`Copiar o link de ${l.rotulo}`} disabled={!l.token}
+                  className="text-nodri-t3 hover:text-nodri-cyan p-0.5 shrink-0 disabled:opacity-30">
+                  <Copy size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

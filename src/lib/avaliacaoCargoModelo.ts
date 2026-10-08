@@ -52,7 +52,10 @@ export interface RodadaAval {
   setor_id: string
   cargo: string
   titulo: string
-  token: string
+  /** Um link por papel: quem responde nao escolhe de onde avalia. */
+  token_auto: string
+  token_gerente: string
+  token_equipe: string
   aberta: boolean
   avaliado: string | null
   ficha: FichaAval
@@ -287,7 +290,9 @@ export function corDaNota(n: number | null | undefined): string {
 }
 
 /** Token do link público. Curto o bastante para caber numa mensagem e longo
- *  o bastante para não se adivinhar. */
+ *  o bastante para não se adivinhar — e é a UNICA coisa que diz ao servidor
+ *  de que papel a resposta vem, por isso não pode ser deduzível a partir do
+ *  token de outro papel da mesma rodada. */
 export function novoToken(): string {
   const a = 'abcdefghijkmnopqrstuvwxyz23456789'
   let s = ''

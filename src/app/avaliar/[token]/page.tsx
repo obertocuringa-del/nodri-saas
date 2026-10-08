@@ -21,6 +21,10 @@ import {
 //    uma observação.
 //  - a observação é opcional e fica escondida até se clicar. Campo de texto
 //    aberto em quarenta pontos faz a pessoa desistir no quinto.
+//
+// E a tela NÃO pergunta de onde a pessoa está avaliando: isso vem do link.
+// Cada papel tem o seu, sorteado em separado, porque pergunta na tela é
+// convite a responder em nome de outro e puxar a média do grupo.
 
 const COR = '#7c3aed'
 
@@ -29,6 +33,8 @@ interface Dados {
   titulo: string
   avaliado: string | null
   aberta: boolean
+  /** Vem do link, não de uma escolha na tela. */
+  tipo: TipoAvaliador
   salao_nome: string
   salao_logo?: string | null
   ficha: FichaAval
@@ -45,7 +51,6 @@ export default function AvaliarPublico() {
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
 
-  const [tipo, setTipo] = useState<TipoAvaliador | ''>('')
   const [avaliador, setAvaliador] = useState('')
   const [notas, setNotas] = useState<Record<string, number | 'nao_sei'>>({})
   const [obs, setObs] = useState<Record<string, string>>({})
@@ -58,16 +63,13 @@ export default function AvaliarPublico() {
       .then(d => {
         if (d.error) { setErro(d.error); setCarregando(false); return }
         setDados(d)
-        // `?como=equipe` no link ja deixa o papel escolhido -- serve para
-        // mandar um link direto para a pessoa certa. Lido do endereco, e nao
-        // por useSearchParams, que exigiria Suspense no build.
-        const como = new URLSearchParams(window.location.search).get('como')
-        if (como && TIPOS_AVALIADOR.some(t => t.tipo === como)) setTipo(como as TipoAvaliador)
         setCarregando(false)
       })
       .catch(() => { setErro('Não deu para abrir o formulário.'); setCarregando(false) })
   }, [token])
 
+  const tipo = dados?.tipo || null
+  const papel = TIPOS_AVALIADOR.find(x => x.tipo === tipo)
   const secoes = useMemo(
     () => (dados && tipo ? porSecao(dados.ficha, tipo) : []),
     [dados, tipo],
@@ -85,7 +87,7 @@ export default function AvaliarPublico() {
       const r = await fetch(`/api/avaliacao-cargo/public/${token}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo, avaliador: avaliador.trim() || null,
+          avaliador: avaliador.trim() || null,
           notas: Object.fromEntries(comNota),
           observacoes: obs, comentario: comentario.trim() || null,
         }),
@@ -180,23 +182,17 @@ export default function AvaliarPublico() {
         <div style={{ maxWidth: 620, margin: '0 auto', padding: '18px 14px 0' }}>
 
           {/* ── De onde você avalia ──
-              Um 360 só vale se as três vozes ficarem separadas: a média da
-              equipe e a do gerente dizem coisas diferentes. */}
-          <div className="cartao" style={cartao}>
-            <p style={rotulo}>De onde você está avaliando?</p>
-            <div style={{ display: 'grid', gap: 9 }}>
-              {TIPOS_AVALIADOR.map(t => (
-                <button key={t.tipo} onClick={() => setTipo(t.tipo)}
-                  style={{
-                    textAlign: 'left', padding: '13px 15px', borderRadius: 13, cursor: 'pointer',
-                    fontFamily: 'inherit', background: tipo === t.tipo ? `${COR}0e` : '#fbfaff',
-                    border: `2px solid ${tipo === t.tipo ? COR : '#f0eef9'}`,
-                  }}>
-                  <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: '#1a1a1a' }}>{t.rotulo}</span>
-                  <span style={{ display: 'block', fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>{t.descricao}</span>
-                </button>
-              ))}
-            </div>
+              Não se pergunta: o link já diz. Mostrar mesmo assim importa,
+              porque a pessoa precisa saber em que chave está respondendo --
+              o que a equipe vê de um coordenador não é o que o gerente vê. */}
+          <div className="cartao" style={{ ...cartao, paddingTop: 18, paddingBottom: 18 }}>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: '#9ca3af', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+              Você está respondendo como
+            </p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: '#1a1a1a' }}>
+              {papel?.rotulo || '—'}
+            </p>
+            <p style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>{papel?.descricao || ''}</p>
 
             <p style={{ ...rotulo, marginTop: 20 }}>
               Seu nome <span style={{ fontWeight: 500, color: '#9ca3af' }}>(opcional)</span>
@@ -210,12 +206,7 @@ export default function AvaliarPublico() {
             </p>
           </div>
 
-          {!tipo ? (
-            <p style={{ textAlign: 'center', fontSize: 13, color: '#9ca3af', padding: '10px 0 24px' }}>
-              Escolha acima para ver os pontos a avaliar.
-            </p>
-          ) : (
-            <>
+          <>
               {dados.ficha.apresentacao && (
                 <div className="cartao" style={{ ...cartao, background: `${COR}08`, border: `1px solid ${COR}25` }}>
                   <p style={{ fontSize: 13.5, color: '#3f3a52', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
@@ -319,8 +310,7 @@ export default function AvaliarPublico() {
               <p style={{ textAlign: 'center', fontSize: 11.5, color: '#9ca3af', marginTop: 12, lineHeight: 1.6 }}>
                 Depois de enviar não dá para mudar. Confira antes.
               </p>
-            </>
-          )}
+          </>
         </div>
       </div>
     </>

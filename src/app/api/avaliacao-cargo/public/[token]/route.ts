@@ -11,15 +11,37 @@ export const dynamic = 'force-dynamic'
 // pessoa precisa ver (os pontos a avaliar) e nunca o que já foi respondido
 // por outros. Nota de colega é coisa que, vazando, estraga a avaliação.
 
-const TIPOS: TipoAvaliador[] = ['auto', 'gerente', 'equipe']
+/**
+ * Quem o link diz que esta respondendo.
+ *
+ * O papel NAO vem do formulario. Cada rodada tem tres links sorteados, um
+ * por papel, e e o link usado que diz de onde a resposta vem -- se fosse uma
+ * escolha na tela, ou um `?como=` no endereco, bastava trocar a palavra na
+ * barra do navegador para o gerente responder em nome da equipe e puxar a
+ * media do grupo para onde quisesse.
+ */
+const COLUNAS: Array<{ col: string; tipo: TipoAvaliador }> = [
+  { col: 'token_auto', tipo: 'auto' },
+  { col: 'token_gerente', tipo: 'gerente' },
+  { col: 'token_equipe', tipo: 'equipe' },
+]
+
+async function acharPeloLink(token: string) {
+  const { data } = await supabaseAdmin
+    .from('avaliacao_cargo_rodada')
+    .select('id, salao_id, cargo, titulo, avaliado, aberta, ficha, token_auto, token_gerente, token_equipe')
+    .or(COLUNAS.map(c => `${c.col}.eq.${token}`).join(','))
+    .maybeSingle()
+  if (!data) return null
+  const achada = COLUNAS.find(c => (data as any)[c.col] === token)
+  if (!achada) return null
+  return { rodada: data, tipo: achada.tipo }
+}
 
 export async function GET(_: NextRequest, { params }: { params: { token: string } }) {
-  const { data: rodada } = await supabaseAdmin
-    .from('avaliacao_cargo_rodada')
-    .select('id, salao_id, cargo, titulo, avaliado, aberta, ficha')
-    .eq('token', params.token).maybeSingle()
-
-  if (!rodada) return NextResponse.json({ error: 'Link inválido' }, { status: 404 })
+  const achado = await acharPeloLink(params.token)
+  if (!achado) return NextResponse.json({ error: 'Link inválido' }, { status: 404 })
+  const { rodada, tipo } = achado
 
   // O nome que a pessoa conhece, nao a razao social. A tela publica do cupom
   // ja tinha mostrado "OLIVEIRA E SCHNEIDER INTITUTO DE BELEZA LTDA" para a
@@ -38,6 +60,8 @@ export async function GET(_: NextRequest, { params }: { params: { token: string 
     titulo: rodada.titulo,
     avaliado: rodada.avaliado,
     aberta: rodada.aberta,
+    // Fixo, vindo do link. A tela mostra de onde a pessoa avalia; nao pergunta.
+    tipo,
     salao_nome: String((cfgRow as any)?.valor?.nomePublico || '').trim() || salao?.nome || '',
     salao_logo: (logoRow as any)?.valor?.logo || null,
     ficha: lerFicha(rodada.ficha, rodada.cargo || ''),
@@ -48,16 +72,10 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   const body = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Envio inválido' }, { status: 400 })
 
-  const { data: rodada } = await supabaseAdmin
-    .from('avaliacao_cargo_rodada')
-    .select('id, aberta, ficha, cargo')
-    .eq('token', params.token).maybeSingle()
-
-  if (!rodada) return NextResponse.json({ error: 'Link inválido' }, { status: 404 })
+  const achado = await acharPeloLink(params.token)
+  if (!achado) return NextResponse.json({ error: 'Link inválido' }, { status: 404 })
+  const { rodada, tipo } = achado
   if (!rodada.aberta) return NextResponse.json({ error: 'Esta avaliação já foi encerrada.' }, { status: 409 })
-
-  const tipo = TIPOS.includes(body.tipo) ? (body.tipo as TipoAvaliador) : null
-  if (!tipo) return NextResponse.json({ error: 'Diga de onde você está avaliando.' }, { status: 400 })
 
   // Só entram notas de critérios que existem NESTA rodada, dentro da faixa, e
   // destinados a este tipo de avaliador. O que vier de fora disso é descartado
