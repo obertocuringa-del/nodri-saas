@@ -4,30 +4,47 @@ import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import {
   Loader2, Save, Printer, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Eye, X,
+  Settings2,
 } from 'lucide-react'
 import {
-  type DocCargo, type BlocoCargo, type TipoBloco,
+  type DocCargo, type BlocoCargo,
   TIPOS_BLOCO, blocoVazio, docVazio, lerDoc, novoId,
 } from '@/lib/descricaoCargoModelo'
+import {
+  folhaParaImprimir, IMPRESSAO_PADRAO, CORES_IMPRESSAO, type OpcoesImpressao,
+} from '@/lib/documentoBlocosImpressao'
 
-// ── Descrição de Cargo de um setor ─────────────────────────────────────────
+// ── Documento em blocos de um setor ────────────────────────────────────────
+//
+// Serve a qualquer documento do setor -- descrição de cargo, POP, política.
+// Quem decide qual é o `docId`: a mesma tela, o mesmo editor, arquivos
+// separados no banco.
 //
 // Duas telas na mesma página: LER e EDITAR.
 //
-// Ler é o que se mostra numa entrevista -- o documento limpo, em seções, sem
-// campo de formulário no meio atrapalhando a leitura. Editar é onde se
-// acrescenta um dever, corrige uma palavra, muda um bloco de lugar.
+// Ler é o que se mostra numa entrevista ou se cola na parede -- o documento
+// limpo, em seções, sem campo de formulário no meio atrapalhando a leitura.
+// Editar é onde se acrescenta um dever, corrige uma palavra, muda um bloco
+// de lugar.
 //
-// Guardado por SETOR, em `salao_config`, na chave `descricao_cargo_<id>`:
-// cada setor tem o seu, e o do Coordenador não se mistura com o do
-// Responsável por Processos.
+// Guardado por SETOR + DOCUMENTO, em `salao_config`: cada setor tem os seus,
+// e o do Coordenador não se mistura com o do Responsável por Processos.
 
-const chaveDo = (profId: string) => `descricao_cargo_${profId}`
+const chaveDo = (profId: string, docId: string) => `${docId}_${profId}`
+const chaveImpressao = (profId: string, docId: string) => `nodri_impr_${docId}_${profId}`
 
-export default function DescricaoCargoSetor({ profId, nomeSetor }: {
+export default function DescricaoCargoSetor({ profId, nomeSetor, docId = 'descricao_cargo', rotulo = 'Descrição de cargo', salao, logo }: {
   profId: string
   nomeSetor: string
+  /** Prefixo da chave no banco. Documentos diferentes, arquivos diferentes. */
+  docId?: string
+  /** O que vai no subtítulo da folha impressa. */
+  rotulo?: string
+  salao?: string
+  logo?: string | null
 }) {
+  const [impr, setImpr] = useState<OpcoesImpressao>(IMPRESSAO_PADRAO)
+  const [painelImpr, setPainelImpr] = useState(false)
   const [doc, setDoc] = useState<DocCargo>(() => docVazio(nomeSetor))
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -36,12 +53,26 @@ export default function DescricaoCargoSetor({ profId, nomeSetor }: {
 
   const carregar = useCallback(async () => {
     try {
-      const d = await fetch(`/api/salon/grid?chave=${chaveDo(profId)}`).then(r => (r.ok ? r.json() : null))
+      const d = await fetch(`/api/salon/grid?chave=${chaveDo(profId, docId)}`).then(r => (r.ok ? r.json() : null))
       setDoc(lerDoc(d, nomeSetor))
     } catch { /* fica o vazio */ }
     setCarregando(false)
-  }, [profId, nomeSetor])
+  }, [profId, nomeSetor, docId])
   useEffect(() => { carregar() }, [carregar])
+
+  // As preferências de impressão são de quem imprime, não do documento:
+  // ficam no aparelho. Em janela anônima o acesso falha e vale o padrão.
+  useEffect(() => {
+    try {
+      const g = localStorage.getItem(chaveImpressao(profId, docId))
+      if (g) setImpr({ ...IMPRESSAO_PADRAO, ...JSON.parse(g) })
+    } catch { /* vale o padrão */ }
+  }, [profId, docId])
+
+  function mudarImpr(novo: OpcoesImpressao) {
+    setImpr(novo)
+    try { localStorage.setItem(chaveImpressao(profId, docId), JSON.stringify(novo)) } catch { /* */ }
+  }
 
   // Sai da página com alteração não salva: o navegador pergunta antes.
   useEffect(() => {
@@ -62,7 +93,7 @@ export default function DescricaoCargoSetor({ profId, nomeSetor }: {
     try {
       const r = await fetch('/api/salon/grid', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chave: chaveDo(profId), doc: paraGravar }),
+        body: JSON.stringify({ chave: chaveDo(profId, docId), doc: paraGravar }),
       })
       if (!r.ok) { toast.error('Não deu para salvar.'); return }
       setDoc(paraGravar); setSujo(false)
@@ -75,46 +106,8 @@ export default function DescricaoCargoSetor({ profId, nomeSetor }: {
   }
 
   function imprimir() {
-    const esc = (v: any) => String(v ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const corpoHtml = doc.blocos.map(b => {
-      const t = b.titulo.trim() ? `<h2>${esc(b.titulo)}</h2>` : ''
-      if (b.tipo === 'divisor') return '<hr>'
-      if (b.tipo === 'destaque') {
-        return `${t}<div class="destaque">${esc(b.corpo).replace(/\n/g, '<br>')}</div>`
-      }
-      if (b.tipo === 'lista' || b.tipo === 'checklist') {
-        const marca = b.tipo === 'checklist' ? 'check' : 'bola'
-        const lis = (b.itens || []).filter(i => i.trim())
-          .map(i => `<li class="${marca}">${esc(i)}</li>`).join('')
-        return `${t}<ul class="${marca}">${lis}</ul>`
-      }
-      return `${t}<p>${esc(b.corpo).replace(/\n/g, '<br>')}</p>`
-    }).join('')
-
-    const css = `@page{size:A4 portrait;margin:18mm}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;font-size:12.5px;line-height:1.65}
-.hd{border-bottom:3px solid #5b4fcf;padding-bottom:10px;margin-bottom:18px}
-.hd .cargo{font-size:21px;font-weight:800;color:#1f2430}
-.hd .setor{font-size:12px;color:#6b6860;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
-h2{font-size:13.5px;font-weight:800;color:#5b4fcf;margin:18px 0 7px;text-transform:uppercase;letter-spacing:.5px}
-p{margin-bottom:9px;text-align:justify}
-ul{margin:0 0 10px 2px;list-style:none}
-li{position:relative;padding-left:17px;margin-bottom:4px}
-li.bola:before{content:'•';position:absolute;left:3px;color:#5b4fcf;font-weight:700}
-li.check:before{content:'\\2713';position:absolute;left:0;color:#2F6B4F;font-weight:700}
-.destaque{background:#f4f3fb;border-left:3px solid #5b4fcf;padding:10px 13px;margin-bottom:10px}
-hr{border:none;border-top:1px solid #e0ddd8;margin:18px 0}
-@media print{body{-webkit-print-color-adjust:exact}h2{break-after:avoid}}`
-
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">`
-      + `<title>${esc(doc.cargo)}</title><style>${css}</style></head><body>`
-      + `<div class="hd"><div class="cargo">${esc(doc.cargo)}</div>`
-      + `<div class="setor">Descrição de cargo</div></div>`
-      + (corpoHtml || '<p><i>Sem conteúdo.</i></p>')
-      + `<script>window.onload=function(){window.print()}</script></body></html>`
-    const w = window.open('', '_blank', 'width=900,height=700')
+    const html = folhaParaImprimir(doc, impr, { salao, logo, subtitulo: rotulo })
+    const w = window.open('', '_blank', 'width=900,height=760')
     if (!w) { toast.error('O navegador bloqueou a janela de impressão.'); return }
     w.document.write(html); w.document.close(); w.focus()
   }
@@ -150,10 +143,17 @@ hr{border:none;border-top:1px solid #e0ddd8;margin:18px 0}
           {editando ? <><Eye size={14} /> Ver pronto</> : <><Pencil size={14} /> Editar</>}
         </button>
 
-        <button onClick={imprimir}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border border-nodri-border text-nodri-t2 shrink-0">
-          <Printer size={14} /> Imprimir
-        </button>
+        <div className="flex items-center shrink-0">
+          <button onClick={imprimir}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-l-lg text-[12px] font-bold border border-nodri-border text-nodri-t2">
+            <Printer size={14} /> Imprimir
+          </button>
+          <button onClick={() => setPainelImpr(v => !v)} title="Ajustar a impressão"
+            className={'px-2 py-2 rounded-r-lg text-[12px] border border-l-0 border-nodri-border transition '
+              + (painelImpr ? 'text-nodri-cyan' : 'text-nodri-t3 hover:text-nodri-cyan')}>
+            <Settings2 size={14} />
+          </button>
+        </div>
 
         {/* Só aparece com alteração pendente: botão de salvar sempre aceso
             deixa de significar alguma coisa. */}
@@ -164,6 +164,56 @@ hr{border:none;border-top:1px solid #e0ddd8;margin:18px 0}
           </button>
         )}
       </div>
+
+      {/* ── Ajustes da folha ──
+          Impressão é outro meio: não tem rolagem, a página tem borda física,
+          e o que quebra no lugar errado não se conserta rolando. Por isso as
+          opções mexem no que importa no papel. */}
+      {painelImpr && (
+        <div className="border border-nodri-border rounded-xl p-3 space-y-3 bg-nodri-surface">
+          <p className="text-[11.5px] font-bold text-nodri-t2">Como a folha sai</p>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12px] text-nodri-t2 w-20">Cor</span>
+            {CORES_IMPRESSAO.map(c => (
+              <button key={c.cor} title={c.nome}
+                onClick={() => mudarImpr({ ...impr, cor: c.cor })}
+                className={'w-7 h-7 rounded-full border-2 transition '
+                  + (impr.cor === c.cor ? 'border-nodri-t1 scale-110' : 'border-transparent')}
+                style={{ background: c.cor }} />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12px] text-nodri-t2 w-20">Letra</span>
+            <input type="range" min={9} max={14} step={0.5} value={impr.tamanho}
+              onChange={e => mudarImpr({ ...impr, tamanho: Number(e.target.value) })}
+              className="flex-1 max-w-[180px]" />
+            <span className="text-[12px] text-nodri-t3 w-14">{impr.tamanho} pt</span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+            {([
+              ['comLogo', 'Logo do salão no topo'],
+              ['comNumeracao', 'Data no rodapé'],
+              ['comAssinatura', 'Linhas de assinatura no fim'],
+              ['quebrarSecoes', 'Cada seção numa folha'],
+            ] as const).map(([k, rot]) => (
+              <label key={k} className="flex items-center gap-2 text-[12px] text-nodri-t2">
+                <input type="checkbox" checked={!!impr[k]}
+                  onChange={e => mudarImpr({ ...impr, [k]: e.target.checked })} />
+                {rot}
+              </label>
+            ))}
+          </div>
+
+          <p className="text-[11px] text-nodri-t3 leading-relaxed">
+            Título nunca fica sozinho no pé da página, e lista ou destaque não
+            se parte ao meio — isso já é automático. "Cada seção numa folha"
+            serve para o POP virar cartaz na parede.
+          </p>
+        </div>
+      )}
 
       {sujo && (
         <p className="text-[11.5px] text-amber-600 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">
