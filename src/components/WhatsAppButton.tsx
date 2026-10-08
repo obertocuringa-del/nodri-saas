@@ -17,7 +17,11 @@ const SEM_BOTAO = ['/', '/landing']
 // E fora do CRM também. Ali a bolinha verde fica em cima da área de escrever,
 // e o que ela oferece é falar com o suporte pelo WhatsApp -- numa tela que É
 // o WhatsApp do salão. Botão que promete o que a tela já faz só atrapalha.
-const PREFIXOS_SEM_BOTAO = ['/promocoes/', '/vitrine/', '/salon/crm']
+//
+// E fora da avaliação de cargo. Quem abre aquele link é colaborador do salão
+// respondendo um formulário: oferecer o suporte do sistema ali não ajuda
+// ninguém, e a bolinha ainda fica em cima do campo de observação.
+const PREFIXOS_SEM_BOTAO = ['/promocoes/', '/vitrine/', '/salon/crm', '/avaliar/']
 
 export default function WhatsAppButton() {
   const rota = usePathname()
