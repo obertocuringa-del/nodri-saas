@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "NODRI — XML das Notas Fiscais",
+  "version": "1.0.0",
+  "description": "Busca as notas fiscais emitidas no Avec no período escolhido no NODRI e baixa os XMLs renomeados, num único arquivo .zip.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://admin.avec.beauty/*",
+    "https://consulta.invoicy.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.nodri.com.br/*",
+        "https://nodri.com.br/*",
+        "https://*.nodri.com.br/*",
+        "https://nodri-saas-jsx4.vercel.app/*",
+        "http://localhost:3000/*"
+      ],
+      "js": [
+        "ponte.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://admin.avec.beauty/admin/financeiro/nota_fiscal*"
+      ],
+      "js": [
+        "zip.js",
+        "avecnf.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

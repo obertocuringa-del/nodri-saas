@@ -67,6 +67,7 @@ const D_CORRIDA: GridDoc = { tabelas: [{ titulo: 'CORRIDA INTERNA', cabecalho: [
 // componentes, para a busca global poder lê-los sem arrastar as telas junto.
 // Reexportados aqui para que quem já importava daqui continue funcionando.
 import DescricaoCargoSetor from '@/components/salon/DescricaoCargoSetor'
+import NotasFiscaisXml from '@/components/salon/NotasFiscaisXml'
 
 export type { Ferramenta } from '@/lib/ferramentasCatalogo'
 export { CATALOGO, FERRAMENTAS_POR_SETOR, ferramentasDoSetor } from '@/lib/ferramentasCatalogo'
@@ -101,6 +102,7 @@ export function ConteudoFerramenta({ id, profsSalao, abaPop = 'cafe', setorId, s
   }
 
   switch (id) {
+    case 'nf_xml':              return <NotasFiscaisXml key="nf_xml" />
     case 'lista_realinhamento': return <ListaServico key="realinhamento" servico="realinhamento" label="Realinhamento" profsSalao={profsSalao} />
     case 'lista_corte':         return <ListaServico key="corte" servico="corte" label="Corte" profsSalao={profsSalao} />
     case 'lista_mechas':        return <ListaServico key="mechas" servico="mechas" label="Mechas" profsSalao={profsSalao} />

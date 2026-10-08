@@ -159,6 +159,8 @@ export function permDaGrade(chave: string): string {
   // Ficha de criterios da avaliacao 360 do cargo: mora junto do documento e
   // pede a mesma permissao dele.
   if (c.startsWith('aval_cargo')) return 'profissionais'
+  // Configuracao e historico da baixa de XML das notas fiscais.
+  if (c.startsWith('nf_xml')) return 'adm_nf_xml'
   if (c === 'tabela_precos_arquivos') return 'adm_tabela_precos'
   if (c === 'arquivos_envio_lista') return 'adm_arquivos_envio'
   if (c === 'exame_admissional') return 'clt_exame'

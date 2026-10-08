@@ -88,6 +88,7 @@ export const CATALOGO: Record<string, Ferramenta> = {
   ck_coordenacao:  { id: 'ck_coordenacao',  label: 'CHECK LIST — COORDENAÇÃO',     perm: 'checklist' },
   ck_processos:    { id: 'ck_processos',    label: 'CHECK LIST — PROCESSOS & QUALIDADE', perm: 'checklist' },
   ck_financeiro:   { id: 'ck_financeiro',   label: 'CHECK LIST — FINANCEIRO',    perm: 'checklist' },
+  nf_xml:          { id: 'nf_xml',          label: 'XML DAS NOTAS FISCAIS',      perm: 'adm_nf_xml' },
   ck_rh:           { id: 'ck_rh', label: 'CHECK LIST — RH', perm: 'checklist' },
   ck_comercial:    { id: 'ck_comercial', label: 'CHECK LIST — COMERCIAL', perm: 'checklist' },
   ck_marketing:    { id: 'ck_marketing', label: 'CHECK LIST — MARKETING', perm: 'checklist' },
@@ -150,7 +151,7 @@ export const FERRAMENTAS_POR_SETOR: { chave: string[]; itens: string[] }[] = [
   { chave: ['ADMINISTRATIVO'], itens: ['ck_administrativo', 'licencas_contratos', 'escala', 'feriados', 'pr_horarios', 'ata', 'senhas', 'telefones', 'calendario', 'pontos_ebulicao', 'msgs_listas', 'auditoria'] },
   // O Financeiro era o unico setor sem check list de tarefas — e sem ele nao
   // dava para receber nem enviar demanda dos outros setores.
-  { chave: ['FINANCEIRO', 'CONTABIL'], itens: ['ck_financeiro', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
+  { chave: ['FINANCEIRO', 'CONTABIL'], itens: ['ck_financeiro', 'nf_xml', 'pr_abertura', 'desconto_profissional', 'pagamento_va_vt', 'pedidos_compra'] },
   { chave: ['GERENCIA', 'GERENTE'], itens: ['doc_cargo', 'ck_gerente', 'corrida_interna', 'pontos_ebulicao', 'msgs_listas'] },
   { chave: ['PROCESSO', 'QUALIDADE'], itens: ['doc_cargo_processos', 'ck_processos', 'man_processos', 'pr_ranking', 'ck_padrao', 'pop_cafe', 'pop_salao', 'checkprocon', 'pop_recepcao', 'pop_manicure', 'pop_cabelereiro'] },
   { chave: ['COMERCIAL', 'VENDAS'], itens: ['ck_comercial', 'lojistas'] },
