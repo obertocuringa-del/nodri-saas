@@ -72,12 +72,50 @@ export default function DepartamentoPage() {
   const [ehDono, setEhDono] = useState(false)   // só o salão principal exclui/transfere
   // Qual lista está aberta embaixo dos contadores (null = tudo recolhido)
   // Tudo fechado ao abrir a página — o usuário escolhe o que quer ver
-  const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | null>(null)
+  const [secao, setSecao] = useState<'abertas' | 'resolvidas' | 'total' | 'nova' | null>(null)
+
+  // ── Abrir pendência aqui dentro ─────────────────────────────────────────
+  // O botão "Nova Pendência" do organograma continua existindo e igual. Este
+  // é um atalho: estando DENTRO do setor, o setor já está escolhido -- não
+  // faz sentido pedir de novo numa lista.
+  const [novaMsg, setNovaMsg] = useState('')
+  const [novaPrazo, setNovaPrazo] = useState('')
+  const [criandoPend, setCriandoPend] = useState(false)
   const [verDia, setVerDia] = useState(false)  // lista do dia também começa fechada
 
   // Resolver com resposta
   const [respondendo, setRespondendo] = useState<string | null>(null)
   const [respostaTxt, setRespostaTxt] = useState('')
+
+  // Cria a pendência já apontando para ESTE setor e a coloca na lista na hora,
+  // sem recarregar: o `id` da rota é o mesmo `profissional_id` que a API pede.
+  async function criarAqui() {
+    const texto = novaMsg.trim()
+    if (!texto) { toast.error('Escreva a pendência.'); return }
+    setCriandoPend(true)
+    try {
+      const res = await fetch('/api/pendencias', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profissional_id: id,
+          mensagem: texto,
+          data_limite: novaPrazo || null,
+        }),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        toast.error(e?.error || 'Não deu para criar.')
+        return
+      }
+      const nova = await res.json()
+      setDemandas(prev => [nova, ...prev])
+      setNovaMsg(''); setNovaPrazo('')
+      setSecao('abertas')          // mostra onde ela foi parar
+      toast.success('Pendência aberta')
+    } catch {
+      toast.error('Sem conexão.')
+    } finally { setCriandoPend(false) }
+  }
   // Transferir
   const [transferindo, setTransferindo] = useState<string | null>(null)
   const [destino, setDestino] = useState('')
@@ -661,7 +699,7 @@ export default function DepartamentoPage() {
         )}
 
         {/* Resumo — clicar abre a lista embaixo, clicar de novo recolhe */}
-        <div className="nodri-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
           {([
             { id: 'abertas' as const, l: 'Abertas', v: abertas.length, c: '#f59e0b' },
             { id: 'resolvidas' as const, l: 'Resolvidas', v: resolvidas.length, c: '#22c55e' },
@@ -677,7 +715,53 @@ export default function DepartamentoPage() {
               </button>
             )
           })}
+
+          {/* O quarto card não conta nada: abre o campo de escrever. Fica
+              junto dos outros porque é aqui que a pessoa já está olhando
+              quando percebe que falta uma pendência. */}
+          <button onClick={() => setSecao(s => s === 'nova' ? null : 'nova')}
+            title="Abrir uma pendência para este setor"
+            style={{
+              background: secao === 'nova' ? '#faf9f7' : '#fff',
+              border: `1px dashed ${secao === 'nova' ? cor : '#cfc9bd'}`,
+              boxShadow: secao === 'nova' ? `inset 0 0 0 1px ${cor}40` : 'none',
+              borderRadius: 12, padding: 12, textAlign: 'center', cursor: 'pointer',
+            }}>
+            <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>Abrir</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: cor, lineHeight: '26px' }}>
+              + Nova pendência
+            </div>
+          </button>
         </div>
+
+        {secao === 'nova' && (
+          <div style={{ border: `1px solid ${cor}55`, borderRadius: 12, padding: 12, marginBottom: 14, background: '#fff' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>
+              Nova pendência para {dep?.nome_completo || 'este setor'}
+            </p>
+            <textarea value={novaMsg} onChange={e => setNovaMsg(e.target.value)}
+              rows={3} autoFocus
+              placeholder="O que precisa ser feito?"
+              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) criarAqui() }}
+              style={{ width: '100%', border: '1px solid #e8e6e0', borderRadius: 10, padding: '9px 11px', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', outline: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 9 }}>
+              <label style={{ fontSize: 11.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6 }}>
+                Prazo (opcional)
+                <input type="date" value={novaPrazo} onChange={e => setNovaPrazo(e.target.value)}
+                  style={{ border: '1px solid #e8e6e0', borderRadius: 8, padding: '5px 8px', fontSize: 12.5, fontFamily: 'inherit' }} />
+              </label>
+              <button onClick={criarAqui} disabled={criandoPend || !novaMsg.trim()}
+                style={{
+                  marginLeft: 'auto', border: 'none', borderRadius: 9, padding: '8px 16px',
+                  background: cor, color: '#fff', fontSize: 12.5, fontWeight: 800,
+                  cursor: criandoPend || !novaMsg.trim() ? 'default' : 'pointer',
+                  opacity: criandoPend || !novaMsg.trim() ? .5 : 1,
+                }}>
+                {criandoPend ? 'Abrindo…' : 'Abrir pendência'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {!secao && demandas.length > 0 && (
           <p style={{ textAlign: 'center', fontSize: 11.5, color: '#9ca3af', margin: '0 0 8px' }}>Toque num dos cards acima para ver a lista.</p>
