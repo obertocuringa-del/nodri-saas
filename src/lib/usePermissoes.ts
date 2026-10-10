@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { meuAcesso } from '@/lib/fetchCache'
 
 // Hook de permissões para componentes client.
 // perms === null  → dono (vê tudo)
@@ -11,7 +12,7 @@ export function usePermissoes() {
 
   useEffect(() => {
     let vivo = true
-    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => {
+    meuAcesso().then(d => {
       if (!vivo) return
       if (d && d.role === 'sub') setPerms(Array.isArray(d.permissoes) ? d.permissoes : [])
       else setPerms(null)

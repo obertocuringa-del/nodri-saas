@@ -8,6 +8,7 @@ import { urlPublica } from '@/lib/urlPublica'
 import OrganogramaDepartamentos from '@/components/salon/OrganogramaDepartamentos'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { corFinalDoSetor, PALETA_SETOR, type MapaCores } from '@/lib/coresDepartamento'
+import { meuAcesso } from '@/lib/fetchCache'
 
 interface Profissional {
   id: string
@@ -141,7 +142,7 @@ export default function PendenciasPage() {
       // profissional, que era uma terceira ida a Sao Paulo: a contagem sai
       // de graca do `pend` que ja esta aqui do lado.
       fetch('/api/profissionais?leve=1').then(r => r.json()),
-      fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
+      meuAcesso().then(d => d || ({})),
       fetch('/api/salon/grid?chave=setor_cores').then(r => r.json()).catch(() => null),
     ]).then(([pend, profs, me, cores]) => {
       setCoresSetor(cores && typeof cores === 'object' && !Array.isArray(cores) ? cores : {})

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Home } from 'lucide-react'
+import { meuAcesso } from '@/lib/fetchCache'
 
 export default function BotaoInicio() {
   const router = useRouter()
@@ -11,8 +12,7 @@ export default function BotaoInicio() {
   // Oculto no portal do profissional (ele não tem acesso ao painel do salão)
   const [oculto, setOculto] = useState(false)
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => (r.ok ? r.json() : null))
+    meuAcesso()
       .then(d => { if (d?.role === 'profissional') setOculto(true) })
       .catch(() => {})
   }, [])

@@ -42,3 +42,31 @@ export function buscarComCache(url: string, onData: (d: any, fresco: boolean) =>
   }
   return buscarFresco(url).then(d => { if (d !== null && d !== undefined) onData(d, true) })
 }
+
+// ── Quem está logado ───────────────────────────────────────────────────────
+//
+// `/api/auth/me` é a chamada mais repetida do sistema: a barra de navegação
+// pergunta, o botão Início pergunta, o hook de permissões pergunta e a
+// própria página pergunta de novo. Medido em 10/10/2026 na tela de
+// Pendências: DUAS idas ao servidor, 184 ms e 525 ms, para saber a mesma
+// coisa.
+//
+// Quem é a pessoa não muda enquanto a página está aberta -- entrar ou sair
+// recarrega tudo. Então a primeira pergunta vale para todas: a promessa fica
+// guardada no módulo e quem chegar depois recebe a mesma, sem nova viagem a
+// São Paulo.
+//
+// Memória do módulo, de propósito, e não sessionStorage: identidade e
+// permissão não devem sobreviver a um F5.
+let promessaDoMe: Promise<any> | null = null
+
+export function meuAcesso(): Promise<any> {
+  if (!promessaDoMe) {
+    promessaDoMe = fetch('/api/auth/me')
+      .then(r => (r.ok ? r.json() : null))
+      .catch(() => null)
+    // Se deu erro de rede, a próxima tentativa pode valer a pena.
+    promessaDoMe.then(d => { if (d === null) promessaDoMe = null })
+  }
+  return promessaDoMe
+}

@@ -10,6 +10,7 @@ import TituloDaAba from './TituloDaAba'
 import { ROTAS_DESCOBERTAS } from '@/lib/rotasDescobertas'
 import { CATALOGO as FERRAMENTAS, FERRAMENTAS_POR_SETOR } from '@/lib/ferramentasCatalogo'
 import { DEMANDAS_POR_SETOR, slugDemanda } from '@/components/salon/demandasSetor'
+import { meuAcesso } from '@/lib/fetchCache'
 
 // ── Navegação global (todas as páginas do painel do salão) ──
 // Canto inferior esquerdo: Voltar (histórico) · Início · Busca ultra inteligente.
@@ -262,7 +263,7 @@ export default function NavegacaoGlobal() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => {
+    meuAcesso().then(d => {
       setRole(d?.role || null)
       setPerms(d?.role === 'sub' && Array.isArray(d.permissoes) ? d.permissoes : null)
     }).catch(() => {})
