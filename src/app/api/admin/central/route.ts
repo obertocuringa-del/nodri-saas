@@ -34,7 +34,7 @@ interface Item {
    * Com o nome e o começo do texto dá para ir direto -- e o link já abre a
    * conversa certa, onde fica o botão Reenviar.
    */
-  falhou?: Array<{ id: string; nome: string; previa: string; quando: string }>
+  falhou?: Array<{ id: string; nome: string; previa: string; quando: string; reenvios: number; desistiu: boolean }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -82,7 +82,7 @@ export async function GET() {
       .eq('direcao', 'saida').gte('criado_em', inicioDoDia)
       .in('autor_nome', ['Confirmação automática', 'Avisar o profissional que a cliente chegou', 'Automação de feedback', 'Envio automático'])
       .limit(10000),
-    supabaseAdmin.from('crm_mensagens').select('id, salao_id, conversa_id, texto, criado_em').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).order('criado_em', { ascending: false }).limit(5000),
+    supabaseAdmin.from('crm_mensagens').select('id, salao_id, conversa_id, texto, criado_em, reenvios').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).order('criado_em', { ascending: false }).limit(5000),
     supabaseAdmin.from('crm_mensagens').select('salao_id').in('situacao', ['na_fila', 'enviando']).lt('criado_em', new Date(agora - 20 * MIN).toISOString()).limit(5000),
     // A fila INTEIRA de cada salão (não só a parada há 20 min). É o número que
     // importa quando o WhatsApp cai: enquanto ele está fora, o que estiver
@@ -120,6 +120,10 @@ export async function GET() {
       nome: clienteDaConversa.get(m.conversa_id) || 'sem nome',
       previa: String(m.texto || '').replace(/\s+/g, ' ').trim().slice(0, 70),
       quando: m.criado_em ? dataHoraSP(new Date(m.criado_em).getTime()) : '',
+      reenvios: Number(m.reenvios || 0),
+      // 3 é o teto do vigia (ver saudeSistema). Chegou lá, ele parou de
+      // tentar e a mensagem está esperando uma decisão de gente.
+      desistiu: Number(m.reenvios || 0) >= 3,
     }))
   const cfg = (salao: string, chave: string) => (cfgs || []).find((c: any) => c.salao_id === salao && c.chave === chave)?.valor
   const conta = (lista: any[] | null, salao: string, autor?: string) =>
@@ -293,7 +297,7 @@ export async function GET() {
     if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
     else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
     else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
-    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'Reenviar aqui mesmo põe a mensagem de volta na fila — não precisa entrar no salão.', falhou: falhasDoSalao(c.salao_id) })
+    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'O vigia reenvia sozinho até 3 vezes. O que passou disso está marcado e espera você.', falhou: falhasDoSalao(c.salao_id) })
     else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
 
     ponteItens.push(!vis || agora - vis > 5 * MIN

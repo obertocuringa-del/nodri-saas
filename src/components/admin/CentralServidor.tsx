@@ -19,7 +19,7 @@ interface Item {
   /** Mensagens esperando a ponte neste salão (fila inteira, não só as presas). */
   fila?: number
   /** QUEM falhou. O link abre a conversa, onde fica o botão Reenviar. */
-  falhou?: Array<{ id: string; nome: string; previa: string; quando: string }>
+  falhou?: Array<{ id: string; nome: string; previa: string; quando: string; reenvios: number; desistiu: boolean }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -199,6 +199,16 @@ export default function CentralServidor() {
                                 {f.previa}…
                               </div>
                             )}
+                            {/* O que o vigia já tentou. Quem chegou ao teto
+                                parou de ser reenviado sozinho -- e é só esse
+                                que de fato precisa de alguém. */}
+                            <div style={{ fontSize: 10.5, marginTop: 3, color: f.desistiu ? '#a3211a' : '#8f877f' }}>
+                              {f.desistiu
+                                ? `O vigia tentou ${f.reenvios}x e parou. Esta precisa de você.`
+                                : f.reenvios > 0
+                                  ? `O vigia já tentou ${f.reenvios}x e vai tentar de novo.`
+                                  : 'O vigia vai reenviar sozinho em alguns minutos.'}
+                            </div>
                           </div>
                           <button
                             onClick={() => mandar(
@@ -207,9 +217,11 @@ export default function CentralServidor() {
                             )}
                             title="Põe a mensagem de volta na fila, sem entrar no salão"
                             style={{
-                              flexShrink: 0, border: '1px solid #8a6a24', borderRadius: 7,
-                              background: '#fff', color: '#8a6a24', fontSize: 11.5, fontWeight: 700,
+                              flexShrink: 0, borderRadius: 7, fontSize: 11.5, fontWeight: 700,
                               padding: '5px 11px', cursor: 'pointer',
+                              border: `1px solid ${f.desistiu ? '#a3211a' : '#d8cdb4'}`,
+                              background: f.desistiu ? '#a3211a' : '#fff',
+                              color: f.desistiu ? '#fff' : '#8f877f',
                             }}>
                             Reenviar
                           </button>

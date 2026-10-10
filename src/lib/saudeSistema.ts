@@ -132,6 +132,70 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
     }
   }
 
+  // ── Mensagem que falhou: o vigia reenvia sozinho ─────────────────────────
+  //
+  // Ordem do dono (10/10/2026): "eu quero tudo automático, não quero ficar
+  // nada pendente". O reenvio é o mesmo que a pessoa faria à mão -- a própria
+  // linha volta para a fila, sem duplicar o balão.
+  //
+  // Isto NÃO fere o "o CRM nunca envia sozinho": a mensagem já tinha sido
+  // autorizada por alguém e só não chegou. O vigia não escreve nada novo,
+  // termina um envio que já havia começado.
+  //
+  // Quatro freios, e cada um tem uma história:
+  //
+  //  - SÓ COM A PONTE CONECTADA. Com o WhatsApp fora, reenviar é empilhar:
+  //    quando ele volta, tudo sai junto. Foi o que quase aconteceu em
+  //    03/10/2026, com 243 na fila.
+  //  - SÓ DEPOIS DE 3 MINUTOS. Falha de um minuto atrás provavelmente tem a
+  //    causa ainda de pé; tentar na hora só queima uma tentativa.
+  //  - NO MÁXIMO 3 VEZES POR MENSAGEM. O que falha quatro vezes não é
+  //    acidente de rede: é número errado, bloqueio ou conteúdo recusado.
+  //    Insistir nisso é o caminho para o WhatsApp barrar o número, como em
+  //    02/10/2026. Depois do terceiro, a mensagem FICA falhada e aparece na
+  //    Central para alguém decidir -- que é o "se ele não fizer, eu faço o
+  //    manual".
+  //  - NO MÁXIMO 5 POR VOLTA. O vigia roda de minuto em minuto; cinco por vez
+  //    repõe sem rajada.
+  if (sit === 'conectado') {
+    const MAX_POR_MENSAGEM = 3
+    const MAX_POR_VOLTA = 5
+    const { data: falhadas } = await supabaseAdmin
+      .from('crm_mensagens')
+      .select('id, reenvios, criado_em')
+      .eq('salao_id', salaoId).eq('situacao', 'falhou').eq('direcao', 'saida')
+      .lt('criado_em', new Date(agora - 3 * MIN).toISOString())
+      .gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString())
+      .order('criado_em', { ascending: true })
+      .limit(50)
+
+    const podem = (falhadas || []).filter((m: any) => (m.reenvios || 0) < MAX_POR_MENSAGEM)
+    const desistidas = (falhadas || []).length - podem.length
+
+    for (const m of podem.slice(0, MAX_POR_VOLTA)) {
+      await supabaseAdmin.from('crm_mensagens').update({
+        situacao: 'na_fila', erro: null, enviado_em: null,
+        criado_em: new Date().toISOString(),
+        reenvios: (m.reenvios || 0) + 1,
+      }).eq('id', m.id).eq('situacao', 'falhou')   // só se ainda estiver falhada
+    }
+
+    if (podem.length) {
+      problemas.push({
+        servico: 'ponte',
+        motivo: `${Math.min(podem.length, MAX_POR_VOLTA)} mensagem(ns) que falharam voltaram para a fila sozinhas`,
+        desde: null, acao: 'avisar',
+      })
+    }
+    if (desistidas) {
+      problemas.push({
+        servico: 'ponte',
+        motivo: `${desistidas} mensagem(ns) falharam ${MAX_POR_MENSAGEM} vezes e pararam de ser reenviadas — precisam de alguém`,
+        desde: null, acao: 'avisar',
+      })
+    }
+  }
+
   // ── A confirmação do dia que não saiu ─────────────────────────────────────
   //
   // "A confirmação jamais pode falhar" é a ordem do dono, e ela podia falhar
