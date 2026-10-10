@@ -134,14 +134,34 @@ export default function PendenciasPage() {
   useEffect(() => {
     Promise.all([
       fetch('/api/pendencias').then(r => r.json()),
-      fetch('/api/profissionais').then(r => r.json()),
+      // `leve=1`: desta tela saem oito campos do profissional, e o modo leve
+      // traz todos. Sem ele vinha `select('*')` -- 95 KB de jsonb que esta
+      // tela nunca abre (servicos_habilitados sozinho ocupa 12 kB no banco).
+      // O modo leve tambem dispensa a subconsulta de pendencias por
+      // profissional, que era uma terceira ida a Sao Paulo: a contagem sai
+      // de graca do `pend` que ja esta aqui do lado.
+      fetch('/api/profissionais?leve=1').then(r => r.json()),
       fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
       fetch('/api/salon/grid?chave=setor_cores').then(r => r.json()).catch(() => null),
     ]).then(([pend, profs, me, cores]) => {
       setCoresSetor(cores && typeof cores === 'object' && !Array.isArray(cores) ? cores : {})
-      setPendencias(Array.isArray(pend) ? pend : [])
-      setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo && !p.is_departamento) : [])
-      setDepartamentos(Array.isArray(profs) ? profs.filter((p: Profissional) => p.is_departamento) : [])
+      const listaPend: Pendencia[] = Array.isArray(pend) ? pend : []
+      setPendencias(listaPend)
+
+      // A MESMA conta que a rota fazia: pendencia nao resolvida, agrupada por
+      // profissional. Aqui ela custa zero -- os dados ja chegaram.
+      const abertasPor: Record<string, number> = {}
+      for (const x of listaPend) {
+        if (x?.resolvido) continue
+        const dono = (x as any)?.profissional_id
+        if (dono) abertasPor[dono] = (abertasPor[dono] || 0) + 1
+      }
+      const comContagem = (Array.isArray(profs) ? profs : []).map((p: Profissional) => ({
+        ...p, pendencias_abertas: abertasPor[p.id] || 0,
+      }))
+
+      setProfissionais(comContagem.filter((p: Profissional) => p.ativo && !p.is_departamento))
+      setDepartamentos(comContagem.filter((p: Profissional) => p.is_departamento))
       if (me?.salaoId) setSalaoId(me.salaoId)
       setLoading(false)
     }).catch(() => setLoading(false))

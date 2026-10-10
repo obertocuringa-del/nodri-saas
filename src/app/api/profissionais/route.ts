@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('profissionais')
-    .select(leve ? 'id, nome_completo, apelido, ativo, is_departamento, data_aniversario, cargo, telefone' : '*')
+    .select(leve ? 'id, nome_completo, apelido, ativo, is_departamento, data_aniversario, cargo, telefone, departamento_cor' : '*')
     .eq('salao_id', salaoId)
     .order('nome_completo')
 
