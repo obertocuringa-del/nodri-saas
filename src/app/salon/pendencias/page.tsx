@@ -121,22 +121,42 @@ export default function PendenciasPage() {
     } catch { toast.error('Erro de conexão ao salvar a cor') }
   }
 
+  // ── O que a tela PRECISA para desenhar ──────────────────────────────────
+  //
+  // Só estes três. Enquanto o `loading` não cai, a página inteira é um
+  // spinner -- inclusive o organograma, que depois ainda busca os textos
+  // dele. Em 10/10/2026 isso dava 3,2 s até o organograma aparecer.
+  //
+  // `/api/salon/alertas` estava aqui dentro e era a mais lenta de todas
+  // (1974 ms). Ela não desenha nada: só alimenta o selinho "X pendências"
+  // de cada card. Segurar a tela inteira por um selo é trocar 2 segundos de
+  // espera por um número que chega sozinho um instante depois.
   useEffect(() => {
     Promise.all([
       fetch('/api/pendencias').then(r => r.json()),
       fetch('/api/profissionais').then(r => r.json()),
       fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
-      fetch('/api/salon/alertas').then(r => r.json()).catch(() => ({})),
       fetch('/api/salon/grid?chave=setor_cores').then(r => r.json()).catch(() => null),
-    ]).then(([pend, profs, me, alertas, cores]) => {
+    ]).then(([pend, profs, me, cores]) => {
       setCoresSetor(cores && typeof cores === 'object' && !Array.isArray(cores) ? cores : {})
-      setSolicPorSetor(alertas?.solicPorSetor && typeof alertas.solicPorSetor === 'object' ? alertas.solicPorSetor : {})
       setPendencias(Array.isArray(pend) ? pend : [])
       setProfissionais(Array.isArray(profs) ? profs.filter((p: Profissional) => p.ativo && !p.is_departamento) : [])
       setDepartamentos(Array.isArray(profs) ? profs.filter((p: Profissional) => p.is_departamento) : [])
       if (me?.salaoId) setSalaoId(me.salaoId)
       setLoading(false)
     }).catch(() => setLoading(false))
+  }, [])
+
+  // Os selinhos de contagem entram depois, sem segurar ninguém. Começam em
+  // {} -- card sem selo até o número chegar, que é o que já acontecia nos
+  // salões em que a conta falhava.
+  useEffect(() => {
+    fetch('/api/salon/alertas')
+      .then(r => r.json())
+      .then(a => {
+        if (a?.solicPorSetor && typeof a.solicPorSetor === 'object') setSolicPorSetor(a.solicPorSetor)
+      })
+      .catch(() => { /* sem selo é melhor do que sem tela */ })
   }, [])
 
   async function criar() {
