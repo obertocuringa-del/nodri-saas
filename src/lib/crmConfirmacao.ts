@@ -106,6 +106,37 @@ export async function gravarFila(salaoId: string, fila: PedidoConfirmacao[]) {
   }, { onConflict: 'salao_id,chave' })
 }
 
+// ── Palavras que, SOZINHAS, não querem dizer confirmação ──────────────────
+//
+// Estão na lista do salão por causa de uma expressão maior: "estarei" veio de
+// "estarei aí", "vou" de "vou sim", "pode" de "pode sim". Soltas, não dizem
+// nada -- e às vezes dizem o contrário.
+//
+// 06/10/2026, ANA: o salão mandou "Podemos confirmar?" e ela respondeu
+// "Oi … eu estarei viajando". A palavra `estarei` bateu, saiu "Combinado,
+// seu horário está confirmado" 42 segundos depois, e o Avec ficou com o
+// horário marcado até alguém perceber no dia seguinte. Outras seis falas em
+// 60 dias caíram no mesmo buraco: "Vou passar aí para deixar o vestido da
+// noiva", "A higienizacao pode incluir tbm, por favor", "Se a Vera estiver
+// disponível vou querer cortar", "Somente isso. Obrigada!".
+//
+// A lista do salão não é mexida de propósito: ela é dele, e amanhã alguém
+// reacrescenta a palavra. Quem tem de saber a diferença é a regra.
+const FRACAS = new Set([
+  'estarei', 'vou', 'vouu', 'pode', 'podee', 'pod', 'isso', 'ta',
+  'obg', 'por favor', 'mantenha', 'pronto', 'oi boa tarde', 'oi boa noite',
+  'barba adilson', 's', 'ss', 'sss',
+])
+
+// Cumprimento, agradecimento e pronome são o embrulho da resposta, não a
+// resposta. "Oi", "boa tarde", "obrigada", "por favor" podem sobrar sem que
+// a cliente tenha falado de outro assunto.
+const RUIDO = new Set([
+  'oi', 'ola', 'bom', 'boa', 'dia', 'tarde', 'noite', 'e',
+  'obrigada', 'obrigado', 'obg', 'brigada', 'muito', 'por', 'favor', 'pfv',
+  'eu', 'ja', 'entao', 'ai', 'a', 'o', 'me', 'mim', 'pra', 'para', 'que',
+])
+
 /**
  * O texto da cliente vale como confirmação?
  *
@@ -113,6 +144,9 @@ export async function gravarFila(salaoId: string, fila: PedidoConfirmacao[]) {
  * três linhas está explicando alguma coisa, não confirmando -- e aí é caso de
  * gente ler. "Pode confirmar por favor, só manicure mesmo" passa (curta); um
  * parágrafo pedindo para remarcar, não.
+ *
+ * E palavra fraca (ver FRACAS) só conta quando é praticamente a mensagem
+ * inteira: "Pode" confirma, "pode incluir a higienização também" não.
  */
 export function ehConfirmacao(texto: string, palavras: string[]): boolean {
   const t = semAcento(texto).replace(/[^a-z0-9?\s]/g, ' ').replace(/\s+/g, ' ').trim()
@@ -132,10 +166,24 @@ export function ehConfirmacao(texto: string, palavras: string[]): boolean {
   // com pressa. Como pedaço, "s" está dentro de qualquer frase e "ta" está em
   // "tarde"; como palavra inteira, "s" só vale quando a cliente escreveu "s".
   const comEspacos = ' ' + t.replace(/\?/g, ' ').replace(/\s+/g, ' ').trim() + ' '
-  return palavras.some(p => {
-    const alvo = semAcento(p).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
-    return !!alvo && comEspacos.includes(' ' + alvo + ' ')
-  })
+  const alvos = palavras
+    .map(p => semAcento(p).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+
+  // Bateu numa expressão que não é fraca? É confirmação e acabou.
+  if (alvos.some(a => !FRACAS.has(a) && comEspacos.includes(' ' + a + ' '))) return true
+
+  // ── Só bateu em palavra fraca ───────────────────────────────────────────
+  //
+  // Então ela só vale se for praticamente a mensagem inteira. Tirando a
+  // própria palavra e o embrulho (cumprimento, agradecimento, pronome), se
+  // AINDA SOBRA alguma coisa, a cliente está falando de outro assunto e isso
+  // é caso de alguém ler -- não de mandar "Combinado" e marcar no Avec.
+  const bateram = alvos.filter(a => FRACAS.has(a) && comEspacos.includes(' ' + a + ' '))
+  if (!bateram.length) return false
+  let resto = comEspacos
+  for (const a of bateram) resto = resto.split(' ' + a + ' ').join(' ')
+  return resto.split(' ').every(w => !w || RUIDO.has(w))
 }
 
 /**
