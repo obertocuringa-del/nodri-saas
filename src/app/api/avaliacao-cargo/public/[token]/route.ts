@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { lerFicha, NOTA_MIN, NOTA_MAX, type TipoAvaliador } from '@/lib/avaliacaoCargoModelo'
+import { lerFicha, NOTA_MIN, NOTA_MAX, NOTA_QUE_PEDE_MOTIVO, type TipoAvaliador } from '@/lib/avaliacaoCargoModelo'
 
 export const dynamic = 'force-dynamic'
 
@@ -100,6 +100,21 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     if (!validos.has(k)) continue
     const t = String(v ?? '').trim().slice(0, 1200)
     if (t) observacoes[k] = t
+  }
+
+  // ── Nota baixa exige exemplo, aqui também ───────────────────────────────
+  //
+  // A tela já barra, mas tela se contorna. Esta avaliação pode pesar na vida
+  // de alguém: um 2 sem uma linha dizendo o que aconteceu não é avaliação, é
+  // opinião -- e não deve entrar no banco como se fosse prova.
+  const semMotivo = Object.entries(notas)
+    .filter(([k, n]) => n <= NOTA_QUE_PEDE_MOTIVO && !observacoes[k])
+  if (semMotivo.length) {
+    return NextResponse.json({
+      error: semMotivo.length === 1
+        ? 'Há uma nota baixa sem exemplo. Escreva o que aconteceu naquele ponto.'
+        : `Há ${semMotivo.length} notas baixas sem exemplo. Escreva o que aconteceu em cada uma.`,
+    }, { status: 400 })
   }
 
   const { error } = await supabaseAdmin.from('avaliacao_cargo_resposta').insert({

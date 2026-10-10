@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { CheckCircle, MessageSquarePlus, X, Lock } from 'lucide-react'
 import {
-  porSecao, TIPOS_AVALIADOR, NOTA_MAX,
+  porSecao, TIPOS_AVALIADOR, NOTA_MAX, faixaDaNota, FAIXAS_DA_NOTA, NOTA_QUE_PEDE_MOTIVO,
   type FichaAval, type TipoAvaliador,
 } from '@/lib/avaliacaoCargoModelo'
 
@@ -82,6 +82,22 @@ export default function AvaliarPublico() {
     const comNota = Object.entries(notas)
       .filter(([, v]) => typeof v === 'number') as [string, number][]
     if (!comNota.length) { setErroEnvio('Dê ao menos uma nota antes de enviar.'); return }
+
+    // Nota baixa sem exemplo não sai daqui. Uma avaliação que pode pesar na
+    // vida de alguém não se sustenta em número solto -- e quem lê o
+    // resultado depois precisa saber O QUE aconteceu, não só quanto foi.
+    const semMotivo = comNota.filter(([id, v]) => v <= NOTA_QUE_PEDE_MOTIVO && !String(obs[id] || '').trim())
+    if (semMotivo.length) {
+      semMotivo.forEach(([id]) => setAbertos(s => ({ ...s, [id]: true })))
+      const prim = secoes.flatMap(g => g.criterios).find(c => c.id === semMotivo[0][0])
+      setErroEnvio(
+        semMotivo.length === 1
+          ? `Falta o exemplo da nota baixa em "${prim?.texto || 'um dos pontos'}".`
+          : `Faltam exemplos em ${semMotivo.length} pontos com nota baixa.`,
+      )
+      document.querySelector(`[data-ponto="${semMotivo[0][0]}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
     setErroEnvio(''); setEnviando(true)
     try {
       const r = await fetch(`/api/avaliacao-cargo/public/${token}`, {
@@ -233,21 +249,47 @@ export default function AvaliarPublico() {
                   {g.criterios.map((c, i) => {
                     const v = notas[c.id]
                     return (
-                      <div key={c.id} style={{ paddingTop: i ? 17 : 0, marginTop: i ? 17 : 0, borderTop: i ? '1px solid #f4f2fb' : 'none' }}>
+                      <div key={c.id} data-ponto={c.id} style={{ paddingTop: i ? 17 : 0, marginTop: i ? 17 : 0, borderTop: i ? '1px solid #f4f2fb' : 'none' }}>
                         <p style={{ fontSize: 14, color: '#1a1a1a', lineHeight: 1.55, marginBottom: 11 }}>{c.texto}</p>
 
                         <div className="regua">
                           {Array.from({ length: NOTA_MAX + 1 }, (_, n) => (
                             <button key={n} type="button"
                               className={'nota' + (v === n ? ' on' : '')}
-                              onClick={() => setNotas(s => ({ ...s, [c.id]: s[c.id] === n ? undefined as any : n }))}>
+                              onClick={() => {
+                                setNotas(s => ({ ...s, [c.id]: s[c.id] === n ? undefined as any : n }))
+                                // Nota baixa abre o campo sozinho: pedir o
+                                // exemplo e deixar escondido onde escrevê-lo
+                                // seria pedir e atrapalhar ao mesmo tempo.
+                                if (n <= NOTA_QUE_PEDE_MOTIVO) setAbertos(s => ({ ...s, [c.id]: true }))
+                              }}>
                               {n}
                             </button>
                           ))}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#b0abc2', marginTop: 4 }}>
-                          <span>não atende</span><span>atende plenamente</span>
-                        </div>
+                        {/* O que a nota escolhida QUER DIZER. Sem isto cada
+                            pessoa calibra de um jeito e a média soma coisas
+                            diferentes: o exigente dá 6 onde o complacente dá 9. */}
+                        {typeof v === 'number' ? (
+                          <p style={{ fontSize: 11.5, color: '#4b4458', marginTop: 5 }}>
+                            <b>{faixaDaNota(v)?.rotulo}</b>
+                            <span style={{ color: '#9ca3af' }}> — {faixaDaNota(v)?.ajuda}</span>
+                          </p>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#b0abc2', marginTop: 4 }}>
+                            <span>não acontece</span><span>sempre, e é referência</span>
+                          </div>
+                        )}
+
+                        {/* Nota baixa sem fato não sustenta nada -- e esta
+                            avaliação pode pesar na vida de alguém. Abaixo de
+                            4 a observação deixa de ser opcional. */}
+                        {typeof v === 'number' && v <= NOTA_QUE_PEDE_MOTIVO && !String(obs[c.id] || '').trim() && (
+                          <p style={{ fontSize: 11.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '7px 10px', marginTop: 7, lineHeight: 1.5 }}>
+                            Nota baixa precisa de um exemplo. Escreva abaixo o que
+                            aconteceu — sem isso ela não pode ser usada.
+                          </p>
+                        )}
 
                         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 9, flexWrap: 'wrap' }}>
                           <button type="button"

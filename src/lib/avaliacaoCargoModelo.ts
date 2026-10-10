@@ -35,6 +35,18 @@ export interface CriterioAval {
   secao: string
   /** Quem responde este ponto. Lista vazia = ninguém, e o ponto não aparece. */
   para: TipoAvaliador[]
+  /**
+   * Ponto NÃO NEGOCIÁVEL.
+   *
+   * Existe porque média esconde o que não pode ser escondido. Alguém com 8,4
+   * de média e um 2 em "registra o valor que recebeu" não é uma pessoa boa
+   * com um detalhe a corrigir -- e a média sozinha diria que é.
+   *
+   * Nota baixa aqui aparece em separado no resultado, fora da média, com a
+   * justificativa de quem deu. Não decide nada por si: aponta o que precisa
+   * ser apurado com fato, não com nota.
+   */
+  critico?: boolean
 }
 
 export interface FichaAval {
@@ -75,6 +87,32 @@ export interface RespostaAval {
 
 export const NOTA_MIN = 0
 export const NOTA_MAX = 10
+
+/**
+ * O que cada faixa da régua QUER DIZER.
+ *
+ * Sem isto, 0 a 10 é impressão: cada pessoa calibra de um jeito e a média
+ * soma coisas diferentes. Quem é exigente dá 6 para quem quem é
+ * complacente dá 9, e o número final não significa nada.
+ *
+ * As faixas falam de FREQUÊNCIA do comportamento, não de simpatia pela
+ * pessoa -- é o que uma avaliação precisa sustentar se um dia for
+ * questionada.
+ */
+export const FAIXAS_DA_NOTA: Array<{ de: number; ate: number; rotulo: string; ajuda: string }> = [
+  { de: 9, ate: 10, rotulo: 'Sempre, e é referência', ajuda: 'Faz sem falhar e os outros aprendem olhando.' },
+  { de: 7, ate: 8,  rotulo: 'Faz o combinado',        ajuda: 'Cumpre o esperado; falha é exceção rara.' },
+  { de: 5, ate: 6,  rotulo: 'Oscila',                 ajuda: 'Às vezes sim, às vezes não — precisa de cobrança.' },
+  { de: 3, ate: 4,  rotulo: 'Quase nunca',            ajuda: 'Falha mais do que acerta.' },
+  { de: 0, ate: 2,  rotulo: 'Não acontece',           ajuda: 'O combinado não está sendo feito.' },
+]
+
+export function faixaDaNota(n: number) {
+  return FAIXAS_DA_NOTA.find(f => n >= f.de && n <= f.ate) || null
+}
+
+/** Abaixo disto a nota pede justificativa: número sem fato não sustenta nada. */
+export const NOTA_QUE_PEDE_MOTIVO = 4
 
 export function novoIdCrit(): string {
   return `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
@@ -129,6 +167,7 @@ export function lerFicha(bruto: any, cargoPadrao: string): FichaAval {
       texto: String(c?.texto || ''),
       secao: String(c?.secao || 'Geral'),
       para: para.length ? para : (['auto', 'gerente', 'equipe'] as TipoAvaliador[]),
+      critico: c?.critico === true,
     }
   }).filter((c: CriterioAval) => c.texto.trim())
   return {
@@ -164,6 +203,15 @@ export interface MediaCriterio {
   /** Autoavaliação menos a média dos OUTROS. Positivo = se vê melhor do que
    *  os outros a veem. Nulo quando falta um dos dois lados. */
   diferenca: number | null
+  /** A MENOR nota que alguém deu neste ponto, fora a autoavaliação. */
+  menorDeFora: number | null
+  /** Distância entre a maior e a menor nota. Média de 6 com dois 10 e dois 2
+   *  não é a mesma coisa que quatro 6 -- a primeira é desacordo, e desacordo
+   *  é informação, não ruído. */
+  amplitude: number | null
+  /** Ponto não negociável com nota baixa de alguém que não é a própria
+   *  pessoa. É o que o resultado mostra em separado. */
+  alertaCritico: boolean
 }
 
 const arred = (v: number) => Math.round(v * 10) / 10
@@ -175,6 +223,7 @@ function media(ns: number[]): { media: number; n: number } | null {
 
 export function calcular(ficha: FichaAval, respostas: RespostaAval[]): {
   linhas: MediaCriterio[]
+  criticos: MediaCriterio[]
   geral: Record<TipoAvaliador, { media: number; n: number } | null>
   geralTotal: { media: number; n: number } | null
   respondentes: Record<TipoAvaliador, number>
@@ -192,11 +241,17 @@ export function calcular(ficha: FichaAval, respostas: RespostaAval[]): {
     const outras = [...colhe('gerente'), ...colhe('equipe')]
     const mOutras = media(outras)
 
+    const menorDeFora = outras.length ? Math.min(...outras) : null
+    const amplitude = todas.length > 1 ? arred(Math.max(...todas) - Math.min(...todas)) : null
+
     return {
       criterio: c,
       por: { auto, gerente, equipe },
       geral: media(todas),
       diferenca: auto && mOutras ? arred(auto.media - mOutras.media) : null,
+      menorDeFora,
+      amplitude,
+      alertaCritico: !!c.critico && menorDeFora != null && menorDeFora <= NOTA_QUE_PEDE_MOTIVO,
     }
   })
 
@@ -205,6 +260,9 @@ export function calcular(ficha: FichaAval, respostas: RespostaAval[]): {
 
   return {
     linhas,
+    // Os não negociáveis que alguém de fora pontuou em baixo. Vão em
+    // separado de propósito: a média não pode engolir isto.
+    criticos: linhas.filter(l => l.alertaCritico),
     geral: {
       auto: media(notasDoTipo('auto')),
       gerente: media(notasDoTipo('gerente')),

@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import {
-  Loader2, Save, Plus, Trash2, ChevronUp, ChevronDown, X, Link2, Copy,
+  Loader2, Save, Plus, Trash2, ChevronUp, ChevronDown, X, Link2, Copy, ShieldAlert,
   Lock, Unlock, BarChart3, ListChecks, Printer, ChevronRight,
 } from 'lucide-react'
 import type { DocCargo } from '@/lib/descricaoCargoModelo'
 import {
   type FichaAval, type CriterioAval, type RodadaAval, type TipoAvaliador,
   TIPOS_AVALIADOR, ROTULO_TIPO, fichaVazia, lerFicha,
-  novoIdCrit, porSecao, calcular, corDaNota,
+  novoIdCrit, porSecao, calcular, corDaNota, NOTA_QUE_PEDE_MOTIVO,
 } from '@/lib/avaliacaoCargoModelo'
 
 // ── Avaliação 360 do cargo: o painel de dentro ─────────────────────────────
@@ -260,9 +260,16 @@ function LinhaCriterio({ c, primeiro, ultimo, secoes, onMudar, onApagar, onMover
   return (
     <div className="border border-nodri-border rounded-lg bg-nodri-surface">
       <div className="flex items-start gap-1.5 p-2">
-        <textarea value={c.texto} rows={1}
-          onChange={e => onMudar({ ...c, texto: e.target.value })}
-          className="flex-1 bg-transparent text-[12.5px] outline-none resize-none leading-relaxed min-h-[34px] py-1" />
+        <div className="flex-1 min-w-0">
+          <textarea value={c.texto} rows={1}
+            onChange={e => onMudar({ ...c, texto: e.target.value })}
+            className="w-full bg-transparent text-[12.5px] outline-none resize-none leading-relaxed min-h-[34px] py-1" />
+          {c.critico && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-500/15 px-1.5 py-0.5 rounded">
+              <ShieldAlert size={10} /> não negociável
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-0.5 shrink-0">
           <button onClick={() => setAberto(v => !v)} title="Quem responde / seção"
             className={'p-1 rounded ' + (aberto ? 'text-nodri-cyan' : 'text-nodri-t3 hover:text-nodri-cyan')}>
@@ -303,6 +310,16 @@ function LinhaCriterio({ c, primeiro, ultimo, secoes, onMudar, onApagar, onMover
               Sem ninguém marcado, este ponto não aparece para nenhum avaliador.
             </p>
           )}
+          <label className="flex items-start gap-2 text-[11.5px] text-nodri-t2 cursor-pointer">
+            <input type="checkbox" checked={!!c.critico} className="mt-0.5"
+              onChange={e => onMudar({ ...c, critico: e.target.checked })} />
+            <span>
+              <b>Não negociável.</b> Nota baixa aqui aparece em separado no
+              resultado, fora da média — média de 8 esconde um 2 em
+              honestidade, e é justamente esse 2 que precisa ser visto.
+            </span>
+          </label>
+
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-nodri-t3 shrink-0">Seção:</span>
             <input value={c.secao} list="secoes-aval"
@@ -569,6 +586,42 @@ function AbaResultado({ rodadas, atual, onTrocar, salao }: {
             <Cartao rotulo="Média geral" valor={r.geralTotal?.media ?? null}
               abaixo={`${respostas.length} no total`} destaque />
           </div>
+
+          {/* ── O que não pode ser diluído na média ── */}
+          {!!r.criticos.length && (
+            <div className="border border-red-400/50 bg-red-500/5 rounded-xl p-3">
+              <p className="text-[12px] font-bold text-red-700 flex items-center gap-1.5">
+                <ShieldAlert size={14} /> Pontos não negociáveis com nota baixa
+              </p>
+              <p className="text-[11px] text-nodri-t3 mt-1 mb-2.5 leading-relaxed">
+                Fora da média de propósito. Isto não decide nada sozinho: é o
+                que precisa ser <b>apurado com fato</b>, conversando com quem
+                avaliou e com a pessoa avaliada.
+              </p>
+              <div className="space-y-2">
+                {r.criticos.map(l => {
+                  const exemplos = respostas
+                    .filter(x => typeof x.notas?.[l.criterio.id] === 'number'
+                              && x.notas[l.criterio.id] <= NOTA_QUE_PEDE_MOTIVO)
+                    .map(x => ({ tipo: x.tipo, nota: x.notas[l.criterio.id], texto: x.observacoes?.[l.criterio.id] }))
+                  return (
+                    <div key={l.criterio.id} className="bg-nodri-surface rounded-lg p-2.5">
+                      <p className="text-[12.5px] font-bold text-nodri-t1">{l.criterio.texto}</p>
+                      <p className="text-[11px] text-nodri-t3 mt-0.5">
+                        menor nota de fora: <b className="text-red-600">{l.menorDeFora?.toFixed(1)}</b>
+                        {l.geral ? ` · média ${l.geral.media.toFixed(1)}` : ''}
+                      </p>
+                      {exemplos.map((e, i) => (
+                        <p key={i} className="text-[11.5px] text-nodri-t2 border-l-2 border-red-400/60 pl-2 py-1 mt-1.5 leading-relaxed">
+                          <b className="text-nodri-t3">{ROTULO_TIPO[e.tipo]} deu {e.nota}:</b> {e.texto || '(sem exemplo)'}
+                        </p>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Onde as visões divergem ── */}
           {!!lacunas.length && (
