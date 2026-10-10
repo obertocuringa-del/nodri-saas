@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import {
-  Loader2, Save, Plus, Trash2, ChevronUp, ChevronDown, Wand2, X, Link2, Copy,
+  Loader2, Save, Plus, Trash2, ChevronUp, ChevronDown, X, Link2, Copy,
   Lock, Unlock, BarChart3, ListChecks, Printer, ChevronRight,
 } from 'lucide-react'
 import type { DocCargo } from '@/lib/descricaoCargoModelo'
 import {
   type FichaAval, type CriterioAval, type RodadaAval, type TipoAvaliador,
-  type GrupoProposto,
-  TIPOS_AVALIADOR, ROTULO_TIPO, proporDaDescricao, fichaVazia, lerFicha,
-  novoIdCrit, porSecao, calcular, corDaNota, PONTOS_CONFORTAVEIS,
+  TIPOS_AVALIADOR, ROTULO_TIPO, fichaVazia, lerFicha,
+  novoIdCrit, porSecao, calcular, corDaNota,
 } from '@/lib/avaliacaoCargoModelo'
 
 // ── Avaliação 360 do cargo: o painel de dentro ─────────────────────────────
@@ -85,37 +84,6 @@ export default function AvaliacaoCargoPainel({ setorId, doc, salao, onFechar }: 
     } catch { toast.error('Sem conexão.') } finally { setSalvando(false) }
   }
 
-  // ── Gerar da descrição ──
-  // Não aplica direto. Uma descrição de cargo bem escrita rende cem pontos,
-  // e formulário de cem perguntas se abandona na vigésima -- então o que o
-  // botão faz é mostrar os blocos e deixar escolher quais entram.
-  const [proposta, setProposta] = useState<GrupoProposto[] | null>(null)
-
-  function gerarDaDescricao() {
-    const grupos = proporDaDescricao(doc)
-    if (!grupos.length) {
-      toast.error('A descrição de cargo não tem deveres em lista nem seções com título.')
-      return
-    }
-    // O que já está na ficha não se propõe de novo.
-    const jaTem = new Set(ficha.criterios.map(c => norma(c.texto)))
-    const limpos = grupos
-      .map(g => ({ ...g, criterios: g.criterios.filter(c => !jaTem.has(norma(c.texto))) }))
-      .filter(g => g.criterios.length)
-    if (!limpos.length) { toast('A ficha já cobre todos os pontos da descrição.'); return }
-    setProposta(limpos)
-  }
-
-  function aplicarProposta(escolhidos: CriterioAval[]) {
-    mexer(f => ({
-      ...f,
-      cargo: f.cargo || doc.cargo,
-      criterios: [...f.criterios, ...escolhidos],
-    }))
-    setProposta(null)
-    toast.success(`${escolhidos.length} ${escolhidos.length === 1 ? 'ponto incluído' : 'pontos incluídos'}`)
-  }
-
   const rodadaAtual = useMemo(
     () => rodadas.find(r => r.id === verRodada) || rodadas[0] || null,
     [rodadas, verRodada],
@@ -166,9 +134,7 @@ export default function AvaliacaoCargoPainel({ setorId, doc, salao, onFechar }: 
 
       <div className="p-3">
         {aba === 'ficha' && (
-          <AbaFicha ficha={ficha} doc={doc} mexer={mexer} gerar={gerarDaDescricao}
-            proposta={proposta} onAplicar={aplicarProposta}
-            onDescartar={() => setProposta(null)} />
+          <AbaFicha ficha={ficha} doc={doc} mexer={mexer} />
         )}
         {aba === 'rodadas' && (
           <AbaRodadas setorId={setorId} ficha={ficha} rodadas={rodadas}
@@ -185,14 +151,10 @@ export default function AvaliacaoCargoPainel({ setorId, doc, salao, onFechar }: 
 
 // ══ Aba 1: os pontos ═══════════════════════════════════════════════════════
 
-function AbaFicha({ ficha, doc, mexer, gerar, proposta, onAplicar, onDescartar }: {
+function AbaFicha({ ficha, doc, mexer }: {
   ficha: FichaAval
   doc: DocCargo
   mexer: (fn: (f: FichaAval) => FichaAval) => void
-  gerar: () => void
-  proposta: GrupoProposto[] | null
-  onAplicar: (c: CriterioAval[]) => void
-  onDescartar: () => void
 }) {
   const [novo, setNovo] = useState('')
   const [novaSecao, setNovaSecao] = useState('')
@@ -215,23 +177,6 @@ function AbaFicha({ ficha, doc, mexer, gerar, proposta, onAplicar, onDescartar }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-2 flex-wrap">
-        <button onClick={gerar}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border border-nodri-cyan text-nodri-cyan hover:bg-nodri-cyan/10">
-          <Wand2 size={14} /> Gerar da descrição de cargo
-        </button>
-        <p className="text-[11.5px] text-nodri-t3 leading-relaxed flex-1 min-w-[200px]">
-          Lê os deveres que já estão escritos no documento e transforma cada um
-          num ponto de 0 a 10. Não apaga nada do que você já ajustou aqui —
-          só acrescenta o que falta.
-        </p>
-      </div>
-
-      {proposta && (
-        <EscolherProposta grupos={proposta} jaNaFicha={ficha.criterios.length}
-          onAplicar={onAplicar} onDescartar={onDescartar} />
-      )}
-
       <div>
         <p className="text-[11.5px] font-bold text-nodri-t2 mb-1.5">Texto de abertura (opcional)</p>
         <textarea value={ficha.apresentacao || ''} rows={2}
@@ -244,9 +189,7 @@ function AbaFicha({ ficha, doc, mexer, gerar, proposta, onAplicar, onDescartar }
         <div className="text-center py-9 border border-dashed border-nodri-border rounded-xl">
           <p className="text-[13px] text-nodri-t3 mb-1">Nenhum ponto na ficha ainda.</p>
           <p className="text-[11.5px] text-nodri-t3">
-            {doc.blocos.length
-              ? 'Use "Gerar da descrição de cargo" acima para começar com os deveres que já estão escritos.'
-              : 'Escreva a descrição de cargo primeiro — é dela que saem os pontos.'}
+            Use "Acrescentar um ponto", no fim desta aba, para escrever o primeiro.
           </p>
         </div>
       ) : (
@@ -297,115 +240,6 @@ function AbaFicha({ ficha, doc, mexer, gerar, proposta, onAplicar, onDescartar }
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border border-nodri-border text-nodri-t2 disabled:opacity-40">
             <Plus size={14} /> Incluir
           </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Escolher o que entra ───────────────────────────────────────────────────
-//
-// Um clique por BLOCO, não por ponto. E o total sempre à vista, porque o
-// erro aqui não é escolher o bloco errado: é marcar tudo e produzir um
-// formulário que ninguém termina.
-
-function EscolherProposta({ grupos, jaNaFicha, onAplicar, onDescartar }: {
-  grupos: GrupoProposto[]
-  jaNaFicha: number
-  onAplicar: (c: CriterioAval[]) => void
-  onDescartar: () => void
-}) {
-  // Nada marcado de saída: a escolha é de quem conhece o cargo, e marcar
-  // por conta própria o que "parece" importante só esconde a decisão.
-  const [marcados, setMarcados] = useState<Set<string>>(new Set())
-  const [abertos, setAbertos] = useState<Set<string>>(new Set())
-
-  const escolhidos = grupos.filter(g => marcados.has(g.rotulo)).flatMap(g => g.criterios)
-  const total = jaNaFicha + escolhidos.length
-  const demais = total > PONTOS_CONFORTAVEIS
-
-  function virar(rotulo: string) {
-    setMarcados(s => {
-      const n = new Set(s)
-      n.has(rotulo) ? n.delete(rotulo) : n.add(rotulo)
-      return n
-    })
-  }
-
-  return (
-    <div className="border border-nodri-cyan/50 rounded-xl overflow-hidden">
-      <div className="px-3 py-2.5 bg-nodri-cyan/5 border-b border-nodri-cyan/30">
-        <p className="text-[12.5px] font-bold text-nodri-t1">
-          A descrição de cargo rende {grupos.reduce((s, g) => s + g.criterios.length, 0)} pontos,
-          em {grupos.length} {grupos.length === 1 ? 'bloco' : 'blocos'}
-        </p>
-        <p className="text-[11.5px] text-nodri-t3 mt-1 leading-relaxed">
-          Escolha os blocos que entram. Uma avaliação que a pessoa termina com
-          atenção tem até {PONTOS_CONFORTAVEIS} pontos — dá para abrir outra
-          depois com o resto.
-        </p>
-      </div>
-
-      <div className="divide-y divide-nodri-border/60 max-h-[42vh] overflow-y-auto">
-        {grupos.map(g => {
-          const on = marcados.has(g.rotulo)
-          const vendo = abertos.has(g.rotulo)
-          return (
-            <div key={g.rotulo} className={on ? 'bg-nodri-cyan/5' : ''}>
-              <div className="flex items-start gap-2 px-3 py-2">
-                <input type="checkbox" checked={on} onChange={() => virar(g.rotulo)}
-                  className="mt-1 shrink-0" id={`gp-${g.rotulo}`} />
-                <label htmlFor={`gp-${g.rotulo}`} className="flex-1 min-w-0 cursor-pointer">
-                  <span className="block text-[12.5px] font-bold text-nodri-t1 leading-snug">
-                    {g.rotulo}
-                  </span>
-                  <span className="block text-[11px] text-nodri-t3 mt-0.5">
-                    {g.criterios.length} {g.criterios.length === 1 ? 'ponto' : 'pontos'}
-                  </span>
-                </label>
-                <button onClick={() => setAbertos(s => {
-                  const n = new Set(s); n.has(g.rotulo) ? n.delete(g.rotulo) : n.add(g.rotulo); return n
-                })}
-                  className="text-[11px] text-nodri-t3 hover:text-nodri-cyan shrink-0 px-1 py-1">
-                  {vendo ? 'esconder' : 'ver'}
-                </button>
-              </div>
-              {vendo && (
-                <ul className="px-3 pb-2.5 pl-9 space-y-1">
-                  {g.criterios.map(c => (
-                    <li key={c.id} className="text-[11.5px] text-nodri-t2 leading-snug">
-                      {c.texto}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="px-3 py-2.5 border-t border-nodri-border bg-nodri-surface space-y-2">
-        {demais && (
-          <p className="text-[11.5px] text-amber-600 leading-relaxed">
-            {total} pontos é muito para uma rodada. Quem responde cansa e as
-            notas do fim saem no automático.
-          </p>
-        )}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => onAplicar(escolhidos)} disabled={!escolhidos.length}
-            className="flex items-center gap-1.5 bg-nodri-cyan text-black px-3.5 py-2 rounded-lg text-[12px] font-bold disabled:opacity-40">
-            <Plus size={13} />
-            {escolhidos.length
-              ? `Incluir ${escolhidos.length} ${escolhidos.length === 1 ? 'ponto' : 'pontos'}`
-              : 'Marque um bloco acima'}
-          </button>
-          <button onClick={onDescartar}
-            className="px-3 py-2 rounded-lg text-[12px] font-bold border border-nodri-border text-nodri-t2">
-            Deixar para depois
-          </button>
-          <span className="text-[11.5px] text-nodri-t3 ml-auto">
-            ficha ficaria com {total}
-          </span>
         </div>
       </div>
     </div>

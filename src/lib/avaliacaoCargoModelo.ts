@@ -97,83 +97,21 @@ function comoPergunta(bruto: string): string {
   return t
 }
 
-/** Um grupo de pontos propostos, para se escolher por bloco e não um a um. */
-export interface GrupoProposto {
-  rotulo: string
-  criterios: CriterioAval[]
-}
-
-/**
- * Propõe os pontos de avaliação a partir da descrição de cargo, em GRUPOS.
- *
- * Em grupos porque descrição de cargo bem escrita é longa: a do Coordenador
- * Operacional do Rouge rende 103 pontos. Formulário de 103 perguntas não se
- * responde -- se abandona na vigésima. Então o gerador propõe e quem monta a
- * ficha escolhe quais blocos entram, com um clique por bloco em vez de cem.
- *
- * Regras, nesta ordem:
- *  - cada bloco de lista ou de permissão é um grupo, com o título dele;
- *  - os parágrafos COM TÍTULO que vêm seguidos formam um grupo só (nos
- *    parágrafos técnicos o título é a atividade e o corpo é a explicação
- *    dela, que não vira pergunta);
- *  - parágrafo sem título, destaque e divisor não viram ponto -- são
- *    princípio e contexto, não há o que notar de 0 a 10;
- *  - repetido sai, olhando o documento inteiro: "Organização" aparece na
- *    lista de deveres e de novo nas habilidades comportamentais, e avaliar
- *    duas vezes a mesma coisa infla a média e cansa quem responde.
- */
-export function proporDaDescricao(doc: DocCargo): GrupoProposto[] {
-  const grupos: GrupoProposto[] = []
-  const vistos = new Set<string>()
-
-  // Os parágrafos com título entram juntos, e o grupo só fecha quando vem
-  // outra coisa pelo caminho.
-  let correndo: CriterioAval[] = []
-  const fecharCorrendo = () => {
-    if (!correndo.length) return
-    grupos.push({ rotulo: 'Atividades descritas em parágrafo', criterios: correndo })
-    correndo = []
-  }
-
-  const guardar = (texto: string, secao: string): CriterioAval | null => {
-    const limpo = comoPergunta(texto)
-    if (!limpo) return null
-    const k = norm(limpo)
-    if (!k || vistos.has(k)) return null
-    vistos.add(k)
-    return { id: novoIdCrit(), texto: limpo, secao, para: ['auto', 'gerente', 'equipe'] }
-  }
-
-  for (const b of doc.blocos || []) {
-    if (b.tipo === 'lista' || b.tipo === 'checklist') {
-      fecharCorrendo()
-      const rotulo = comoPergunta(b.titulo) || 'Deveres'
-      const criterios = (b.itens || [])
-        .map(i => guardar(i, rotulo))
-        .filter((c): c is CriterioAval => !!c)
-      if (criterios.length) grupos.push({ rotulo, criterios })
-      continue
-    }
-    if (b.tipo === 'texto' && b.titulo.trim()) {
-      const c = guardar(b.titulo, 'Atividades descritas em parágrafo')
-      if (c) correndo.push(c)
-      continue
-    }
-    // Destaque, divisor e parágrafo solto não propõem nada, mas cortam a
-    // sequência de parágrafos: o que vem depois é outro assunto.
-    fecharCorrendo()
-  }
-  fecharCorrendo()
-  return grupos
-}
-
-/** Tudo de uma vez, achatado. Usado quando não há escolha a fazer. */
-export function criteriosDaDescricao(doc: DocCargo): CriterioAval[] {
-  return proporDaDescricao(doc).flatMap(g => g.criterios)
-}
-
-/** Avaliação boa é curta o bastante para a pessoa terminar com atenção. */
-export const PONTOS_CONFORTAVEIS = 30
+// ── Por que não existe gerador automático aqui ────────────────────────────
+//
+// Houve um: lia os deveres escritos na descrição de cargo e virava cada um
+// num ponto de 0 a 10. Saiu em 10/10/2026, por decisão do dono depois de
+// usar: "as perguntas vêm de forma nada a ver".
+//
+// O motivo é que descrição de cargo e ficha de avaliação parecem a mesma
+// coisa e não são. A descrição diz o que o cargo FAZ; a ficha pergunta se a
+// pessoa faz BEM. Virar uma na outra mecanicamente produz pergunta torta --
+// "Operar caixa" não é uma pergunta, e um parágrafo técnico de quarenta
+// linhas não vira nota.
+//
+// As fichas dos seis cargos foram escritas à mão, ponto a ponto, e vivem no
+// banco. Quem quiser mudar edita na tela: dá para corrigir o texto,
+// acrescentar, apagar e mudar de ordem.
 
 export function fichaVazia(cargo: string): FichaAval {
   return { cargo, criterios: [] }
