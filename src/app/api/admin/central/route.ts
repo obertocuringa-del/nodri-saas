@@ -34,7 +34,7 @@ interface Item {
    * Com o nome e o começo do texto dá para ir direto -- e o link já abre a
    * conversa certa, onde fica o botão Reenviar.
    */
-  falhou?: Array<{ nome: string; previa: string; conversa_id: string; quando: string }>
+  falhou?: Array<{ id: string; nome: string; previa: string; quando: string }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -82,7 +82,7 @@ export async function GET() {
       .eq('direcao', 'saida').gte('criado_em', inicioDoDia)
       .in('autor_nome', ['Confirmação automática', 'Avisar o profissional que a cliente chegou', 'Automação de feedback', 'Envio automático'])
       .limit(10000),
-    supabaseAdmin.from('crm_mensagens').select('salao_id, conversa_id, texto, criado_em').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).order('criado_em', { ascending: false }).limit(5000),
+    supabaseAdmin.from('crm_mensagens').select('id, salao_id, conversa_id, texto, criado_em').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).order('criado_em', { ascending: false }).limit(5000),
     supabaseAdmin.from('crm_mensagens').select('salao_id').in('situacao', ['na_fila', 'enviando']).lt('criado_em', new Date(agora - 20 * MIN).toISOString()).limit(5000),
     // A fila INTEIRA de cada salão (não só a parada há 20 min). É o número que
     // importa quando o WhatsApp cai: enquanto ele está fora, o que estiver
@@ -116,9 +116,9 @@ export async function GET() {
     .filter(m => m.salao_id === salao)
     .slice(0, 12)
     .map(m => ({
+      id: String(m.id),
       nome: clienteDaConversa.get(m.conversa_id) || 'sem nome',
       previa: String(m.texto || '').replace(/\s+/g, ' ').trim().slice(0, 70),
-      conversa_id: String(m.conversa_id || ''),
       quando: m.criado_em ? dataHoraSP(new Date(m.criado_em).getTime()) : '',
     }))
   const cfg = (salao: string, chave: string) => (cfgs || []).find((c: any) => c.salao_id === salao && c.chave === chave)?.valor
@@ -293,7 +293,7 @@ export async function GET() {
     if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
     else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
     else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
-    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'Clique no nome para abrir a conversa — lá a mensagem tem o botão Reenviar.', falhou: falhasDoSalao(c.salao_id) })
+    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'Reenviar aqui mesmo põe a mensagem de volta na fila — não precisa entrar no salão.', falhou: falhasDoSalao(c.salao_id) })
     else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
 
     ponteItens.push(!vis || agora - vis > 5 * MIN
@@ -385,6 +385,29 @@ export async function POST(req: NextRequest) {
   const quem = await master()
   if (!quem) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const b = await req.json().catch(() => ({}))
+  // ── Reenviar daqui, sem entrar no salão ─────────────────────────────────
+  //
+  // Quem olha a Central está logado como master, não como salão: o link para
+  // /salon/crm não abriria nada. E o motivo de existir a Central é não ter de
+  // entrar salão por salão.
+  //
+  // Faz o MESMO que o botão Reenviar do CRM: a própria linha volta para a
+  // fila, sem duplicar o balão na conversa. A trava de "só o que falhou"
+  // continua valendo -- aqui ela é a única, já que não há salão na sessão
+  // para escopar.
+  if (b.acao === 'reenviar_mensagem' && b.id) {
+    const { data: m } = await supabaseAdmin
+      .from('crm_mensagens').select('id, situacao, direcao').eq('id', String(b.id)).maybeSingle()
+    if (!m) return NextResponse.json({ error: 'Mensagem não encontrada' }, { status: 404 })
+    if (m.direcao !== 'saida' || m.situacao !== 'falhou') {
+      return NextResponse.json({ error: 'Só dá para reenviar mensagem que falhou' }, { status: 400 })
+    }
+    await supabaseAdmin.from('crm_mensagens').update({
+      situacao: 'na_fila', erro: null, enviado_em: null, criado_em: new Date().toISOString(),
+    }).eq('id', String(b.id))
+    return NextResponse.json({ ok: true })
+  }
+
   if (b.acao === 'reiniciar' && b.alvo in ALVOS) {
     await pedirReinicio(b.alvo as Alvo, String((quem as any).nome || (quem as any).email || 'master'))
     return NextResponse.json({ ok: true })

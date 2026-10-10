@@ -19,7 +19,7 @@ interface Item {
   /** Mensagens esperando a ponte neste salão (fila inteira, não só as presas). */
   fila?: number
   /** QUEM falhou. O link abre a conversa, onde fica o botão Reenviar. */
-  falhou?: Array<{ nome: string; previa: string; conversa_id: string; quando: string }>
+  falhou?: Array<{ id: string; nome: string; previa: string; quando: string }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -184,24 +184,36 @@ export default function CentralServidor() {
                       para ir direto — e o link já abre a conversa certa. */}
                   {!!it.falhou?.length && (
                     <div style={{ marginTop: 7, display: 'grid', gap: 5 }}>
-                      {it.falhou.map((f, i) => (
-                        <a key={i}
-                          href={f.conversa_id ? `/salon/crm?conversa=${f.conversa_id}` : '#'}
-                          target="_blank" rel="noopener noreferrer"
-                          title="Abrir esta conversa no CRM"
+                      {it.falhou.map(f => (
+                        <div key={f.id}
                           style={{
-                            display: 'block', textDecoration: 'none',
+                            display: 'flex', alignItems: 'flex-start', gap: 8,
                             background: '#fff', border: '1px solid #e8dfc8', borderRadius: 9,
                             padding: '7px 10px',
                           }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#8a4c05' }}>{f.nome}</span>
-                          {f.quando && <span style={{ fontSize: 11, color: '#9a948c' }}> · {f.quando}</span>}
-                          {f.previa && (
-                            <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 1, lineHeight: 1.4 }}>
-                              {f.previa}…
-                            </div>
-                          )}
-                        </a>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#8a4c05' }}>{f.nome}</span>
+                            {f.quando && <span style={{ fontSize: 11, color: '#9a948c' }}> · {f.quando}</span>}
+                            {f.previa && (
+                              <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 1, lineHeight: 1.4 }}>
+                                {f.previa}…
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => mandar(
+                              { acao: 'reenviar_mensagem', id: f.id },
+                              `Reenviar a mensagem para ${f.nome}?`,
+                            )}
+                            title="Põe a mensagem de volta na fila, sem entrar no salão"
+                            style={{
+                              flexShrink: 0, border: '1px solid #8a6a24', borderRadius: 7,
+                              background: '#fff', color: '#8a6a24', fontSize: 11.5, fontWeight: 700,
+                              padding: '5px 11px', cursor: 'pointer',
+                            }}>
+                            Reenviar
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}
