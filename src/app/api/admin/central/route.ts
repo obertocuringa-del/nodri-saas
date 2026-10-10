@@ -27,6 +27,14 @@ interface Item {
   crm_ligado?: boolean
   /** Quantas mensagens estão esperando a ponte neste salão (fila inteira). */
   fila?: number
+  /**
+   * QUEM falhou, e não só quantos.
+   *
+   * "1 mensagem falhou nas últimas 24h" obriga a abrir o CRM e caçar qual.
+   * Com o nome e o começo do texto dá para ir direto -- e o link já abre a
+   * conversa certa, onde fica o botão Reenviar.
+   */
+  falhou?: Array<{ nome: string; previa: string; conversa_id: string; quando: string }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -74,7 +82,7 @@ export async function GET() {
       .eq('direcao', 'saida').gte('criado_em', inicioDoDia)
       .in('autor_nome', ['Confirmação automática', 'Avisar o profissional que a cliente chegou', 'Automação de feedback', 'Envio automático'])
       .limit(10000),
-    supabaseAdmin.from('crm_mensagens').select('salao_id').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).limit(5000),
+    supabaseAdmin.from('crm_mensagens').select('salao_id, conversa_id, texto, criado_em').eq('situacao', 'falhou').gte('criado_em', new Date(agora - 24 * 60 * MIN).toISOString()).order('criado_em', { ascending: false }).limit(5000),
     supabaseAdmin.from('crm_mensagens').select('salao_id').in('situacao', ['na_fila', 'enviando']).lt('criado_em', new Date(agora - 20 * MIN).toISOString()).limit(5000),
     // A fila INTEIRA de cada salão (não só a parada há 20 min). É o número que
     // importa quando o WhatsApp cai: enquanto ele está fora, o que estiver
@@ -84,6 +92,35 @@ export async function GET() {
   ])
 
   const nome = new Map((saloes || []).filter((s: any) => !s.is_modelo).map((s: any) => [s.id, s.nome as string]))
+
+  // ── Quem é a cliente de cada mensagem que falhou ────────────────────────
+  //
+  // Uma consulta a mais, e só quando há falha -- que é o caso raro. Sem ela
+  // a Central diz "1 mensagem falhou" e deixa a pessoa caçar qual no CRM.
+  const clienteDaConversa = new Map<string, string>()
+  const idsConversa = Array.from(new Set(((falhas || []) as any[]).map(m => m.conversa_id).filter(Boolean)))
+  if (idsConversa.length) {
+    const { data: convs } = await supabaseAdmin
+      .from('crm_conversas').select('id, contato_id').in('id', idsConversa.slice(0, 200))
+    const idsContato = Array.from(new Set((convs || []).map((c: any) => c.contato_id).filter(Boolean)))
+    const { data: contatos } = idsContato.length
+      ? await supabaseAdmin.from('crm_contatos').select('id, cliente_nome, nome, telefone').in('id', idsContato)
+      : { data: [] as any[] }
+    const porContato = new Map((contatos || []).map((c: any) =>
+      [c.id, String(c.cliente_nome || c.nome || c.telefone || 'sem nome')]))
+    for (const c of (convs || []) as any[]) {
+      clienteDaConversa.set(c.id, porContato.get(c.contato_id) || 'sem nome')
+    }
+  }
+  const falhasDoSalao = (salao: string) => ((falhas || []) as any[])
+    .filter(m => m.salao_id === salao)
+    .slice(0, 12)
+    .map(m => ({
+      nome: clienteDaConversa.get(m.conversa_id) || 'sem nome',
+      previa: String(m.texto || '').replace(/\s+/g, ' ').trim().slice(0, 70),
+      conversa_id: String(m.conversa_id || ''),
+      quando: m.criado_em ? dataHoraSP(new Date(m.criado_em).getTime()) : '',
+    }))
   const cfg = (salao: string, chave: string) => (cfgs || []).find((c: any) => c.salao_id === salao && c.chave === chave)?.valor
   const conta = (lista: any[] | null, salao: string, autor?: string) =>
     (lista || []).filter((m: any) => m.salao_id === salao && (!autor || m.autor_nome === autor)).length
@@ -256,7 +293,7 @@ export async function GET() {
     if (c.situacao !== 'conectado') crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: `WhatsApp: ${c.situacao}.`, detalhe: 'Precisa ler o QR Code de novo no CRM.' })
     else if (c.erro) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'vermelho', texto: 'Conectado, mas com problema.', detalhe: primeiraLinha(c.erro) })
     else if (p) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${p} mensagem(ns) parada(s) na fila há mais de 20 min.` })
-    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'No CRM, a mensagem que falhou tem o botão Reenviar.' })
+    else if (f) crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'amarelo', texto: `${f} mensagem(ns) falharam nas últimas 24h.`, detalhe: 'Clique no nome para abrir a conversa — lá a mensagem tem o botão Reenviar.', falhou: falhasDoSalao(c.salao_id) })
     else crmItens.push({ salao: n, salao_id: c.salao_id, crm_ligado: c.situacao !== 'desconectado', fila: naFilaDele, cor: 'verde', texto: `Conectado${c.numero ? ` (${c.numero})` : ''}, mensagens saindo normalmente.` })
 
     ponteItens.push(!vis || agora - vis > 5 * MIN

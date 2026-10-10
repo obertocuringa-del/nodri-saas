@@ -18,6 +18,8 @@ interface Item {
   crm_ligado?: boolean
   /** Mensagens esperando a ponte neste salão (fila inteira, não só as presas). */
   fila?: number
+  /** QUEM falhou. O link abre a conversa, onde fica o botão Reenviar. */
+  falhou?: Array<{ nome: string; previa: string; conversa_id: string; quando: string }>
 }
 interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
@@ -175,6 +177,34 @@ export default function CentralServidor() {
                 <div style={{ fontSize: 12.5, color: '#1a1a2e', lineHeight: 1.45, flex: 1 }}>
                   {it.salao && <b>{it.salao}: </b>}{it.texto}
                   {it.detalhe && <div style={{ fontSize: 11.5, color: '#6b6860', wordBreak: 'break-word' }}>{it.detalhe}</div>}
+
+                  {/* ── Quem falhou ──
+                      O número sozinho ("1 mensagem falhou") obriga a abrir o
+                      CRM e caçar qual. Com nome, começo do texto e hora, dá
+                      para ir direto — e o link já abre a conversa certa. */}
+                  {!!it.falhou?.length && (
+                    <div style={{ marginTop: 7, display: 'grid', gap: 5 }}>
+                      {it.falhou.map((f, i) => (
+                        <a key={i}
+                          href={f.conversa_id ? `/salon/crm?conversa=${f.conversa_id}` : '#'}
+                          target="_blank" rel="noopener noreferrer"
+                          title="Abrir esta conversa no CRM"
+                          style={{
+                            display: 'block', textDecoration: 'none',
+                            background: '#fff', border: '1px solid #e8dfc8', borderRadius: 9,
+                            padding: '7px 10px',
+                          }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#8a4c05' }}>{f.nome}</span>
+                          {f.quando && <span style={{ fontSize: 11, color: '#9a948c' }}> · {f.quando}</span>}
+                          {f.previa && (
+                            <div style={{ fontSize: 11.5, color: '#6b6860', marginTop: 1, lineHeight: 1.4 }}>
+                              {f.previa}…
+                            </div>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  )}
 
                   {aberto === 'crm' && it.salao_id && (
                     <button
