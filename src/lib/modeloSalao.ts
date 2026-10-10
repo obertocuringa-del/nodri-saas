@@ -38,6 +38,19 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'menu_links', como: 'inteiro', rotulo: 'Links do menu' },
   { chave: 'organograma', como: 'inteiro', rotulo: 'Organograma dos setores' },
 
+  // Documentos escritos de cada setor. A chave termina no ID DO SETOR
+  // (`descricao_cargo_<id>`), e o salão novo cria os setores dele com ids
+  // próprios -- id é chave primária da linha, dois salões não compartilham.
+  // Quem conserta isso é `ajustarChavesPorSetor` em modeloTabelas.ts, que
+  // traduz o id pelo NOME do setor depois de copiá-los. Os nomes sempre
+  // batem porque os setores do destino nasceram desta mesma lista.
+  //
+  // Sem estas três linhas eles cairiam na regra do fim ("todo o resto viaja
+  // EM BRANCO") e o salão novo abriria a descrição de cargo vazia.
+  { chave: 'descricao_cargo_', prefixo: true, como: 'inteiro', rotulo: 'Descrição de cargo dos setores' },
+  { chave: 'pop_correcoes_', prefixo: true, como: 'inteiro', rotulo: 'POPs próprios dos setores' },
+  { chave: 'aval_cargo_', prefixo: true, como: 'inteiro', rotulo: 'Ficha da avaliação 360 dos cargos' },
+
   // Preferências da emissão de guias do MEI (dia de pagamento, anos a olhar,
   // nome do arquivo). É ajuste de operação, sem dado de ninguém — viaja inteiro
   // para o salão novo já nascer configurado. O histórico, que tem nome e CNPJ,

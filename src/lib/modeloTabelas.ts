@@ -290,6 +290,99 @@ async function copiarFeedbackProf(modeloId: string, destinoId: string): Promise<
  * só o que falta. Nunca derruba a criação do salão: falhar aqui significa
  * apenas começar sem alguma parte, que a próxima atualização traz.
  */
+/**
+ * Traduz o ID DO SETOR que vem dentro da chave.
+ *
+ * Os documentos de setor moram em `salao_config` com a chave terminando no
+ * id do setor: `grid_descricao_cargo_<id>`. Esse id é chave primária da linha
+ * em `profissionais` -- dois salões não podem compartilhá-lo. Então a cópia
+ * do modelo chega apontando para um setor que não existe no destino, e a
+ * página abre vazia sem ninguém entender por quê.
+ *
+ * A tradução é pelo NOME, e isso é seguro justamente porque os setores do
+ * destino acabaram de nascer DESTA mesma lista (ver copiarSetores, que roda
+ * antes): para cada setor do modelo existe um de nome igual no destino.
+ *
+ * Roda depois de copiar os setores e NUNCA apaga nada: só renomeia a chave
+ * que ficou órfã. Setor sem par no destino tem a chave removida -- melhor do
+ * que deixar um documento pendurado num id que não existe.
+ */
+async function ajustarChavesPorSetor(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
+  const FAMILIAS = ['grid_descricao_cargo_', 'grid_pop_correcoes_', 'grid_aval_cargo_']
+
+  const [{ data: doModelo }, { data: doDestino }] = await Promise.all([
+    supabaseAdmin.from('profissionais').select('id, nome_completo')
+      .eq('salao_id', modeloId).eq('is_departamento', true),
+    supabaseAdmin.from('profissionais').select('id, nome_completo')
+      .eq('salao_id', destinoId).eq('is_departamento', true),
+  ])
+  if (!doModelo?.length || !doDestino?.length) return []
+
+  const chave = (s: any) => String(s || '').trim().toUpperCase()
+  const idDestinoPorNome = new Map<string, string>()
+  for (const d of doDestino) idDestinoPorNome.set(chave(d.nome_completo), d.id)
+
+  // id do modelo -> id do destino, pelo nome
+  const traducao = new Map<string, string>()
+  for (const m of doModelo) {
+    const alvo = idDestinoPorNome.get(chave(m.nome_completo))
+    if (alvo && alvo !== m.id) traducao.set(m.id, alvo)
+  }
+  if (!traducao.size) return []
+
+  const { data: linhas } = await supabaseAdmin
+    .from('salao_config').select('chave, valor').eq('salao_id', destinoId)
+  if (!linhas?.length) return []
+
+  const paraGravar: any[] = []
+  const paraApagar: string[] = []
+  const agora = new Date().toISOString()
+
+  // O que o salão JÁ escreveu, pela chave dele mesmo. Documento com conteúdo
+  // próprio nunca é sobrescrito: aplicar atualização do modelo não pode
+  // apagar a descrição de cargo que o salão ajustou à mão.
+  const jaTemConteudo = new Set<string>()
+  for (const l of linhas as any[]) {
+    const blocos = (l.valor as any)?.blocos
+    const criterios = (l.valor as any)?.criterios
+    const cheio = (Array.isArray(blocos) && blocos.length) || (Array.isArray(criterios) && criterios.length)
+    if (cheio) jaTemConteudo.add(String(l.chave))
+  }
+
+  for (const l of linhas as any[]) {
+    const fam = FAMILIAS.find(f => String(l.chave).startsWith(f))
+    if (!fam) continue
+    const idAntigo = String(l.chave).slice(fam.length)
+
+    // Chave que já é DO DESTINO (id dele): é documento dele, não se toca.
+    if (doDestino.some(d => d.id === idAntigo)) continue
+
+    const idNovo = traducao.get(idAntigo)
+    if (!idNovo) {
+      // Veio do modelo mas o destino não tem esse setor: não serve a ninguém.
+      paraApagar.push(l.chave)
+      continue
+    }
+    // O destino já escreveu o dele neste setor? Então o do modelo vai embora
+    // sem encostar no que existe.
+    if (jaTemConteudo.has(fam + idNovo)) { paraApagar.push(l.chave); continue }
+
+    paraGravar.push({ salao_id: destinoId, chave: fam + idNovo, valor: l.valor, atualizado_em: agora })
+    paraApagar.push(l.chave)
+  }
+
+  if (paraGravar.length) {
+    const { error } = await supabaseAdmin.from('salao_config')
+      .upsert(paraGravar, { onConflict: 'salao_id,chave' })
+    if (error) return []   // não apaga nada se a gravação falhou
+  }
+  if (paraApagar.length) {
+    await supabaseAdmin.from('salao_config')
+      .delete().eq('salao_id', destinoId).in('chave', paraApagar)
+  }
+  return paraGravar.length ? [{ tabela: 'documentos dos setores', copiados: paraGravar.length }] : []
+}
+
 export async function copiarMoldesDeTabelas(
   modeloId: string, destinoId: string, nomeDestino: string,
 ): Promise<ResultadoCopia[]> {
@@ -301,5 +394,8 @@ export async function copiarMoldesDeTabelas(
   for (const t of TABELAS_CATALOGO) {
     try { out.push(...await copiarCatalogo(t, modeloId, destinoId)) } catch { /* segue */ }
   }
+  // Por último: os setores já existem, então dá para acertar as chaves que
+  // trazem o id do setor dentro delas.
+  try { out.push(...await ajustarChavesPorSetor(modeloId, destinoId)) } catch { /* segue */ }
   return out.filter(r => r.copiados > 0)
 }
