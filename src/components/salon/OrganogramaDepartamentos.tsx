@@ -113,6 +113,26 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
   const wrapRef = useRef<HTMLDivElement>(null)
   const contRef = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
+
+  // ── Lupa ─────────────────────────────────────────────────────────────────
+  //
+  // As caixas são pequenas de propósito -- dezessete setores têm de caber na
+  // largura da tela. Em vez de aumentar a fonte (e não caber), a leitura vem
+  // no passar do mouse.
+  //
+  // Por que um painel FLUTUANTE e não um `scale` na própria caixa: o quadro
+  // do organograma vive dentro de um `overflow: hidden` e, medido em
+  // 10/10/2026, sobram 19 px abaixo da última fileira. Uma caixa crescendo no
+  // lugar sairia cortada justamente embaixo, que é onde estão metade dos
+  // setores. `position: fixed` não é cortado por nada.
+  //
+  // O conteúdo vem PRONTO de quem desenhou a caixa: assim a lupa não repete
+  // a conta do selo e não tem como mostrar um número diferente do card.
+  const [lupa, setLupa] = useState<null | {
+    rect: DOMRect; titulo: string; cor: string; staff: boolean
+    responsavel: string; linhas: string[]
+    selo: { texto: string; fundo: string; tinta: string }
+  }>(null)
   const [altura, setAltura] = useState<number | undefined>(undefined)
   const [larguraTela, setLarguraTela] = useState<number | undefined>(undefined)
 
@@ -239,6 +259,16 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
     return (
       <div
         onClick={() => { if (!editando) onAbrir(dep.id) }}
+        onMouseEnter={e => {
+          if (editando) return
+          setLupa({
+            rect: e.currentTarget.getBoundingClientRect(),
+            titulo: dep.nome_completo, cor, staff,
+            responsavel: info.responsavel || '',
+            linhas, selo,
+          })
+        }}
+        onMouseLeave={() => setLupa(null)}
         className={`rounded-xl transition ${editando ? '' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'}`}
         style={{
           // Largura fixa por nível: ter seis filhos embaixo não pode fazer a
@@ -494,6 +524,58 @@ export default function OrganogramaDepartamentos({ departamentos, solicPorSetor,
       <p className="text-[9.5px] text-nodri-t3 mt-2 text-center">
         Integrar todas as áreas para entregar excelência no atendimento, qualidade nos serviços e resultados sustentáveis.
       </p>
+
+      {/* ── A lupa ──
+          Fica fora do quadro, em position: fixed, para nenhum `overflow` a
+          cortar. `pointerEvents: none` é o que impede o painel de roubar o
+          mouse da caixa e entrar em pisca-pisca: ele aparece ao lado, nunca
+          embaixo do cursor, e o clique continua chegando no card. */}
+      {lupa && (() => {
+        const L = 300                      // largura do painel
+        const folga = 14
+        // Nasce à direita da caixa; se não couber, vai para a esquerda.
+        const cabeDireita = lupa.rect.right + folga + L < window.innerWidth
+        const x = cabeDireita ? lupa.rect.right + folga : Math.max(8, lupa.rect.left - folga - L)
+        // Centraliza na vertical e segura dentro da janela.
+        const y = Math.min(
+          Math.max(8, lupa.rect.top + lupa.rect.height / 2 - 70),
+          Math.max(8, window.innerHeight - 220),
+        )
+        return (
+          <div style={{
+            position: 'fixed', left: x, top: y, width: L, zIndex: 60, pointerEvents: 'none',
+            background: '#fff', borderRadius: 14,
+            border: `1px ${lupa.staff ? 'dashed' : 'solid'} #ddd8cd`,
+            borderTop: `5px ${lupa.staff ? 'dashed' : 'solid'} ${lupa.staff ? '#8a8377' : lupa.cor}`,
+            boxShadow: '0 12px 32px rgba(0,0,0,.17)', padding: '14px 18px 16px',
+          }}>
+            <p style={{
+              fontSize: 15, fontWeight: 800, lineHeight: 1.2,
+              color: lupa.staff ? '#5f594e' : lupa.cor,
+              letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 6,
+            }}>{lupa.titulo}</p>
+
+            {lupa.responsavel && (
+              <p style={{ fontSize: 18, fontWeight: 800, color: '#26231f', lineHeight: 1.25, marginBottom: 7 }}>
+                {lupa.responsavel}
+              </p>
+            )}
+
+            {lupa.linhas.map((l, i) => (
+              <p key={i} style={{ fontSize: 14, color: '#5c564c', lineHeight: 1.5 }}>{l}</p>
+            ))}
+
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 11,
+              fontSize: 13.5, fontWeight: 700, padding: '4px 13px 4px 10px', borderRadius: 99,
+              background: lupa.selo.fundo, color: lupa.selo.tinta, fontVariantNumeric: 'tabular-nums',
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor' }} />
+              {lupa.selo.texto}
+            </span>
+          </div>
+        )
+      })()}
     </div>
   )
 }
