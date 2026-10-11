@@ -299,6 +299,9 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
     // Janela de 7 dias, igual à da entrada de mensagem: mais antiga que isso,
     // nasce conversa nova (conta de cliente que voltou).
     let reaberta = false
+    // Conversa que NASCEU nesta volta. Se as mensagens não entrarem, ela
+    // precisa morrer junto -- senão fica uma casca vazia na lista.
+    let criadaAgora = false
     if (!conversa) {
       const { data: ultimas } = await supabaseAdmin
         .from('crm_conversas').select('id, estado, nao_lidas, fechada_em, ultima_em')
@@ -324,6 +327,7 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
         ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: previa, nao_lidas: 0,
       }).select('id, estado, nao_lidas').maybeSingle()
       conversa = nova
+      criadaAgora = !!nova
     } else {
       const patch: any = { ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: previa, atualizado_em: agoraIso }
       // Mesma regra do disparo: só sai de pasta passiva. Quem está em Preciso
@@ -358,7 +362,22 @@ export async function processarRelatorio(salaoId: string, linhas: LinhaRelatorio
       criado_em: new Date(base + i * 1000).toISOString(),
     }))
     const { error } = await supabaseAdmin.from('crm_mensagens').insert(fila)
-    if (error) { resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); continue }
+    if (error) {
+      // ── Conversa criada e mensagem que não entrou = casca vazia ──────────
+      //
+      // Era isto que enchia o CRM do Rouge: 59 conversas com prévia e NENHUMA
+      // mensagem dentro, achadas em 11/10/2026. A conversa nascia aqui em
+      // cima, o insert das duas mensagens falhava, o `continue` ia embora --
+      // e a casca ficava na lista, atrapalhando quem procurava a conversa de
+      // verdade (que existe, com todo o histórico, em outra linha).
+      //
+      // Só apaga a que acabou de nascer. Conversa que já existia fica como
+      // estava: ela tem história, e o erro foi só desta mensagem.
+      if (criadaAgora && conversa?.id) {
+        await supabaseAdmin.from('crm_conversas').delete().eq('id', conversa.id)
+      }
+      resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); continue
+    }
 
     await supabaseAdmin.from('crm_eventos').insert({
       salao_id: salaoId, conversa_id: conversa.id, tipo: 'respondeu',

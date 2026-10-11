@@ -1080,7 +1080,13 @@ async function enviarPara(salaoId: string, d: Disparo, x: PerfilCliente, pacote:
     salao_id: salaoId, disparo_id: d.id, ciclo: d.ciclo, chave: marca,
     cliente_nome: x.cliente_nome, conversa_id: conversa.id,
   })
-  if (dup) return null
+  if (dup) {
+    // Duas voltas correndo juntas: esta perdeu. Se foi ELA que criou a
+    // conversa, leva a conversa embora -- senão fica uma casca vazia ao lado
+    // da conversa boa, que é a da volta que ganhou. Ver crmAutomacao.ts.
+    if (nova) await supabaseAdmin.from('crm_conversas').delete().eq('id', conversa.id)
+    return null
+  }
 
   // Saudação, mensagem e anexo saem separados, 8 segundos um do outro
   // (criado_em no futuro = a ponte só pega a partir dali). A marca de envio

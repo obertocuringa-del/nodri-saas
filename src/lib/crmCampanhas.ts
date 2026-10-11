@@ -639,6 +639,8 @@ export async function processarCampanha(
     // api/crm/ponte): encerrada há até 7 dias é a mesma conversa; mais antiga
     // que isso, nasce outra -- é assim que o painel conta cliente que voltou.
     let reaberta = false
+    // Nasceu nesta volta: se a mensagem não entrar, ela vai embora junto.
+    let criadaAgora = false
     if (!conversa) {
       const { data: ultimas } = await supabaseAdmin
         .from('crm_conversas').select('id, estado, nao_lidas, fechada_em, ultima_em')
@@ -662,6 +664,7 @@ export async function processarCampanha(
         ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: previa, nao_lidas: 0,
       }).select('id, estado').maybeSingle()
       conversa = nova
+      criadaAgora = !!nova
     } else {
       const patch: any = { ultima_em: agoraIso, ultima_de: 'salao', ultima_previa: previa, atualizado_em: agoraIso }
       // Mesma regra do disparo: só mexe em pasta passiva. Quem está em "Preciso
@@ -707,7 +710,13 @@ export async function processarCampanha(
       criado_em: new Date(base + i * 1000).toISOString(),
     }))
     const { error } = await supabaseAdmin.from('crm_mensagens').insert(mensagens)
-    if (error) { resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); return }
+    if (error) {
+      // Casca vazia: ver a explicação longa em crmAutomacao.ts.
+      if (criadaAgora && conversa?.id) {
+        await supabaseAdmin.from('crm_conversas').delete().eq('id', conversa.id)
+      }
+      resumo.puladas++; resumo.erro = String(error.message).slice(0, 200); return
+    }
 
     jaHoje.add(a.chave)
     resumo.enviadas++

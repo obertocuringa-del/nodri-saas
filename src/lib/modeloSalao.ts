@@ -142,6 +142,7 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   { chave: 'crm_confirmacao', como: 'crmDesligado', rotulo: 'CRM — confirmação e palavras' },
   { chave: 'crm_boas_vindas', como: 'crmDesligado', rotulo: 'CRM — boas-vindas' },
   { chave: 'crm_automacao_feedback', como: 'crmDesligado', rotulo: 'CRM — envio de feedback' },
+  { chave: 'crm_disparos', como: 'crmDesligado', rotulo: 'CRM — listas do envio automático' },
   { chave: 'lojistas_servicos', como: 'inteiro', rotulo: 'Serviços para lojistas' },
   { chave: 'planejamento_estrutura', como: 'inteiro', rotulo: 'Planejamento estratégico (estrutura)' },
 
@@ -210,6 +211,7 @@ const NUNCA: { chave: string; prefixo?: boolean; motivo: string }[] = [
   { chave: 'crm_robo_avec', motivo: 'login do sistema de agenda é de cada salão' },
   { chave: 'crm_automacao_feedback_estado', motivo: 'telefones que já receberam feedback' },
   { chave: 'crm_campanhas_estado', motivo: 'histórico de envios de cada salão' },
+  { chave: 'crm_disparos_estado', motivo: 'quem já recebeu cada lista, de cada salão' },
   { chave: 'crm_confirmacao_fila', motivo: 'fila de confirmações de clientes' },
   { chave: 'crm_automacao_limpar_abas', motivo: 'pedido de operação de cada salão' },
   { chave: 'crm_fora_do_ar', motivo: 'registro de queda de cada salão' },
@@ -395,6 +397,28 @@ function limparCrm(v: any): any {
   }
   const out = tira(v)
   if (Array.isArray(out.campanhas)) out.campanhas = out.campanhas.map(tira)
+  // Listas do envio automatico (crm_disparos). Tres coisas a mais que as
+  // campanhas: elas se chamam `ligado` (nao `ligada`), tem `anexo` -- que e um
+  // arquivo no armazenamento do salao de origem, e salao novo mandaria a foto
+  // de outro -- e guardam os textos em `mensagens`/`saudacoes`, que sao LISTAS
+  // de texto, nao um campo so.
+  if (Array.isArray(out.disparos)) {
+    out.disparos = out.disparos.map((d: any) => {
+      const x: any = tira(d)
+      if (!x || typeof x !== 'object') return x
+      x.ligado = false
+      delete x.anexo
+      for (const k of ['mensagens', 'saudacoes']) {
+        if (Array.isArray(x[k])) {
+          x[k] = x[k].map((s: any) => typeof s === 'string'
+            ? s.replace(/https?:\/\/\S+/g, '').replace(/\n{3,}/g, '\n\n').trim()
+            : s)
+        }
+      }
+      return x
+    })
+  }
+  if ('ligado' in out) out.ligado = false
   // Link de avaliação/agendamento escrito no meio do texto também é identidade.
   for (const k of ['msg1', 'msg2', 'texto', 'resposta']) {
     if (typeof out[k] === 'string') out[k] = out[k].replace(/https?:\/\/\S+/g, '').replace(/\n{3,}/g, '\n\n').trim()
@@ -409,7 +433,13 @@ function limparCrm(v: any): any {
  * "nosso salão", CNPJ sai. O modelo nasceu do Rouge, então os nomes dele
  * estão aqui; salão de origem novo -> acrescentar o nome na lista.
  */
-const NOMES_DE_ORIGEM = [/rouge\s*hair/gi, /oliveira\s+e\s+schneider[^"\n]*/gi]
+// "Rouge Hair" junto vem PRIMEIRO; o que sobrar de "Rouge" solto cai na
+// regra seguinte. Em 11/10/2026 duas mensagens do envio automatico diziam
+// "aqui no Rouge" (sem o Hair) e passavam batido. Conferido no banco antes de
+// soltar a regra solta: das 11 aparicoes de "rouge" sozinho no Rouge, TODAS
+// sao a marca -- nenhuma e o rouge de maquiagem. Salao de origem novo ->
+// acrescentar o nome aqui.
+const NOMES_DE_ORIGEM = [/rouge\s*hair/gi, /\brouge\b/gi, /oliveira\s+e\s+schneider[^"\n]*/gi]
 function semIdentidadeNoTexto(v: any): any {
   if (typeof v === 'string') {
     let t = v
