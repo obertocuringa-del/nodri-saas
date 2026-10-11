@@ -212,6 +212,50 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
     }
   } catch { /* sem campanha configurada: não é problema */ }
 
+  // ── A conversa aberta pelo botão verde e deixada para trás ────────────────
+  //
+  // O botão verde das listas CRIA a conversa para a tela poder abrir nela com
+  // a mensagem já escrita na caixa (/api/crm/abrir). Quem clica e desiste de
+  // enviar deixa uma conversa sem mensagem nenhuma em Aguardando -- a tal que
+  // "está aguardando, só que não aparece a mensagem, não carrega".
+  //
+  // Apagar aqui não perde nada: não há mensagem para cascatear, o contato
+  // continua existindo e um novo clique no botão verde recria na hora. As
+  // travas são de propósito apertadas:
+  //  - SÓ sem prévia. Conversa com prévia já teve conteúdo: não se toca.
+  //  - SÓ em 'aguardando'. Pasta do salão (extra_*) pode ser estacionamento
+  //    proposital; pasta de estado decidido tem história.
+  //  - SÓ depois de 2 DIAS. Quem abriu hoje pode voltar e enviar amanhã.
+  //  - NO MÁXIMO 20 POR VOLTA.
+  try {
+    const MAX_FAXINA = 20
+    const { data: suspeitas } = await supabaseAdmin
+      .from('crm_conversas')
+      .select('id')
+      .eq('salao_id', salaoId).eq('estado', 'aguardando')
+      .is('ultima_previa', null).eq('nao_lidas', 0)
+      .lt('criado_em', new Date(agora - 2 * 24 * 60 * MIN).toISOString())
+      .limit(60)
+
+    const ids = (suspeitas || []).map((c: any) => c.id)
+    if (ids.length) {
+      // Quais dessas REALMENTE não têm mensagem. Pergunta-se ao banco em vez
+      // de confiar na prévia: prévia é enfeite, mensagem é o fato.
+      const { data: comMsg } = await supabaseAdmin
+        .from('crm_mensagens').select('conversa_id').in('conversa_id', ids)
+      const temMsg = new Set((comMsg || []).map((m: any) => m.conversa_id))
+      const vazias = ids.filter(id => !temMsg.has(id)).slice(0, MAX_FAXINA)
+      if (vazias.length) {
+        await supabaseAdmin.from('crm_conversas').delete().in('id', vazias)
+        problemas.push({
+          servico: 'ponte',
+          motivo: `${vazias.length} conversa(s) aberta(s) pelo botão verde e deixada(s) sem mensagem foram removida(s)`,
+          desde: null, acao: 'avisar',
+        })
+      }
+    }
+  } catch { /* faxina é enfeite: se falhar, não atrapalha o resto do vigia */ }
+
   return problemas
 }
 
