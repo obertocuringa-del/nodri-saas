@@ -641,6 +641,63 @@ export default function CrmPage() {
     }
   }, [filtro, contagem, contagemExtras, estadosCfg])   // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── As pastas, montadas como LISTA antes de virarem tela ──────────────────
+  //
+  // Antes cada pasta era escrita à mão no meio do JSX. No computador elas
+  // cabem numa linha só e está ótimo; no celular a linha quebra e vira um
+  // amontoado de pílulas em que ninguém acha nada (foto do dono, 11/10/2026).
+  // Montando como dado, a MESMA lista serve aos dois: linha no computador,
+  // uma embaixo da outra no celular.
+  const pastasDaFaixa = useMemo(() => {
+    const lista: Array<{ chave: string; texto: string; destaque?: boolean; esperando?: number }> = []
+    const por = (chave: string, texto: string, extra?: { destaque?: boolean; esperando?: number }) =>
+      lista.push({ chave, texto, ...(extra || {}) })
+
+    // Pisca com QUALQUER pessoa esperando, não só com as críticas: o pedido
+    // do dono foi ver de longe que há alguém na fila.
+    por('fila', `Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`, { destaque: contagem.fila > 0 })
+    if (contagem.novas > 0) por('novas', `Clientes novas (${contagem.novas})`)
+    // A aba "Sem resposta" saiu: ela era o esconderijo. As paradas há mais
+    // tempo agora abrem "Preciso agir", marcadas em vermelho com os dias.
+    por('aguardando', `${nomePasta('aguardando')} (${contagem.aguardando})`)
+    // As pastas que o salão criou (Profissionais, ...) vêm logo aqui, e não
+    // no fim: quem escreve delas é gente da casa, e a resposta não pode
+    // esperar a recepção rolar a barra até o fim (dono, 22/09/2026).
+    for (const ex of estadosCfg.extras || []) {
+      if ((contagemExtras[ex.chave] || 0) > 0) {
+        por(ex.chave, `${ex.rotulo} (${contagemExtras[ex.chave]})`, { esperando: naoLidasExtras[ex.chave] || 0 })
+      }
+    }
+    if (contagem.promo > 0) por('aguardando_promo', `${nomePasta('aguardando_promo')} (${contagem.promo})`)
+    if (contagem.feedback > 0) por('feedback', `${nomePasta('feedback')} (${contagem.feedback})`)
+    if (contagem.confirmacao > 0) por('confirmacao', `${nomePasta('confirmacao')} (${contagem.confirmacao})`)
+    if (contagem.followUp > 0) por('follow_up', `${nomePasta('follow_up')} (${contagem.followUp})`)
+    if (contagem.pausadas > 0) por('pausada', `${nomePasta('pausada')} (${contagem.pausadas})`)
+    if (contagem.agendadas > 0) por('agendado', `${nomePasta('agendado')} (${contagem.agendadas})`)
+    if (contagem.confirmadas > 0) por('confirmado', `${nomePasta('confirmado')} (${contagem.confirmadas})`)
+    if (contagem.desmarcadas > 0) por('desmarcou', `${nomePasta('desmarcou')} (${contagem.desmarcadas})`)
+    if (contagem.perdidas > 0) por('sem_conversao', `${nomePasta('sem_conversao')} (${contagem.perdidas})`)
+    if (contagem.naoPerturbe > 0) por('naoperturbe', `Não perturbe (${contagem.naoPerturbe})`)
+    por('todas', 'Todas')
+    return lista
+  }, [contagem, contagemExtras, naoLidasExtras, estadosCfg])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A MESMA lista, em ordem alfabética, para a caixa do celular.
+  //
+  // Duas ficam fora do alfabeto de propósito: "Preciso agir" no alto, porque
+  // é a pasta que pisca quando tem cliente esperando e enterrá-la na letra P
+  // é o contrário do que o CRM serve para fazer; e "Todas" no fim, porque não
+  // é pasta, é o "ver tudo".
+  const pastasEmOrdem = useMemo(() => {
+    const meio = pastasDaFaixa.filter(x => x.chave !== 'fila' && x.chave !== 'todas')
+      .sort((a, b) => a.texto.localeCompare(b.texto, 'pt-BR'))
+    return [
+      ...pastasDaFaixa.filter(x => x.chave === 'fila'),
+      ...meio,
+      ...pastasDaFaixa.filter(x => x.chave === 'todas'),
+    ]
+  }, [pastasDaFaixa])
+
   // Por que se perdeu, com quantas. É este quadro que vira ação comercial:
   // quem caiu por preço recebe promoção, quem caiu por horário recebe encaixe.
   const porMotivo = useMemo(() => {
@@ -1235,81 +1292,26 @@ export default function CrmPage() {
         )}
 
         {/* ── Pastas fixas ───────────────────────────────────────────────────
-            Uma linha só, sempre à vista, rolando de lado se não couber. No
-            celular é a caixa flutuante de antes, aberta pelo botão. */}
+            No computador: uma linha só, sempre à vista, rolando de lado se
+            não couber. No celular: a caixa que o botão abre, e dentro dela
+            uma LISTA de cima para baixo em ordem alfabética -- antes eram
+            pílulas quebrando de linha e viravam um amontoado (dono, 11/10).
+            A lista em si é montada em `pastasDaFaixa`. */}
         {conectado && (noCelular ? abasAbertas : true) && (
           <div
             className={noCelular
-              ? 'absolute left-0 right-0 z-40 mx-4 mb-2 p-2 rounded-xl flex gap-1 flex-wrap'
+              ? 'absolute left-0 right-0 z-40 mx-4 mb-2 p-1.5 rounded-xl flex flex-col gap-1'
               : 'mx-4 mb-2 pb-1 flex gap-1 items-center'}
             style={noCelular
-              ? { background: '#fff', border: '1px solid #e9ddd6', boxShadow: '0 10px 30px rgba(26,22,20,.12)' }
+              ? { background: '#fff', border: '1px solid #e9ddd6', boxShadow: '0 10px 30px rgba(26,22,20,.12)',
+                  maxHeight: '62vh', overflowY: 'auto' }
               : { overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'thin' }}
             onClick={() => { if (noCelular) setAbasAbertas(false) }}>
-            {/* Pisca com QUALQUER pessoa esperando, nao so com as criticas:
-                o pedido do dono foi ver de longe que ha alguem na fila. */}
-            <Aba ativo={filtro === 'fila'} onClick={() => setFiltro('fila')}
-              texto={`Preciso agir${contagem.fila ? ` (${contagem.fila})` : ''}`} destaque={contagem.fila > 0} />
-            {contagem.novas > 0 && (
-              <Aba ativo={filtro === 'novas'} onClick={() => setFiltro('novas')}
-                texto={`Clientes novas (${contagem.novas})`} />
-            )}
-            {/* A aba "Sem resposta" saiu: ela era o esconderijo. As paradas
-                ha mais tempo agora abrem "Preciso agir", marcadas em
-                vermelho com os dias a vista. */}
-            <Aba ativo={filtro === 'aguardando'} onClick={() => setFiltro('aguardando')}
-              texto={`${nomePasta('aguardando')} (${contagem.aguardando})`} />
-            {/* As pastas que o salão criou (Profissionais, ...) vêm logo aqui,
-                e não no fim da fileira: quem escreve delas é gente da casa, e
-                a resposta não pode esperar a recepção rolar a barra até o fim.
-                Ordem pedida pelo dono em 22/09/2026. Com mensagem esperando,
-                a aba fica vermelha e piscando até a última ser lida. */}
-            {(estadosCfg.extras || []).map(ex => (contagemExtras[ex.chave] || 0) > 0 && (
-              <Aba key={ex.chave} ativo={filtro === ex.chave} onClick={() => setFiltro(ex.chave)}
-                texto={`${ex.rotulo} (${contagemExtras[ex.chave]})`}
-                esperando={naoLidasExtras[ex.chave] || 0} />
+            {(noCelular ? pastasEmOrdem : pastasDaFaixa).map(pa => (
+              <Aba key={pa.chave} ativo={filtro === pa.chave} onClick={() => setFiltro(pa.chave)}
+                texto={pa.texto} destaque={pa.destaque} esperando={pa.esperando || 0}
+                emLista={noCelular} />
             ))}
-            {contagem.promo > 0 && (
-              <Aba ativo={filtro === 'aguardando_promo'} onClick={() => setFiltro('aguardando_promo')}
-                texto={`${nomePasta('aguardando_promo')} (${contagem.promo})`} />
-            )}
-            {contagem.feedback > 0 && (
-              <Aba ativo={filtro === 'feedback'} onClick={() => setFiltro('feedback')}
-                texto={`${nomePasta('feedback')} (${contagem.feedback})`} />
-            )}
-            {contagem.confirmacao > 0 && (
-              <Aba ativo={filtro === 'confirmacao'} onClick={() => setFiltro('confirmacao')}
-                texto={`${nomePasta('confirmacao')} (${contagem.confirmacao})`} />
-            )}
-            {contagem.followUp > 0 && (
-              <Aba ativo={filtro === 'follow_up'} onClick={() => setFiltro('follow_up')}
-                texto={`${nomePasta('follow_up')} (${contagem.followUp})`} />
-            )}
-            {contagem.pausadas > 0 && (
-              <Aba ativo={filtro === 'pausada'} onClick={() => setFiltro('pausada')}
-                texto={`${nomePasta('pausada')} (${contagem.pausadas})`} />
-            )}
-            {contagem.agendadas > 0 && (
-              <Aba ativo={filtro === 'agendado'} onClick={() => setFiltro('agendado')}
-                texto={`${nomePasta('agendado')} (${contagem.agendadas})`} />
-            )}
-            {contagem.confirmadas > 0 && (
-              <Aba ativo={filtro === 'confirmado'} onClick={() => setFiltro('confirmado')}
-                texto={`${nomePasta('confirmado')} (${contagem.confirmadas})`} />
-            )}
-            {contagem.desmarcadas > 0 && (
-              <Aba ativo={filtro === 'desmarcou'} onClick={() => setFiltro('desmarcou')}
-                texto={`${nomePasta('desmarcou')} (${contagem.desmarcadas})`} />
-            )}
-            {contagem.perdidas > 0 && (
-              <Aba ativo={filtro === 'sem_conversao'} onClick={() => setFiltro('sem_conversao')}
-                texto={`${nomePasta('sem_conversao')} (${contagem.perdidas})`} />
-            )}
-            {contagem.naoPerturbe > 0 && (
-              <Aba ativo={filtro === 'naoperturbe'} onClick={() => setFiltro('naoperturbe')}
-                texto={`Não perturbe (${contagem.naoPerturbe})`} />
-            )}
-            <Aba ativo={filtro === 'todas'} onClick={() => setFiltro('todas')} texto="Todas" />
           </div>
         )}
         </div>
@@ -1856,18 +1858,23 @@ function pulsar(e: React.MouseEvent<HTMLElement>, classe = 'nodri-pulso') {
 // de zero a aba fica vermelha, mostra o número e PISCA até a última ser
 // aberta -- é o que faz alguém notar que a profissional escreveu, sem ter de
 // abrir pasta por pasta (pedido do dono, 22/09/2026).
-function Aba({ ativo, onClick, texto, destaque, esperando = 0 }: any) {
+function Aba({ ativo, onClick, texto, destaque, esperando = 0, emLista = false }: any) {
   const pisca = !ativo && esperando > 0
+  // `emLista` é o celular: a pasta deixa de ser pílula e vira linha inteira,
+  // alinhada à esquerda, para a caixa virar uma lista de verdade.
+  const forma = emLista
+    ? 'w-full px-3 py-2 rounded-lg text-[13px] text-left flex items-center'
+    : 'px-3 py-1.5 rounded-full text-[12px] flex-shrink-0 whitespace-nowrap'
   return (
     <button onClick={e => { pulsar(e); onClick?.() }} type="button"
       title={pisca ? `${esperando} conversa(s) esperando resposta nesta pasta` : undefined}
-      className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition duration-100 hover:brightness-95 active:scale-[.94] flex-shrink-0 whitespace-nowrap ${pisca ? 'nodri-alerta-pisca' : ''}`}
+      className={`${forma} font-bold transition duration-100 hover:brightness-95 active:scale-[.98] ${pisca ? 'nodri-alerta-pisca' : ''}`}
       style={ativo
         ? { background: '#a8624f', color: '#fff' }
         : { background: destaque ? '#fbebe9' : '#f6f1ee', color: destaque ? '#b4322a' : '#6e625c' }}>
-      {texto}
+      <span className={emLista ? 'flex-1 min-w-0 truncate' : undefined}>{texto}</span>
       {pisca && (
-        <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]"
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] flex-shrink-0 ${emLista ? 'ml-2' : 'ml-1.5'}`}
           style={{ background: '#b4322a', color: '#fff' }}>{esperando}</span>
       )}
     </button>
@@ -2116,20 +2123,27 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
       {statusAberto && (
         <div className="mt-3 p-3 rounded-xl" style={{ background: '#f6f1ee', border: '1px solid #e9ddd6' }}>
           <p className="text-[11px] font-bold mb-2" style={{ color: '#9a8c85' }}>MARCAR ESTA CONVERSA COMO</p>
-          <div className="flex gap-1.5 flex-wrap">
-            {(botoesDeEstado as any[]).filter((e: any) => e.chave !== 'acao_necessaria').map((e: any) => {
+          {/* Lista de cima para baixo, em ordem alfabética (dono, 11/10/2026):
+              em pílulas lado a lado as etiquetas quebravam de linha e viravam
+              um amontoado, e a pessoa tinha que caçar a que queria. */}
+          <div className="flex flex-col gap-1">
+            {(botoesDeEstado as any[])
+              .filter((e: any) => e.chave !== 'acao_necessaria')
+              .slice()
+              .sort((a: any, b: any) => String(a.acao || a.rotulo).localeCompare(String(b.acao || b.rotulo), 'pt-BR'))
+              .map((e: any) => {
               // Os dois que pedem motivo abrem o painel em vez de mudar direto:
               // fechar sem motivo é o que transforma "perdemos 40" em nada.
               if (e.chave === 'desmarcou') {
                 return (
                   <BotaoAcao key={e.chave} onClick={() => { setStatusAberto(false); setFecharAberto(false); setDesmarqueAberto(true) }}
-                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} />
+                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} emLista />
                 )
               }
               if (e.chave === 'sem_conversao') {
                 return (
                   <BotaoAcao key={e.chave} onClick={() => { setStatusAberto(false); setDesmarqueAberto(false); setFecharAberto(true) }}
-                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} />
+                    cor={e.cor} fundo={e.fundo} texto={e.acao || e.rotulo} emLista />
                 )
               }
               // Follow-up e Pausa nascem com prazo: sem data, "volto depois"
@@ -2144,7 +2158,7 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
                   : undefined
               return (
                 <BotaoAcao key={e.chave} onClick={() => escolher(e.chave, extra)}
-                  cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} nota={e.nota} />
+                  cor={e.cor} fundo={e.fundo} icone={icone} texto={e.acao || e.rotulo} nota={e.nota} emLista />
               )
             })}
           </div>
@@ -2188,13 +2202,14 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
 }
 
 // Etiquetas de "Marcar esta conversa como" -- mesmo retorno das pastas.
-function BotaoAcao({ onClick, cor, fundo, texto, icone, nota }: any) {
+function BotaoAcao({ onClick, cor, fundo, texto, icone, nota, emLista = false }: any) {
+  // `emLista`: a etiqueta ocupa a linha inteira, para o painel virar lista.
   return (
     <button onClick={e => { pulsar(e); onClick?.() }} type="button"
-      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
+      className={`${emLista ? 'w-full px-3 py-2 text-[12.5px] text-left' : 'px-2.5 py-1.5 text-[11px]'} rounded-lg font-bold flex items-center gap-1.5 transition duration-100 hover:brightness-95 active:scale-[.98]`}
       style={{ background: fundo, color: cor }}>
-      {icone}{texto}
-      {nota && <span className="font-normal text-[9.5px] opacity-70">({nota})</span>}
+      {icone}<span className={emLista ? 'flex-1 min-w-0 truncate' : undefined}>{texto}</span>
+      {nota && <span className="font-normal text-[9.5px] opacity-70 flex-shrink-0">({nota})</span>}
     </button>
   )
 }
