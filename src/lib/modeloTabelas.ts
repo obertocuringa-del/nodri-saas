@@ -307,7 +307,7 @@ async function copiarFeedbackProf(modeloId: string, destinoId: string): Promise<
  * que ficou órfã. Setor sem par no destino tem a chave removida -- melhor do
  * que deixar um documento pendurado num id que não existe.
  */
-async function ajustarChavesPorSetor(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
+export async function ajustarChavesPorSetor(modeloId: string, destinoId: string): Promise<ResultadoCopia[]> {
   const FAMILIAS = ['grid_descricao_cargo_', 'grid_pop_correcoes_', 'grid_aval_cargo_']
 
   const [{ data: doModelo }, { data: doDestino }] = await Promise.all([

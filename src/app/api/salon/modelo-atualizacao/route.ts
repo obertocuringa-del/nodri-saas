@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao } from '@/lib/apiAuth'
 import { CHAVE_PAGINAS_COM_DADOS, compararComModelo, definirPaginasComDados, ehChaveDoModelo, mesclarComExistente, regraDaChave, sanitizar, temConteudo, versaoDoModelo } from '@/lib/modeloSalao'
-import { copiarMoldesDeTabelas } from '@/lib/modeloTabelas'
+import { copiarMoldesDeTabelas, ajustarChavesPorSetor } from '@/lib/modeloTabelas'
 
 /** Setores são linhas de `profissionais` — conta para saber se faltam. */
 async function totalSetores(salaoId: string): Promise<number> {
@@ -170,6 +170,20 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabaseAdmin.from('salao_config').upsert(linhasNovas, { onConflict: 'salao_id,chave' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // ── O id do setor dentro do nome da chave ─────────────────────────────────
+  //
+  // `grid_descricao_cargo_<id do setor>` chega aqui com o id do setor DO
+  // MODELO, e esse id não existe neste salão: a página abre vazia e o
+  // documento fica pendurado numa chave que ninguém lê.
+  //
+  // A criação de salão já consertava isso (ajustarChavesPorSetor roda no fim
+  // de copiarMoldesDeTabelas), mas ATUALIZAR não — e por isso o Rouge tinha
+  // 6 descrições de cargo órfãs, apontando para setores do modelo
+  // (achado em 12/10/2026). A função é a mesma, traduz pelo NOME do setor,
+  // nunca sobrescreve documento que o salão já escreveu, e é idempotente:
+  // rodar de novo em salão limpo não faz nada.
+  try { await ajustarChavesPorSetor((mod as any).id, sess.salaoId) } catch { /* não derruba a atualização */ }
 
   await supabaseAdmin.from('saloes')
     .update({ modelo_versao: versao, modelo_aplicado_em: agora }).eq('id', sess.salaoId)
