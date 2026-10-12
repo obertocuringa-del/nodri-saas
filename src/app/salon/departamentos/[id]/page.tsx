@@ -353,15 +353,22 @@ export default function DepartamentoPage() {
             <button onClick={() => { setTransferindo(null); setDestino('') }} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-            {!d.resolvido && <button onClick={() => { setRespondendo(d.id); setRespostaTxt(''); setTransferindo(null) }} style={btn('#16a34a')}><Check size={13} /> Feito / Responder</button>}
-            <button onClick={() => { setConversando(conversando === d.id ? null : d.id); setMsgTxt(''); setMsgSit(d.situacao && d.situacao !== 'aberta' ? d.situacao : 'andamento'); setMsgPrazo(d.prazo || ''); setRespondendo(null); setTransferindo(null) }}
-              style={{ ...btnGhost(), color: '#5b4fcf', borderColor: '#c9c4f0' }}>
-              Conversar{(d.conversa?.length || 0) > 0 ? ` (${d.conversa!.length})` : ''}
-            </button>
-            {!d.resolvido && ehDono && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
-            {d.resolvido && ehDono && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
-            {ehDono && <button onClick={() => excluir(d)} style={{ ...btnGhost(), color: '#dc2626', marginLeft: 'auto' }}><Trash2 size={13} /></button>}
+          <div className="dep-acoes" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            {/* Os tres botoes de acao moram num grupo so. No computador o
+                grupo e `display: contents`, entao eles continuam sendo filhos
+                diretos da linha e NADA muda ali. No celular o grupo vira uma
+                faixa que nao quebra, com os tres dividindo a largura por
+                igual -- ver .dep-acoes-main no estilo da pagina. */}
+            <div className="dep-acoes-main">
+              {!d.resolvido && <button onClick={() => { setRespondendo(d.id); setRespostaTxt(''); setTransferindo(null) }} style={btn('#16a34a')}><Check size={13} /> Feito / Responder</button>}
+              <button onClick={() => { setConversando(conversando === d.id ? null : d.id); setMsgTxt(''); setMsgSit(d.situacao && d.situacao !== 'aberta' ? d.situacao : 'andamento'); setMsgPrazo(d.prazo || ''); setRespondendo(null); setTransferindo(null) }}
+                style={{ ...btnGhost(), color: '#5b4fcf', borderColor: '#c9c4f0' }}>
+                Conversar{(d.conversa?.length || 0) > 0 ? ` (${d.conversa!.length})` : ''}
+              </button>
+              {!d.resolvido && ehDono && <button onClick={() => { setTransferindo(d.id); setDestino(''); setRespondendo(null) }} style={btn(cor)}><CornerUpRight size={13} /> Transferir</button>}
+              {d.resolvido && ehDono && <button onClick={() => reabrir(d)} style={btnGhost()}>Reabrir</button>}
+            </div>
+            {ehDono && <button onClick={() => excluir(d)} className="dep-acoes-lixo" style={{ ...btnGhost(), color: '#dc2626', marginLeft: 'auto' }}><Trash2 size={13} /></button>}
           </div>
         )}
 
@@ -418,6 +425,57 @@ export default function DepartamentoPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#faf9f7' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+/* CSS cru de proposito: como filho de texto o React escapa aspas e ">" no
+   servidor, a regra vira letra morta e a hidratacao quebra. Conteudo fixo
+   deste arquivo, sem dado de usuario. */
+
+        /* No computador o grupo some do layout: os botoes seguem filhos
+           diretos da linha, exatamente como antes. */
+        .dep-acoes-main { display: contents; }
+
+        /* CELULAR — os tres botoes SEMPRE lado a lado ─────────────────────
+           Eles estavam numa linha que podia quebrar. Num iPhone 16 Pro Max
+           (440px) os tres cabiam; num celular de 390 ou 360px o "Transferir"
+           caia para baixo. O dono viu os dois e pediu o mesmo em qualquer
+           aparelho (11/10/2026).
+
+           A faixa deixa de quebrar e os tres dividem a largura por igual.
+           Para caber nos 360px: os icones saem (sao enfeite, o nome diz
+           tudo), a fonte e o respiro encolhem, e o texto que ainda assim
+           passar corta com reticencias em vez de empurrar o vizinho.
+           A lixeira fica fora do grupo, na linha de baixo e a direita,
+           como ja ficava. */
+        @media (max-width: 640px) {
+          .dep-acoes-main {
+            display: flex !important;
+            width: 100%;
+            flex-wrap: nowrap;
+            gap: 6px;
+          }
+          .dep-acoes-main > button {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            justify-content: center !important;
+            padding: 8px 4px !important;
+            font-size: 11px !important;
+            gap: 0 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+            text-align: center !important;
+          }
+          .dep-acoes-main > button > svg { display: none !important; }
+        }
+        /* Celular estreito de verdade (320-380px: SE antigo, Android basico,
+           Fold fechado). Medido: a 320px o "Feito / Responder" encostava e
+           cortava com 11px. Com 9,5px e menos respiro, cabe inteiro. */
+        @media (max-width: 380px) {
+          .dep-acoes-main { gap: 4px; }
+          .dep-acoes-main > button { font-size: 9.5px !important; padding: 8px 3px !important; }
+        }
+      ` }} />
       <nav style={{ background: '#fff', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.push('/salon/pendencias')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Setores</button>
         <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
