@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft, Pencil, X } from 'lucide-react'
 import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, ehDoCargo, type CatAval, type Faixa } from './avaliacaoModelo'
 import { getLogoSalao } from '@/lib/logoSalao'
+import { folhaDePerguntas } from '@/lib/folhaPerguntas'
 import EditorAvaliacao from './EditorAvaliacao'
 import { usePermissoes } from '@/lib/usePermissoes'
 
@@ -137,6 +138,32 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
     } catch { toast.error('Erro') }
   }
 
+  // ── Imprimir as PERGUNTAS (em branco) ─────────────────────────────────────
+  //
+  // Diferente do `imprimir(av)` logo abaixo, que sai com as notas de uma
+  // avaliacao ja feita. Esta e a folha para LER com calma e, se quiser,
+  // preencher a mao -- pedido do dono em 12/10/2026.
+  //
+  // Leva so as secoes do CARGO desta pessoa: imprimir a tecnica de manicure
+  // na folha da cabeleireira seria o mesmo erro que o filtro da tela corrige.
+  async function imprimirPerguntas() {
+    const w = window.open('', '_blank', 'width=940,height=800')
+    if (!w) { toast.error('O navegador bloqueou a janela de impressão.'); return }
+    const logo = await getLogoSalao().catch(() => '')
+    w.document.write(folhaDePerguntas({
+      titulo: 'Avaliação de Desempenho',
+      subtitulo: profissionalNome + (cargo ? ` — ${cargo}` : ''),
+      logo: logo || undefined,
+      escala: ESCALA.map(e => `${e.n} = ${e.l}`),
+      campos: ['Avaliado(a)', 'Quem está avaliando', 'Tempo de empresa', 'Data'],
+      secoes: secoesDoCargo.map(s => ({
+        titulo: s.titulo, cor: s.cor,
+        linhas: s.criterios.map(cr => ({ texto: cr.texto })),
+      })),
+    }))
+    w.document.close(); w.focus()
+  }
+
   async function imprimir(av: Avaliacao) {
     const logoSalao = await getLogoSalao()
     const r = calcular(av.respostas, secoesDoCargo)
@@ -203,6 +230,11 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
           <button onClick={() => setView('lista')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 13 }}><ArrowLeft size={15} /> Voltar</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: '#9ca3af' }}>{totalRespondidas}/{TOTAL} respondidos</span>
+            <button onClick={imprimirPerguntas} title="Imprimir esta avaliação em branco"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                borderRadius: 8, padding: '6px 11px', border: '1px solid #d0cdc7', background: '#fff', color: '#374151' }}>
+              <Printer size={13} /> Imprimir
+            </button>
             {podeEditarFicha && (
               <button onClick={() => setEditando(v => !v)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -279,7 +311,12 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Avaliações de {profissionalNome}</h3>
           <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>{soResultado ? 'Veja o resultado das suas avaliações.' : `Avalie ${TOTAL} critérios em ${secoesDoCargo.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.`}</p>
         </div>
-        {!soResultado && <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {/* A folha em branco serve a todos, inclusive a quem so ve o
+              resultado: e com ela que a pessoa le as perguntas com calma. */}
+          <button onClick={imprimirPerguntas} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}><Printer size={15} /> Imprimir perguntas</button>
+          {!soResultado && <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>}
+        </div>
       </div>
 
       {/* ── EVOLUÇÃO POR CATEGORIA (comparativo no tempo) ── */}

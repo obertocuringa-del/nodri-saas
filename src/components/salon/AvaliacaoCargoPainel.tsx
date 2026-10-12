@@ -7,10 +7,12 @@ import {
   Lock, Unlock, BarChart3, ListChecks, Printer, ChevronRight,
 } from 'lucide-react'
 import type { DocCargo } from '@/lib/descricaoCargoModelo'
+import { folhaDePerguntas } from '@/lib/folhaPerguntas'
+import { getLogoSalao } from '@/lib/logoSalao'
 import {
   type FichaAval, type CriterioAval, type RodadaAval, type TipoAvaliador,
   TIPOS_AVALIADOR, ROTULO_TIPO, fichaVazia, lerFicha,
-  novoIdCrit, porSecao, calcular, corDaNota, NOTA_QUE_PEDE_MOTIVO,
+  novoIdCrit, porSecao, calcular, corDaNota, NOTA_QUE_PEDE_MOTIVO, FAIXAS_DA_NOTA,
 } from '@/lib/avaliacaoCargoModelo'
 
 // ── Avaliação 360 do cargo: o painel de dentro ─────────────────────────────
@@ -175,8 +177,47 @@ function AbaFicha({ ficha, doc, mexer }: {
     setNovo('')
   }
 
+  // ── Imprimir a ficha em branco ────────────────────────────────────────────
+  //
+  // O painel ja imprimia o RESULTADO de uma rodada. Esta e a folha das
+  // PERGUNTAS, para ler no papel e, se quiser, preencher a mao (dono,
+  // 12/10/2026). Mesma folha da avaliacao do profissional: o gerador mora em
+  // lib/folhaPerguntas, para as duas nunca sairem diferentes.
+  //
+  // Em cada ponto vai escrito QUEM responde aquilo -- numa ficha 360 isso
+  // muda tudo: na folha do gerente nao faz sentido um ponto que so a propria
+  // pessoa responde.
+  async function imprimirPerguntas() {
+    const w = window.open('', '_blank', 'width=940,height=800')
+    if (!w) { toast.error('O navegador bloqueou a janela de impressão.'); return }
+    const logo = await getLogoSalao().catch(() => '')
+    w.document.write(folhaDePerguntas({
+      titulo: 'Avaliação 360',
+      subtitulo: doc?.cargo || ficha.cargo || 'Cargo',
+      logo: logo || undefined,
+      apresentacao: ficha.apresentacao || undefined,
+      escala: FAIXAS_DA_NOTA.slice().reverse().map(f => `${f.de}–${f.ate} ${f.rotulo}`),
+      campos: ['Avaliado(a)', 'Quem está avaliando', 'Papel (autoavaliação / gerente / equipe)', 'Data'],
+      secoes: porSecao(ficha).map(g => ({
+        titulo: g.secao,
+        linhas: g.criterios.map(c => ({
+          texto: c.texto,
+          critico: c.critico,
+          nota: 'Responde: ' + (c.para.length ? c.para.map(x => ROTULO_TIPO[x]).join(', ') : 'ninguém'),
+        })),
+      })),
+    }))
+    w.document.close(); w.focus()
+  }
+
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={imprimirPerguntas}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border border-nodri-border text-nodri-t2">
+          <Printer size={13} /> Imprimir perguntas
+        </button>
+      </div>
       <div>
         <p className="text-[11.5px] font-bold text-nodri-t2 mb-1.5">Texto de abertura (opcional)</p>
         <textarea value={ficha.apresentacao || ''} rows={2}
