@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getAtendimentosRaw } from '@/lib/atendimentosCache'
+import { paginar } from '@/lib/paginar'
 import { escritaBloqueadaSub, getSessao, sessaoModoCaixa } from '@/lib/apiAuth'
 
 /**
@@ -56,7 +56,41 @@ export async function GET() {
   const ativos = itens.filter(i => i.status === 'aguardando' || i.status === 'contatada' || i.status === 'remarcada')
   if (ativos.length) {
     try {
-      const atend = await getAtendimentosRaw(salaoId)
+      // ── Só os atendimentos que PODEM dar baixa ──────────────────────────
+      //
+      // Aqui se lia a tabela INTEIRA de atendimentos (getAtendimentosRaw).
+      // Medido em 11/10/2026 no Rouge: 132.094 linhas, 64 MB, para decidir a
+      // situação de DUAS pessoas na fila. Pior: a conferência de frescor são
+      // duas consultas (uma delas conta as 132 mil) em TODA abertura, e o robô
+      // do Avec importa várias vezes por dia -- então a releitura caía com
+      // frequência: 133 idas ao banco de mil em mil, a ~100 ms cada daqui até
+      // São Paulo. A tela de quem está no telefone com a cliente levava
+      // dezenas de segundos para abrir.
+      //
+      // A baixa só olha atendimento a partir de (entrada na fila − 12 h). Tudo
+      // antes disso é incapaz de mudar o resultado: a conta pega o MAIOR
+      // carimbo de cada cliente, e um carimbo mais velho que o corte nunca
+      // vira baixa nem derruba um mais novo. Então a janela é exatamente
+      // equivalente -- só não lê o que não serve.
+      //
+      // O corte é por `ano`/`mes` (conferido no banco: 100% preenchidos e
+      // batendo com data_comanda), com UM MÊS A MAIS de folga, porque
+      // `criado_em` é UTC e `data_comanda` é a data do salão -- na virada do
+      // mês as duas não coincidem.
+      const maisAntigo = Math.min(...ativos.map(i => new Date(i.criado_em).getTime())) - 12 * 3600000
+      const de = new Date(maisAntigo)
+      de.setUTCMonth(de.getUTCMonth() - 1)
+      const anoDe = de.getUTCFullYear()
+      const mesDe = de.getUTCMonth() + 1
+
+      const { dados: atend } = await paginar((ini, fim) =>
+        supabaseAdmin.from('atendimentos_raw')
+          .select('cliente, data_comanda')
+          .eq('salao_id', salaoId)
+          .or(`ano.gt.${anoDe},and(ano.eq.${anoDe},mes.gte.${mesDe})`)
+          .order('ano').order('mes').order('cliente')
+          .range(ini, fim))
+
       const ultimoPorCliente: Record<string, number> = {}
       for (const r of atend) {
         const nome = norm(r.cliente || '')
@@ -88,7 +122,9 @@ export async function GET() {
     for (const i of itens) if (mover.includes(i.id)) i.categoria = 'nao_agendada'
   }
 
-  return NextResponse.json({ lista: itens })
+  // O salao vai junto: o atalho do navegador guarda isso e assim a fila de um
+  // salao nao aparece na tela de outro (ver a tela).
+  return NextResponse.json({ lista: itens, salao: salaoId })
 }
 
 export async function POST(req: NextRequest) {

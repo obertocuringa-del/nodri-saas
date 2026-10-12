@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, MessageCircle, Trash2, X, Clock, AlertTriangle, DollarSign, Users, Check, Loader2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -70,6 +70,32 @@ export default function ListaEsperaPage() {
   const [fObs, setFObs] = useState('')
   const [buscaServ, setBuscaServ] = useState('')
 
+  // ── O atalho do navegador ────────────────────────────────────────────────
+  //
+  // A tela abre mostrando a fila guardada aqui, sem esperar o servidor. Quem
+  // está no telefone com a cliente não pode ver ampulheta.
+  //
+  // Por isso TODA mudança na fila grava aqui na hora -- não só o
+  // recarregamento. Antes só o `carregar()` gravava: quem adicionava alguém e
+  // recarregava a página antes de ele terminar via a fila SEM a pessoa que
+  // acabou de entrar. Era o que o dono descrevia em 12/10/2026, e numa tela
+  // em que o atraso de um minuto custa o horário de uma cliente.
+  //
+  // O atalho guarda TAMBEM de que salao e aquela fila. Sem isso ele era uma
+  // caixa anonima no navegador: quem entra num salao e depois em outro via,
+  // por um instante, a fila do primeiro -- com nome e telefone de cliente.
+  // E o mesmo vazamento de 28/09/2026, por cache de navegador sem salao.
+  const salaoRef = useRef<string | null>(null)
+  const guardar = useCallback((lst: Item[]) => {
+    try {
+      localStorage.setItem('nodri_lista_espera', JSON.stringify({ salao: salaoRef.current, lista: lst }))
+    } catch { /* */ }
+  }, [])
+  // Mexe na fila da tela e no atalho de uma vez só.
+  const mexerNaFila = useCallback((fn: (prev: Item[]) => Item[]) => {
+    setLista(prev => { const nova = fn(prev); guardar(nova); return nova })
+  }, [guardar])
+
   const carregar = useCallback(async () => {
     try {
       const [a, b] = await Promise.all([
@@ -77,18 +103,30 @@ export default function ListaEsperaPage() {
         fetch('/api/servicos').then(r => r.ok ? r.json() : []).catch(() => []),
       ])
       const lst = a.lista || []
+      salaoRef.current = a.salao || null
       setLista(lst)
-      try { localStorage.setItem('nodri_lista_espera', JSON.stringify(lst)) } catch { /* */ }
+      guardar(lst)
       const srv = Array.isArray(b) ? b.filter((s: any) => s.ativo !== false) : []
       setServicosCat(srv)
       try { localStorage.setItem('nodri_servicos_cache', JSON.stringify(srv)) } catch { /* */ }
     } catch { /* ignore */ }
     setLoading(false)
-  }, [])
+  }, [guardar])
   useEffect(() => {
     // Mostra o cache na hora (sem espera) e atualiza em segundo plano
     try {
-      const c = localStorage.getItem('nodri_lista_espera'); if (c) { setLista(JSON.parse(c)); setLoading(false) }
+      // Formato novo: { salao, lista }. O antigo era a lista crua, sem dono
+      // conhecido -- esse nao se mostra, so se descarta.
+      const c = localStorage.getItem('nodri_lista_espera')
+      if (c) {
+        const g = JSON.parse(c)
+        if (g && !Array.isArray(g) && Array.isArray(g.lista)) {
+          salaoRef.current = g.salao || null
+          setLista(g.lista); setLoading(false)
+        } else {
+          localStorage.removeItem('nodri_lista_espera')
+        }
+      }
       const s = localStorage.getItem('nodri_servicos_cache'); if (s) setServicosCat(JSON.parse(s))
     } catch { /* */ }
     carregar()
@@ -120,7 +158,7 @@ export default function ListaEsperaPage() {
       const saved = await res.json().catch(() => null)
       toast.success(editId ? 'Alterações salvas!' : 'Cliente adicionada à fila!')
       // Atualização instantânea na tela (sem esperar o recarregamento pesado)
-      if (saved && saved.id) setLista(prev => editId ? prev.map(x => x.id === saved.id ? saved : x) : [...prev, saved])
+      if (saved && saved.id) mexerNaFila(prev => editId ? prev.map(x => x.id === saved.id ? saved : x) : [...prev, saved])
       limparForm(); setModal(false); setSalvando(false)
       carregar() // sincroniza em segundo plano
       return
@@ -130,7 +168,7 @@ export default function ListaEsperaPage() {
 
   async function atualizar(id: string, patch: any) {
     // Atualização instantânea na tela; sincroniza em segundo plano
-    setLista(prev => prev.map(x => x.id === id ? { ...x, ...patch } : x))
+    mexerNaFila(prev => prev.map(x => x.id === id ? { ...x, ...patch } : x))
     try {
       const res = await fetch('/api/salon/lista-espera', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...patch }) })
       if (!res.ok) { toast.error('Erro'); carregar(); return }
@@ -140,7 +178,10 @@ export default function ListaEsperaPage() {
 
   async function excluir(id: string) {
     if (!confirm('Remover esta cliente da lista de espera?')) return
-    try { await fetch('/api/salon/lista-espera?id=' + id, { method: 'DELETE' }); await carregar() } catch { /* */ }
+    // Sai da tela na hora; o servidor confirma depois. Se der erro, o
+    // `carregar()` traz a fila de volta como ela está de verdade.
+    mexerNaFila(prev => prev.filter(x => x.id !== id))
+    try { await fetch('/api/salon/lista-espera?id=' + id, { method: 'DELETE' }); carregar() } catch { carregar() }
   }
 
   function chamarWhats(it: Item) {
