@@ -388,11 +388,14 @@ ${doMes.length
         .ncal-dia { min-height: max(76px, calc((100vh - 250px) / ${semanas.length})); }
         .ncal-chip { font-size: ${fonte}px; }
         @media (max-width: 900px) { .ncal-dia { min-height: max(64px, calc((100vh - 300px) / ${semanas.length})); } }
-        /* CELULAR — cela compacta com o texto ESCRITO dentro dela, sem a
-           moldura que o computador usa. Numa cela de 70px a caixinha branca
-           com borda comia a largura toda e sobrava lugar para duas palavras.
-           Aqui o compromisso e so texto, na cor dele; a cor tambem vai para o
-           numero do dia, que e o que se enxerga de longe. */
+        /* CELULAR — so a CHAMADA do compromisso; o resto abre no toque.
+           A coluna do dia tem uns 50px: o texto inteiro escrito ali quebrava
+           palavra no meio e virava um paredao ilegivel (foto do dono,
+           11/10/2026). Agora cada compromisso e UMA linha cortada com
+           reticencias, o responsavel sai, e passando de dois aparece "+N".
+           Tocar no dia abre a janela que ja existia, com tudo por extenso e
+           o X para fechar -- o "zoom" que o dono pediu. O computador nao
+           entra aqui: la cabe e esta como ele quer. */
         @media (max-width: 640px) {
           .ncal-grid { gap: 3px !important; }
           .ncal-dia { min-height: 70px !important; padding: 4px 4px !important; }
@@ -403,8 +406,17 @@ ${doMes.length
           .ncal-chip > span {
             padding: 0 !important; border: none !important; background: transparent !important;
             border-radius: 0 !important; color: var(--cor-ev) !important; font-weight: 700 !important;
+            white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+            display: block !important; max-width: 100% !important;
           }
-          .ncal-chip em { color: var(--cor-ev) !important; opacity: .75; }
+          /* Do terceiro em diante some: no lugar deles entra o "+N". */
+          .ncal-chip > span:nth-child(n+3) { display: none !important; }
+          /* O responsavel e detalhe: ele cabe na janela, nao na cela. */
+          .ncal-chip em { display: none !important; }
+          .ncal-mais {
+            display: block !important; font-size: 8px !important; font-weight: 800 !important;
+            color: #9ca3af !important; margin-top: 1px !important; line-height: 1 !important;
+          }
           .ncal-vazio { min-height: 70px !important; }
           .ncal-legenda-grid { grid-template-columns: 1fr !important; }
           .ncal-topo-mes { gap: 8px !important; }
@@ -504,6 +516,12 @@ ${doMes.length
                       )
                     })}
                   </span>
+
+                  {/* So no celular (ver .ncal-mais no CSS): diz que o dia tem
+                      mais do que as duas linhas que couberam. */}
+                  {evs.length > 2 && (
+                    <span className="ncal-mais" style={{ display: 'none' }}>+{evs.length - 2}</span>
+                  )}
                 </button>
               )
             })}

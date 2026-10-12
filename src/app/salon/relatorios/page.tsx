@@ -432,6 +432,43 @@ export default function RelatoriosPage() {
       .catch(() => setTrava(null))
   }, [p1Ano, p1Mes])
 
+  // ── A meta fica SALVA, e quem guarda e o banco ────────────────────────────
+  //
+  // Ela ja era gravada em `ia_metas_salao` (por salao, por ano e mes) toda vez
+  // que o dono clica em Salvar Meta. O que faltava era a TELA ler isso de
+  // volta: ela lia so o `localStorage`, que e memoria do navegador. Limpou o
+  // cache, trocou de maquina, usou o celular, ou o proprio Chrome decidiu
+  // liberar espaco -- a meta "voltava zerada" e o dono digitava o mesmo numero
+  // de novo (pedido dele em 11/10/2026: "e so para salvar a tela").
+  //
+  // Nao muda numero nenhum: o valor lido aqui e exatamente o que o botao
+  // Salvar Meta gravou. Sem linha de meta no mes escolhido, cai na mais
+  // recente -- que e como a tela ja se comportava com o valor unico do
+  // navegador, entao quem olha nao ve diferenca nenhuma.
+  useEffect(() => {
+    let cancelado = false
+    ;(async () => {
+      try {
+        const r = await fetch('/api/ia/metas', { credentials: 'include', cache: 'no-store' })
+        if (!r.ok) return
+        const { metas } = await r.json()
+        if (cancelado || !Array.isArray(metas) || !metas.length) return
+        const doMes = metas.find((m: any) => Number(m.ano) === p1Ano && Number(m.mes) === p1Mes)
+        const escolhida = doMes || metas[0]   // a rota ja devolve da mais nova para a mais velha
+        const valor = Number(escolhida?.meta_valor) || 0
+        if (!valor) return
+        setMetaSalva(valor)
+        if (escolhida?.meta_tipo === 'valor' || escolhida?.meta_tipo === 'pct') setMetaTipo(escolhida.meta_tipo)
+        if (escolhida?.meta_pct != null) setMetaPct(String(escolhida.meta_pct))
+        // Espelha no navegador: a proxima abertura ja mostra o numero certo
+        // antes mesmo de o banco responder.
+        try { localStorage.setItem(META_KEY, JSON.stringify({ valor, tipo: escolhida?.meta_tipo || 'valor' })) } catch { }
+      } catch { /* sem meta salva: a tela segue com o que tinha */ }
+    })()
+    return () => { cancelado = true }
+  }, [p1Ano, p1Mes])
+
+
   useEffect(() => {
     if (!profsCadastrados.length) return
     const ids = profsCadastrados.map(p => p.id).join(',')
@@ -516,6 +553,8 @@ export default function RelatoriosPage() {
         }
       } catch { }
 
+      // O navegador e so o chute inicial, para a tela nao piscar em zero
+      // enquanto o banco responde. Quem manda e carregarMetaSalva().
       try {
         const m = localStorage.getItem(META_KEY)
         if (m) { const md = JSON.parse(m); setMetaSalva(md.valor || 0) }
@@ -1838,16 +1877,20 @@ ${([['Faturamento Total',r1.fat_total,r2.fat_total],['Ticket Médio',r1.ticket,r
               const MESES_PT_FULL = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
               // 1. Carrega meta total do localStorage
-              let metaTotalProf = 0
+              // Primeiro o valor que veio do BANCO (metaSalva); o navegador fica
+              // só como reserva para o instante antes de o banco responder.
+              let metaTotalProf = metaSalva || 0
               let metaAviso = ''
-              try {
-                const m = localStorage.getItem(META_KEY)
-                if (m) {
-                  const md = JSON.parse(m)
-                  // md.valor já é sempre o valor final calculado (seja fixo ou % sobre ano anterior)
-                  metaTotalProf = md.valor || 0
-                }
-              } catch { }
+              if (!metaTotalProf) {
+                try {
+                  const m = localStorage.getItem(META_KEY)
+                  if (m) {
+                    const md = JSON.parse(m)
+                    // md.valor já é sempre o valor final calculado (seja fixo ou % sobre ano anterior)
+                    metaTotalProf = md.valor || 0
+                  }
+                } catch { }
+              }
               if (metaTotalProf === 0) metaAviso = 'Meta total não configurada. Configure na aba Metas.'
 
               // 2. Profissionais ativos via profsCadastrados (já carregado)
