@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft } from 'lucide-react'
+import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft, Pencil, X } from 'lucide-react'
 import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, type CatAval, type Faixa } from './avaliacaoModelo'
 import { getLogoSalao } from '@/lib/logoSalao'
+import EditorAvaliacao from './EditorAvaliacao'
+import { usePermissoes } from '@/lib/usePermissoes'
 
 const ESCALA = [{ n: 1, l: 'Muito abaixo' }, { n: 2, l: 'Abaixo' }, { n: 3, l: 'Dentro do esperado' }, { n: 4, l: 'Acima' }, { n: 5, l: 'Excelente' }]
 const TEMPOS = ['Menos de 6 meses', '6 meses a 1 ano', '1 a 2 anos', '2 a 5 anos', 'Mais de 5 anos']
@@ -38,7 +40,7 @@ function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string })
   )
 }
 
-export default function AvaliarProfissional({ profissionalId, profissionalNome, soResultado }: { profissionalId: string; profissionalNome: string; soResultado?: boolean }) {
+export default function AvaliarProfissional({ profissionalId, profissionalNome, soResultado, souProf }: { profissionalId: string; profissionalNome: string; soResultado?: boolean; souProf?: boolean }) {
   const [secoes, setSecoes] = useState<CatAval[]>([])
   const [faixas, setFaixas] = useState<Faixa[]>(CLASSIF_AVAL)
   const [historico, setHistorico] = useState<Avaliacao[]>([])
@@ -51,6 +53,32 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [vendo, setVendo] = useState<Avaliacao | null>(null)
+  // ── Editar as perguntas sem sair daqui ────────────────────────────────────
+  //
+  // O editor ja existia, mas morava em Profissionais > Perfil -- outra tela.
+  // Quem esta com a ficha aberta para avaliar nao achava, e nao ha por que
+  // fazer a volta: e o MESMO componente, so que aberto aqui (dono, 12/10/2026).
+  //
+  // A ficha e UMA SO para o salao inteiro (chave `avaliacao_modelo`): editar
+  // daqui muda a avaliacao de TODOS os profissionais, de qualquer categoria.
+  // Por isso o aviso em cima do editor -- sem ele, parece que esta mexendo so
+  // na ficha desta pessoa.
+  const [editando, setEditando] = useState(false)
+  // Quem pode reescrever a ficha. Tres travas, e a primeira e a que importa:
+  //
+  //  1. PROFISSIONAL NAO EDITA, so visualiza (ordem do dono, 12/10/2026).
+  //     Isto precisa ser explicito: `usePermissoes` trata "nao e sub" como
+  //     "pode tudo", e profissional NAO e sub -- sem esta linha o botao
+  //     aparecia dentro do portal dele. A tela e a mesma nos dois lugares;
+  //     quem separa e o `souProf` que a pagina ja calcula.
+  //  2. Sub-usuario precisa da permissao de profissionais (mesma regra do
+  //     servidor: permDaGrade('avaliacao_modelo') = 'profissionais').
+  //  3. MODO CAIXA executa e acrescenta, mas nao reescreve ficha.
+  //
+  // O servidor tambem barra (escritaBloqueadaSub + permDaGrade): isto aqui e
+  // para nao mostrar um botao que nao vai funcionar.
+  const { pode, modoCaixa } = usePermissoes()
+  const podeEditarFicha = !souProf && pode('profissionais') && !modoCaixa
 
   const carregar = useCallback(async () => {
     try {
@@ -67,6 +95,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
     setLoading(false)
   }, [profissionalId])
   useEffect(() => { carregar() }, [carregar])
+  useEffect(() => { if (souProf) setEditando(false) }, [souProf])
 
   const TOTAL = secoes.reduce((a, s) => a + s.criterios.length, 0)
   const totalRespondidas = Object.keys(respostas).length
@@ -160,8 +189,36 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <button onClick={() => setView('lista')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 13 }}><ArrowLeft size={15} /> Voltar</button>
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>{totalRespondidas}/{TOTAL} respondidos</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#9ca3af' }}>{totalRespondidas}/{TOTAL} respondidos</span>
+            {podeEditarFicha && (
+              <button onClick={() => setEditando(v => !v)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  borderRadius: 8, padding: '6px 11px',
+                  border: editando ? '1px solid #5b4fcf' : '1px solid #d0cdc7',
+                  background: editando ? '#5b4fcf' : '#fff', color: editando ? '#fff' : '#5b4fcf' }}>
+                {editando ? <><X size={13} /> Fechar edicao</> : <><Pencil size={13} /> Editar perguntas</>}
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* O editor e o MESMO de Profissionais > Perfil. A ficha e uma so para
+            o salao inteiro, entao o aviso tem de vir antes do primeiro campo:
+            sem ele, parece que se esta mexendo so na ficha desta pessoa. */}
+        {editando && (
+          <div style={{ background: '#fff', border: '1.5px solid #5b4fcf', borderRadius: 12, padding: 16, marginBottom: 14 }}>
+            <p style={{ fontSize: 12.5, color: '#5b4fcf', fontWeight: 700, margin: '0 0 2px' }}>
+              Editando a ficha de avaliacao do salao
+            </p>
+            <p style={{ fontSize: 12, color: '#6b6860', margin: '0 0 12px' }}>
+              A ficha e uma so: o que voce mudar aqui vale para a avaliacao de
+              TODOS os profissionais, de qualquer categoria. Depois de salvar,
+              feche a edicao para as perguntas novas aparecerem no formulario.
+            </p>
+            <EditorAvaliacao />
+          </div>
+        )}
         <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: 16, marginBottom: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Data da Avaliação</label><input type="date" value={dataAval} onChange={e => setDataAval(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }} /></div>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Tempo de Empresa</label><select value={tempo} onChange={e => setTempo(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>{TEMPOS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>

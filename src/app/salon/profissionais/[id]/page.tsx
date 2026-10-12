@@ -3642,7 +3642,7 @@ Use os dados reais e cite números. Proibido sugestão genérica.`
 
         {/*  AVALIAR PROFISSIONAL  */}
         {tab === 'avaliar' && (
-          <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} />
+          <AvaliarProfissional profissionalId={id} profissionalNome={prof?.apelido || prof?.nome_completo || 'Profissional'} soResultado={souProf && !((prof as any)?.acesso_oculto?.autoavaliacao)} souProf={souProf} />
         )}
 
         {/*  POPS — processos da categoria + Avaliação POP (sub-abas)  */}
