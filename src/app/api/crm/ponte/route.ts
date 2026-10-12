@@ -330,7 +330,7 @@ export async function POST(req: NextRequest) {
     // Em páginas: acima de mil contatos o banco cortava a lista calado e o
     // nome que chegava para o contato 1001 se perdia.
     const { dados: todos } = await paginar<any>((de, ate) => supabaseAdmin
-      .from('crm_contatos').select('id, telefone, lid, nome')
+      .from('crm_contatos').select('id, telefone, lid, nome, foto_url, foto_em')
       .eq('salao_id', salaoId).order('id').range(de, ate), 60000)
 
     let atualizados = 0
@@ -338,10 +338,11 @@ export async function POST(req: NextRequest) {
       const tel = normalizarTelefone(String(c?.telefone || ''))
       const lid = String(c?.lid || '').trim() || null
       const nome = String(c?.nome || '').trim()
+      const foto = String(c?.foto || '').trim()
       // Item só com telefone e lid também vale: é como a ponte devolve o
       // número que descobriu perguntando ao WhatsApp.
       if (!tel && !lid) continue
-      if (!nome && !tel) continue
+      if (!nome && !tel && !foto) continue
 
       const alvoChave = tel ? chaveTelefone(tel) : ''
       const achado = (todos || []).find((x: any) =>
@@ -358,6 +359,19 @@ export async function POST(req: NextRequest) {
         patch.telefone = tel
         patch.telefone_bruto = tel
         patch.conferido_em = null
+      }
+      // ── Foto de perfil ────────────────────────────────────────────────
+      //
+      // Chega da ponte já pronta (ela é quem pergunta ao WhatsApp). Aqui só
+      // se guarda, e guarda-se a URL: o arquivo fica no CDN do WhatsApp, não
+      // gasta egress do Supabase e não ocupa storage.
+      //
+      // `foto: 'sem'` é a pessoa que NÃO tem foto ou escondeu. Isso também
+      // se registra, com a data — senão a ponte voltaria a perguntar dela
+      // para sempre, e pergunta em massa foi o que derrubou o número.
+      if (foto) {
+        patch.foto_url = foto === 'sem' ? null : foto
+        patch.foto_em = new Date().toISOString()
       }
       if (!Object.keys(patch).length) continue
       await supabaseAdmin.from('crm_contatos').update(patch).eq('id', achado.id)
