@@ -129,6 +129,18 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
   const cfgCupons = await getCfgCupons(salao.salaoId)
   const cuponsNoAr = cfgCupons.ativo && !campanhaVencida(cfgCupons)
 
+  // Quantas clientes ja pegaram o cupom. Serve de empurrao para quem chega:
+  // "ja sao N" diz que a coisa existe e que gente de verdade esta usando.
+  // So a CONTA sai daqui -- nenhum nome, nenhum telefone, e a pagina e
+  // publica. `head: true` nao traz linha nenhuma, so o numero.
+  let quantosCupons = 0
+  if (cuponsNoAr) {
+    const { count } = await supabaseAdmin
+      .from('cupom_indicacao').select('*', { count: 'exact', head: true })
+      .eq('salao_id', salao.salaoId)
+    quantosCupons = count || 0
+  }
+
   return NextResponse.json({
     salao: {
       nome: salao.nome,
@@ -146,6 +158,7 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
       validoAte: cfgCupons.validoAte,
       destaques: cfgCupons.destaques || '',
       endereco: cfgCupons.endereco || '',
+      quantos: quantosCupons,
     },
   })
 }

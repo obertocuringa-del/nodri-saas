@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Check, Copy, Ticket, Share2, ImageDown } from 'lucide-react'
+import { Loader2, Check, Copy, Ticket, Share2, ImageDown, Users } from 'lucide-react'
 import { desenharCupom } from '@/lib/cupomArte'
 
 // ── A cliente pega o cupom dela ─────────────────────────────────────────────
@@ -16,6 +16,8 @@ import { desenharCupom } from '@/lib/cupomArte'
 interface Props {
   slug: string
   percentual: number
+  /** Quantas clientes do salão já pegaram o cupom. Vira prova social. */
+  quantos?: number
   validoAte: string | null
   /** Identidade de QUEM compartilha a arte — do salão, nunca do sistema. */
   nomeSalao: string
@@ -39,7 +41,7 @@ function dataCurta(iso: string | null): string {
   return `${d}/${m}/${a}`
 }
 
-export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, logo, destaques, endereco }: Props) {
+export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, logo, destaques, endereco, quantos = 0 }: Props) {
   const [tela, setTela] = useState<Tela>('telefone')
   const [telefone, setTelefone] = useState('')
   const [nome, setNome] = useState('')
@@ -163,6 +165,21 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
     salvarArte(arte, cupom.codigo)
   }
 
+  // ── "Já são N clientes com cupom" ────────────────────────────────────────
+  //
+  // Pedido do dono (12/10/2026): mostrar quantas já criaram, para quem chega
+  // ver que não é só ela. Sem nome e sem telefone -- só a conta.
+  //
+  // Abaixo de 8 a frase NÃO aparece. Prova social com número pequeno faz o
+  // contrário do que deveria: "já são 3 clientes" conta que ninguém aderiu.
+  // Enquanto não chega lá, melhor não dizer nada.
+  //
+  // Passando de 40 vira "mais de 40", arredondado para baixo: número redondo
+  // lê melhor em escala, e arredondar PARA BAIXO mantém a frase verdadeira.
+  const provaSocial = quantos < 8 ? null
+    : quantos < 40 ? `Já são ${quantos} clientes com cupom. Falta o seu.`
+    : `Já são mais de ${Math.floor(quantos / 10) * 10} clientes com cupom. Falta o seu.`
+
   const botao = 'w-full py-3.5 rounded-xl font-semibold text-[15px] text-white bg-[var(--vt-cor)] disabled:opacity-50 transition'
   const campo = 'w-full px-4 py-3.5 rounded-xl border border-gray-300 text-[16px] outline-none focus:border-[var(--vt-cor)] transition'
 
@@ -194,9 +211,15 @@ export default function VitrineCupom({ slug, percentual, validoAte, nomeSalao, l
               autoFocus
               className={campo}
             />
-            <p className="text-[12px] text-gray-400 mt-2 mb-4">
+            <p className={`text-[12px] text-gray-400 mt-2 ${provaSocial ? 'mb-2' : 'mb-4'}`}>
               Se você já tem cupom, ele aparece aqui — é sempre o mesmo código.
             </p>
+            {provaSocial && (
+              <p className="text-[12.5px] font-medium text-[var(--vt-cor)] mb-4 flex items-center gap-1.5">
+                <Users size={13} className="flex-shrink-0" />
+                {provaSocial}
+              </p>
+            )}
             {erro && <p className="text-[13px] text-red-600 mb-3">{erro}</p>}
             <button type="submit" disabled={carregando || telefone.replace(/\D+/g, '').length < 10} className={botao}>
               {carregando ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Continuar'}

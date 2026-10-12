@@ -112,7 +112,8 @@ export default function PromocoesPage({ params }: { params: { slug: string } }) 
           <VitrineCupom slug={params.slug}
             percentual={dados.cupons.percentual} validoAte={dados.cupons.validoAte}
             nomeSalao={salao.nome} logo={salao.logo}
-            destaques={dados.cupons.destaques} endereco={dados.cupons.endereco} />
+            destaques={dados.cupons.destaques} endereco={dados.cupons.endereco}
+            quantos={dados.cupons.quantos} />
         )}
         {aba === 'precos' && (
           <VitrinePrecos servicos={dados.servicos} />
