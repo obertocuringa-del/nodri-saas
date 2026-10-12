@@ -135,6 +135,65 @@ export async function acharOuCriarContato(
  * não tem; a ficha `apagar` é excluída. Nunca perde mensagem: mensagem
  * pertence à conversa, e a conversa só troca de ficha.
  */
+/**
+ * Uma conversa ABERTA por contato, e só uma.
+ *
+ * Junta as abertas que sobraram num contato: as mensagens e os eventos vão
+ * para a que fica, e a casca vazia é apagada. Nada se perde — mensagem e
+ * evento são CASCATA, então mover vem SEMPRE antes de apagar.
+ *
+ * Quem fica, na ordem (regra do dono, 12/10/2026):
+ *   1. a que está numa pasta de PROFISSIONAIS, que segura a conversa;
+ *   2. senão, a de atividade mais recente.
+ * A conversa anda de pasta em pasta; ela não se duplica para mudar de lugar.
+ *
+ * CONVERSA DECIDIDA NÃO ENTRA. Agendada, Confirmada, Desmarcou e Não fechou
+ * são oportunidades fechadas, e é o acúmulo delas que faz a conta de
+ * conversão parar de pé. Cliente que volta a cada 15 dias tem dezenas, e
+ * isso é certo — não é duplicidade.
+ */
+export async function juntarConversasAbertas(salaoId: string, contatoId: string) {
+  const DECIDIDAS = ['agendado', 'confirmado', 'sem_conversao', 'desmarcou']
+  const { data: abertas } = await supabaseAdmin
+    .from('crm_conversas').select('id, estado, ultima_em, nao_lidas')
+    .eq('salao_id', salaoId).eq('contato_id', contatoId)
+    .not('estado', 'in', `(${DECIDIDAS.map(e => `"${e}"`).join(',')})`)
+  if (!abertas || abertas.length < 2) return
+
+  const ehProf = (e: string) => /^extra_profissiona/.test(String(e || ''))
+  const ordenadas = [...abertas].sort((a: any, b: any) => {
+    const pa = ehProf(a.estado) ? 0 : 1, pb = ehProf(b.estado) ? 0 : 1
+    if (pa !== pb) return pa - pb
+    return String(b.ultima_em || '').localeCompare(String(a.ultima_em || ''))
+  })
+  const fica = ordenadas[0]
+  const saem = ordenadas.slice(1).map((c: any) => c.id)
+
+  // Mover ANTES de apagar: as duas tabelas apagam em cascata.
+  await supabaseAdmin.from('crm_mensagens').update({ conversa_id: fica.id })
+    .eq('salao_id', salaoId).in('conversa_id', saem)
+  await supabaseAdmin.from('crm_eventos').update({ conversa_id: fica.id })
+    .eq('salao_id', salaoId).in('conversa_id', saem)
+
+  // O aviso de "não lida" das que entraram não pode sumir junto.
+  const naoLidas = abertas.reduce((s: number, c: any) => s + (c.nao_lidas || 0), 0)
+  const { data: ult } = await supabaseAdmin
+    .from('crm_mensagens').select('criado_em, direcao, texto')
+    .eq('conversa_id', fica.id).order('criado_em', { ascending: false }).limit(1)
+  const u: any = ult?.[0]
+  await supabaseAdmin.from('crm_conversas').update({
+    nao_lidas: naoLidas,
+    ...(u ? {
+      ultima_em: u.criado_em,
+      ultima_de: u.direcao === 'entrada' ? 'cliente' : 'salao',
+      ultima_previa: String(u.texto || '').slice(0, 120),
+    } : {}),
+    atualizado_em: new Date().toISOString(),
+  }).eq('id', fica.id)
+
+  await supabaseAdmin.from('crm_conversas').delete().eq('salao_id', salaoId).in('id', saem)
+}
+
 export async function fundirContatos(salaoId: string, manter: any, apagar: any) {
   if (!manter?.id || !apagar?.id || manter.id === apagar.id) return
   const patch: any = {}
@@ -148,6 +207,11 @@ export async function fundirContatos(salaoId: string, manter: any, apagar: any) 
 
   await supabaseAdmin.from('crm_conversas')
     .update({ contato_id: manter.id }).eq('salao_id', salaoId).eq('contato_id', apagar.id)
+  // Mover nao basta: a ficha que fica termina com a conversa DELA mais a da
+  // ficha que saiu, e a cliente aparece duas vezes na fila. Era esta a
+  // fabrica de duplicidade -- em 12/10/2026 o Rouge tinha 14 contatos com
+  // duas conversas ABERTAS, e 5 deles vinham exatamente daqui.
+  await juntarConversasAbertas(salaoId, manter.id)
   // O LID tem índice único: sai da ficha velha antes de entrar na nova.
   await supabaseAdmin.from('crm_contatos').delete().eq('id', apagar.id).eq('salao_id', salaoId)
   if (Object.keys(patch).length) {

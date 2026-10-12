@@ -7,7 +7,7 @@ import { paginar } from '@/lib/paginar'
 import { ehEstadoDoSalao } from '@/lib/crmEstados'
 import { carregarConfig as cfgConfirmacao, ehConfirmacao, enfileirar } from '@/lib/crmConfirmacao'
 import { datasDoSalao } from '@/lib/crmCampanhas'
-import { acharOuCriarContato } from '@/lib/crmContatos'
+import { acharOuCriarContato, juntarConversasAbertas } from '@/lib/crmContatos'
 import { boasVindasSePrimeiroContato } from '@/lib/crmBoasVindas'
 
 export const dynamic = 'force-dynamic'
@@ -828,6 +828,22 @@ export async function POST(req: NextRequest) {
         .from('crm_conversas').insert(criarConversas).select('id, contato_id, ultima_em')
       for (const n of novas || []) porContato.set(n.contato_id, n)
       criadas = (novas || []).length
+
+      // ── Rede de seguranca da importacao ───────────────────────────────────
+      //
+      // O codigo acima ja reaproveita a conversa que existe: so cria para quem
+      // nao tem nenhuma. Mesmo assim, se por qualquer caminho a pessoa acabar
+      // com duas ABERTAS -- duas fichas da mesma pessoa que so depois viram
+      // uma, dois lotes correndo juntos -- a juncao desfaz na hora, em vez de
+      // deixar a duplicidade aparecer na fila para alguem achar semanas
+      // depois (pedido do dono, 12/10/2026).
+      //
+      // Custa uma consulta por contato RECEM-CRIADO, nao por contato do lote,
+      // e nao mexe em conversa decidida: cliente que volta a cada 15 dias tem
+      // dezenas de oportunidades fechadas, e e isso que sustenta a conversao.
+      for (const n of novas || []) {
+        try { await juntarConversasAbertas(salaoId, n.contato_id) } catch { /* nao derruba a importacao */ }
+      }
     }
 
     // ── Mensagens ───────────────────────────────────────────────────────────
