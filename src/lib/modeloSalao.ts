@@ -23,6 +23,7 @@ export type Sanitizador =
   | 'listaCompra'  // mantém o que comprar e o mínimo; zera estoque e pedidos
   | 'semIdentidade' // mantém o texto padrão; tira token, slug e link do grupo
   | 'crmDesligado'  // CRM: vai o molde (textos, horários, palavras) DESLIGADO e sem chave/login/link
+  | 'cupomDesligado' // Cupom de indicação: vai a regra, DESLIGADO e sem prazo/endereço/destaques
 
 export interface ChaveModelo {
   chave: string           // nome exato, ou prefixo quando `prefixo: true`
@@ -137,6 +138,7 @@ export const CHAVES_MODELO: ChaveModelo[] = [
   // horários e as palavras de confirmação, mas DESLIGADOS e sem nada que
   // aponte para outro salão (chave do conector, login do sistema de agenda,
   // link de agendamento): o dono do salão novo revisa e liga.
+  { chave: 'cupons_indicacao_cfg', como: 'cupomDesligado', rotulo: 'Cupom de indicação — regras' },
   { chave: 'crm_estados', como: 'inteiro', rotulo: 'CRM — pastas do salão' },
   { chave: 'crm_campanhas', como: 'crmDesligado', rotulo: 'CRM — envios pela agenda' },
   { chave: 'crm_confirmacao', como: 'crmDesligado', rotulo: 'CRM — confirmação e palavras' },
@@ -387,6 +389,24 @@ function limparIdentidade(v: any): any {
  * que liga a configuração a UM salão: a chave do conector, o login e o
  * endereço de login do sistema de agenda, o link de agendamento/avaliação.
  */
+/**
+ * Cupom de indicação: viaja a REGRA, não a campanha.
+ *
+ * O percentual é o único número que serve a qualquer salão. O resto é do
+ * salão de origem e tem de nascer vazio:
+ *   - `ativo` DESLIGADO: ninguém abre salão novo com campanha no ar sem saber;
+ *   - `validoAte` é o prazo da campanha daquele salão -- herdar prazo vencido
+ *     faria a aba nascer morta, e prazo em aberto faria o salão prometer
+ *     desconto que ele não combinou;
+ *   - `destaques` e `endereco` vão para o rodapé da ARTE que circula no
+ *     WhatsApp. O próprio arquivo dos cupons já avisa: endereço errado numa
+ *     arte que circula é cliente batendo na porta de outro salão.
+ */
+function limparCupom(v: any): any {
+  if (!v || typeof v !== 'object') return v
+  return { ...v, ativo: false, validoAte: null, destaques: '', endereco: '' }
+}
+
 function limparCrm(v: any): any {
   if (!v || typeof v !== 'object') return v
   const tira = (o: any) => {
@@ -465,6 +485,7 @@ function sanitizarSemTexto(chave: string, valor: any): any {
   if (!r) return null
   const copia = JSON.parse(JSON.stringify(valor ?? null))
   if (r.como === 'crmDesligado') return limparCrm(copia)
+  if (r.como === 'cupomDesligado') return limparCupom(copia)
   if (r.como === 'checklist') return limparChecklist(copia)
   if (r.como === 'listaCompra') return limparListaCompra(copia)
   if (r.como === 'gradeVazia') return limparGrade(copia)

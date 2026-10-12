@@ -6,6 +6,7 @@ import { voltar } from '@/lib/historicoNav'
 import AcoesComerciais from '@/components/salon/AcoesComerciais'
 import LinkVitrine from '@/components/salon/LinkVitrine'
 import ValidarCupom from '@/components/salon/ValidarCupom'
+import CuponsGerados from '@/components/salon/CuponsGerados'
 
 export default function AcoesComerciaisPage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function AcoesComerciaisPage() {
       <main className="max-w-6xl mx-auto px-4 py-6">
         <LinkVitrine />
         <ValidarCupom />
+        <CuponsGerados />
         <AcoesComerciais />
       </main>
     </div>

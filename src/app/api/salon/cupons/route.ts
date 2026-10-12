@@ -52,6 +52,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ cfg: await getCfg(sess.salaoId) })
   }
 
+  // ── Quem já gerou cupom ───────────────────────────────────────────────────
+  //
+  // Pedido do dono (12/10/2026): ver, do lado de dentro, QUEM gerou e quantas
+  // cada uma trouxe -- "para eu saber se está dando certo ou não". A conta
+  // sozinha não responde isso: cem cupons que não trouxeram ninguém é uma
+  // campanha parada, e dez que trouxeram trinta é uma campanha funcionando.
+  //
+  // Aqui o nome vai INTEIRO e o telefone também. É a tela do balcão, atrás de
+  // login -- ao contrário da pública, que abre só com o telefone e por isso
+  // abrevia ("Maria S.").
+  if (acao === 'gerados') {
+    const [{ data: cupons }, { data: usos }] = await Promise.all([
+      supabaseAdmin.from('cupom_indicacao')
+        .select('id, codigo, dono_nome, dono_telefone, criado_em')
+        .eq('salao_id', sess.salaoId).order('criado_em', { ascending: false }).limit(500),
+      supabaseAdmin.from('cupom_indicacao_usos')
+        .select('cupom_id, situacao').eq('salao_id', sess.salaoId).limit(2000),
+    ])
+    // Quantas cada cupom trouxe, e quantas dessas já passaram pelo salão.
+    const trouxe: Record<string, { indicadas: number; atendidas: number }> = {}
+    for (const u of usos || []) {
+      const k = (u as any).cupom_id
+      if (!k) continue
+      if (!trouxe[k]) trouxe[k] = { indicadas: 0, atendidas: 0 }
+      trouxe[k].indicadas++
+      if ((u as any).situacao === 'atendida') trouxe[k].atendidas++
+    }
+    const lista = (cupons || []).map((c: any) => ({
+      id: c.id, codigo: c.codigo, nome: c.dono_nome, telefone: c.dono_telefone,
+      criado_em: c.criado_em,
+      indicadas: trouxe[c.id]?.indicadas || 0,
+      atendidas: trouxe[c.id]?.atendidas || 0,
+    }))
+    return NextResponse.json({
+      lista,
+      total: lista.length,
+      comIndicacao: lista.filter(x => x.indicadas > 0).length,
+      indicadasTotal: lista.reduce((s, x) => s + x.indicadas, 0),
+      atendidasTotal: lista.reduce((s, x) => s + x.atendidas, 0),
+    })
+  }
+
   // Cruzar com o que o Avec já trouxe ANTES de responder. É o que faz a tela
   // mostrar "já usou em tal dia" mesmo quando a recepção esqueceu de marcar —
   // o pedido explícito do dono. Roda aqui, e não só no cron, porque cron que
