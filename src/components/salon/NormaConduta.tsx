@@ -35,9 +35,27 @@ function analisar(corpo: string): Linha[] {
   })
 }
 
+/* ── {{ASSINATURAS}} vira a lista de quem assina ──────────────────────────
+   Uma linha por profissional cadastrado, com o nome já escrito e a linha de
+   assinatura ao lado. Tela e impressão passam as duas por aqui, então não há
+   como uma mostrar uma coisa e a outra mostrar outra.
+
+   Sem ninguém cadastrado, cai em linhas em branco -- melhor uma folha que dá
+   para assinar à mão do que uma folha sem lugar nenhum. */
+const MARCA_ASSINATURAS = '{{ASSINATURAS}}'
+const LINHA_ASS = ' — Assinatura: ______________________________________'
+function comAssinaturas(corpo: string, nomes: string[]): string {
+  if (!corpo.includes(MARCA_ASSINATURAS)) return corpo
+  const SEPARADOR = String.fromCharCode(10, 10)   // linha em branco entre um e outro
+  const lista = nomes.length
+    ? nomes.map(n => n + LINHA_ASS).join(SEPARADOR)
+    : Array.from({ length: 12 }, () => 'Profissional: ______________________________' + LINHA_ASS).join(SEPARADOR)
+  return corpo.split(MARCA_ASSINATURAS).join(lista)
+}
+
 /* ── Um bloco renderizado como documento ── */
-function BlocoLeitura({ bloco, n }: { bloco: Bloco; n: number }) {
-  const linhas = useMemo(() => analisar(bloco.corpo), [bloco.corpo])
+function BlocoLeitura({ bloco, n, nomes }: { bloco: Bloco; n: number; nomes: string[] }) {
+  const linhas = useMemo(() => analisar(comAssinaturas(bloco.corpo, nomes)), [bloco.corpo, nomes])
   return (
     <section id={`nc-${n}`} style={{ marginBottom: 34, scrollMarginTop: 90 }}>
       <h2 style={{
@@ -107,6 +125,9 @@ export default function NormaConduta() {
   const [dirty, setDirty] = useState(false)
   const [auto, setAuto] = useState<'idle' | 'salvando' | 'salvo'>('idle')
   const fileRef = useRef<HTMLInputElement>(null)
+  // Quem assina: profissional cadastrado e ATIVO. Setor não é gente e não
+  // assina nada; quem saiu também não.
+  const [nomes, setNomes] = useState<string[]>([])
   useGuardaSalvar(dirty, 'Norma de Conduta')
 
   const carregar = useCallback(async () => {
@@ -119,6 +140,21 @@ export default function NormaConduta() {
     setLoading(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/profissionais?leve=1')
+      .then(r => r.ok ? r.json() : [])
+      .then((lista: any[]) => {
+        if (!vivo || !Array.isArray(lista)) return
+        setNomes(lista
+          .filter(p => p && p.ativo !== false && !p.is_departamento)
+          .map(p => String(p.nome_completo || p.apelido || '').trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'pt-BR')))
+      })
+      .catch(() => { /* sem lista, o termo cai em linhas em branco */ })
+    return () => { vivo = false }
+  }, [])
 
   const salvar = useCallback(async (silencioso = false) => {
     if (!silencioso) setSalvando(true)
@@ -163,7 +199,7 @@ export default function NormaConduta() {
     const lg = logo || await getLogoSalao()
     const esc = (v: string) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const corpo = blocos.map((b, n) => {
-      const linhas = analisar(b.corpo).map(l => {
+      const linhas = analisar(comAssinaturas(b.corpo, nomes)).map(l => {
         if (l.t === 'vazio') return '<div class="sp"></div>'
         if (l.t === 'sub') return `<p class="sub">${esc(l.v)}</p>`
         if (l.t === 'item') {
@@ -317,7 +353,7 @@ ${corpo}<script>window.onload=function(){window.print()}</script></body></html>`
 
           {/* Corpo */}
           <div style={{ padding: '30px 40px 38px' }}>
-            {blocos.map((b, i) => <BlocoLeitura key={b.id} bloco={b} n={i} />)}
+            {blocos.map((b, i) => <BlocoLeitura key={b.id} bloco={b} n={i} nomes={nomes} />)}
           </div>
         </div>
       )}

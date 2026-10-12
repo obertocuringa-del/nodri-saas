@@ -204,10 +204,19 @@ EXEMPLOS DE ASSÉDIO MORAL
   },
   {
     titulo: 'Termo de Ciência e Assinaturas',
+    // {{ASSINATURAS}} vira, na hora de desenhar, uma linha por profissional
+    // cadastrado: o nome já escrito e a linha de assinatura ao lado. Aqui
+    // eram 34 linhas EM BRANCO -- quem assinava tinha que procurar uma vaga,
+    // dava para pular gente sem ninguém notar, e a folha não dizia quem
+    // faltava assinar.
+    //
+    // Fica como MARCA e não como lista cravada: contratou hoje, imprimiu
+    // amanhã, o nome está lá; saiu, sumiu. E nenhum nome de pessoa fica
+    // guardado no documento, então nada disso viaja para o salão modelo.
     corpo: `Declaro que recebi, li e compreendi integralmente o presente Manual de Conduta, comprometendo-me a cumprir todas as diretrizes nele estabelecidas.
 
 Local e data: ____________________________, ______ de ____________________ de ________
 
-${Array.from({ length: 34 }, () => 'Profissional: ______________________________________    Assinatura: ______________________________').join('\n\n')}`,
+{{ASSINATURAS}}`,
   },
 ]

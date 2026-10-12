@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { Loader2, Plus, Save, Printer, Trash2, ArrowLeft, Pencil, X } from 'lucide-react'
-import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, type CatAval, type Faixa } from './avaliacaoModelo'
+import { MODELO_AVAL_DEFAULT, CLASSIF_AVAL, classificarAval, ehDoCargo, type CatAval, type Faixa } from './avaliacaoModelo'
 import { getLogoSalao } from '@/lib/logoSalao'
 import EditorAvaliacao from './EditorAvaliacao'
 import { usePermissoes } from '@/lib/usePermissoes'
@@ -42,6 +42,9 @@ function Gauge({ pct, cor, label }: { pct: number; cor: string; label: string })
 
 export default function AvaliarProfissional({ profissionalId, profissionalNome, soResultado, souProf }: { profissionalId: string; profissionalNome: string; soResultado?: boolean; souProf?: boolean }) {
   const [secoes, setSecoes] = useState<CatAval[]>([])
+  // O cargo de quem esta sendo avaliado: e ele que decide quais secoes
+  // tecnicas aparecem (ver ehDoCargo no modelo).
+  const [cargo, setCargo] = useState<string>('')
   const [faixas, setFaixas] = useState<Faixa[]>(CLASSIF_AVAL)
   const [historico, setHistorico] = useState<Avaliacao[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,6 +89,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
         fetch(`/api/profissionais/${profissionalId}`).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/salon/grid?chave=avaliacao_modelo').then(r => r.ok ? r.json() : null).catch(() => null),
       ])
+      setCargo(String(p?.cargo || ''))
       setSecoes(modelo && Array.isArray(modelo.categorias) && modelo.categorias.length ? modelo.categorias : MODELO_AVAL_DEFAULT.categorias)
       setFaixas(modelo && Array.isArray(modelo.classificacao) && modelo.classificacao.length ? modelo.classificacao : CLASSIF_AVAL)
       let arr: Avaliacao[] = []
@@ -97,7 +101,15 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => { if (souProf) setEditando(false) }, [souProf])
 
-  const TOTAL = secoes.reduce((a, s) => a + s.criterios.length, 0)
+  // ── So o que serve a esta pessoa ──────────────────────────────────────────
+  //
+  // Secao sem cargo marcado vale para todos; secao tecnica so aparece para o
+  // cargo dela. Tudo o que vem depois -- o formulario, o TOTAL que trava o
+  // salvar, a nota e a impressao -- passa a usar ESTA lista, senao a pessoa
+  // ficaria presa num total que inclui pergunta que ela nem ve.
+  const secoesDoCargo = useMemo(() => secoes.filter(s => ehDoCargo(s, cargo)), [secoes, cargo])
+
+  const TOTAL = secoesDoCargo.reduce((a, s) => a + s.criterios.length, 0)
   const totalRespondidas = Object.keys(respostas).length
 
   function novaAvaliacao() {
@@ -127,9 +139,9 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
 
   async function imprimir(av: Avaliacao) {
     const logoSalao = await getLogoSalao()
-    const r = calcular(av.respostas, secoes)
+    const r = calcular(av.respostas, secoesDoCargo)
     const cl = classificarAval(r.overallPct, faixas)
-    const linhas = secoes.map(s => {
+    const linhas = secoesDoCargo.map(s => {
       const notas = s.criterios.map(cr => av.respostas[`${s.id}:${cr.id}`]).filter(n => n != null) as number[]
       const avg = notas.length ? Math.round(notas.reduce((a, b) => a + b, 0) / notas.length / 5 * 100) : 0
       return `<div class="sec"><h3 style="color:${s.cor}">${s.titulo} <span style="font-weight:400;color:#666;font-size:11px">— média ${avg}%</span></h3>${s.criterios.map(cr => `<div class="cri"><span>${cr.texto.replace(/</g, '&lt;')}</span><b>${av.respostas[`${s.id}:${cr.id}`] ?? '-'} / 5</b></div>`).join('')}</div>`
@@ -144,7 +156,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
   // ── RESULTADO ──
   if (view === 'resultado' || vendo) {
     const av = vendo || { id: 'tmp', data: dataAval, tempo, respostas, obs }
-    const r = calcular(av.respostas, secoes)
+    const r = calcular(av.respostas, secoesDoCargo)
     const cl = classificarAval(r.overallPct, faixas)
     return (
       <div>
@@ -224,7 +236,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Tempo de Empresa</label><select value={tempo} onChange={e => setTempo(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 13 }}>{TEMPOS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
           <div><label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 4 }}>Quem está avaliando (360°)</label><select value={perspectiva} onChange={e => setPerspectiva(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1.5px solid ${corPersp(perspectiva)}`, color: corPersp(perspectiva), fontWeight: 700, fontSize: 13 }}>{PERSPECTIVAS.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
         </div>
-        {secoes.map((s, si) => (
+        {secoesDoCargo.map((s, si) => (
           <div key={s.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
             <div style={{ background: s.cor, color: '#fff', padding: '10px 16px', fontWeight: 800, fontSize: 14 }}>{si + 1}. {s.titulo}</div>
             <div style={{ padding: 16 }}>
@@ -265,7 +277,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: '0 0 4px' }}>Avaliações de {profissionalNome}</h3>
-          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>{soResultado ? 'Veja o resultado das suas avaliações.' : `Avalie ${TOTAL} critérios em ${secoes.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.`}</p>
+          <p style={{ fontSize: 13, color: '#6b6860', margin: 0 }}>{soResultado ? 'Veja o resultado das suas avaliações.' : `Avalie ${TOTAL} critérios em ${secoesDoCargo.length} áreas (1 a 5). Os critérios vêm de “Perfil e Avaliação de Desempenho”.`}</p>
         </div>
         {!soResultado && <button onClick={novaAvaliacao} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#5b4fcf)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}><Plus size={16} /> Nova Avaliação</button>}
       </div>
@@ -273,7 +285,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
       {/* ── EVOLUÇÃO POR CATEGORIA (comparativo no tempo) ── */}
       {historico.length >= 2 && (() => {
         const cron = [...historico].sort((a, b) => (a.data || '').localeCompare(b.data || ''))
-        const calcs = cron.map(av => ({ data: av.data, ...calcular(av.respostas, secoes) }))
+        const calcs = cron.map(av => ({ data: av.data, ...calcular(av.respostas, secoesDoCargo) }))
         const fmt = (d: string) => (d || '').split('-').reverse().slice(0, 2).join('/')
         const seta = (d: number) => d > 0 ? '↑' : d < 0 ? '↓' : '→'
         const corDelta = (d: number) => d > 0 ? '#16a34a' : d < 0 ? '#dc2626' : '#9ca3af'
@@ -286,7 +298,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 320 }}>
               <thead><tr><th style={{ ...thE, textAlign: 'left' }}>Categoria</th>{calcs.map((c, i) => <th key={i} style={thE}>{fmt(c.data)}</th>)}<th style={thE}>Δ</th></tr></thead>
               <tbody>
-                {secoes.map((s, si) => {
+                {secoesDoCargo.map((s, si) => {
                   const vals = calcs.map(c => c.secoes[si]?.pct ?? 0)
                   const delta = vals[vals.length - 1] - vals[0]
                   return (
@@ -315,7 +327,7 @@ export default function AvaliarProfissional({ profissionalId, profissionalNome, 
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {historico.map(av => {
-            const r = calcular(av.respostas, secoes); const cl = classificarAval(r.overallPct, faixas)
+            const r = calcular(av.respostas, secoesDoCargo); const cl = classificarAval(r.overallPct, faixas)
             return (
               <div key={av.id} style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ width: 54, height: 54, borderRadius: 12, background: cl.cor, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

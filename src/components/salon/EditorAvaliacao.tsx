@@ -16,6 +16,28 @@ export default function EditorAvaliacao() {
   const [dirty, setDirty] = useState(false)
   useGuardaSalvar(dirty, 'Perfil de Avaliação') // avisa "Deseja salvar?" antes de sair sem salvar
 
+  // Os cargos que existem no cadastro, para marcar a quem cada secao se
+  // aplica. Sai do proprio cadastro de profissionais: assim a lista nunca
+  // fica desencontrada de quem esta la dentro.
+  const [cargos, setCargos] = useState<string[]>([])
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/profissionais?leve=1')
+      .then(r => r.ok ? r.json() : [])
+      .then((l: any[]) => {
+        if (!vivo || !Array.isArray(l)) return
+        const set = new Set<string>()
+        for (const p of l) {
+          if (p?.is_departamento) continue
+          const c = String(p?.cargo || '').trim()
+          if (c) set.add(c)
+        }
+        setCargos([...set].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+      })
+      .catch(() => { /* sem cargos, a secao vale para todos */ })
+    return () => { vivo = false }
+  }, [])
+
   const carregar = useCallback(async () => {
     try {
       const d = await fetch(`/api/salon/grid?chave=${CHAVE}`).then(r => r.ok ? r.json() : null)
@@ -60,6 +82,33 @@ export default function EditorAvaliacao() {
             <input value={c.titulo} onChange={e => mut(d => { d.categorias[ci].titulo = e.target.value })} style={{ flex: 1, background: 'rgba(255,255,255,.18)', border: 'none', borderRadius: 6, padding: '7px 10px', color: '#fff', fontWeight: 800, fontSize: 14, outline: 'none' }} />
             <button onClick={() => { if (confirm('Excluir esta categoria e seus critérios?')) mut(d => { d.categorias.splice(ci, 1) }) }} title="Excluir categoria" style={{ border: 'none', background: 'rgba(255,255,255,.2)', color: '#fff', borderRadius: 6, padding: '6px 8px', cursor: 'pointer' }}><Trash2 size={14} /></button>
           </div>
+          {/* ── A quem esta secao se aplica ──────────────────────────────
+              Nada marcado = TODO MUNDO, que e o padrao e o que mantem as
+              secoes gerais como sempre foram. Marcando um cargo, a secao some
+              para quem tem outro -- e assim que a tecnica de manicure para de
+              aparecer para a cabeleireira. */}
+          {cargos.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '9px 14px', borderBottom: '1px solid #f0eee8', background: '#faf9f7' }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#6b6860' }}>Aparece para:</span>
+              <button onClick={() => mut(d => { delete d.categorias[ci].cargos })}
+                style={{ ...chip, ...(!c.cargos || !c.cargos.length ? chipOn : null) }}>
+                Todos
+              </button>
+              {cargos.map(cg => {
+                const marcado = !!c.cargos?.some(x => x === cg)
+                return (
+                  <button key={cg} onClick={() => mut(d => {
+                    const atual = d.categorias[ci].cargos || []
+                    const nova = marcado ? atual.filter(x => x !== cg) : [...atual, cg]
+                    if (nova.length) d.categorias[ci].cargos = nova
+                    else delete d.categorias[ci].cargos
+                  })} style={{ ...chip, ...(marcado ? chipOn : null) }}>
+                    {cg}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           <div style={{ padding: 12 }}>
             {c.criterios.map((cr, cj) => (
               <div key={cr.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -97,4 +146,11 @@ export default function EditorAvaliacao() {
 
 const btnPrim: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }
 const btnSec: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 10, border: '1px solid #d0cdc7', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
+// Etiqueta de cargo na faixa "Aparece para".
+const chip: React.CSSProperties = {
+  border: '1px solid #d0cdc7', background: '#fff', color: '#6b6860',
+  borderRadius: 999, padding: '4px 11px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+}
+const chipOn: React.CSSProperties = { borderColor: '#5b4fcf', background: '#5b4fcf', color: '#fff' }
+
 const btnDashed: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px dashed #5b4fcf', background: '#f6f4ff', color: '#5b4fcf', fontSize: 13, fontWeight: 800, cursor: 'pointer' }
