@@ -345,7 +345,7 @@ ${doMes.length
 
         <div style={{ position: 'relative' }}>
           <button onClick={() => setCopiarOpen(v => !v)} style={{ ...bt, borderColor: '#bfe6cd', color: '#0f6b3c', background: '#e9f7ef' }}>
-            <Copy size={14} /> Copiar agenda
+            <Copy size={14} /> <span className="ncal-so-largo">Copiar agenda</span><span className="ncal-so-estreito">Copiar</span>
           </button>
           {copiarOpen && (
             <>
@@ -419,16 +419,64 @@ ${doMes.length
           }
           .ncal-vazio { min-height: 70px !important; }
           .ncal-legenda-grid { grid-template-columns: 1fr !important; }
-          .ncal-topo-mes { gap: 8px !important; }
+
+          /* ── A BARRA DE CIMA, NUMA LINHA SO ──────────────────────────────
+             Voltar, o titulo, PDF e Copiar agenda quebravam em duas linhas.
+             Para os quatro caberem ate num aparelho de 320px: a palavra
+             "Voltar" sai (a seta ja diz), o tracinho separador sai, e
+             "Copiar agenda" vira "Copiar". O Imprimir ja nao aparece no
+             celular (regra global do icone de impressora). */
+          .ncal-nav { gap: 7px !important; padding: 10px 12px !important; }
+          .ncal-nav-sep { display: none !important; }
+          .ncal-nav-titulo { font-size: 13.5px !important; white-space: nowrap; }
+          .ncal-so-largo { display: none !important; }
+          .ncal-so-estreito { display: inline !important; }
+
+          /* ── A LINHA DO MES ──────────────────────────────────────────────
+             Fica so o essencial: mes anterior, o mes, proximo mes e Hoje,
+             numa linha so. Saem a contagem de compromissos e o A-/A+ --
+             o dono pediu os dois fora, o tamanho da letra perdeu a razao de
+             ser agora que tocar no dia abre tudo por extenso. */
+          .ncal-topo-mes {
+            gap: 6px !important; flex-wrap: nowrap !important; margin-bottom: 10px !important;
+          }
+          .ncal-mes-nome { min-width: 0 !important; font-size: 16.5px !important; white-space: nowrap; }
+          .ncal-contagem { display: none !important; }
+          .ncal-fonte { display: none !important; }
+
+          /* ── A LEGENDA ───────────────────────────────────────────────────
+             Titulo centralizado em cima, as cores uma do lado da outra
+             embaixo (quebrando quando nao couberem), e o "editar" no canto.
+             Antes era tudo na mesma linha e embolava. */
+          .ncal-leg-btn {
+            flex-direction: column !important; align-items: center !important;
+            gap: 8px !important; text-align: center !important;
+          }
+          .ncal-leg-cores {
+            flex: none !important; width: 100% !important;
+            justify-content: center !important; gap: 10px !important;
+          }
+          .ncal-leg-editar { position: absolute !important; top: 12px; right: 14px; }
         }
+        /* Celular estreito (320-380px). Medido: a 360px a barra de cima ja
+           cabia numa linha, a 320px ainda quebrava. Aqui ela encolhe o
+           bastante para caber tambem nos aparelhos antigos. */
+        @media (max-width: 380px) {
+          .ncal-nav { gap: 5px !important; padding: 9px 9px !important; }
+          .ncal-nav-titulo { font-size: 12.5px !important; }
+          .ncal-nav button { padding: 6px 9px !important; font-size: 11.5px !important; }
+          .ncal-mes-nome { font-size: 15px !important; }
+        }
+        /* O rotulo curto do Copiar so aparece no celular (ver .ncal-so-*). */
+        .ncal-so-estreito { display: none; }
         .ncal-dia:hover { border-color: ${corTema} !important; }
       ` }} />
 
       {!embutido ? (
-      <nav style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
-        <button onClick={() => voltar(router, '/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> Voltar</button>
-        <span style={{ width: 1, height: 16, background: '#e0ddd8' }} />
-        <span style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}><CalendarDays size={15} style={{ display: 'inline', verticalAlign: -2, marginRight: 6, color: corTema }} />{titulo}</span>
+      <nav className="ncal-nav" style={{ background: '#faf9f7', borderBottom: '1px solid #e8e6e0', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
+        <button onClick={() => voltar(router, '/salon')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#6b6860', cursor: 'pointer', fontSize: 14 }}><ArrowLeft size={16} /> <span className="ncal-so-largo">Voltar</span></button>
+        <span className="ncal-nav-sep" style={{ width: 1, height: 16, background: '#e0ddd8' }} />
+        <span className="ncal-nav-titulo" style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}><CalendarDays size={15} style={{ display: 'inline', verticalAlign: -2, marginRight: 6, color: corTema }} />{titulo}</span>
         <div style={{ flex: 1 }} />
         <BotoesCompartilhar />
       </nav>
@@ -453,17 +501,17 @@ ${doMes.length
         {/* Cabeçalho do mês */}
         <div className="ncal-topo-mes" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
           <button onClick={() => mudarMes(-1)} style={navBtn} title="Mês anterior"><ChevronLeft size={18} /></button>
-          <span style={{ fontWeight: 800, fontSize: 19, color: '#1a1a1a', minWidth: 190, textAlign: 'center' }}>{MESES[ref.mes]} {ref.ano}</span>
+          <span className="ncal-mes-nome" style={{ fontWeight: 800, fontSize: 19, color: '#1a1a1a', minWidth: 190, textAlign: 'center' }}>{MESES[ref.mes]} {ref.ano}</span>
           <button onClick={() => mudarMes(1)} style={navBtn} title="Próximo mês"><ChevronRight size={18} /></button>
           <button onClick={irParaHoje} style={{ ...navBtn, width: 'auto', padding: '0 13px', fontSize: 12.5, fontWeight: 700 }}>Hoje</button>
           {doMes.length > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: corTema, background: `${corTema}15`, borderRadius: 20, padding: '5px 12px' }}>
+            <span className="ncal-contagem" style={{ fontSize: 12, fontWeight: 700, color: corTema, background: `${corTema}15`, borderRadius: 20, padding: '5px 12px' }}>
               {doMes.length} compromisso{doMes.length === 1 ? '' : 's'} no mês
             </span>
           )}
           {/* Tamanho do texto dentro do quadrado — dia cheio nao esconde nada,
               e quem quiser ver tudo de uma vez so diminui a letra. */}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: '1px solid #e0ddd8', borderRadius: 8, background: '#fff', overflow: 'hidden' }} title="Tamanho do texto dentro dos dias">
+          <span className="ncal-fonte" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: '1px solid #e0ddd8', borderRadius: 8, background: '#fff', overflow: 'hidden' }} title="Tamanho do texto dentro dos dias">
             <button onClick={() => mudarFonte(-1)} disabled={fonte <= 7} style={btnFonte}>A−</button>
             <span style={{ fontSize: 11, color: '#9ca3af', minWidth: 26, textAlign: 'center' }}>{fonte}px</span>
             <button onClick={() => mudarFonte(1)} disabled={fonte >= 18} style={{ ...btnFonte, fontSize: 15 }}>A+</button>
@@ -529,11 +577,13 @@ ${doMes.length
         </div>
 
         {/* Legenda de cores — o que cada cor significa neste salão */}
-        <div style={{ marginTop: 12, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '12px 16px' }}>
-          <button onClick={() => setLegendaAberta(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
-            <Palette size={15} style={{ color: corTema }} />
-            <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a' }}>Legenda de cores</span>
-            <div style={{ flex: 1, display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div className="ncal-leg-card" style={{ position: 'relative', marginTop: 12, background: '#fff', border: '1px solid #e8e6e0', borderRadius: 14, padding: '12px 16px' }}>
+          <button onClick={() => setLegendaAberta(v => !v)} className="ncal-leg-btn" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
+            <span className="ncal-leg-titulo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Palette size={15} style={{ color: corTema }} />
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1a1a1a' }}>Legenda de cores</span>
+            </span>
+            <div className="ncal-leg-cores" style={{ flex: 1, display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {coresUsadas.map(p => (
                 <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#6b6860' }}>
                   <i style={{ width: 10, height: 10, borderRadius: 3, background: p.hex, display: 'block' }} />
@@ -541,7 +591,7 @@ ${doMes.length
                 </span>
               ))}
             </div>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: corTema, whiteSpace: 'nowrap' }}>{legendaAberta ? 'fechar' : 'editar'}</span>
+            <span className="ncal-leg-editar" style={{ fontSize: 11.5, fontWeight: 700, color: corTema, whiteSpace: 'nowrap' }}>{legendaAberta ? 'fechar' : 'editar'}</span>
           </button>
 
           {legendaAberta && (
