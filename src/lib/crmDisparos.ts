@@ -1307,12 +1307,32 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
       return false
     }
 
-    // 2ª mensagem primeiro: é quem está esperando há dias. Sem a trava de
-    // "recebeu algo há pouco" -- o que ela recebeu foi justamente a 1ª.
+    // A 1ª mensagem vem PRIMEIRO. A 2ª usa o que sobrar do dia.
+    //
+    // Era o contrário ("quem está esperando há dias"), e o efeito apareceu em
+    // 13/10/2026: a leva de 02/10 deixou ~34 follow-ups maduros, e com 30 por
+    // dia eles tomavam o dia inteiro -- a promoção da 1ª mensagem não saía
+    // para ninguém novo, embora fosse justamente ela que o salão queria
+    // mandar.
+    //
+    // A inversão também é a mais defensável em si: a 1ª vai para quem nunca
+    // ouviu a oferta, e a 2ª só existe para quem JÁ ignorou uma mensagem --
+    // exatamente o público que derruba número. Entre gastar a cota do dia num
+    // e noutro, o primeiro vale mais e arrisca menos.
+    //
+    // Consequência assumida: a 2ª tem janela (de `segunda.dias` até 7 dias
+    // depois). Se a 1ª consumir a cota, parte dos follow-ups vence sem sair.
+    // É o certo -- o lembrete de duas semanas atrás já não é lembrete.
+    const soSegundaAgora = soDaSegunda
     const segundas = (await segundasPendentes(salaoId, d, perfis))
       .filter(x => !bloq.has(x.chave) && !profs.has(x.chave) && !naRecuperacao(x) && !recebeuOutro.has(x.chave))
-    if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
-    if (soDaSegunda) continue
+
+    // Lista desligada que só continua por causa do follow-up: aí a 2ª é tudo
+    // o que existe, não há 1ª para preferir.
+    if (soSegundaAgora) {
+      if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
+      continue
+    }
 
     const { lista } = await alvosDoDisparo(salaoId, d, perfis)
     const [env, trava] = await Promise.all([
@@ -1322,6 +1342,8 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     const restantes = env.alinhar(lista).filter(x => !env.feitos.has(x.envio_chave!) && !bloq.has(x.chave) && !profs.has(x.chave)
       && !naRecuperacao(x)).map(env.marcaDe)
     if (!restantes.length) {
+      // Acabou a 1ª: AGORA o follow-up é o que tem para mandar.
+      if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
       if (sempreRodando(d)) {
         e.proximo_em = new Date(Date.now() + 30 * 60000).toISOString()
         marcar(d, retorno ? 'Ninguém na hora de voltar agora; olha de novo em 30 min' : 'Ninguém novo na lista agora; olha de novo em 30 min', e)
@@ -1335,6 +1357,9 @@ export async function rodarDisparoDoSalao(salaoId: string): Promise<string> {
     // Quem recebeu outro envio nesta semana fica para depois (continua na fila).
     for (const t of recebeuOutro) trava.chaves.add(t)
     if (await tentar(restantes, false, trava, env.total)) break
+    // A 1ª não achou ninguém livre agora (todas em conversa ou contatadas há
+    // pouco). O follow-up é o plano B da volta, não o A.
+    if (segundas.length && await tentar(segundas, true, undefined, e.enviados_dia)) break
     e.proximo_em = new Date(Date.now() + 15 * 60000).toISOString()
     marcar(d, 'Ninguém disponível agora (em conversa ou contatada há pouco); tenta de novo em 15 min', e)
   }
