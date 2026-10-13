@@ -73,21 +73,28 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const payload = token ? await verifyJWT(token) : null
   if (!payload || payload.role !== 'master') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  // FIX: verifica cada erro de cascade para não deixar dados órfãos
-  const { error: errUsuarios } = await supabaseAdmin
-    .from('usuarios').delete().eq('salao_id', params.id)
-  if (errUsuarios) return NextResponse.json({ error: 'Erro ao remover usuários: ' + errUsuarios.message }, { status: 500 })
+  // ── Apagar o salão POR INTEIRO ───────────────────────────────────────────
+  //
+  // Aqui se apagavam TRÊS tabelas (usuarios, salao_modulos, notificacoes) e
+  // depois o salão. Dois defeitos, achados em 12/10/2026 quando o dono tentou
+  // excluir um salão de teste e só via "Erro ao excluir salão":
+  //
+  //   1. NÃO EXCLUÍA: `logs` aponta para `saloes` com NO ACTION e o banco
+  //      recusava. A mensagem não dizia o porquê.
+  //   2. Se passasse, deixaria 38 TABELAS ÓRFÃS -- o CRM inteiro (contatos,
+  //      conversas, mensagens), salao_config, lista de espera, lojistas,
+  //      auditoria. Cliente cancela, some da lista, e as conversas das
+  //      clientes dele ficam no banco para sempre. Isso é LGPD, não bagunça.
+  //
+  // Quem apaga agora é a função `excluir_salao` no banco: ela descobre as
+  // tabelas pelo catálogo, na hora. Lista escrita aqui envelheceria -- toda
+  // tabela nova com salao_id teria de ser lembrada, e passo manual não
+  // acontece. Tabela de backup ela não toca.
+  const { data: apagado, error } = await supabaseAdmin.rpc('excluir_salao', { p_salao: params.id })
+  if (error) return NextResponse.json({ error: 'Não deu para excluir: ' + error.message }, { status: 500 })
 
-  const { error: errModulos } = await supabaseAdmin
-    .from('salao_modulos').delete().eq('salao_id', params.id)
-  if (errModulos) return NextResponse.json({ error: 'Erro ao remover módulos: ' + errModulos.message }, { status: 500 })
-
-  const { error: errNotifs } = await supabaseAdmin
-    .from('notificacoes').delete().eq('salao_id', params.id)
-  if (errNotifs) return NextResponse.json({ error: 'Erro ao remover notificações: ' + errNotifs.message }, { status: 500 })
-
-  const { error } = await supabaseAdmin.from('saloes').delete().eq('id', params.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ ok: true })
+  // O resumo vai para o log do servidor: excluir é irreversível, e saber
+  // depois quanto saiu de cada tabela é a única pista que resta.
+  console.log('[excluir_salao]', params.id, JSON.stringify(apagado))
+  return NextResponse.json({ ok: true, apagado })
 }
