@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye, Sparkles, MessageSquare } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
@@ -439,6 +439,7 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
     { chaves: ['custo operacional', 'calculadora / financeira', 'calculadora/financeira'], url: '/salon/calculadora-custo' },
     { chaves: ['profissionais'], url: '/salon/profissionais' },
     { chaves: ['relatórios', 'relatorios'], url: '/salon/relatorios' },
+    { chaves: ['crm'], url: '/salon/crm' },
   ]
   function getModuloWebUrl(nome: string): string | null {
     const norm = nome.toLowerCase().trim()
@@ -475,6 +476,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
       toast(plano
         ? `Disponível a partir do plano ${plano.nome} (R$ ${plano.preco}/mês). Fale com a NODRI para ativar.`
         : 'Entre em contato para ativar este módulo.')
+      return
+    }
+    // A NODRI IA nao e pagina: e o painel que abre por cima. Vem depois do
+    // cadeado de proposito -- card bloqueado nao abre nada.
+    if (modulo.nome.toLowerCase().trim() === 'nodri ia') {
+      window.dispatchEvent(new Event('nodri-abrir-ia'))
       return
     }
     const webUrl = getModuloWebUrl(modulo.nome)
@@ -742,23 +749,12 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
                 <h1 className="font-syne font-bold text-[13px] text-nodri-t1 truncate">Módulos</h1>
                 <span className="text-[11px] text-nodri-t2 hidden sm:inline"><span className="text-nodri-cyan font-bold">{totalAtivosExibidos}</span>/{totalModulosExibidos}</span>
               </div>
-              {/* IA e CRM na barra, e não flutuando.
-                  No celular vão só com o ícone: três rótulos escritos mais a
-                  busca não cabem em 375px, e cortar texto em botão parece
-                  defeito. No computador, onde sobra espaço, o nome aparece. */}
-              <button onClick={() => window.dispatchEvent(new Event('nodri-abrir-ia'))}
-                title="NODRI IA" aria-label="Abrir a NODRI IA"
-                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 shrink-0"
-                style={{ background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(245,158,11,0.40)', color: '#b45309' }}>
-                <Sparkles size={13} className="shrink-0" />
-                <span className="hidden sm:inline">NODRI IA</span>
-              </button>
-              <a href="/salon/crm" title="Abrir o CRM"
-                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[10.5px] font-bold transition hover:brightness-110 shrink-0 mr-0.5"
-                style={{ background: 'rgba(91,79,207,0.12)', border: '1px solid rgba(91,79,207,0.35)', color: '#5b4fcf' }}>
-                <MessageSquare size={13} className="shrink-0" />
-                <span className="hidden sm:inline">CRM</span>
-              </a>
+              {/* A NODRI IA e o CRM saíram desta barra em 12/10/2026 e viraram
+                  CARD, junto com os outros módulos. Botão na barra parece
+                  função da tela; card parece produto -- e é o card que mostra
+                  a quem paga o plano Completo o que ele está levando. Quem
+                  está num plano menor vê os dois com cadeado, como os demais.
+                  Quem abre a IA agora é o card (ver handleAbrir). */}
               {configPrograma?.link && (
                 <div className="hidden md:flex items-center gap-2">
                   <a href={configPrograma.link} target="_blank" rel="noopener noreferrer"

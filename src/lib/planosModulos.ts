@@ -21,7 +21,7 @@
 // acento), porque os nomes foram cadastrados em épocas diferentes: uns em
 // maiúsculas ('RELATÓRIOS'), outros capitalizados ('Enviar Lista').
 
-export type ChaveModulo = 'profissionais' | 'academia' | 'calculadora' | 'relatorios' | 'suite'
+export type ChaveModulo = 'profissionais' | 'academia' | 'calculadora' | 'relatorios' | 'suite' | 'ia' | 'crm'
 
 export interface ModuloNodri {
   chave: ChaveModulo
@@ -105,6 +105,39 @@ export const MODULOS_NODRI: ModuloNodri[] = [
     ],
     nomesNoBanco: ['Confirmar Agendamento', 'Enviar Feedback', 'Enviar Lista', 'Enviar Lista c/ Arquivo'],
   },
+  // ── IA e CRM viraram MÓDULO (12/10/2026) ────────────────────────────────
+  //
+  // Eram dois botões na barra de cima da tela de módulos. Botão parece
+  // função da tela; card parece produto — e é o card que justifica o preço
+  // do plano mais caro. Pedido do dono, e ele tem razão: quem paga R$ 300
+  // precisa VER o que está levando.
+  //
+  // Entram só no Completo. Quem está num plano menor vê o card com cadeado,
+  // igual aos outros, e o servidor barra o link direto (ROTAS_POR_MODULO).
+  {
+    chave: 'ia',
+    rotulo: 'NODRI IA',
+    descricao: 'Consultoria com inteligência artificial sobre os dados do seu salão.',
+    destaques: [
+      'Pergunta em português sobre o seu próprio movimento',
+      'Lê os seus atendimentos, metas e feedbacks para responder',
+      'Sugere ação comercial a partir do que a sua base já compra',
+    ],
+    nomesNoBanco: ['NODRI IA'],
+  },
+  {
+    chave: 'crm',
+    rotulo: 'CRM WhatsApp',
+    descricao: 'O WhatsApp do salão dentro do NODRI: fila de conversas, confirmação e feedback automáticos.',
+    destaques: [
+      'Todas as conversas do salão numa fila, por ordem de trabalho',
+      'Confirmação do dia seguinte enviada sozinha',
+      'Feedback automático depois do atendimento',
+      'Pastas por situação: quem espera resposta, quem agendou, quem sumiu',
+      'Histórico da cliente ao lado da conversa, com ticket e frequência',
+    ],
+    nomesNoBanco: ['CRM'],
+  },
 ]
 
 export interface PlanoNodri {
@@ -168,7 +201,7 @@ export const PLANOS_NODRI: PlanoNodri[] = [
     tema: 'O alcance',
     resumo: 'O salão falando com o mercado: vitrine própria, campanhas, parcerias e WhatsApp em escala.',
     perguntaDeVenda: 'Quantos horários furaram no seu salão semana passada?',
-    modulos: ['profissionais', 'academia', 'calculadora', 'relatorios', 'suite'],
+    modulos: ['profissionais', 'academia', 'calculadora', 'relatorios', 'suite', 'ia', 'crm'],
   },
 ]
 
@@ -229,6 +262,9 @@ export function planoMinimoPara(chave: ChaveModulo): PlanoNodri | undefined {
 // Quando uma tela da base depende de dado de módulo, quem avisa é o
 // <AvisoPlano>, não um 403 no meio do carregamento.
 export const ROTAS_POR_MODULO: Array<{ prefixo: string; chave: ChaveModulo }> = [
+  // IA e CRM: o cadeado do card nao basta, o link direto tem de barrar.
+  { prefixo: '/salon/crm', chave: 'crm' },
+  { prefixo: '/salon/consultoria', chave: 'ia' },
   { prefixo: '/salon/academia', chave: 'academia' },
   { prefixo: '/api/academia', chave: 'academia' },
   { prefixo: '/salon/calculadora-custo', chave: 'calculadora' },
