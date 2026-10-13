@@ -1116,11 +1116,6 @@ export default function RelatoriosPage() {
                   <select value={p1Ano} onChange={e => setP1Ano(+e.target.value)} style={{ background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '8px 8px' : '5px 8px', fontSize: 12, fontWeight: isMobile ? 700 : 400, outline: 'none' }}>
                     {anosDisp.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
-                  {isMobile && (
-                    <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '8px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
-                      <Upload size={13} /> Importar
-                    </button>
-                  )}
                 </div>
                 {/* linha 3 — contra o que está comparando */}
                 <span style={{ fontSize: 11, color: '#6b6860' }}>
@@ -1142,11 +1137,6 @@ export default function RelatoriosPage() {
                   <span style={{ fontSize: 10, color: '#6b6860' }}>a</span>
                   <input type="date" value={p2Ate} onChange={e => setP2Ate(e.target.value)} style={{ flex: isMobile ? 1 : undefined, minWidth: 0, background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 6, color: '#1a1a1a', padding: isMobile ? '7px 6px' : '4px 6px', fontSize: 11, outline: 'none' }} />
                 </div>
-                {isMobile && (
-                  <button onClick={() => router.push('/salon/relatorios/importar-excel')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#ffffff', border: '1px solid #dedad4', borderRadius: 6, padding: '8px 12px', color: '#5b4fcf', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
-                    <Upload size={13} /> Importar
-                  </button>
-                )}
               </div>
             )}
 
@@ -1162,7 +1152,14 @@ export default function RelatoriosPage() {
             so se chegava nele digitando o endereco -- o que equivale a nao
             existir para quem trabalha no balcao. Fica depois do Importar, que
             e o botao que some quando nao ha dado importado; por isso este
-            mora FORA daquele bloco, senao sumiria junto sem motivo. */}
+            mora FORA daquele bloco, senao sumiria junto sem motivo.
+
+            So no COMPUTADOR (pedido do dono, 13/10/2026): no celular a tela de
+            relatorios e para LER o numero, e tanto o Iniciar CRM quanto o
+            Importar ocupavam uma faixa inteira cada um antes do primeiro
+            dado aparecer. Importar planilha nao se faz no celular, e o CRM
+            tem o cartao dele no Inicio. */}
+        {!isMobile && (
         <button onClick={() => router.push('/salon/crm')}
           title="Abrir o CRM de WhatsApp"
           style={{
@@ -1177,6 +1174,7 @@ export default function RelatoriosPage() {
           }}>
           <MessageCircle size={14} /> Iniciar CRM
         </button>
+        )}
       </div>
 
       {/* SEM DADOS */}
