@@ -9,6 +9,10 @@ const moeda = (v: number) => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { 
 
 export default function RecepcionistasCarteira() {
   const [bonusPorNome, setBonusPorNome] = useState<Record<string, number>>({})
+  // Nomes que são automação, não gente. O servidor é quem diz (campo
+  // `automacao` do ranking) -- comparar o texto "Envio automático" aqui
+  // quebraria no dia em que o rótulo mudasse.
+  const [robos, setRobos] = useState<Set<string>>(new Set())
   const [carteira, setCarteira] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')              // nome em processamento
@@ -17,8 +21,13 @@ export default function RecepcionistasCarteira() {
 
   const aplicarRec = useCallback((rec: any) => {
     const bonus: Record<string, number> = {}
-    for (const r of (rec?.ranking || [])) bonus[r.nome] = Number(r.bonus) || 0
+    const auto = new Set<string>()
+    for (const r of (rec?.ranking || [])) {
+      bonus[r.nome] = Number(r.bonus) || 0
+      if (r.automacao) auto.add(r.nome)
+    }
     setBonusPorNome(bonus)
+    setRobos(auto)
   }, [])
 
   const carregar = useCallback(async (fresco = false) => {
@@ -93,22 +102,26 @@ export default function RecepcionistasCarteira() {
                 const aCreditar = Math.round(Math.max(0, ganho - (c.bonus_creditado || 0)) * 100) / 100
                 const saldo = c.saldo || 0
                 const carregando = busy === nome
+                const robo = robos.has(nome)
                 return (
-                  <tr key={nome} style={{ borderTop: '1px solid #f0eee8' }}>
-                    <td style={{ padding: '9px 12px', fontWeight: 700, color: '#1a1a1a' }}>{nome}</td>
+                  <tr key={nome} style={{ borderTop: '1px solid #f0eee8', background: robo ? '#fcfbf9' : undefined }}>
+                    <td style={{ padding: '9px 12px', fontWeight: 700, color: '#1a1a1a' }}>
+                      {nome}
+                      {robo && <span style={{ display: 'block', fontWeight: 500, fontSize: 10.5, color: '#767069', marginTop: 1 }}>automação — conta no total, não vira pagamento</span>}
+                    </td>
                     <td style={{ padding: '9px 12px', textAlign: 'right', color: '#d97706', fontWeight: 700 }}>{moeda(ganho)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', color: aCreditar > 0 ? '#16a34a' : '#9ca3af', fontWeight: 700 }}>{moeda(aCreditar)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#5b4fcf', fontWeight: 800 }}>{moeda(saldo)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#767069' }}>{moeda(c.pago || 0)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', color: robo ? '#9ca3af' : (aCreditar > 0 ? '#16a34a' : '#9ca3af'), fontWeight: 700 }}>{robo ? '—' : moeda(aCreditar)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#5b4fcf', fontWeight: 800 }}>{robo ? '—' : moeda(saldo)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#767069' }}>{robo ? '—' : moeda(c.pago || 0)}</td>
                     <td style={{ padding: '9px 12px' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {aCreditar > 0 && (
+                        {!robo && aCreditar > 0 && (
                           <button disabled={carregando} onClick={() => acao(nome, 'creditar', aCreditar)}
                             style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: carregando ? 0.6 : 1 }}>
                             + Creditar {moeda(aCreditar)}
                           </button>
                         )}
-                        {saldo > 0 && (
+                        {!robo && saldo > 0 && (
                           <>
                             <button disabled={carregando} onClick={() => { if (confirm(`Pagar todo o saldo de ${nome} (${moeda(saldo)})?`)) acao(nome, 'pagar') }}
                               style={{ background: '#5b4fcf', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: carregando ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -120,7 +133,7 @@ export default function RecepcionistasCarteira() {
                             </button>
                           </>
                         )}
-                        {aCreditar <= 0 && saldo <= 0 && <span style={{ fontSize: 11, color: '#9ca3af' }}>—</span>}
+                        {(robo || (aCreditar <= 0 && saldo <= 0)) && <span style={{ fontSize: 11, color: '#9ca3af' }}>—</span>}
                       </div>
                     </td>
                   </tr>

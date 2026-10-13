@@ -111,7 +111,7 @@ export default function SalaDeJogos() {
 
       {nomes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>
-          Nenhuma recepcionista com saldo. Credite o bônus na aba <strong>Carteira & Pagamentos</strong> primeiro.
+          Nenhuma recepcionista cadastrada com o cargo Recepção. Cadastre em <strong>Profissionais</strong> e credite o bônus em <strong>Carteira & Pagamentos</strong>.
         </div>
       ) : (
         <>
@@ -226,7 +226,7 @@ export default function SalaDeJogos() {
               <label style={{ fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 5 }}>Recepcionista</label>
               <select value={nome} onChange={e => { setNome(e.target.value); setResultado(null) }}
                 style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #d0cdc7', fontSize: 14, color: '#1a1a1a', marginBottom: 14 }}>
-                {nomes.map(n => <option key={n} value={n}>{n}</option>)}
+                {nomes.map(n => <option key={n} value={n}>{n} ({moeda(carteira[n]?.saldo || 0)})</option>)}
               </select>
 
               <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>

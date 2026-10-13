@@ -61,7 +61,7 @@ export default function DesafioMatch() {
   const pendentes = desafios.filter(d => d.status === 'pendente')
   const historico = desafios.filter(d => d.status !== 'pendente').slice(0, 12)
 
-  if (nomes.length < 2) return <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>É preciso ter pelo menos 2 recepcionistas com saldo. Credite o bônus em <strong>Carteira & Pagamentos</strong>.</div>
+  if (nomes.length < 2) return <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>É preciso ter pelo menos 2 recepcionistas cadastradas com o cargo Recepção.</div>
 
   return (
     <div>

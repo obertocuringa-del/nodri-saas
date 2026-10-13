@@ -150,9 +150,16 @@ export async function GET(req: NextRequest) {
         // dias ausente = entre a última visita ANTES do contato e o retorno
         const ultimaAntes = [...visitas].reverse().find(v => v.ts < tContato)
         const diasAusente = ultimaAntes ? Math.round((retorno.ts - ultimaAntes.ts) / 86400000) : null
-        // Retorno do Envio automático entra na conta, mas não paga bônus: não
-        // tem recepcionista por trás.
-        const bonus = c.origem === 'envio_automatico' ? 0 : Math.round(retorno.valor * (BONUS_PCT / 100) * 100) / 100
+        // O Envio automático GANHA bônus na conta como qualquer outra origem.
+        //
+        // Antes ele era zerado aqui ("não tem recepcionista por trás"). O
+        // efeito colateral é que o faturamento recuperado contava a automação
+        // e o bônus não: o "Bônus total" da tela mostrava só o das meninas e
+        // o ROI saía inflado. Agora o número é o mesmo para todo mundo, e
+        // quem separa o que vira PAGAMENTO é a Carteira -- lá a linha da
+        // automação não tem botão de creditar, porque não há pessoa para
+        // receber (decisão do dono, 13/10/2026).
+        const bonus = Math.round(retorno.valor * (BONUS_PCT / 100) * 100) / 100
         recuperados.push({
           cliente_nome: nome,
           recepcionista_nome: c.recepcionista_nome || '—',
@@ -171,6 +178,20 @@ export async function GET(req: NextRequest) {
       const taxaConversao = totalContatos > 0 ? Math.round((totalRecuperados / totalContatos) * 1000) / 10 : 0
       const faturamentoRecuperado = Math.round(recuperados.reduce((s, r) => s + r.valor_retorno, 0) * 100) / 100
       const totalBonus = Math.round(recuperados.reduce((s, r) => s + r.bonus, 0) * 100) / 100
+      // A parte do bônus que a automação gerou. Entra no total (o dono quis
+      // ver tudo somado), mas é dinheiro que o salão NÃO paga -- por isso sai
+      // separado, para a tela poder dizer quanto foi economia.
+      const bonusAutomacao = Math.round(recuperados
+        .filter(r => r.origem === 'envio_automatico')
+        .reduce((s, r) => s + r.bonus, 0) * 100) / 100
+
+      // Nomes que só existem por causa da automação: a Carteira usa isto para
+      // não oferecer "Creditar" a quem não é gente.
+      const nomesAutomacao = new Set<string>()
+      for (const c of contatos) {
+        if (c.origem === 'envio_automatico') nomesAutomacao.add(c.recepcionista_nome || '—')
+      }
+
       const rankingMap: Record<string, { contatos: number; recuperados: number; bonus: number }> = {}
       for (const c of contatos) {
         const r = c.recepcionista_nome || '—'
@@ -184,6 +205,7 @@ export async function GET(req: NextRequest) {
       }
       const ranking = Object.entries(rankingMap).map(([nome, v]) => ({
         nome, ...v, bonus: Math.round(v.bonus * 100) / 100,
+        automacao: nomesAutomacao.has(nome),
         taxa: v.contatos > 0 ? Math.round((v.recuperados / v.contatos) * 1000) / 10 : 0,
       })).sort((a, b) => b.recuperados - a.recuperados)
 
@@ -191,6 +213,7 @@ export async function GET(req: NextRequest) {
         bonus_pct: BONUS_PCT, janela_dias: JANELA_DIAS,
         total_contatos: totalContatos, total_recuperados: totalRecuperados,
         taxa_conversao: taxaConversao, faturamento_recuperado: faturamentoRecuperado, total_bonus: totalBonus,
+        bonus_automacao: bonusAutomacao,
         roi: totalBonus > 0 ? Math.round((faturamentoRecuperado / totalBonus) * 10) / 10 : 0,
         ranking, recuperados: recuperados.sort((a, b) => parseBR(b.data_retorno) - parseBR(a.data_retorno)),
         // A lista de QUEM foi contatado, para o funil poder abrir.

@@ -73,10 +73,11 @@ export default function RecuperadosReport() {
       .finally(() => setLoading(false))
   }, [])
 
-  const card = (icon: any, label: string, valor: string, cor: string) => (
+  const card = (icon: any, label: string, valor: string, cor: string, rodape?: string) => (
     <div style={{ background: '#fff', border: '1px solid #e8e6e0', borderRadius: 12, padding: '14px 16px', flex: '1 1 160px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6b6860', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>{icon}{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: cor }}>{valor}</div>
+      {rodape && <div style={{ fontSize: 10.5, color: '#767069', marginTop: 3, lineHeight: 1.3 }}>{rodape}</div>}
     </div>
   )
 
@@ -151,7 +152,10 @@ export default function RecuperadosReport() {
         {card(<Users size={14} />, 'Recuperados', String(data.total_recuperados), '#16a34a')}
         {card(<TrendingUp size={14} />, 'Taxa de conversão', `${data.taxa_conversao}%`, '#5b4fcf')}
         {card(<DollarSign size={14} />, 'Faturam. recuperado', moeda(data.faturamento_recuperado), '#059669')}
-        {card(<DollarSign size={14} />, 'Bônus total', moeda(data.total_bonus), '#d97706')}
+        {card(<DollarSign size={14} />, 'Bônus total', moeda(data.total_bonus), '#d97706',
+          data.bonus_automacao > 0
+            ? `${moeda(data.bonus_automacao)} vieram do Envio automático — contam aqui, mas não viram pagamento.`
+            : undefined)}
         {card(<TrendingUp size={14} />, 'ROI (recuperado ÷ bônus)', `${data.roi}x`, '#0891b2')}
       </div>
 

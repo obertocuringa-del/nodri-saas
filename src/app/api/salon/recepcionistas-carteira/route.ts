@@ -106,6 +106,29 @@ async function carregarMovimentos(salaoId: string) {
   return data || []
 }
 
+/**
+ * As recepcionistas CADASTRADAS, pelo cargo.
+ *
+ * A carteira nascia só de quem já tinha movimento, e isso deixava as telas
+ * mentindo: a Sala de Recompensas, os Jogos e o Desafio 1×1 só mostravam os
+ * dois nomes de TESTE, porque eram os únicos com lançamento. A RUTH, que tem
+ * bônus a creditar, simplesmente não existia ali (relatado em 13/10/2026).
+ *
+ * Agora a lista começa pelo cadastro e os movimentos só preenchem os valores:
+ * recepcionista nova aparece no mesmo dia em que é cadastrada, com saldo zero.
+ */
+async function recepcionistasCadastradas(salaoId: string): Promise<string[]> {
+  const { data } = await supabaseAdmin
+    .from('profissionais')
+    .select('nome_completo, apelido, cargo')
+    .eq('salao_id', salaoId)
+    .eq('ativo', true)
+  return (data || [])
+    .filter((p: any) => (p.cargo || '').toLowerCase().includes('recep'))
+    .map((p: any) => String(p.apelido || p.nome_completo || '').trim())
+    .filter(Boolean)
+}
+
 function agregar(movs: any[]) {
   const hojeStr = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
   const carteira: Record<string, { saldo: number; bonus_creditado: number; pago: number; jogadas_hoje: number }> = {}
@@ -133,9 +156,16 @@ function agregar(movs: any[]) {
 export async function GET() {
   const p = await getPayload()
   if (!p) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const [movs, desafios] = await Promise.all([carregarMovimentos(p.salaoId!), carregarDesafios(p.salaoId!)])
+  const [movs, desafios, cadastradas] = await Promise.all([
+    carregarMovimentos(p.salaoId!), carregarDesafios(p.salaoId!), recepcionistasCadastradas(p.salaoId!),
+  ])
+  const carteira = agregar(movs)
+  for (const n of cadastradas) {
+    if (!carteira[n]) carteira[n] = { saldo: 0, bonus_creditado: 0, pago: 0, jogadas_hoje: 0 }
+  }
   return NextResponse.json({
-    carteira: agregar(movs),
+    carteira,
+    recepcionistas: cadastradas,
     movimentos: movs.slice(0, 200),
     roda: RODA.map(s => ({ label: s.label, mult: s.mult, cor: s.cor })),
     limite_jogadas_dia: LIMITE_JOGADAS_DIA,
@@ -152,6 +182,20 @@ export async function POST(req: NextRequest) {
   // Saldo atual (recalculado do banco — fonte da verdade)
   const movs = await carregarMovimentos(p.salaoId!)
   const carteira = agregar(movs)
+
+  // Dinheiro só se move para GENTE.
+  //
+  // "Envio automático" aparece na tabela porque gerou bônus, e o bônus dele
+  // agora conta no total -- mas não existe ninguém para receber. A tela já
+  // esconde os botões; esta trava é o que vale, porque tela se contorna.
+  // Quem já tem movimento passa (recepcionista que saiu ainda recebe o que
+  // o salão deve a ela).
+  if (nome && ['creditar', 'pagar', 'adiantar'].includes(acao)) {
+    const gente = await recepcionistasCadastradas(p.salaoId!)
+    if (!gente.includes(nome) && !carteira[nome]) {
+      return NextResponse.json({ error: `"${nome}" não é uma recepcionista cadastrada: não há para quem pagar.` }, { status: 400 })
+    }
+  }
   const insertNome = (n: string, tipo: string, valor: number, extra: any = {}) =>
     supabaseAdmin.from('recepcionista_movimentos').insert({
       salao_id: p.salaoId, recepcionista_nome: n, tipo, valor, ...extra,
