@@ -279,6 +279,11 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
     // enquanto a resposta chega, uma rolagem suave nova cancela a anterior a
     // cada pedaço de texto, e o resultado é uma tela que nunca para quieta.
     caixa.scrollTop = caixa.scrollHeight
+    // De novo no quadro seguinte: a resposta é markdown, e a altura só fica
+    // certa DEPOIS que o navegador desenha. Descer antes disso parava no
+    // meio da resposta -- a conta usava uma altura que ainda ia crescer.
+    const r = requestAnimationFrame(() => { caixa.scrollTop = caixa.scrollHeight })
+    return () => cancelAnimationFrame(r)
   }, [mensagens, carregando])
 
   useEffect(() => {
@@ -708,7 +713,7 @@ export default function ChatWidget({ profissionalId, modoEmbarcado, semBotao }: 
               Com `absolute` + `inset: 0` a altura vem do pai direto, que é
               `relative` e tem tamanho garantido. Nada mais a herdar.
               O respiro embaixo é do campo de digitar, que fica por cima. */}
-          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overscrollBehavior: 'contain', touchAction: 'pan-y', padding: isMobile ? '16px 12px 92px' : '24px max(24px, calc(50% - 400px))', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overscrollBehavior: 'contain', touchAction: 'pan-y', padding: isMobile ? '16px 12px 92px' : '24px max(24px, calc(50% - 400px)) 104px', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {mensagens.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 20 }}>
                 {/* Rótulo */}
