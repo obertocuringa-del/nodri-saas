@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2, Plus, Save, Trash2, X, UserPlus, Check, Lock, Penci
 import toast from 'react-hot-toast'
 import { CATALOGO_PERMISSOES, TODAS_CHAVES, PAPEIS_SUGERIDOS, chaveModulo } from '@/lib/permissoes'
 
-interface Usuario { id: string; nome?: string; usuario: string; papel?: string; permissoes: string[]; ativo: boolean }
+interface Usuario { id: string; nome?: string; usuario: string; email?: string; papel?: string; permissoes: string[]; ativo: boolean }
 
 export default function UsuariosPage() {
   const router = useRouter()
@@ -18,6 +18,7 @@ export default function UsuariosPage() {
   const [nome, setNome] = useState('')
   const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
+  const [email, setEmail] = useState('')
   const [papel, setPapel] = useState('')
   const [perms, setPerms] = useState<Set<string>>(new Set())
   const [salvando, setSalvando] = useState(false)
@@ -41,8 +42,8 @@ export default function UsuariosPage() {
     .map(([chave, nome]) => ({ chave, label: nome }))
   const TODAS_COM_MODULOS = [...TODAS_CHAVES, ...moduloItens.map(i => i.chave)]
 
-  function abrirNovo() { setEditando('novo'); setNome(''); setUsuario(''); setSenha(''); setPapel(''); setPerms(new Set()) }
-  function abrirEdit(u: Usuario) { setEditando(u); setNome(u.nome || ''); setUsuario(u.usuario); setSenha(''); setPapel(u.papel || ''); setPerms(new Set(u.permissoes || [])) }
+  function abrirNovo() { setEditando('novo'); setNome(''); setUsuario(''); setSenha(''); setEmail(''); setPapel(''); setPerms(new Set()) }
+  function abrirEdit(u: Usuario) { setEditando(u); setNome(u.nome || ''); setUsuario(u.usuario); setSenha(''); setEmail(u.email || ''); setPapel(u.papel || ''); setPerms(new Set(u.permissoes || [])) }
   function fechar() { setEditando(null) }
   function toggle(ch: string) { setPerms(p => { const n = new Set(p); n.has(ch) ? n.delete(ch) : n.add(ch); return n }) }
 
@@ -63,8 +64,9 @@ export default function UsuariosPage() {
   async function salvar() {
     if (!usuario.trim()) { toast.error('Defina o login do usuário'); return }
     if (editando === 'novo' && !senha) { toast.error('Defina uma senha'); return }
+    if (!email.trim()) { toast.error('Informe o e-mail. É por ele que a pessoa recupera a senha se esquecer.'); return }
     setSalvando(true)
-    const body: any = { nome, usuario, papel, permissoes: Array.from(perms) }
+    const body: any = { nome, usuario, email: email.trim(), papel, permissoes: Array.from(perms) }
     if (senha) body.senha = senha
     try {
       let res
@@ -102,8 +104,16 @@ export default function UsuariosPage() {
               <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da pessoa" style={inp} /></div>
               <div><label style={lbl}>Login (usuário)</label><input value={usuario} onChange={e => setUsuario(e.target.value)} placeholder="ex: recepcao" style={inp} /></div>
               <div><label style={lbl}>Senha {editando !== 'novo' && <span style={{ color: '#9ca3af', fontWeight: 400 }}>(deixe vazio p/ manter)</span>}</label><input type="text" value={senha} onChange={e => setSenha(e.target.value)} placeholder="defina a senha" style={inp} /></div>
+              <div><label style={lbl}>E-mail <span style={{ color: '#dc2626', fontWeight: 800 }}>*</span></label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@dapessoa.com" style={inp} /></div>
               <div><label style={lbl}>Papel (opcional)</label><input value={papel} onChange={e => setPapel(e.target.value)} placeholder="ex: Recepção" style={inp} /></div>
             </div>
+            {/* O e-mail e obrigatorio desde 13/10/2026: e o unico endereco
+                para onde o "esqueci minha senha" desta pessoa pode ir. Sem
+                ele, quem esquece a senha fica dependendo do dono. */}
+            <p style={{ fontSize: 11.5, color: '#6b6860', margin: '-6px 0 14px', lineHeight: 1.5 }}>
+              O <strong>e-mail</strong> é por onde esta pessoa recupera a senha sozinha, se esquecer.
+              Tem de ser o e-mail dela, e não pode repetir o de outro acesso do sistema.
+            </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 10, padding: '10px 12px', background: '#f6f4ff', borderRadius: 10 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: '#5b4fcf' }}>Papel pronto:</span>
@@ -199,6 +209,7 @@ export default function UsuariosPage() {
                 <div style={{ flex: 1, minWidth: 150 }}>
                   <div style={{ fontWeight: 800, color: '#1a1a1a', fontSize: 14 }}>{u.nome || u.usuario} {u.papel && <span style={{ fontSize: 11, fontWeight: 700, color: '#5b4fcf', background: '#f0eefb', borderRadius: 20, padding: '2px 8px', marginLeft: 4 }}>{u.papel}</span>}</div>
                   <div style={{ fontSize: 12, color: '#6b6860' }}>login: <strong>{u.usuario}</strong> · {u.permissoes?.length || 0} liberação(ões){!u.ativo && ' · inativo'}</div>
+                  {!u.email && <div style={{ fontSize: 11.5, color: '#b45309', marginTop: 2 }}>sem e-mail — não consegue recuperar a senha sozinho</div>}
                 </div>
                 <button onClick={() => abrirEdit(u)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, border: '1px solid #d0cdc7', background: '#fff', color: '#5b4fcf', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Pencil size={13} /> Editar</button>
                 <button onClick={() => excluir(u)} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer' }}><Trash2 size={14} /></button>

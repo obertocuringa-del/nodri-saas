@@ -28,16 +28,21 @@ export async function POST(req: NextRequest) {
   //
   //  1) o DONO do salão, pelo e-mail do cadastro do salão (tabela usuarios);
   //  2) o PROFISSIONAL, pelo e-mail do cadastro DELE, e só se o acesso ao
-  //     portal estiver liberado.
+  //     portal estiver liberado;
+  //  3) o USUÁRIO EXTRA (recepção), pelo e-mail do cadastro dele -- campo que
+  //     passou a ser obrigatório em 13/10/2026, justamente para isto.
   //
   // O link vai SEMPRE para o endereço que está no cadastro -- é o próprio
   // cadastro que é consultado. Não há como digitar um e-mail qualquer e
   // receber o link de outra pessoa, que é o furto que isto evita (reforçado
   // pelo dono em 13/10/2026).
   //
-  // Usuário extra (salao_usuarios) fica de fora de propósito: ele entra com
-  // um LOGIN escolhido pelo salão e não tem e-mail no cadastro, então não há
-  // endereço confiável para onde mandar. Quem redefine a senha dele é o dono.
+  // Usuário extra criado ANTES dessa data pode estar sem e-mail; nesse caso
+  // ele continua dependendo do dono, e a tela de Usuários avisa isso na lista.
+  //
+  // A ordem importa só para evitar ambiguidade, e o cadastro já impede que o
+  // mesmo endereço sirva a dois acessos (conferência cruzada ao salvar, mais
+  // índice único no banco).
   const { data: usuario } = await supabaseAdmin
     .from('usuarios')
     .select('id, nome, email')
@@ -57,14 +62,27 @@ export async function POST(req: NextRequest) {
     if (p?.email) prof = { id: p.id, nome: p.apelido || p.nome_completo || 'Profissional', email: p.email }
   }
 
-  // Responde sempre OK (não revelar se email existe)
+  let sub: { id: string; nome: string; email: string } | null = null
   if (!usuario && !prof) {
+    const { data: u } = await supabaseAdmin
+      .from('salao_usuarios')
+      .select('id, nome, usuario, email, ativo')
+      .ilike('email', alvo)
+      .eq('ativo', true)
+      .maybeSingle()
+    if (u?.email) sub = { id: u.id, nome: u.nome || u.usuario || 'Usuário', email: u.email }
+  }
+
+  // Responde sempre OK (não revelar se email existe)
+  if (!usuario && !prof && !sub) {
     return NextResponse.json({ ok: true, message: 'Se o email existir, você receberá as instruções.' })
   }
 
   const quem = usuario
     ? { coluna: 'usuario_id' as const, id: usuario.id, nome: usuario.nome, email: usuario.email }
-    : { coluna: 'profissional_id' as const, id: prof!.id, nome: prof!.nome, email: prof!.email }
+    : prof
+      ? { coluna: 'profissional_id' as const, id: prof.id, nome: prof.nome, email: prof.email }
+      : { coluna: 'salao_usuario_id' as const, id: sub!.id, nome: sub!.nome, email: sub!.email }
 
   // Gera token seguro
   const token = crypto.randomBytes(32).toString('hex')

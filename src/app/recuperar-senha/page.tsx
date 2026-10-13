@@ -63,7 +63,7 @@ export default function RecuperarSenhaPage() {
                 acesso ao portal. Outro endereço não recebe nada.
                 <br />
                 <span className="text-nodri-t3">
-                  Usuário extra (recepção) não tem e-mail no cadastro: a senha dele é redefinida pelo dono do salão.
+                  Vale também para o usuário extra (recepção), pelo e-mail do cadastro dele.
                 </span>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">

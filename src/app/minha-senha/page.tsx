@@ -114,8 +114,8 @@ export default function MinhaSenhaPage() {
         </div>
 
         <p style={{ fontSize: 11.5, color: '#9ca3af', textAlign: 'center', marginTop: 14, lineHeight: 1.6 }}>
-          Esqueceu a senha e não consegue entrar? Quem redefine é o salão:
-          o dono redefine a de profissionais e usuários extras no cadastro de cada um.
+          Esqueceu a senha e não consegue entrar? Use &quot;Esqueci minha senha&quot; na tela de login:
+          o link vai para o e-mail do seu cadastro. Se não houver e-mail lá, quem redefine é o dono do salão.
         </p>
       </div>
     </div>
