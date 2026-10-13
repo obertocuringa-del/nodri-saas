@@ -94,17 +94,30 @@ export async function trocarPlanoDoSalao(
   const novo = (planos || []).find(
     (p: any) => p.slug === planoSlugOuId || p.id === planoSlugOuId,
   )
-  if (!novo || typeof novo.preco !== 'number') return { ok: false, erro: 'Plano inválido' }
+  // ── `preco` chega como TEXTO ───────────────────────────────────────────
+  //
+  // A coluna é `numeric` no Postgres, e numeric atravessa o PostgREST como
+  // string: "50.00", não 50. O teste aqui era `typeof preco !== 'number'`,
+  // então TODA troca de plano morria com "Plano inválido" -- e, morrendo
+  // aqui, nunca chegava em `ligarModulosDoPlano`. Era por isso que assinar
+  // não liberava módulo nenhum: o Send Beauty assinou o Inicial em
+  // 12/10/2026 e ficou com 0 de 10 (achado nesse dia).
+  //
+  // Pior do que não liberar: a comparação de preço logo abaixo também era
+  // entre textos, e em texto "50.00" é MAIOR que "300.00". Subida seria lida
+  // como descida.
+  const precoNovo = Number(novo?.preco)
+  if (!novo || !Number.isFinite(precoNovo)) return { ok: false, erro: 'Plano inválido' }
 
   if (novo.id === salao.plano_id) {
     return { ok: false, erro: 'Este já é o plano atual.' }
   }
 
   const atual = (salao as any).planos
-  const precoAtual = Array.isArray(atual) ? atual[0]?.preco : atual?.preco
+  const precoAtual = Number(Array.isArray(atual) ? atual[0]?.preco : atual?.preco)
   const direcao: 'subiu' | 'desceu' | 'igual' =
-    typeof precoAtual !== 'number' || novo.preco === precoAtual ? 'igual'
-      : novo.preco > precoAtual ? 'subiu' : 'desceu'
+    !Number.isFinite(precoAtual) || precoNovo === precoAtual ? 'igual'
+      : precoNovo > precoAtual ? 'subiu' : 'desceu'
 
   // O Asaas só entra quando existe assinatura. Salão sem assinatura (cortesia,
   // cadastro manual, migração antiga) troca de plano no banco e pronto — não
@@ -112,7 +125,7 @@ export async function trocarPlanoDoSalao(
   if (salao.asaas_subscription_id) {
     try {
       await atualizarAssinatura(salao.asaas_subscription_id, {
-        valor: novo.preco,
+        valor: precoNovo,
         descricao: `NODRI ${novo.nome}`,
       })
     } catch (e: any) {
@@ -137,13 +150,13 @@ export async function trocarPlanoDoSalao(
   const mensagem = !salao.asaas_subscription_id
     ? `Plano alterado para ${novo.nome}. O acesso já vale agora. Este salão não tem assinatura no Asaas, então não há cobrança a atualizar.`
     : aplicaAgora
-      ? `Plano alterado para ${novo.nome} (R$ ${novo.preco}/mês). O acesso novo já está liberado e o valor entra na próxima fatura — o cartão continua o mesmo.`
-      : `Plano alterado para ${novo.nome} (R$ ${novo.preco}/mês). O acesso maior continua até o fim do mês já pago; na próxima fatura entram juntos o valor menor e o acesso do novo plano.`
+      ? `Plano alterado para ${novo.nome} (R$ ${precoNovo}/mês). O acesso novo já está liberado e o valor entra na próxima fatura — o cartão continua o mesmo.`
+      : `Plano alterado para ${novo.nome} (R$ ${precoNovo}/mês). O acesso maior continua até o fim do mês já pago; na próxima fatura entram juntos o valor menor e o acesso do novo plano.`
 
   return {
     ok: true,
     planoNome: novo.nome,
-    valor: novo.preco,
+    valor: precoNovo,
     direcao,
     acessoLiberadoAgora: aplicaAgora,
     mensagem,
