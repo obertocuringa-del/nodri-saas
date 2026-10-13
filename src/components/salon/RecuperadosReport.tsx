@@ -33,6 +33,7 @@ function chipFunil(ativo: boolean, fundo: string, cor: string): React.CSSPropert
 export default function RecuperadosReport() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [atualizando, setAtualizando] = useState(true)
   const [vista, setVista] = useState<'recuperados' | 'carteira' | 'jogo' | 'desafios' | 'arena'>('recuperados')
   // Bônus e janela são do salão, não do sistema: a campanha muda e o prêmio
   // da recepção muda junto.
@@ -69,8 +70,15 @@ export default function RecuperadosReport() {
 
   useEffect(() => {
     // cache aparece na hora; dado fresco atualiza em seguida
-    buscarComCache('/api/relatorios/recuperacao?tipo=recuperados', d => { setData(d); setLoading(false) })
-      .finally(() => setLoading(false))
+    //
+    // Enquanto o fresco não chega, o que está na tela é a cópia da sessão
+    // anterior -- e número de DINHEIRO desatualizado sem aviso parece
+    // defeito, não cache (foi o que aconteceu em 13/10/2026: o bônus da
+    // automação aparecia R$ 0,00 por alguns segundos depois do deploy e
+    // passava por bug). Daí o aviso: ele some sozinho quando o dado chega.
+    buscarComCache('/api/relatorios/recuperacao?tipo=recuperados', (d, fresco) => {
+      setData(d); setLoading(false); if (fresco) setAtualizando(false)
+    }).finally(() => { setLoading(false); setAtualizando(false) })
   }, [])
 
   const card = (icon: any, label: string, valor: string, cor: string, rodape?: string) => (
@@ -146,6 +154,14 @@ export default function RecuperadosReport() {
           </div>
         )}
       </div>
+
+      {atualizando && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fffbeb', border: '1px solid #fde68a',
+                      borderRadius: 9, padding: '7px 12px', marginBottom: 12, fontSize: 12, color: '#92400e' }}>
+          <Loader2 size={13} className="animate-spin" />
+          Mostrando os números da última vez. Conferindo com o servidor…
+        </div>
+      )}
 
       {/* Métricas + ROI */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
