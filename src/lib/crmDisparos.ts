@@ -799,13 +799,60 @@ async function montarUltimas(salaoId: string) {
  * quem fez um dos serviços e já passou da data de voltar (mas não mais que
  * a tolerância), de quem veio ao salão mais recentemente para a mais antiga.
  */
+/**
+ * Quem JÁ ESCREVEU para o salão alguma vez, pela chave do telefone.
+ *
+ * Guardado 10 minutos: a fila é montada várias vezes por volta do relógio e
+ * isto não muda de minuto para minuto.
+ */
+async function quemJaEscreveu(salaoId: string): Promise<Set<string>> {
+  return memo(`falaram:${salaoId}`, 600, async () => {
+    // Quem faz a conta é o banco (`telefones_que_escreveram`). Pelo lado
+    // daqui seriam 27.593 mensagens de entrada paginadas de mil em mil para
+    // extrair uns 650 telefones -- e isso a cada volta do relógio.
+    const { data, error } = await supabaseAdmin.rpc('telefones_que_escreveram', { p_salao: salaoId })
+    if (error) throw new Error(error.message)
+    const s = new Set<string>()
+    for (const linha of (data || []) as any[]) {
+      const tel = typeof linha === 'string' ? linha : linha?.telefone
+      if (tel) s.add(chaveTelefone(normalizarTelefone(String(tel))))
+    }
+    return s
+  })
+}
+
 export async function alvosDoDisparo(salaoId: string, d: Disparo, perfis: PerfilCliente[]) {
   const r = await alvosSemAgenda(salaoId, d, perfis)
   // Já tem horário marcado (hoje ou depois): não recebe nada -- nem
   // "sentimos sua falta", nem lembrete, nem promoção.
   const agenda = await comHorarioMarcado(salaoId)
   const lista = r.lista.filter(x => !agenda.chaves.has(x.chave) && !x.nomes.some(n => agenda.nomes.has(n)))
-  return { ...r, lista, agendadas: r.lista.length - lista.length }
+
+  // ── Quem já conversou com o salão vai PRIMEIRO ──────────────────────────
+  //
+  // Vale para TODA lista -- lembrete, recuperar perdidas, clientes em risco,
+  // 2ª visita, venda cruzada -- e para as que o dono criar depois, porque
+  // está aqui, no ponto único por onde todas passam, e não na configuração
+  // de cada uma. Salão novo nasce com isto; não há o que configurar.
+  //
+  // O motivo é o bloqueio de 02/10/2026. Medido no Rouge: dos 6.477 clientes
+  // do Avec com celular, só 646 (10%) já escreveram ao salão. Antes a fila
+  // era ordenada só pelo atraso do serviço, então cada lote do dia saía
+  // quase todo para quem nunca respondeu -- e conta que fala com
+  // desconhecido e não recebe resposta é exatamente o que o WhatsApp
+  // bloqueia. Naquele dia foram 48 de 52 sem histórico e 84% sem resposta.
+  //
+  // Ordena SÓ por esse critério: `sort` é estável, então dentro de cada
+  // grupo a ordem anterior (atraso, dias sem vir) fica intacta.
+  let jaFalaram = 0
+  try {
+    const falaram = await quemJaEscreveu(salaoId)
+    const temHistorico = (x: PerfilCliente) => falaram.has(x.chave)
+    jaFalaram = lista.filter(temHistorico).length
+    lista.sort((a, b) => Number(temHistorico(b)) - Number(temHistorico(a)))
+  } catch { /* sem o CRM a fila segue na ordem de antes, não para */ }
+
+  return { ...r, lista, agendadas: r.lista.length - lista.length, jaFalaram }
 }
 
 /**
