@@ -30,7 +30,15 @@ export default function UsuariosPage() {
   useEffect(() => { carregar() }, [carregar])
 
   // chaves de todos os módulos (cards) — dedup
-  const moduloItens = Array.from(new Map(modulos.map(m => [chaveModulo(m.nome), m.nome])).entries()).map(([chave, nome]) => ({ chave, label: nome }))
+  //
+  // Fora também o módulo cuja chave JÁ aparece no catálogo por nome próprio
+  // (CRM e Assistente/IA). Senão o mesmo interruptor sairia duas vezes na
+  // tela, e quem marcasse um ficaria procurando por que o outro também
+  // mudou — são a mesma permissão.
+  const noCatalogo = new Set(CATALOGO_PERMISSOES.flatMap(g => g.itens.map(i => i.chave)))
+  const moduloItens = Array.from(new Map(modulos.map(m => [chaveModulo(m.nome), m.nome])).entries())
+    .filter(([chave]) => !noCatalogo.has(chave))
+    .map(([chave, nome]) => ({ chave, label: nome }))
   const TODAS_COM_MODULOS = [...TODAS_CHAVES, ...moduloItens.map(i => i.chave)]
 
   function abrirNovo() { setEditando('novo'); setNome(''); setUsuario(''); setSenha(''); setPapel(''); setPerms(new Set()) }

@@ -97,7 +97,11 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
 
 // ── RECUPERAÇÃO DE SENHA ──
 export async function enviarEmailRecuperacaoSenha(email: string, nome: string, token: string) {
-  const link = `${SITE_URL}/recuperar-senha?token=${token}`
+  // /recuperar-senha é a tela que PEDE o e-mail e ignora `?token=`; quem
+  // aceita o token e grava a senha nova é /redefinir-senha. O link apontava
+  // para a primeira, então mesmo quando o e-mail chegava o clique caía num
+  // formulário em branco (achado em 13/10/2026).
+  const link = `${SITE_URL}/redefinir-senha?token=${token}`
   await sendEmail({
     to: email,
     subject: 'Recuperação de senha — NODRI',

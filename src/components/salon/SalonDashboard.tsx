@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye } from 'lucide-react'
+import { Bell, Settings, CheckCircle, X, Zap, Play, Search, ChevronDown, ArrowRight, LogOut, Menu, Wrench, Lock, Eye, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { ModuloComStatus, Notificacao } from '@/types'
 import { chaveModulo } from '@/lib/permissoes'
@@ -726,6 +726,10 @@ export default function SalonDashboard({ salaoNome, plano, modulos, notificacoes
               </button>
               <a href="/salon/perfil" className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition">
                 <Settings size={13} />
+              </a>
+              <a href="/minha-senha" title="Trocar minha senha"
+                className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t2 hover:text-nodri-cyan transition">
+                <KeyRound size={13} />
               </a>
               <button onClick={handleLogout} title="Sair"
                 className="flex-1 h-7 bg-nodri-card border border-nodri-border rounded-lg flex items-center justify-center text-nodri-t3 hover:text-nodri-red hover:border-nodri-red/30 transition">

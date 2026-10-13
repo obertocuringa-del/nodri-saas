@@ -162,6 +162,14 @@ export function chaveModulo(nome: string): string {
   if (n.includes('pendenc')) return 'pendencias'
   if (n.includes('feedback') && n.includes('profission')) return 'feedback_prof'
   if (n.includes('feedback')) return 'feedback_cliente'
+  // CRM e NODRI IA viraram CARD na tela inicial em 13/10/2026. Sem estas duas
+  // linhas eles caíam no genérico ('modulo_crm', 'modulo_nodri_ia') e o
+  // sub-usuário ficava com DUAS permissões para a mesma coisa: a da página
+  // (que o middleware confere) e a do card. Na prática o card sumia para quem
+  // já tinha a permissão certa marcada. Aqui a chave passa a ser a mesma dos
+  // dois lados.
+  if (n.includes('crm')) return 'crm'
+  if (n.includes('nodri ia') || n.trim() === 'ia') return 'ia'
   return 'modulo_' + n.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24)
 }
 

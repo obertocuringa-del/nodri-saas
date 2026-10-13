@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   DollarSign, Target, Calendar, Trophy, Megaphone, ClipboardList, Moon, Sun, Bell,
-  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen, ShieldCheck,
+  AlertTriangle, Users, Lightbulb, Package, UserMinus, Star, Sparkles, CalendarRange, User, ArrowRight, LogOut, Hand, X, Check, Send, BookOpen, ShieldCheck, KeyRound,
 } from 'lucide-react'
 
 import MedalhasTopo from './MedalhasTopo'
@@ -176,6 +176,14 @@ export default function PainelResumoProf({ pid, nome, prof: profProp, onIrAba }:
           <MedalhasTopo profId={meuId || pid} />
         </div>
         <button onClick={() => setDark(d => !d)} title={dark ? 'Modo claro' : 'Modo escuro'} style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid var(--bord)', background: 'var(--card)', color: 'var(--txt2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+        {/* Trocar a propria senha: ate 13/10/2026 nao havia como, e o portal
+            tambem nao entrava no "esqueci a senha". So o salao podia mexer. */}
+        {ehProf && (
+          <a href="/minha-senha" title="Trocar minha senha"
+            style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid var(--bord)', background: 'var(--card)', color: 'var(--txt2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <KeyRound size={18} />
+          </a>
+        )}
         {ehProf && (
           <button onClick={() => { window.location.href = '/logout' }} title="Sair da conta"
             style={{ height: 42, padding: '0 14px', borderRadius: 13, border: '1px solid rgba(239,68,68,.4)', background: 'var(--card)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>

@@ -49,9 +49,23 @@ export default function RecuperarSenhaPage() {
           ) : (
             <>
               <h2 className="font-syne font-bold text-xl mb-2">Esqueceu sua senha?</h2>
-              <p className="text-nodri-t2 text-sm mb-6 leading-relaxed">
+              <p className="text-nodri-t2 text-sm mb-4 leading-relaxed">
                 Digite seu email e enviaremos um link para você criar uma nova senha.
               </p>
+              {/* O link SO vai para o endereco que esta no cadastro -- e isso
+                  que impede alguem de digitar um e-mail qualquer e receber o
+                  acesso de outra pessoa. Quem nao sabe disso digita o e-mail
+                  errado, nao recebe nada e acha que o sistema esta quebrado
+                  (foi o que aconteceu em 13/10/2026). */}
+              <div className="mb-6 rounded-lg border border-nodri-border bg-nodri-surface px-3 py-2.5 text-[12px] text-nodri-t2 leading-relaxed">
+                O link vai <strong className="text-nodri-t1">apenas</strong> para o e-mail que está no
+                cadastro — o do salão, se você é o dono, ou o seu, se você é profissional com
+                acesso ao portal. Outro endereço não recebe nada.
+                <br />
+                <span className="text-nodri-t3">
+                  Usuário extra (recepção) não tem e-mail no cadastro: a senha dele é redefinida pelo dono do salão.
+                </span>
+              </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-[11px] text-nodri-t3 uppercase tracking-wider mb-1.5 block">Email cadastrado</label>

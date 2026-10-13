@@ -120,6 +120,19 @@ export default function AcessoProfissional({ profId, prof, onSaved }: { profId: 
         </div>
       </div>
 
+      {/* Sem e-mail no cadastro, "esqueci a senha" não tem para onde mandar.
+          O link de recuperação SÓ vai para o endereço que está no cadastro --
+          é o que impede alguém de digitar um e-mail qualquer e roubar o
+          acesso. Então a falta do e-mail é informação útil aqui, não lá na
+          hora do aperto. */}
+      {liberado && !String(prof?.email || '').trim() && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 12px', marginBottom: 14, fontSize: 12, color: '#92400e', lineHeight: 1.5 }}>
+          Sem <strong>e-mail</strong> no cadastro desta pessoa. Ela entra normalmente, mas se
+          esquecer a senha não consegue recuperar sozinha — quem redefine é você, aqui.
+          Preencha o e-mail nos dados dela para liberar o &quot;Esqueci minha senha&quot;.
+        </div>
+      )}
+
       {/* O que ocultar da visão do profissional */}
       <div style={{ marginBottom: 14 }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', margin: '0 0 8px' }}>O que o profissional NÃO pode ver:</p>

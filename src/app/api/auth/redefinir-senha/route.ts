@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
   // Busca token válido
   const { data: tokenData } = await supabaseAdmin
     .from('tokens_senha')
-    .select('id, usuario_id, expira_em, usado')
+    .select('id, usuario_id, profissional_id, expira_em, usado')
     .eq('token', token)
-    .single()
+    .maybeSingle()
 
   if (!tokenData) return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
   if (tokenData.usado) return NextResponse.json({ error: 'Token já utilizado' }, { status: 400 })
@@ -26,9 +26,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Token expirado. Solicite um novo.' }, { status: 400 })
   }
 
-  // Atualiza senha
+  // O token diz a quem pertence: dono do salão (usuarios) ou profissional do
+  // portal (profissionais.acesso_senha_hash). O banco garante que é exatamente
+  // um dos dois (constraint tokens_senha_um_dono).
   const senhaHash = await hashPassword(nova_senha)
-  await supabaseAdmin.from('usuarios').update({ senha_hash: senhaHash }).eq('id', tokenData.usuario_id)
+  const { error: erroSenha } = tokenData.profissional_id
+    ? await supabaseAdmin.from('profissionais')
+        .update({ acesso_senha_hash: senhaHash }).eq('id', tokenData.profissional_id)
+    : await supabaseAdmin.from('usuarios')
+        .update({ senha_hash: senhaHash }).eq('id', tokenData.usuario_id)
+
+  if (erroSenha) return NextResponse.json({ error: 'Não consegui salvar a senha nova.' }, { status: 500 })
 
   // Marca token como usado
   await supabaseAdmin.from('tokens_senha').update({ usado: true }).eq('id', tokenData.id)
