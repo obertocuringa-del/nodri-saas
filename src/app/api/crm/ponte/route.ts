@@ -805,12 +805,55 @@ export async function POST(req: NextRequest) {
       return { c, contato, ultima, quando, daCliente }
     }).filter((r: any) => r.contato)
 
+    // ── O que ja esta gravado ────────────────────────────────────────────
+    //
+    // Reimportar não pode duplicar a mensagem da cliente na tela: o que já
+    // está gravado é filtrado pelo id do WhatsApp antes de inserir.
+    //
+    // Isto subiu para ANTES da criação de conversa de propósito. Ver o
+    // filtro `trazAlgoNovo` logo abaixo.
+    const todosIds = lote.flatMap((c: any) => c.mensagens.map((m: any) => m.id_whatsapp)).filter(Boolean)
+    const conhecidos = new Set<string>()
+    for (let i = 0; i < todosIds.length; i += 200) {
+      const { data: velhas } = await supabaseAdmin
+        .from('crm_mensagens').select('id_whatsapp')
+        .eq('salao_id', salaoId).in('id_whatsapp', todosIds.slice(i, i + 200))
+      for (const v of velhas || []) if (v.id_whatsapp) conhecidos.add(v.id_whatsapp)
+    }
+
+    /**
+     * Esta thread traz pelo menos UMA mensagem que ainda não está gravada?
+     *
+     * Sem id do WhatsApp não dá para saber, e aí conta como nova -- errar
+     * para o lado de gravar é melhor que perder a mensagem.
+     */
+    const trazAlgoNovo = (r: any) =>
+      r.c.mensagens.some((m: any) => !m.id_whatsapp || !conhecidos.has(m.id_whatsapp))
+
     // Conversa sem NENHUMA mensagem nao e oportunidade: e um contato que
     // existe na agenda do celular. O contato fica gravado (para reconhecer
     // quem escrever amanha), a conversa nao nasce -- senao a fila de trabalho
     // enche de linhas em que nao ha nada para ler nem para responder.
     const criarConversas = resumo
       .filter((r: any) => r.c.mensagens.length > 0)
+      // ── A casca vazia do repareamento (15/10/2026) ──────────────────────
+      //
+      // Faltava esta linha, e o estrago foi 129 conversas vazias de uma vez.
+      //
+      // Quando a ponte é pareada de novo, o WhatsApp manda o histórico
+      // inteiro outra vez. Para a cliente cuja última conversa está DECIDIDA
+      // e tem mais de 7 dias, o bloco acima não a reaproveita (de propósito:
+      // quem volta meses depois é oportunidade nova) e manda criar uma
+      // conversa. Só que as mensagens dessa thread JÁ estão gravadas na
+      // conversa antiga, então todas são puladas na hora de inserir -- e a
+      // conversa nasce com a prévia preenchida e ZERO mensagem dentro.
+      //
+      // Na tela é pior que inútil: a casca é a mais recente, aparece na
+      // frente da conversa de verdade, e quem clica não vê nada.
+      //
+      // Oportunidade nova precisa de FALA nova. Sem mensagem inédita no
+      // lote, não há o que abrir.
+      .filter(trazAlgoNovo)
       .filter((r: any) => !porContato.has(r.contato.id))
       .map((r: any) => {
         // Quem falou por ultimo foi a cliente => alguem precisa responder.
@@ -858,18 +901,6 @@ export async function POST(req: NextRequest) {
       for (const n of novas || []) {
         try { await juntarConversasAbertas(salaoId, n.contato_id) } catch { /* nao derruba a importacao */ }
       }
-    }
-
-    // ── Mensagens ───────────────────────────────────────────────────────────
-    // Reimportar não pode duplicar a conversa da cliente na tela: o que já
-    // está gravado é filtrado pelo id do WhatsApp antes de inserir.
-    const todosIds = lote.flatMap((c: any) => c.mensagens.map((m: any) => m.id_whatsapp)).filter(Boolean)
-    const conhecidos = new Set<string>()
-    for (let i = 0; i < todosIds.length; i += 200) {
-      const { data: velhas } = await supabaseAdmin
-        .from('crm_mensagens').select('id_whatsapp')
-        .eq('salao_id', salaoId).in('id_whatsapp', todosIds.slice(i, i + 200))
-      for (const v of velhas || []) if (v.id_whatsapp) conhecidos.add(v.id_whatsapp)
     }
 
     const inserir: any[] = []
