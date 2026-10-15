@@ -216,6 +216,61 @@ function guardarEnviada(salaoId, id, conteudo) {
 // aí o problema não é a ponte -- mas as primeiras 500 ainda merecem chegar.
 const TETO_PENDENTES = 500
 
+/**
+ * Mensagem do proprio celular que chegou cifrada e nao abriu: registra o
+ * BURACO no CRM em vez de deixar sumir.
+ *
+ * O conteudo e irrecuperavel -- foi cifrado para uma chave de aparelho que o
+ * WhatsApp ja descartou, e nem o celular reenvia. O que da para salvar e a
+ * existencia dela: a conversa passa a mostrar que houve uma fala do salao
+ * naquele minuto. Sem isso, quem abre o CRM depois acha que ninguem
+ * respondeu a cliente.
+ *
+ * Nunca derruba o fluxo: qualquer erro aqui e engolido, porque o caminho de
+ * receber mensagem e o mais critico da ponte e ele funcionava sem isto.
+ */
+const TETO_BURACOS_POR_CONEXAO = 40
+
+async function marcarBuracoNoCrm(salaoId, m, s) {
+  try {
+    // Sessao podre traz centenas de tocos. Encher a conversa de marcas de
+    // lugar seria pior que o buraco, entao tem teto por conexao.
+    if ((s.buracos || 0) >= TETO_BURACOS_POR_CONEXAO) return
+    const bruto = m.key?.remoteJid || ''
+    if (!bruto || bruto.endsWith('@g.us') || bruto === 'status@broadcast') return
+    if (!ehCliente(bruto)) return
+
+    const quando = segundos(m) || null
+    const hora = quando
+      ? new Date(quando * 1000).toLocaleString('pt-BR', {
+          timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit',
+          hour: '2-digit', minute: '2-digit',
+        })
+      : 'hora desconhecida'
+
+    s.buracos = (s.buracos || 0) + 1
+    const porLid = ehLid(bruto)
+    await entregarAoNodri(salaoId, {
+      salao_id: salaoId,
+      telefone: porLid ? null : soNumero(bruto),
+      lid: porLid ? soNumero(bruto) : null,
+      nome: null,
+      texto: '[mensagem enviada pelo celular do salao em ' + hora + ' - o CRM nao conseguiu ler o conteudo]',
+      tipo: 'texto',
+      midia_url: null,
+      // O id verdadeiro vai junto: se um dia a mensagem chegar de verdade,
+      // o NODRI reconhece como repetida e nao duplica a linha.
+      id_whatsapp: m.key?.id || null,
+      direcao: 'saida',
+      em_massa: false,
+      em: quando,
+    })
+    registro(salaoId, 'mensagem do celular que nao abriu virou marca de lugar no CRM (' + hora + ')')
+  } catch (e) {
+    registro(salaoId, 'nao consegui marcar o buraco no CRM:', e.message)
+  }
+}
+
 /** Entrega uma mensagem ao NODRI; se ele estiver fora de alcance, guarda para a volta seguinte. */
 async function entregarAoNodri(salaoId, corpo) {
   try {
@@ -938,6 +993,13 @@ async function abrirDeVerdade(salaoId, registroSessao) {
           registroSessao.naoAbriu++
           if (m.key?.fromMe && type === 'append' && descartarDaFila(m.key)) {
             registroSessao.descartadas = (registroSessao.descartadas || 0) + 1
+            // Esta nao volta mais: saiu da fila do servidor e o conteudo
+            // estava cifrado para uma chave que ja nao existe. Antes ela
+            // sumia calada e a conversa no CRM ficava com um buraco
+            // invisivel -- em 13/10/2026 foram 16 de uma vez. Agora entra
+            // uma marca de lugar: o CRM mostra QUE o salao falou e QUANDO,
+            // mesmo sem o texto. Pedido do dono em 15/10/2026.
+            await marcarBuracoNoCrm(salaoId, m, registroSessao)
           }
           continue
         }
@@ -1443,8 +1505,13 @@ function soltarBufferPreso(salaoId, s) {
   const abertaHa = Date.now() - s.abertoEm
   if (abertaHa <= SEGUNDOS_BUFFER * 1000) return
   if (typeof sock.ev?.isBuffering !== 'function' || !sock.ev.isBuffering()) return
-  // Uma linha por minuto, não uma por mensagem: o log é para ler.
-  if (!s.soltouEm || Date.now() - s.soltouEm > 60000) {
+  // O conserto roda a cada segundo; o AVISO sai de 10 em 10 minutos.
+  //
+  // Era de minuto em minuto, e numa reconexao com muita fila atrasada isso
+  // enchia o log de linhas identicas por horas -- parecia defeito novo
+  // quando era o remendo funcionando (15/10/2026). Dez minutos ainda mostram
+  // que o Baileys esta segurando, sem afogar o resto.
+  if (!s.soltouEm || Date.now() - s.soltouEm > 600000) {
     registro(salaoId, `o Baileys segurava os eventos (${Math.round(abertaHa / 1000)} s de conexão) — soltando na mão`)
     s.soltouEm = Date.now()
   }
