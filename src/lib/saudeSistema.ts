@@ -256,6 +256,52 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
     }
   } catch { /* faxina é enfeite: se falhar, não atrapalha o resto do vigia */ }
 
+  // ── A casca que ESCONDE a conversa de verdade ─────────────────────────────
+  //
+  // Diferente da faxina acima, e por isso é um vigia separado.
+  //
+  // Lá o alvo é a conversa que ninguém usou (botão verde, sem prévia). Aqui é
+  // a conversa vazia que nasceu DUPLICADA: a mesma cliente já tem outra com o
+  // histórico inteiro, e a vazia -- por ser a mais recente -- fica na frente
+  // na lista. Quem clica não vê nada e acha que o CRM quebrou.
+  //
+  // Em 15/10/2026 o repareamento da ponte fez 129 de uma vez. A causa foi
+  // corrigida na importação (`trazAlgoNovo`, em /api/crm/ponte), mas correção
+  // de causa só vale para o que vier depois: isto limpa o que já está na tela
+  // e cobre o caminho que ninguém previu ainda.
+  //
+  // Pedido do dono em 15/10/2026, e é a regra para tudo daqui pra frente:
+  // "errou, eu já quero que faça uma correção automática -- imagina se eu
+  // tenho 30 salões, vou ter que ficar vendo 30 salões todos os dias".
+  //
+  // A conta roda NO BANCO (conversas_vazias_duplicadas). O vigia passa de
+  // minuto em minuto em cada salão; trazer as mensagens para contar aqui
+  // seriam milhares de linhas por volta, que é o jeito rápido de estourar a
+  // cota de egress.
+  //
+  // Seguro por construção: a função só devolve a casca cujo contato TEM outra
+  // conversa com mensagem. Nunca é a última lembrança de ninguém. E os
+  // eventos (quem mudou o quê, quando) vão para a conversa que fica --
+  // apagar direto cascatearia e levaria a trilha junto.
+  try {
+    const { data: cascas } = await supabaseAdmin
+      .rpc('conversas_vazias_duplicadas', { p_salao: salaoId, p_limite: 50 })
+    const lista = (cascas || []).filter((c: any) => c?.casca && c?.fica)
+    if (lista.length) {
+      // Mover ANTES de apagar: crm_eventos é CASCADE em crm_conversas.
+      for (const c of lista) {
+        await supabaseAdmin.from('crm_eventos')
+          .update({ conversa_id: c.fica }).eq('conversa_id', c.casca)
+      }
+      await supabaseAdmin.from('crm_conversas').delete().in('id', lista.map((c: any) => c.casca))
+      problemas.push({
+        servico: 'ponte',
+        motivo: `${lista.length} conversa(s) vazia(s) que escondia(m) a conversa de verdade foram juntada(s) e removida(s)`,
+        desde: null, acao: 'avisar',
+      })
+    }
+  } catch { /* o vigia não pode derrubar a volta por causa da faxina */ }
+
   return problemas
 }
 
