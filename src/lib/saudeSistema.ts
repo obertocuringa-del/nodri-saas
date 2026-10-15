@@ -59,6 +59,40 @@ export async function lerSaude(salaoId: string): Promise<EstadoSaude | null> {
   return (data as any)?.valor || null
 }
 
+/**
+ * Avisa por e-mail que a ponte precisa de QR, no máximo uma vez a cada 6 h.
+ *
+ * Vai para o e-mail do cadastro do salão e para o master. Nada de ficar só na
+ * tela: a tela é o lugar onde o dono só olha quando já desconfiou de alguma
+ * coisa, e foi exatamente isso que fez a queda de 13/10 durar dois dias.
+ *
+ * Falhar aqui não pode atrapalhar o vigia: quem chama engole o erro.
+ */
+const CHAVE_AVISO_QR = 'crm_aviso_qr'
+
+async function avisarQrPorEmail(salaoId: string, desde: string, agora: number) {
+  const { data: marca } = await supabaseAdmin
+    .from('salao_config').select('valor').eq('salao_id', salaoId).eq('chave', CHAVE_AVISO_QR).maybeSingle()
+  const ultimo = (marca as any)?.valor?.em ? new Date((marca as any).valor.em).getTime() : 0
+  if (ultimo && agora - ultimo < 6 * 60 * MIN) return
+
+  const [{ data: dono }, { data: salao }] = await Promise.all([
+    supabaseAdmin.from('usuarios').select('email, nome').eq('salao_id', salaoId).eq('ativo', true).maybeSingle(),
+    supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle(),
+  ])
+  const para = [(dono as any)?.email, 'admin@nodri.com.br'].filter(Boolean) as string[]
+  if (!para.length) return
+
+  const { enviarEmailPonteCaida } = await import('./email')
+  for (const e of [...new Set(para)]) {
+    await enviarEmailPonteCaida(e, (salao as any)?.nome || 'seu salão', desde).catch(() => {})
+  }
+  await supabaseAdmin.from('salao_config').upsert(
+    { salao_id: salaoId, chave: CHAVE_AVISO_QR, valor: { em: new Date(agora).toISOString(), desde }, atualizado_em: new Date(agora).toISOString() },
+    { onConflict: 'salao_id,chave' },
+  )
+}
+
 async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]> {
   const problemas: Problema[] = []
   const [{ data: cfgs }, { data: canal }] = await Promise.all([
@@ -104,6 +138,41 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
     const visto = new Date((canal as any).visto_em).getTime()
     if (agora - visto > 5 * MIN) {
       problemas.push({ servico: 'ponte', motivo: `ponte do WhatsApp sem sinal desde ${hhmm((canal as any).visto_em)}`, desde: (canal as any).visto_em })
+    }
+  }
+
+  // ── A ponte caiu e NINGUÉM ficou sabendo ─────────────────────────────────
+  //
+  // Este é o vigia que faltava, e o preço de não existir foi medido: em
+  // 13/10/2026 às 20:05 o WhatsApp removeu o aparelho conectado
+  // (`conflict: device_removed`). A ponte apagou a credencial e passou a
+  // pedir QR. O salão seguiu trabalhando pelo celular e só em 15/10 às 13:36
+  // alguém leu o QR -- **40 horas** com o CRM cego, sem automação nenhuma, e
+  // o dono descobriu por acaso.
+  //
+  // O vigia de cima ignora 'desconectado' de propósito, e está certo: a ponte
+  // é UMA para todos os salões, e religá-la por causa de um salão derrubaria
+  // os outros (lição de 01/10/2026). Só que "não religar" virou "não falar".
+  //
+  // Aqui ninguém religa nada: AVISA, e avisa fora da tela. Nenhum código no
+  // mundo encosta um celular num QR Code -- o conserto é humano, e o que dá
+  // para automatizar é a pessoa certa saber em minutos em vez de dois dias.
+  //
+  // Quem é cobrado: o canal que estava VIVO há menos de 7 dias. Passou disso,
+  // o salão não usa o CRM e cobrar vira barulho.
+  if (sit === 'desconectado' || sit === 'aguardando_qr') {
+    const visto = (canal as any)?.visto_em ? new Date((canal as any).visto_em).getTime() : 0
+    const paradoHa = visto ? agora - visto : 0
+    const comercial = h >= '08:00' && h <= '20:00'
+    if (visto && paradoHa > 20 * MIN && paradoHa < 7 * 24 * 60 * MIN && comercial) {
+      problemas.push({
+        servico: 'ponte',
+        motivo: `WhatsApp desconectado desde ${hhmm((canal as any).visto_em)} — precisa ler o QR Code de novo no CRM`,
+        desde: (canal as any).visto_em, acao: 'avisar',
+      })
+      // E-mail no máximo de 6 em 6 horas: o vigia passa de minuto em minuto e
+      // ninguém precisa de 360 e-mails por salão.
+      await avisarQrPorEmail(salaoId, (canal as any).visto_em, agora).catch(() => {})
     }
   }
 

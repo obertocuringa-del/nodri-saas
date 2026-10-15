@@ -328,3 +328,50 @@ export async function enviarEmailTeste(para: string) {
     </div>`,
   })
 }
+
+// ── A PONTE CAIU E PRECISA DE QR ──
+//
+// O unico conserto possivel e humano: alguem tem de encostar o celular do
+// salao no QR Code. O que o sistema pode fazer e a pessoa certa saber em
+// minutos -- em 13/10/2026 ninguem soube por 40 horas, o CRM ficou cego e as
+// automacoes todas paradas, enquanto o salao seguia atendendo pelo celular.
+//
+// Quem dispara e o vigia (saudeSistema), no maximo de 6 em 6 horas.
+export async function enviarEmailPonteCaida(para: string, salao: string, desde: string) {
+  const quando = new Date(desde).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  return sendEmail({
+    to: para,
+    subject: `NODRI — o WhatsApp de ${salao} desconectou do CRM`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;color:#1a1a1a;border-radius:12px;overflow:hidden">
+      <div style="background:#b4322a;padding:22px 24px">
+        <div style="color:#fff;font-size:13px;letter-spacing:2px">NODRI</div>
+        <div style="color:#fff;font-size:19px;font-weight:800;margin-top:4px">O WhatsApp saiu do CRM</div>
+      </div>
+      <div style="padding:24px">
+        <p style="color:#444;line-height:1.6;margin:0 0 14px">
+          O WhatsApp de <strong>${salao}</strong> esta sem ligacao com o CRM desde
+          <strong>${quando}</strong>.
+        </p>
+        <p style="color:#444;line-height:1.6;margin:0 0 14px">
+          O numero continua funcionando no celular e as clientes seguem sendo atendidas.
+          O que parou foi o CRM: as conversas nao entram na tela e
+          <strong>nenhuma automacao esta saindo</strong> (confirmacao, feedback, listas
+          e aviso ao profissional).
+        </p>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 14px;margin:0 0 16px">
+          <strong style="color:#92400e">Como resolver, leva um minuto:</strong>
+          <ol style="color:#92400e;margin:8px 0 0;padding-left:18px;line-height:1.7">
+            <li>Abra o CRM no NODRI.</li>
+            <li>Clique em <strong>Configurar</strong> e depois em conectar.</li>
+            <li>No celular do salao: WhatsApp &gt; Aparelhos conectados &gt; Conectar aparelho.</li>
+            <li>Aponte para o QR Code da tela.</li>
+          </ol>
+        </div>
+        <p style="color:#767069;font-size:12px;line-height:1.6;margin:0">
+          Enquanto nao for religado, este aviso se repete a cada 6 horas no horario comercial.
+          Se o salao deixou de usar o CRM de proposito, pode ignorar.
+        </p>
+      </div>
+    </div>`,
+  })
+}
