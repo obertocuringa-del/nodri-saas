@@ -788,15 +788,34 @@ async function montarUltimas(salaoId: string) {
   const rows = await lerAtendimentosLeve(salaoId)
   const chaveDe = chavesDosAtendimentos(rows)
   const receita = new Map<string, { em: number; valor: number }[]>()
-  const visitas = new Map<string, { em: number; valor: number; data: string }[]>()
+  // ── Uma linha por VISITA, não por serviço ────────────────────────────────
+  //
+  // A planilha do Avec traz uma linha por SERVIÇO: a cliente que fez corte e
+  // escova no mesmo dia aparece duas vezes. Na lista de retornos isso virava
+  // "Ana Clara, 03/10, R$ 34" e "Ana Clara, 03/10, R$ 190" — a mesma ida ao
+  // salão contada duas vezes, e o dono lendo como se ela tivesse voltado
+  // duas vezes (achado por ele em 18/10/2026).
+  //
+  // Então o mapa junta por cliente + DIA e soma os serviços. Dia diferente
+  // continua sendo linha diferente, que é o retorno de verdade.
+  const porDia = new Map<string, { em: number; valor: number; data: string }>()
   for (const r of rows) {
     const cli = chaveDe(r), em = parseData(String(r.data_comanda || ''))
     const valor = Number(r.total) || Number(r.valor) || 0
     if (!cli || !em) continue
+    const dia = String(r.data_comanda || '')
+    const k = `${cli}@${dia}`
+    const atual = porDia.get(k)
     // A visita entra SEMPRE, mesmo valendo zero: ela aconteceu.
-    const v = visitas.get(cli) || []; v.push({ em, valor, data: String(r.data_comanda || '') }); visitas.set(cli, v)
+    if (atual) atual.valor += valor
+    else porDia.set(k, { em, valor, data: dia })
     if (!valor) continue
     const l = receita.get(cli) || []; l.push({ em, valor }); receita.set(cli, l)
+  }
+  const visitas = new Map<string, { em: number; valor: number; data: string }[]>()
+  for (const [k, v] of porDia) {
+    const cli = k.slice(0, k.lastIndexOf('@'))
+    const l = visitas.get(cli) || []; l.push(v); visitas.set(cli, l)
   }
   _receita.set(salaoId, receita)
   _visitas.set(salaoId, visitas)
@@ -1779,13 +1798,26 @@ export async function detalheDoDisparo(salaoId: string, d: Disparo): Promise<{
 
   const respostas: Resposta[] = []
   const ids = [...inicio.keys()]
+  const ja = new Set<string>()
   for (let i = 0; i < ids.length; i += 150) {
+    const lote = ids.slice(i, i + 150)
+    // ── O corte por data é obrigatório aqui ────────────────────────────────
+    //
+    // Sem ele isto devolvia ZERO respostas, com 27 na tela ao lado
+    // (18/10/2026). A ordem é crescente, para a PRIMEIRA fala da cliente
+    // depois do envio ser a primeira que chega; só que, sem o corte, as
+    // primeiras 2.000 linhas de 150 conversas antigas são todas de ANTES do
+    // envio — nenhuma passava no teste e a lista saía vazia.
+    //
+    // O piso é o envio mais antigo do lote: não dá para pôr um piso por
+    // conversa numa consulta só, e este já joga fora quase tudo.
+    const piso = Math.min(...lote.map(c => inicio.get(c)?.em ?? Infinity))
     const { data } = await supabaseAdmin.from('crm_mensagens')
       .select('conversa_id, texto, tipo, criado_em')
-      .in('conversa_id', ids.slice(i, i + 150))
+      .in('conversa_id', lote)
       .eq('direcao', 'entrada')
-      .order('criado_em', { ascending: true }).limit(2000)
-    const ja = new Set<string>()
+      .gte('criado_em', new Date(piso).toISOString())
+      .order('criado_em', { ascending: true }).limit(3000)
     for (const m of data || []) {
       if (ja.has(m.conversa_id)) continue
       const base = inicio.get(m.conversa_id)
