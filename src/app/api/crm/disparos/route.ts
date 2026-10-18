@@ -4,7 +4,7 @@ import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizarTelefone } from '@/lib/crm'
 import {
-  carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo,
+  carregarDisparos, gravarDisparos, carregarEstadosDisparo, lerDisparo, resumoDoDisparo, detalheDoDisparo,
   servicosDoSalao, perfisDoSalao, alvosDoDisparo, foraPorRecuperacao, dividirDia, textoPara, saudacaoPara, pacotePara, segundaPara, periodosDe, conversaDoContato, cabemPorDia, AUTOR_DISPARO, simularProximo,
   esquecerResumo,
   type Disparo,
@@ -35,6 +35,18 @@ export async function GET(req: NextRequest) {
     await Promise.all(disparos.map(async d => { resumos[d.id] = await resumoDoDisparo(s.salaoId, d).catch(() => null) }))
     return NextResponse.json({ resumos })
   }
+  // ── O detalhe de um envio (?detalhe=<id>) ──
+  //
+  // Quem clica em "27 responderam" ou "15 voltaram" cai aqui. Vem numa
+  // chamada separada de propósito: o resumo abre a tela, e este detalhe só
+  // existe para quem for olhar — que é a minoria das vezes.
+  const detalheDe = new URL(req.url).searchParams.get('detalhe')
+  if (detalheDe) {
+    const d = (await carregarDisparos(s.salaoId)).find(x => x.id === detalheDe)
+    if (!d) return NextResponse.json({ error: 'Envio não encontrado' }, { status: 404 })
+    return NextResponse.json(await detalheDoDisparo(s.salaoId, d))
+  }
+
   const [disparos, estados, servicos] = await Promise.all([
     carregarDisparos(s.salaoId), carregarEstadosDisparo(s.salaoId), servicosDoSalao(s.salaoId),
   ])

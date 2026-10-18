@@ -25,6 +25,13 @@ type Disparo = {
 }
 
 const ROXO = '#5b4fcf'
+
+/** Numero do cartao que abre o detalhe: parece texto, se comporta como link. */
+const linkNumero: React.CSSProperties = {
+  background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit',
+  cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted',
+  textUnderlineOffset: 3, textDecorationColor: '#c9c4bd',
+}
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const INTERVALOS = [10, 15, 20, 30, 40, 45, 60, 90, 120, 180]
 
@@ -221,7 +228,165 @@ const completar = (d: any): Disparo => ({
   publico: { ...NOVO.publico, ...(d.publico || {}), ano_de: d.publico?.ano_de || 0, ano_ate: d.publico?.ano_ate || 0, servicos_nao: d.publico?.servicos_nao || [] },
 })
 
+// ── O DETALHE POR TRAS DOS NUMEROS ──────────────────────────────────────────
+//
+// "27 responderam" e "15 voltaram" eram so numeros. O dono pediu para abrir
+// cada um (18/10/2026), e a razao e de venda: mostrar a cliente PEDINDO
+// horario por causa da mensagem, e a linha "mandei dia 2, ela voltou dia 3 e
+// gastou R$ 668", convence outro salao mais que qualquer estatistica.
+//
+// Busca so no clique: o detalhe nao vem junto do resumo para nao deixar a
+// tela de envios lenta para quem nao vai olhar.
+
+interface Resposta { cliente: string; enviado_em: string; respondeu_em: string; texto: string }
+interface RetornoLinha { cliente: string; enviado_em: string; voltou_em: string; valor: number; nota?: string }
+
+const dia = (v: string) => {
+  if (!v) return ''
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v.slice(0, 5)
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? v : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+const diaHora = (v: string) => {
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? v : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+const reais = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+function PainelDetalhe({ envioId, nome, aba, aoFechar }: {
+  envioId: string; nome: string; aba: 'respostas' | 'retornos'; aoFechar: () => void
+}) {
+  const [ver, setVer] = useState<'respostas' | 'retornos'>(aba)
+  // Periodo que o dono escolhe para recortar. 0 = tudo, que e o padrao:
+  // ele quer ver o retorno TOTAL da lista e so entao filtrar se quiser.
+  const [dias, setDias] = useState(0)
+  const [dados, setDados] = useState<{ respostas: Resposta[]; retornos: RetornoLinha[]; receita: number; voltaram: number } | null>(null)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let vivo = true
+    fetch(`/api/crm/disparos?detalhe=${encodeURIComponent(envioId)}`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error('nao deu'))))
+      .then(d => { if (vivo) setDados(d) })
+      .catch(() => { if (vivo) setErro('Nao consegui carregar o detalhe. Tente de novo.') })
+    return () => { vivo = false }
+  }, [envioId])
+
+  // O recorte vale para as DUAS abas: o dono compara "quantas mensagens
+  // sairam" com "quantas voltaram" no mesmo periodo, e numeros de janelas
+  // diferentes nao se comparam.
+  const corte = dias ? Date.now() - dias * 864e5 : 0
+  const emData = (v: string) => {
+    if (!v) return 0
+    const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v)
+    if (br) return new Date(+br[3], +br[2] - 1, +br[1]).getTime()
+    const d = new Date(v); return isNaN(d.getTime()) ? 0 : d.getTime()
+  }
+  const respostas = (dados?.respostas || []).filter(x => !corte || emData(x.respondeu_em) >= corte)
+  const retornos = (dados?.retornos || []).filter(x => !corte || emData(x.voltou_em) >= corte)
+  const receita = retornos.reduce((t, x) => t + x.valor, 0)
+  const pessoas = new Set(retornos.map(x => x.cliente)).size
+  const zerados = retornos.filter(r => !r.valor).length
+
+  return (
+    <div onClick={aoFechar} style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,26,.45)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 760, maxHeight: '86vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid #ece9e2', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}>{nome}</div>
+            <div style={{ fontSize: 12, color: '#8f877f' }}>O que aconteceu depois do envio</div>
+          </div>
+          <button onClick={aoFechar} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af', padding: 4 }}><X size={18} /></button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, padding: '10px 18px 0' }}>
+          {([['respostas', 'Responderam'], ['retornos', 'Voltaram ao salao']] as const).map(([k, rot]) => (
+            <button key={k} onClick={() => setVer(k)}
+              style={{ padding: '7px 14px', borderRadius: 9, border: `1.5px solid ${ver === k ? ROXO : '#e0ddd8'}`, background: ver === k ? '#f0eefb' : '#fff', color: ver === k ? ROXO : '#6b6860', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {rot}{dados ? ` (${k === 'respostas' ? respostas.length : retornos.length})` : ''}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '10px 18px 0', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11.5, color: '#8f877f' }}>Periodo:</span>
+          {([[0, 'Tudo'], [30, '30 dias'], [60, '60 dias'], [365, '1 ano']] as const).map(([n, rot]) => (
+            <button key={n} onClick={() => setDias(n)}
+              style={{ padding: '4px 10px', borderRadius: 7, border: `1px solid ${dias === n ? ROXO : '#e0ddd8'}`, background: dias === n ? '#f0eefb' : '#fff', color: dias === n ? ROXO : '#6b6860', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+              {rot}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ overflowY: 'auto', padding: 18 }}>
+          {erro && <div style={{ color: '#b4322a', fontSize: 13 }}>{erro}</div>}
+          {!dados && !erro && <div style={{ color: '#8f877f', fontSize: 13 }}><Loader2 size={13} className="animate-spin" style={{ verticalAlign: -2 }} /> Buscando...</div>}
+
+          {dados && ver === 'respostas' && (respostas.length === 0
+            ? <div style={{ color: '#8f877f', fontSize: 13 }}>Ninguem respondeu neste periodo.</div>
+            : <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead><tr style={{ background: '#faf9f7' }}>
+                  {['Cliente', 'Enviado', 'Respondeu', 'O que disse'].map(h =>
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 11, color: '#6b6860', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {respostas.map((x, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid #f0eee8' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 700, color: '#1a1a1a' }}>{x.cliente}</td>
+                      <td style={{ padding: '8px 10px', color: '#6b6860', whiteSpace: 'nowrap' }}>{dia(x.enviado_em)}</td>
+                      <td style={{ padding: '8px 10px', color: '#6b6860', whiteSpace: 'nowrap' }}>{diaHora(x.respondeu_em)}</td>
+                      <td style={{ padding: '8px 10px', color: '#1a1a1a' }}>{x.texto}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>)}
+
+          {dados && ver === 'retornos' && (retornos.length === 0
+            ? <div style={{ color: '#8f877f', fontSize: 13 }}>Ninguem voltou ao salao neste periodo.</div>
+            : <>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12.5, color: '#6b6860', marginBottom: 10 }}>
+                  <span><b style={{ color: '#1a1a1a' }}>{pessoas}</b> clientes</span>
+                  <span><b style={{ color: '#1a1a1a' }}>{retornos.length}</b> visitas</span>
+                  <span style={{ color: '#2f6b4f', fontWeight: 800 }}>R$ {reais(receita)} {dias ? 'no período' : 'no total'}</span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                  <thead><tr style={{ background: '#faf9f7' }}>
+                    {['Cliente', 'Enviado', 'Voltou', 'Gastou'].map(h =>
+                      <th key={h} style={{ textAlign: h === 'Gastou' ? 'right' : 'left', padding: '8px 10px', fontSize: 11, color: '#6b6860', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {retornos.map((x, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid #f0eee8' }}>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, color: '#1a1a1a' }}>
+                          {x.cliente}
+                          {x.nota && <span style={{ display: 'block', fontWeight: 500, fontSize: 11, color: '#8f877f', marginTop: 1 }}>{x.nota}</span>}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#6b6860', whiteSpace: 'nowrap' }}>{dia(x.enviado_em)}</td>
+                        <td style={{ padding: '8px 10px', color: '#6b6860', whiteSpace: 'nowrap' }}>{dia(x.voltou_em)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, color: x.valor ? '#2f6b4f' : '#9ca3af' }}>
+                          R$ {reais(x.valor)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!!zerados && (
+                  <p style={{ fontSize: 11.5, color: '#8f877f', marginTop: 10, lineHeight: 1.5 }}>
+                    {zerados === 1 ? 'Uma visita aparece' : `${zerados} visitas aparecem`} com R$ 0,00. A visita aconteceu;
+                    o que faltou foi o valor na planilha do Avec. Em geral e agendamento sem comparecimento,
+                    cortesia, ou comanda que ficou aberta.
+                  </p>
+                )}
+              </>)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function EnvioAutomatico() {
+  // Qual envio esta com o detalhe aberto, e em que aba.
+  const [detalhe, setDetalhe] = useState<{ id: string; nome: string; aba: 'respostas' | 'retornos' } | null>(null)
   const [lista, setLista] = useState<Disparo[] | null>(null)
   const [servicos, setServicos] = useState<{ nome: string; clientes: number; ciclo?: number | null }[]>([])
   const [editando, setEditando] = useState<Disparo | null>(null)
@@ -282,6 +447,9 @@ export default function EnvioAutomatico() {
 
   return (
     <div>
+      {detalhe && (
+        <PainelDetalhe envioId={detalhe.id} nome={detalhe.nome} aba={detalhe.aba} aoFechar={() => setDetalhe(null)} />
+      )}
       <div style={{ background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 12, padding: '16px 18px', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ maxWidth: 720 }}>
@@ -395,8 +563,8 @@ export default function EnvioAutomatico() {
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#6b6860', marginTop: 10 }}>
                   <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> na hora de voltar agora</span>
                   <span><b style={{ color: '#1a1a1a' }}>{r.envios_total || 0}</b> lembretes enviados</span>
-                  <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
-                  <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                  <button onClick={() => setDetalhe({ id: d.id || '', nome: d.nome || 'Envio', aba: 'respostas' })} style={linkNumero}><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</button>
+                  <button onClick={() => setDetalhe({ id: d.id || '', nome: d.nome || 'Envio', aba: 'retornos' })} style={linkNumero}><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</button>
                     {!!r.receita && <span style={{ color: '#2f6b4f', fontWeight: 700 }}>R$ {r.receita.toLocaleString('pt-BR')} em atendimentos depois do envio</span>}
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                   <span><Users size={12} style={{ verticalAlign: -2 }} /> até {c.porDia} por dia</span>
@@ -413,8 +581,8 @@ export default function EnvioAutomatico() {
                   <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#6b6860' }}>
                     <span><b style={{ color: '#1a1a1a' }}>{r.enviadas}</b> de {r.total} enviadas ({pct}%)</span>
                     <span><b style={{ color: '#1a1a1a' }}>{r.faltam}</b> faltam</span>
-                    <span><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</span>
-                    <span><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</span>
+                    <button onClick={() => setDetalhe({ id: d.id || '', nome: d.nome || 'Envio', aba: 'respostas' })} style={linkNumero}><MessageCircle size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#1a1a1a' }}>{r.responderam}</b> responderam</button>
+                    <button onClick={() => setDetalhe({ id: d.id || '', nome: d.nome || 'Envio', aba: 'retornos' })} style={linkNumero}><CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> <b style={{ color: '#2f6b4f' }}>{r.voltaram}</b> voltaram ao salão</button>
                     {!!r.receita && <span style={{ color: '#2f6b4f', fontWeight: 700 }}>R$ {r.receita.toLocaleString('pt-BR')} em atendimentos depois do envio</span>}
                     {!!r.segundas && <span><b style={{ color: '#1a1a1a' }}>{r.segundas}</b> 2ª mensagem</span>}
                     <span><Users size={12} style={{ verticalAlign: -2 }} /> {c.porDia} por dia</span>

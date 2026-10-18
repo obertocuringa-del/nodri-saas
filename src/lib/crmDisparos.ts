@@ -770,17 +770,36 @@ async function lerAtendimentosLeve(salaoId: string) {
 /** Por cliente (nome sem acento): cada comanda com data e valor -- a receita do envio. */
 const _receita = new Map<string, Map<string, { em: number; valor: number }[]>>()
 
+/**
+ * TODAS as visitas por cliente, inclusive as de valor ZERO.
+ *
+ * `_receita` existe para somar dinheiro e por isso descarta a comanda sem
+ * valor. Só que a visita zerada ACONTECEU: a cliente voltou ao salão.
+ * Escondê-la fazia a lista de retornos mentir — o dono via "15 voltaram" e,
+ * ao abrir, achava menos gente do que o número prometia.
+ *
+ * Pedido do dono em 18/10/2026: mostrar a visita zerada e dizer por que está
+ * zerada. Daqui sai a lista de retornos E a conta de receita, para os dois
+ * números nunca mais divergirem entre si.
+ */
+const _visitas = new Map<string, Map<string, { em: number; valor: number; data: string }[]>>()
+
 async function montarUltimas(salaoId: string) {
   const rows = await lerAtendimentosLeve(salaoId)
   const chaveDe = chavesDosAtendimentos(rows)
   const receita = new Map<string, { em: number; valor: number }[]>()
+  const visitas = new Map<string, { em: number; valor: number; data: string }[]>()
   for (const r of rows) {
     const cli = chaveDe(r), em = parseData(String(r.data_comanda || ''))
     const valor = Number(r.total) || Number(r.valor) || 0
-    if (!cli || !em || !valor) continue
+    if (!cli || !em) continue
+    // A visita entra SEMPRE, mesmo valendo zero: ela aconteceu.
+    const v = visitas.get(cli) || []; v.push({ em, valor, data: String(r.data_comanda || '') }); visitas.set(cli, v)
+    if (!valor) continue
     const l = receita.get(cli) || []; l.push({ em, valor }); receita.set(cli, l)
   }
   _receita.set(salaoId, receita)
+  _visitas.set(salaoId, visitas)
   const mapa = new Map<string, Map<string, { nome: string; em: number; data: string }>>()
   for (const r of rows) {
     const cli = chaveDe(r), serv = String(r.servico || '').trim()
@@ -1501,6 +1520,79 @@ export async function resumoDoDisparo(salaoId: string, d: Disparo) {
   return dados
 }
 
+/** Uma visita que aconteceu DEPOIS do envio, com o porquê de estar zerada. */
+export interface Retorno {
+  chave: string
+  cliente: string
+  enviado_em: string
+  voltou_em: string
+  valor: number
+  /** Só quando valor é zero: o que explica a comanda sem dinheiro. */
+  nota?: string
+}
+
+// Não há prazo de validade: a visita conta como retorno por quanto tempo for.
+//
+// Havia um corte de 60 dias, herdado de quando isto só somava receita
+// recente. O dono tirou em 18/10/2026, e a razão é de medida, não de
+// preferência: ele quer saber o retorno TOTAL que cada lista deu desde que
+// nasceu. Recortar por data é escolha de quem olha, e a tela oferece isso
+// (últimos 30 dias, 60 dias, um ano) — o número guardado é sempre o cheio.
+
+/**
+ * As visitas que aconteceram depois do envio, UMA LINHA POR VISITA.
+ *
+ * Uma linha por visita, e não por pessoa, porque é assim que o dono mostra o
+ * resultado: "mandei dia 2, ela voltou dia 3 e de novo dia 10". Agrupar por
+ * pessoa esconderia a segunda volta, que é justamente a prova de que a
+ * cliente ficou (pedido dele em 18/10/2026).
+ *
+ * A data de corte é a PRIMEIRA mensagem enviada àquela cliente; a 2ª
+ * mensagem não reabre a janela, senão a mesma visita contaria duas vezes.
+ */
+function montarRetornos(salaoId: string, envios: any[]): Retorno[] {
+  const visitas = _visitas.get(salaoId)
+  if (!visitas) return []
+
+  const primeira = new Map<string, { em: number; nome: string }>()
+  for (const v of envios) {
+    if (String(v.chave || '').endsWith(SEGUNDA)) continue
+    const nome = semAcento(v.cliente_nome).replace(/\s+/g, ' ')
+    const k = chaveDaCliente(nome, telDaChave(v.chave))
+    const t = new Date(v.enviado_em).getTime()
+    const atual = primeira.get(k)
+    if (!atual || t < atual.em) primeira.set(k, { em: t, nome: v.cliente_nome || nome })
+  }
+
+  const saida: Retorno[] = []
+  for (const [k, { em, nome }] of primeira) {
+    for (const c of visitas.get(k) || []) {
+      if (c.em <= em) continue
+      saida.push({
+        chave: k,
+        cliente: nome,
+        enviado_em: new Date(em).toISOString(),
+        voltou_em: c.data,
+        valor: Math.round(c.valor * 100) / 100,
+        ...(c.valor ? {} : { nota: notaDoZero() }),
+      })
+    }
+  }
+  return saida.sort((a, b) => parseData(b.voltou_em) - parseData(a.voltou_em))
+}
+
+/**
+ * Por que uma visita aparece valendo zero.
+ *
+ * O NODRI não sabe o motivo: ele lê a planilha do sistema de agenda, e lá a
+ * comanda veio sem valor. O que dá para fazer é dizer isso em português, em
+ * vez de mostrar um R$ 0,00 seco que parece defeito do sistema. Os casos que
+ * o salão relata são sempre os mesmos três.
+ */
+const notaDoZero = () =>
+  'Comanda sem valor na planilha do Avec. Em geral é agendamento que a cliente não compareceu, '
+  + 'cortesia, ou comanda que ficou aberta e não foi fechada.'
+
 async function calcularResumo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)
   // Tudo o que não depende um do outro sai junto. `alvosDoDisparo` e a
@@ -1539,25 +1631,22 @@ async function calcularResumo(salaoId: string, d: Disparo) {
       if (new Date(m.criado_em).getTime() > (porConversa.get(m.conversa_id) || Infinity)) { ja.add(m.conversa_id); responderam++ }
     }
   }
-  // Pelo celular: pelo nome, a volta de uma "FABIANA" contava para a outra.
-  const ultimaDe = new Map<string, number>()
-  for (const p of perfis) ultimaDe.set(p.chave, Math.max(ultimaDe.get(p.chave) || 0, parseBR(p.ultima_visita)))
-  const voltaram = envios.filter(v => (ultimaDe.get(telDaChave(v.chave)) || 0) > new Date(v.enviado_em).getTime()).length
-
-  // Receita: o que quem recebeu gastou no salão DEPOIS de receber (até 60
-  // dias). A primeira mensagem de cada cliente conta; a 2ª não soma de novo.
+  // ── Retornos e receita: UMA fonte só ────────────────────────────────────
+  //
+  // Antes eram duas contas com critérios diferentes, e por isso não fechavam
+  // entre si: "voltaram" olhava a ÚLTIMA VISITA pelo TELEFONE, e a receita
+  // somava as comandas por NOME+TELEFONE numa janela de 60 dias. O dono via
+  // "15 voltaram · R$ 5.012" e, ao abrir o detalhe, a soma não batia com o
+  // cartão (reclamação dele em 18/10/2026: "quero ficar o mais assertivo
+  // possível, sem distorção").
+  //
+  // Agora as duas saem da MESMA lista de visitas: quem recebeu, o que ela
+  // fez depois de receber, dentro de 60 dias. `voltaram` é quanta gente
+  // aparece nessa lista e `receita` é a soma dela. Não há como divergirem.
   await ultimasPorServico(salaoId)
-  const receitaMap = _receita.get(salaoId)
-  let receita = 0
-  const primeira = new Map<string, number>()
-  for (const v of envios) {
-    if (String(v.chave || '').endsWith(SEGUNDA)) continue
-    const k = chaveDaCliente(semAcento(v.cliente_nome).replace(/\s+/g, ' '), telDaChave(v.chave)), t = new Date(v.enviado_em).getTime()
-    if (!primeira.has(k) || t < primeira.get(k)!) primeira.set(k, t)
-  }
-  for (const [k, t] of primeira) {
-    for (const c of receitaMap?.get(k) || []) if (c.em > t && c.em - t <= 60 * 864e5) receita += c.valor
-  }
+  const retornos = montarRetornos(salaoId, envios)
+  const voltaram = new Set(retornos.map(r => r.chave)).size
+  const receita = retornos.reduce((t, r) => t + r.valor, 0)
 
   const segundas = envios.filter(v => String(v.chave || '').endsWith(SEGUNDA)).length
   return {
@@ -1633,4 +1722,86 @@ export async function servicosDoSalao(salaoId: string) {
     const nome = [...c.grafias.entries()].sort((a, b) => b[1] - a[1])[0][0]
     return { nome, clientes: c.clientes.size, ciclo: catalogo.get(semAcento(nome)) || null }
   }).sort((a, b) => b.clientes - a.clientes)
+}
+
+// ── O DETALHE POR TRÁS DOS NÚMEROS ───────────────────────────────────────────
+//
+// O cartão do envio mostra "27 responderam · 15 voltaram · R$ 5.012". Até
+// 18/10/2026 o detalhe era calculado e jogado fora: ficava só o total.
+//
+// O dono pediu para abrir cada número, e o motivo é de venda, não de
+// curiosidade: mostrar a cliente PEDINDO horário por causa da mensagem, e a
+// linha "mandei dia 2, ela voltou dia 3 e gastou R$ 668", vale mais que
+// qualquer estatística na hora de convencer outro salão.
+//
+// Vive numa função separada, chamada só quando alguém clica: carregar isto
+// junto do resumo deixaria a tela de envios lenta para quem não vai olhar.
+
+export interface Resposta {
+  cliente: string
+  enviado_em: string
+  respondeu_em: string
+  texto: string
+}
+
+export async function detalheDoDisparo(salaoId: string, d: Disparo): Promise<{
+  respostas: Resposta[]
+  retornos: Retorno[]
+  receita: number
+  voltaram: number
+}> {
+  const { dados: envios } = await paginar<any>((de, ate) => supabaseAdmin
+    .from('crm_disparo_envios')
+    .select('chave, cliente_nome, conversa_id, enviado_em')
+    .eq('salao_id', salaoId).eq('disparo_id', d.id).range(de, ate))
+
+  // ── Quem respondeu, e o que disse ──
+  //
+  // A PRIMEIRA mensagem que a cliente mandou depois do envio. As seguintes
+  // são a conversa andando; quem abre esta lista quer saber o que ela
+  // respondeu ao disparo, não o atendimento inteiro.
+  const inicio = new Map<string, { em: number; nome: string }>()
+  for (const v of envios) {
+    if (!v.conversa_id) continue
+    const t = new Date(v.enviado_em).getTime()
+    const atual = inicio.get(v.conversa_id)
+    if (!atual || t < atual.em) inicio.set(v.conversa_id, { em: t, nome: v.cliente_nome || '' })
+  }
+
+  const respostas: Resposta[] = []
+  const ids = [...inicio.keys()]
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data } = await supabaseAdmin.from('crm_mensagens')
+      .select('conversa_id, texto, tipo, criado_em')
+      .in('conversa_id', ids.slice(i, i + 150))
+      .eq('direcao', 'entrada')
+      .order('criado_em', { ascending: true }).limit(2000)
+    const ja = new Set<string>()
+    for (const m of data || []) {
+      if (ja.has(m.conversa_id)) continue
+      const base = inicio.get(m.conversa_id)
+      if (!base || new Date(m.criado_em).getTime() <= base.em) continue
+      ja.add(m.conversa_id)
+      respostas.push({
+        cliente: base.nome,
+        enviado_em: new Date(base.em).toISOString(),
+        respondeu_em: m.criado_em,
+        // Áudio e foto não têm texto: dizer o que é vale mais que vir vazio.
+        texto: String(m.texto || '').trim() || `[${m.tipo || 'mídia'}]`,
+      })
+    }
+  }
+  respostas.sort((a, b) => b.respondeu_em.localeCompare(a.respondeu_em))
+
+  // ── Quem voltou, quando e quanto gastou ──
+  // Mesma fonte que alimenta o número do cartão, então a soma sempre fecha.
+  await ultimasPorServico(salaoId)
+  const retornos = montarRetornos(salaoId, envios)
+
+  return {
+    respostas,
+    retornos,
+    receita: Math.round(retornos.reduce((t, r) => t + r.valor, 0)),
+    voltaram: new Set(retornos.map(r => r.chave)).size,
+  }
 }
