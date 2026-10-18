@@ -1585,13 +1585,22 @@ function montarRetornos(salaoId: string, envios: any[]): Retorno[] {
  * Por que uma visita aparece valendo zero.
  *
  * O NODRI não sabe o motivo: ele lê a planilha do sistema de agenda, e lá a
- * comanda veio sem valor. O que dá para fazer é dizer isso em português, em
- * vez de mostrar um R$ 0,00 seco que parece defeito do sistema. Os casos que
- * o salão relata são sempre os mesmos três.
+ * comanda veio sem valor. O que dá para fazer é dizer isso, em vez de um
+ * R$ 0,00 seco que parece defeito do sistema.
+ *
+ * O texto foi corrigido na auditoria de 18/10/2026. A primeira versão dizia
+ * "em geral é agendamento que a cliente não compareceu", e isso era CHUTE
+ * errado: ao conferir os casos reais, eram sessões de pacote já pago — uma
+ * cliente com três drenagens semanais seguidas a zero, outra com terapia
+ * capilar. Chamar isso de falta seria dar informação errada ao dono, logo na
+ * tela que ele usa para mostrar resultado a um cliente.
+ *
+ * Por isso a ordem dos motivos começa pelo que de fato aparece, e a frase diz
+ * que o sistema não sabe qual deles foi.
  */
 const notaDoZero = () =>
-  'Comanda sem valor na planilha do Avec. Em geral é agendamento que a cliente não compareceu, '
-  + 'cortesia, ou comanda que ficou aberta e não foi fechada.'
+  'Visita sem valor na planilha do Avec — geralmente sessão de pacote já pago. '
+  + 'Também pode ser cortesia, retoque incluso ou comanda que ficou aberta.'
 
 async function calcularResumo(salaoId: string, d: Disparo) {
   const perfis = await perfisDoSalao(salaoId)

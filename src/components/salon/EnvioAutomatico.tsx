@@ -372,9 +372,10 @@ function PainelDetalhe({ envioId, nome, aba, aoFechar }: {
                 </table>
                 {!!zerados && (
                   <p style={{ fontSize: 11.5, color: '#8f877f', marginTop: 10, lineHeight: 1.5 }}>
-                    {zerados === 1 ? 'Uma visita aparece' : `${zerados} visitas aparecem`} com R$ 0,00. A visita aconteceu;
-                    o que faltou foi o valor na planilha do Avec. Em geral e agendamento sem comparecimento,
-                    cortesia, ou comanda que ficou aberta.
+                    {zerados === 1 ? 'Uma visita aparece' : `${zerados} visitas aparecem`} com R$ 0,00. A cliente
+                    veio; o que faltou foi o valor na planilha do Avec — geralmente sessão de pacote já pago,
+                    que não gera cobrança nova. Também pode ser cortesia, retoque incluso ou comanda que ficou
+                    aberta. Elas contam como retorno, mas não somam no valor.
                   </p>
                 )}
               </>)}
