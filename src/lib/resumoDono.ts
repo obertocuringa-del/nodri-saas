@@ -22,6 +22,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { paginar } from '@/lib/paginar'
 import { normalizarTelefone, ETIQUETA_NAO_PERTURBE } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
+import { normalizaServico, type Campanha } from '@/lib/acoesComerciais'
 
 const FUSO = 'America/Sao_Paulo'
 export const CHAVE_RESUMO_DONO = 'resumo_dono'
@@ -62,6 +63,8 @@ export interface ConfigResumo {
   /** 0 = domingo ... 6 = sábado */
   dias: number[]
   hora: string
+  /** Como o salão se chama no título da mensagem (vazio = o nome do WhatsApp do salão). */
+  nome: string
 }
 export interface EstadoResumo {
   dia: string
@@ -95,6 +98,7 @@ export function lerConfig(b: any): ConfigResumo {
     itens, telefones, dias,
     // Padrão do dono: 23h, quando o dia fechou e a coleta das 22h já chegou.
     hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(b?.hora || '')) ? String(b.hora) : '23:00',
+    nome: String(b?.nome || '').trim().slice(0, 60),
   }
 }
 
@@ -164,6 +168,8 @@ const num = (v: any) => { const n = Number(String(v ?? '').replace(',', '.')); r
 const moeda = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const moedaCurta = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
 const pct = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'
+/** "alta de 7,6%" / "queda de 9,8%": palavra no lugar do sinal, que no WhatsApp se perde. */
+const variacao = (v: number | null) => v === null ? '' : v >= 0 ? `alta de ${pct(v)}` : `queda de ${pct(-v)}`
 const primeiroNome = (s: string) => {
   const p = String(s || '').trim().split(/\s+/)[0] || ''
   if (p.length <= 2) return p.toUpperCase()          // sigla ("MP"), não nome
@@ -195,7 +201,7 @@ function mediaDoDia(diario: Map<string, number>, ate: string, dow: number, quant
   return v.length ? { media: v.reduce((s, x) => s + x, 0) / v.length, n: v.length } : { media: 0, n: 0 }
 }
 
-async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Numeros> {
+async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhido = ''): Promise<Numeros> {
   const sinais: string[] = []
   const linhas: Record<string, string[]> = {}
   const quer = (id: string) => itens.includes(id)
@@ -206,15 +212,18 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     meses.push({ ano: d.getUTCFullYear(), mes: d.getUTCMonth() + 1 })
   }
 
-  const [{ data: salao }, { data: periodos }, { data: metaRow }] = await Promise.all([
+  const [{ data: salao }, { data: canal }, { data: periodos }, { data: metaRow }] = await Promise.all([
     supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle(),
+    supabaseAdmin.from('crm_canais').select('nome_exibicao').eq('salao_id', salaoId).maybeSingle(),
     supabaseAdmin.from('relatorio_periodos')
       .select('ano, mes, atualizado_em, resumo_mensal, faturamento_diario, prof_servicos, prof_ticket, prof_ocupacao')
       .eq('salao_id', salaoId).gte('ano', hoje.ano - 1),
     supabaseAdmin.from('ia_metas_salao').select('meta_valor')
       .eq('salao_id', salaoId).eq('ano', hoje.ano).eq('mes', hoje.mes).maybeSingle(),
   ])
-  const nome = String((salao as any)?.nome || 'Seu salão')
+  // A razão social ("... LTDA") é feia para título; o nome do WhatsApp do salão
+  // é como o dono o conhece. O dono ainda pode escolher o nome na tela.
+  const nome = nomeEscolhido.trim() || String((canal as any)?.nome_exibicao || '').trim() || String((salao as any)?.nome || 'Seu salão')
 
   const doMes = (periodos || []).find((p: any) => p.ano === hoje.ano && p.mes === hoje.mes) || null
   const diario = new Map<string, number>()
@@ -252,19 +261,17 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
 
     const l: string[] = []
     if (valorHoje > 0) {
-      let cmp = ''
+      l.push(`Faturamento: ${moeda(valorHoje)}`)
       if (base.n >= 2) {
-        const d = (valorHoje / base.media - 1) * 100
-        cmp = ` (${d >= 0 ? '+' : ''}${pct(d).replace('.', ',')} sobre a média de ${DIA_PLURAL[hoje.dow]}: ${moedaCurta(base.media)})`
+        l.push(`Média de ${DIA_PLURAL[hoje.dow]}: ${moedaCurta(base.media)}`, `Hoje teve ${variacao((valorHoje / base.media - 1) * 100)}`)
         if (valorHoje < base.media * 0.7) sinais.push(`Dia fraco: ${moedaCurta(valorHoje)}, ${pct((valorHoje / base.media) * 100)} da média de ${DIA_PLURAL[hoje.dow]}.`)
       }
-      l.push(`Faturamento: ${moeda(valorHoje)}${cmp}`)
-      if (clientes > 0) l.push(`Clientes atendidas: ${clientes} | Ticket: ${moeda(valorHoje / clientes)}`)
+      if (clientes > 0) l.push('', `Clientes atendidas: ${clientes}`, `Ticket do dia: ${moeda(valorHoje / clientes)}`)
       if (desconto > 0 && bruto > 0) {
-        l.push(`Descontos: ${moeda(desconto)} (${pct((desconto / bruto) * 100)} do bruto)`)
+        l.push('', `Descontos: ${moeda(desconto)}`, `São ${pct((desconto / bruto) * 100)} do bruto`)
         if (desconto / bruto > 0.1) sinais.push(`Descontos altos hoje: ${pct((desconto / bruto) * 100)} do bruto. Vale conferir quem concedeu e por quê.`)
       }
-      if (comandas >= 500) l.push('Atenção: o Avec entrega no máximo 500 comandas por coleta; os números do dia podem estar incompletos.')
+      if (comandas >= 500) l.push('', 'Atenção: o Avec entrega no máximo 500 comandas por coleta; os números do dia podem estar incompletos.')
     } else {
       l.push('Nenhum faturamento lançado hoje.')
       if (base.n >= 2) sinais.push(`Sem faturamento lançado hoje (a média de ${DIA_PLURAL[hoje.dow]} é ${moedaCurta(base.media)}). Confira se o dia foi fechado ou se o relatório não chegou.`)
@@ -293,20 +300,19 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     const l: string[] = []
     if (meta > 0) {
       const restante = Math.max(meta - realizado, 0)
-      l.push(`Realizado: ${moeda(realizado)} de ${moeda(meta)} (${pct((realizado / meta) * 100)})`)
-      if (restante <= 0) l.push('Meta batida.')
+      l.push(`Meta: ${moeda(meta)}`, `Realizado: ${moeda(realizado)}`, `Já são ${pct((realizado / meta) * 100)} da meta`)
+      if (restante <= 0) l.push('', 'Meta batida.')
       else {
-        l.push(`Falta: ${moeda(restante)}`)
+        l.push('', `Falta: ${moeda(restante)}`)
         if (abertos > 0) {
-          l.push(`Ainda restam ${abertos} dias de atendimento: precisa de ${moedaCurta(restante / abertos)} por dia`)
+          l.push(`Restam ${abertos} dias de atendimento`, `Precisa de ${moedaCurta(restante / abertos)} por dia`)
           const proj = realizado + esperado
-          l.push(`Projeção no ritmo atual: ${moedaCurta(proj)} (${pct((proj / meta) * 100)} da meta)`)
+          l.push('', 'Projeção no ritmo atual:', `${moedaCurta(proj)}, ${pct((proj / meta) * 100)} da meta`)
           if (proj < meta * 0.9) sinais.push(`Meta em risco: no ritmo atual o mês fecha em ${pct((proj / meta) * 100)} da meta. Faltam ${moedaCurta(restante)}; vale uma ação comercial nos dias fracos.`)
         } else l.push('Não restam dias de atendimento no mês.')
       }
     } else {
-      l.push(`Realizado: ${moeda(realizado)}`)
-      l.push(`A meta de ${MES_NOME[hoje.mes]} não está definida. Defina em Relatórios > Metas para ver a projeção.`)
+      l.push(`Realizado: ${moeda(realizado)}`, '', `A meta de ${MES_NOME[hoje.mes]} não está definida. Defina em Relatórios > Metas para ver a projeção.`)
     }
     linhas.meta = l
   }
@@ -325,7 +331,6 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     const antes = (periodos || []).find((p: any) => p.ano === hoje.ano - 1 && p.mes === hoje.mes)
     const ant = Array.isArray(antes?.resumo_mensal) ? antes!.resumo_mensal[0] : null
     const var_ = (a: number, b: number) => b > 0 ? (a / b - 1) * 100 : null
-    const sinal = (v: number | null) => v === null ? '' : ` (${v >= 0 ? '+' : ''}${pct(v)})`
     const fator = realizado > 0 ? (realizado + esperado) / realizado : 1
 
     const somaAte = (linhas: any[], prefixo?: string) => {
@@ -347,30 +352,93 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
 
     if (atual) {
       const vAno = var_(fatBase, fatAnoPassado), vMes = var_(fatBase, fatMesPassado)
-      l.push(`Faturamento: ${moeda(num(atual.faturamento_total))}`)
-      if (fatAnoPassado > 0) l.push(`  mesmo período de ${ano}: ${moedaCurta(fatAnoPassado)}${sinal(vAno)}`)
-      if (fatMesPassado > 0) l.push(`  mesmo período do mês passado: ${moedaCurta(fatMesPassado)}${sinal(vMes)}`)
+      l.push('*Faturamento*', moeda(num(atual.faturamento_total)))
+      if (fatAnoPassado > 0) l.push(`Em ${ano}, mesmo período: ${moedaCurta(fatAnoPassado)}`, `Agora: ${variacao(vAno)}`)
+      if (fatMesPassado > 0) l.push(`No mês passado, mesmo período: ${moedaCurta(fatMesPassado)}`, `Agora: ${variacao(vMes)}`)
       if (vAno !== null && vAno <= -10) sinais.push(`Faturamento ${pct(Math.abs(vAno))} abaixo do mesmo período de ${ano}. O mês está andando mais devagar que o do ano passado.`)
       else if (vMes !== null && vMes <= -10) sinais.push(`Faturamento ${pct(Math.abs(vMes))} abaixo do mesmo período do mês passado.`)
 
       const tk = num(atual.ticket_medio), tkAnt = num(ant?.ticket_medio)
-      l.push(`Ticket médio: ${moeda(tk)}${tkAnt > 0 ? ` | ${ano}: ${moeda(tkAnt)}${sinal(var_(tk, tkAnt))}` : ''}`)
+      l.push('', '*Ticket médio*', moeda(tk))
+      if (tkAnt > 0) l.push(`Em ${ano}: ${moeda(tkAnt)}`, `Agora: ${variacao(var_(tk, tkAnt))}`)
       const vt = tkAnt > 0 ? var_(tk, tkAnt) : null
       if (vt !== null && vt <= -10) sinais.push(`Ticket médio ${pct(Math.abs(vt))} abaixo do de ${ano}: confira descontos e venda de serviços de maior valor.`)
 
-      const linha = (nome: string, a: number, b: number, dinheiro: boolean) => {
+      // Cada indicador em 3 ou 4 linhas curtas: o valor até hoje, onde deve
+      // fechar o mês no ritmo atual e o mês inteiro de um ano atrás.
+      const bloco = (nome: string, a: number, b: number, dinheiro: boolean) => {
         const f = (v: number) => dinheiro ? moedaCurta(v) : String(Math.round(v))
         const rit = a * fator
-        return `${nome}: ${f(a)} até hoje | no ritmo fecha em ${dinheiro ? '' : '~'}${f(rit)}` +
-          (b > 0 ? ` | ${ano} (mês inteiro): ${f(b)}${sinal(var_(rit, b))}` : '')
+        const r = ['', `*${nome}*`, `Até hoje: ${f(a)}`, `Fecha o mês em ${dinheiro ? '' : 'cerca de '}${f(rit)}`]
+        if (b > 0) r.push(`${MES_NOME[hoje.mes]} de ${ano} inteiro: ${f(b)}`, `Previsão: ${variacao(var_(rit, b))}`)
+        return r
       }
-      l.push(linha('Clientes atendidas', num(atual.clientes_atendidos), num(ant?.clientes_atendidos), false))
-      l.push(linha('Clientes novas', num(atual.clientes_novos), num(ant?.clientes_novos), false))
-      l.push(linha('Serviços', num(atual.faturamento_servicos), num(ant?.faturamento_servicos), true))
-      l.push(linha('Produtos', num(atual.faturamento_produtos), num(ant?.faturamento_produtos), true))
-      if (!ant) l.push(`Sem relatório de ${MES_NOME[hoje.mes]}/${ano} no sistema para comparar.`)
+      l.push(...bloco('Clientes atendidas', num(atual.clientes_atendidos), num(ant?.clientes_atendidos), false))
+      l.push(...bloco('Clientes novas', num(atual.clientes_novos), num(ant?.clientes_novos), false))
+      l.push(...bloco('Serviços', num(atual.faturamento_servicos), num(ant?.faturamento_servicos), true))
+      l.push(...bloco('Produtos', num(atual.faturamento_produtos), num(ant?.faturamento_produtos), true))
+      if (!ant) l.push('', `Sem relatório de ${MES_NOME[hoje.mes]}/${ano} no sistema para comparar.`)
     } else l.push('Sem o resumo do mês importado.')
     linhas.indicadores = l
+  }
+
+  // ── Vendas das ações comerciais ──
+  //
+  // Mesma conta da tela Ações Comerciais (api/salon/acoes-comerciais/vendidos):
+  // a ação tem o NOME de um serviço, e a venda é a quantidade desse serviço no
+  // relatório "Serviços mais vendidos" dos meses da campanha. Assim o número da
+  // mensagem é o mesmo que o dono vê na tela. Limite herdado dela: o relatório
+  // vem somado por mês, então a ação conta o mês inteiro em que está.
+  if (quer('acoes')) {
+    const { data: cfgA } = await supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', salaoId).eq('chave', 'acoes_comerciais').maybeSingle()
+    const campanhas: Campanha[] = Array.isArray((cfgA as any)?.valor) ? (cfgA as any).valor : []
+    const conhecidos = new Set<string>()
+    for (const p of periodos || []) for (const it of (Array.isArray(p.prof_servicos) ? p.prof_servicos : [])) conhecidos.add(normalizaServico(it?.servico))
+    const diasEntre = (a: string, b: string) => Math.round((dtDe(a).getTime() - dtDe(b).getTime()) / 864e5)
+    const lista: Array<{ titulo: string; texto: string; qtd: number; encerrada: boolean }> = []
+    for (const c of campanhas) {
+      if (!c.ativa) continue
+      const ini = c.dataInicio || '', fim = c.dataFim || ''
+      if (ini && ini > hoje.iso) continue                                  // ainda não começou
+      const encerrada = !!fim && fim < hoje.iso
+      if (encerrada && fim < somarDias(hoje.iso, -30)) continue            // acabou há mais de 30 dias
+      const alvo = normalizaServico(c.titulo)
+      if (!alvo) continue
+      const titulo = String(c.titulo).trim().slice(0, 60)
+
+      const de = ini || `${hoje.ano - 1}-${p2(hoje.mes)}-01`
+      const ate = encerrada ? fim : hoje.iso
+      const noPeriodo = (ano: number, mes: number) => {
+        const ym = ano * 12 + mes
+        return ym >= Number(de.slice(0, 4)) * 12 + Number(de.slice(5, 7)) && ym <= Number(ate.slice(0, 4)) * 12 + Number(ate.slice(5, 7))
+      }
+      let qtd = 0, valor = 0, qtdMes = 0
+      for (const p of periodos || []) {
+        if (!noPeriodo(p.ano, p.mes)) continue
+        for (const it of (Array.isArray(p.prof_servicos) ? p.prof_servicos : [])) {
+          if (normalizaServico(it?.servico) !== alvo) continue
+          qtd += num(it.quantidade); valor += num(it.valor)
+          if (p.ano === hoje.ano && p.mes === hoje.mes) qtdMes += num(it.quantidade)
+        }
+      }
+      if (!qtd && !conhecidos.has(alvo)) {
+        lista.push({ titulo, qtd: 0, encerrada, texto: `${titulo}: nenhuma venda encontrada (o nome da ação precisa ser igual ao do serviço lançado)` })
+        continue
+      }
+      const partes = [`${qtd} vendido${qtd === 1 ? '' : 's'}${valor > 0 ? ` (${moedaCurta(valor)})` : ''}`]
+      if (!encerrada && qtdMes > 0 && qtdMes !== qtd) partes.push(`${qtdMes} neste mês`)
+      if (encerrada) partes.push(`encerrada em ${fim.slice(8)}/${fim.slice(5, 7)}`)
+      else if (fim) partes.push(`termina em ${diasEntre(fim, hoje.iso)} dia${diasEntre(fim, hoje.iso) === 1 ? '' : 's'}`)
+      lista.push({ titulo, qtd, encerrada, texto: `${titulo}: ${partes.join(' | ')}` })
+      if (!encerrada && qtd === 0 && ini && diasEntre(hoje.iso, ini) >= 7) {
+        sinais.push(`Ação "${titulo}" está ativa há ${diasEntre(hoje.iso, ini)} dias e não teve nenhuma venda. Vale rever a divulgação ou encerrar.`)
+      }
+    }
+    lista.sort((a, b) => Number(a.encerrada) - Number(b.encerrada) || b.qtd - a.qtd)
+    const l = lista.slice(0, 10).map(x => x.texto)
+    if (lista.length > 10) l.push(`e mais ${lista.length - 10} ações`)
+    linhas.acoes = l.length ? l : ['Nenhuma ação comercial ativa no momento.']
   }
 
   // ── Agenda dos próximos 7 dias ──
@@ -406,10 +474,11 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
       const normal = v.reduce((s, x) => s + x, 0) / v.length
       const n = futuros.get(iso) || 0
       const fraco = n < normal * 0.6
-      l.push(`${curto(iso)}: ${n} agendados (normal ${Math.round(normal)})${fraco ? ' - fraco' : ''}`)
-      if (fraco) fracos.push(`${curto(iso)} (${n} contra ${Math.round(normal)})`)
+      l.push(`${curto(iso)}: ${n} (normal ${Math.round(normal)})${fraco ? ' - fraco' : ''}`)
+      if (fraco) fracos.push(curto(iso))
     }
-    if (fracos.length) sinais.push(`Agenda fraca: ${fracos.join(', ')}. Ainda dá tempo de chamar a lista de espera e as clientes em retorno.`)
+    if (l.length) l.unshift('Agendados contra o normal do dia:', '')
+    if (fracos.length) sinais.push(`Agenda fraca em ${fracos.length} dos próximos 7 dias (${fracos.join(', ')}). Ainda dá tempo de chamar a lista de espera e as clientes em retorno.`)
     linhas.agenda = l.length ? l : ['Sem agendamentos futuros no sistema (ou a agenda ainda não foi importada).']
   }
 
@@ -436,23 +505,24 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     }
     const doNome = (n: string) => { const o = ocup.get(semAcento(primeiroNome(n))); return o && o.length === 1 ? o[0] : null }
     const maiorDias = Math.max(0, ...ordem.map(([n]) => doNome(n)?.dias || 0))
+    // Duas linhas por pessoa: o nome com o valor, e embaixo o que explica o número.
     const linhaProf = ([n, v]: [string, number], i: number) => {
       const t = ticket.get(semAcento(n)), o = doNome(n)
-      const partes = [moedaCurta(v)]
-      if (t) partes.push(`ticket ${moedaCurta(t)}`)
-      if (o && o.dias > 0) partes.push(`${o.dias} dias${maiorDias > 0 && o.dias < maiorDias * 0.5 ? ' (poucos dias no mês)' : ''}`)
-      if (o && o.taxa > 0) partes.push(`ocupação ${Math.round(o.taxa)}%`)
-      return `${i + 1}. ${primeiroNome(n)}: ${partes.join(' | ')}`
+      const detalhe: string[] = []
+      if (t) detalhe.push(`ticket ${moedaCurta(t)}`)
+      if (o && o.dias > 0) detalhe.push(`${o.dias} dias${maiorDias > 0 && o.dias < maiorDias * 0.5 ? ' (poucos dias no mês)' : ''}`)
+      if (o && o.taxa > 0) detalhe.push(`ocupação ${Math.round(o.taxa)}%`)
+      return [`${i + 1}. *${primeiroNome(n)}*: ${moedaCurta(v)}`, ...(detalhe.length ? [`   ${detalhe.join(', ')}`] : [])]
     }
     // Mesma quantidade nas duas pontas (até 5), sem repetir ninguém.
     const quantos = Math.min(5, Math.floor(ordem.length / 2))
     if (quantos >= 2) {
-      l.push('Maiores faturamentos:', ...ordem.slice(0, quantos).map(linhaProf))
-      l.push('Menores faturamentos:', ...ordem.slice(-quantos).reverse().map(linhaProf))
-    } else ordem.forEach((x, i) => l.push(linhaProf(x, i)))
+      l.push('*Maiores faturamentos*', ...ordem.slice(0, quantos).flatMap(linhaProf))
+      l.push('', '*Menores faturamentos*', ...ordem.slice(-quantos).reverse().flatMap(linhaProf))
+    } else ordem.forEach((x, i) => l.push(...linhaProf(x, i)))
     if (ordem.length >= 4 && total > 0) {
       const top3 = ordem.slice(0, 3).reduce((s, [, v]) => s + v, 0) / total * 100
-      l.push(`Os 3 primeiros respondem por ${pct(top3)} do faturamento de serviços`)
+      l.push('', `Os 3 primeiros respondem por ${pct(top3)} do faturamento de serviços`)
       if (top3 > 60) sinais.push(`Receita concentrada: 3 profissionais fazem ${pct(top3)} dos serviços. Se um deles faltar ou sair, o mês sente.`)
     }
     linhas.profissionais = l.length ? l : ['Sem faturamento por profissional importado neste mês.']
@@ -479,7 +549,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
       if (notas.length) {
         const media = notas.reduce((s, x) => s + x, 0) / notas.length
         const baixas = notas.filter(n => n <= 3).length
-        l.push(`Nota média da semana: ${media.toFixed(1).replace('.', ',')} de 5 (${resp.dados.length} respostas, ${baixas} notas baixas)`)
+        l.push(`Nota média da semana: ${media.toFixed(1).replace('.', ',')} de 5`, `${resp.dados.length} resposta${resp.dados.length === 1 ? '' : 's'}, ${baixas} nota${baixas === 1 ? '' : 's'} baixa${baixas === 1 ? '' : 's'}`)
         if (media < 4.5 || baixas >= 5) sinais.push(`Qualidade: nota média ${media.toFixed(1).replace('.', ',')} na semana com ${baixas} notas baixas. Leia as respostas no módulo Feedback.`)
       } else l.push('Nenhuma resposta de cliente com nota na última semana.')
     }
@@ -493,10 +563,10 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
       else if (t === 'NEGATIVO') { nega++; const n = primeiroNome(String((r as any).profissional || '')) || 'Sem profissional'; neg.set(n, (neg.get(n) || 0) + 1) }
     }
     if (pos + nega > 0) {
-      l.push(`Feedback do Avec no mês: ${pos} positivos e ${nega} negativos`)
+      l.push('', 'Feedback do Avec no mês:', `${pos} positivos e ${nega} negativos`)
       const piores = [...neg.entries()].sort((a, b) => b[1] - a[1]).filter(([, n]) => n >= 3).slice(0, 3)
       if (piores.length) {
-        l.push(`Mais negativos: ${piores.map(([n, c]) => `${n} (${c})`).join(', ')}`)
+        l.push('', 'Mais negativos:', ...piores.map(([n, c]) => `${n}: ${c}`))
         sinais.push(`Feedback negativo recorrente no mês: ${piores.map(([n, c]) => `${n} (${c})`).join(', ')}. Vale uma conversa individual.`)
       }
     }
@@ -510,7 +580,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     const aberta = data || []
     if (aberta.length) {
       const velha = Math.max(...aberta.map((x: any) => Math.floor((Date.now() - new Date(x.criado_em).getTime()) / 864e5)))
-      linhas.espera = [`${aberta.length} aguardando vaga; a mais antiga espera há ${velha} dias`]
+      linhas.espera = [`${aberta.length} aguardando vaga`, `A mais antiga espera há ${velha} dias`]
     } else linhas.espera = ['Ninguém aguardando vaga.']
   }
 
@@ -529,27 +599,36 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
 
 // ── A mensagem ───────────────────────────────────────────────────────────────
 
-export async function montarResumo(salaoId: string, itens: string[], quando = new Date()): Promise<string> {
+/**
+ * A mensagem em PARTES: uma por assunto, cada uma curta o bastante para ler
+ * sem rolar. Um bloco único misturava tudo e o WhatsApp o mostrava como um
+ * paredão (dono, 22/10/2026, vendo no celular). A primeira parte traz o que
+ * pede decisão (os alertas); o detalhe vem depois, na ordem de importância.
+ */
+export async function montarResumo(salaoId: string, itens: string[], nomeEscolhido = '', quando = new Date()): Promise<string[]> {
   const hoje = agoraBR(quando)
-  const n = await reunir(salaoId, hoje, itens)
-  const bloco = (titulo: string, l?: string[]) => l && l.length ? [`*${titulo}*`, ...l, ''] : []
+  const n = await reunir(salaoId, hoje, itens, nomeEscolhido)
+  const tem = (id: string) => itens.includes(id)
+  const bloco = (titulo: string, l?: string[]) => l && l.length ? [`*${titulo}*`, '', ...l] : []
 
-  const saida: string[] = [
-    `*Resumo do dia - ${n.nome}*`,
-    `${DIA_CURTO[hoje.dow]}, ${p2(hoje.dia)}/${p2(hoje.mes)}/${hoje.ano}`,
-    '',
-    ...(itens.includes('dia') ? bloco('Hoje', n.linhas.dia) : []),
-    ...(itens.includes('meta') ? bloco(`Meta de ${MES_NOME[hoje.mes]}`, n.linhas.meta) : []),
-    ...(itens.includes('indicadores') ? bloco(`Indicadores de ${MES_NOME[hoje.mes]} (1 a ${hoje.dia})`, n.linhas.indicadores) : []),
-    ...(itens.includes('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []),
-    ...(itens.includes('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : []),
-    ...(itens.includes('qualidade') ? bloco('Qualidade', n.linhas.qualidade) : []),
-    ...(itens.includes('espera') ? bloco('Lista de espera', n.linhas.espera) : []),
-    ...(itens.includes('alertas')
-      ? bloco('Alertas', n.sinais.length ? n.sinais.map(s => '- ' + s) : ['Nenhum alerta hoje.'])
-      : []),
-  ]
-  return saida.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  const mes = MES_NOME[hoje.mes]
+  const partes: string[][] = [
+    tem('alertas')
+      ? bloco('Alertas', n.sinais.length ? n.sinais.flatMap((s, i) => i ? ['', '- ' + s] : ['- ' + s]) : ['Nenhum alerta hoje.'])
+      : [],
+    [...(tem('dia') ? bloco('Hoje', n.linhas.dia) : []), ...(tem('dia') && tem('meta') ? [''] : []), ...(tem('meta') ? bloco(`Meta de ${mes}`, n.linhas.meta) : [])],
+    tem('indicadores') ? bloco(`Indicadores de ${mes} (1 a ${hoje.dia})`, n.linhas.indicadores?.[0] === '' ? n.linhas.indicadores.slice(1) : n.linhas.indicadores) : [],
+    tem('acoes') ? bloco('Ações comerciais', n.linhas.acoes) : [],
+    [...(tem('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []), ...(tem('agenda') && tem('espera') ? [''] : []), ...(tem('espera') ? bloco('Lista de espera', n.linhas.espera) : [])],
+    tem('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : [],
+    tem('qualidade') ? bloco('Qualidade', n.linhas.qualidade) : [],
+  ].filter(p => p.length)
+
+  const cabecalho = [`*Resumo do dia - ${n.nome}*`, `${DIA_CURTO[hoje.dow]}, ${p2(hoje.dia)}/${p2(hoje.mes)}/${hoje.ano}`]
+  if (!partes.length) return [cabecalho.join('\n')]
+  // O título abre a primeira parte, separado do conteúdo.
+  partes[0] = [...cabecalho, '', ...partes[0]]
+  return partes.map(p => p.join('\n').replace(/\n{3,}/g, '\n\n').trim())
 }
 
 // ── Envio ────────────────────────────────────────────────────────────────────
@@ -559,7 +638,7 @@ export async function montarResumo(salaoId: string, itens: string[], quando = ne
  * (`sem_conversao`, que o relógio do CRM não mexe) e marcada com a origem do
  * resumo, que é o que a esconde da recepção.
  */
-export async function enviarResumo(salaoId: string, texto: string, destinos: DestinoResumo[]) {
+export async function enviarResumo(salaoId: string, partes: string[], destinos: DestinoResumo[]) {
   let enviados = 0
   const falhas: string[] = []
   for (const d of destinos) {
@@ -582,10 +661,14 @@ export async function enviarResumo(salaoId: string, texto: string, destinos: Des
         conversaId = nova?.id || null
       }
       if (!conversaId) { falhas.push(d.telefone); continue }
-      const { error } = await supabaseAdmin.from('crm_mensagens').insert({
+      // Uma mensagem por parte, 4 s uma da outra: a ponte só pega a que já
+      // venceu, então chegam na ordem certa e não de uma vez só.
+      const inicio = Date.now()
+      const { error } = await supabaseAdmin.from('crm_mensagens').insert(partes.map((texto, i) => ({
         salao_id: salaoId, conversa_id: conversaId, direcao: 'saida', texto, tipo: 'texto',
         situacao: 'na_fila', autor_nome: AUTOR_RESUMO, em_massa: false,
-      })
+        criado_em: new Date(inicio + i * 4000).toISOString(),
+      })))
       if (error) { falhas.push(d.telefone); continue }
       await supabaseAdmin.from('crm_conversas').update({ ultima_em: agora, ultima_de: 'salao', atualizado_em: agora }).eq('id', conversaId)
       enviados++
@@ -620,8 +703,8 @@ async function rodarDoSalao(salaoId: string, c: ConfigResumo, agora: Agora): Pro
   // Marca ANTES de montar: duas voltas seguidas nunca mandam duas vezes.
   await gravarEstado(salaoId, { dia: agora.iso, enviado_em: null, situacao: '', para: 0, motivo: 'enviando' })
   try {
-    const texto = await montarResumo(salaoId, c.itens)
-    const r = await enviarResumo(salaoId, texto, c.telefones)
+    const partes = await montarResumo(salaoId, c.itens, c.nome)
+    const r = await enviarResumo(salaoId, partes, c.telefones)
     await gravarEstado(salaoId, {
       dia: agora.iso, enviado_em: new Date().toISOString(), para: r.enviados,
       situacao: r.enviados ? 'enviado' : 'erro',

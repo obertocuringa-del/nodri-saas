@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (b.acao === 'previa') {
     const c = lerConfig({ ...b.config, ligado: false })
     if (!c.itens.length) return NextResponse.json({ error: 'Marque pelo menos um item.' }, { status: 400 })
-    return NextResponse.json({ texto: await montarResumo(s.salaoId, c.itens) })
+    return NextResponse.json({ partes: await montarResumo(s.salaoId, c.itens, c.nome) })
   }
 
   if (b.acao === 'salvar') {
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
     const c = lerConfig({ ...b.config, ligado: false })
     if (!c.telefones.length) return NextResponse.json({ error: 'Informe pelo menos um telefone válido (com DDD).' }, { status: 400 })
     if (!c.itens.length) return NextResponse.json({ error: 'Marque pelo menos um item.' }, { status: 400 })
-    const texto = await montarResumo(s.salaoId, c.itens)
-    const r = await enviarResumo(s.salaoId, texto, c.telefones)
+    const partes = await montarResumo(s.salaoId, c.itens, c.nome)
+    const r = await enviarResumo(s.salaoId, partes, c.telefones)
     if (!r.enviados) return NextResponse.json({ error: 'Não consegui enfileirar a mensagem.' }, { status: 500 })
     return NextResponse.json({ ok: true, ...r })
   }

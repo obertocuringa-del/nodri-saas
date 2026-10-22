@@ -10,11 +10,11 @@ import toast from 'react-hot-toast'
 
 interface Item { id: string; titulo: string; descricao: string; padrao: boolean }
 interface Destino { nome: string; telefone: string }
-interface Config { ligado: boolean; itens: string[]; telefones: Destino[]; dias: number[]; hora: string }
+interface Config { ligado: boolean; itens: string[]; telefones: Destino[]; dias: number[]; hora: string; nome: string }
 interface Estado { dia: string; enviado_em: string | null; situacao: string; para: number; motivo: string }
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const VAZIA: Config = { ligado: false, itens: [], telefones: [{ nome: '', telefone: '' }], dias: [0, 1, 2, 3, 4, 5, 6], hora: '23:00' }
+const VAZIA: Config = { ligado: false, itens: [], telefones: [{ nome: '', telefone: '' }], dias: [0, 1, 2, 3, 4, 5, 6], hora: '23:00', nome: '' }
 
 const campo = { width: '100%', background: '#faf9f7', border: '1px solid #e8e6e0', borderRadius: 8, padding: '8px 10px', fontSize: 13, color: '#1a1a1a', outline: 'none' } as const
 const rotulo = { fontSize: 12, fontWeight: 700, color: '#6b6860', display: 'block', marginBottom: 6 } as const
@@ -34,13 +34,13 @@ export default function NotificarDonos() {
   const [estado, setEstado] = useState<Estado | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [ocupado, setOcupado] = useState<'' | 'salvar' | 'teste' | 'previa'>('')
-  const [previa, setPrevia] = useState('')
+  const [previa, setPrevia] = useState<string[]>([])
 
   useEffect(() => {
     if (!aberto) return
     let vivo = true
     setCarregando(true)
-    setPrevia('')
+    setPrevia([])
     fetch('/api/relatorios/resumo-dono', { credentials: 'include', cache: 'no-store' })
       .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Falha ao carregar'); return d })
       .then(d => {
@@ -61,7 +61,7 @@ export default function NotificarDonos() {
   }, [aberto])
 
   const todos = itens.length > 0 && itens.every(i => cfg.itens.includes(i.id))
-  const set = (p: Partial<Config>) => { setCfg(c => ({ ...c, ...p })); setPrevia('') }
+  const set = (p: Partial<Config>) => { setCfg(c => ({ ...c, ...p })); setPrevia([]) }
   const alternar = (id: string) => set({ itens: cfg.itens.includes(id) ? cfg.itens.filter(x => x !== id) : [...cfg.itens, id] })
   const alternarDia = (d: number) => set({ dias: cfg.dias.includes(d) ? cfg.dias.filter(x => x !== d) : [...cfg.dias, d].sort() })
   const setTel = (i: number, p: Partial<Destino>) => set({ telefones: cfg.telefones.map((t, j) => j === i ? { ...t, ...p } : t) })
@@ -91,7 +91,7 @@ export default function NotificarDonos() {
   }
   async function ver() {
     setOcupado('previa')
-    try { setPrevia((await chamar('previa')).texto) }
+    try { setPrevia((await chamar('previa')).partes || []) }
     catch (e: any) { toast.error(e.message) } finally { setOcupado('') }
   }
 
@@ -121,6 +121,11 @@ export default function NotificarDonos() {
               <div style={{ padding: 40, textAlign: 'center', color: '#6b6860' }}><Loader2 size={20} className="animate-spin" /></div>
             ) : (
               <>
+                {/* Nome no título */}
+                <span style={rotulo as any}>Nome do salão na mensagem</span>
+                <input value={cfg.nome} onChange={e => set({ nome: e.target.value })} maxLength={60}
+                  placeholder="Vazio: usa o nome do WhatsApp do salão" style={{ ...campo, marginBottom: 18 }} />
+
                 {/* Itens */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={rotulo as any}>O que receber</span>
@@ -200,8 +205,15 @@ export default function NotificarDonos() {
                   <span>Sai pelo WhatsApp do salão, mas a conversa fica escondida: não aparece no CRM para a recepção. No celular do salão, o chat com o dono aparece no WhatsApp; ative as mensagens temporárias nele se quiser que apague sozinho.</span>
                 </div>
 
-                {previa && (
-                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 12.5, lineHeight: 1.55, color: '#1a1a1a', background: '#E7F1E9', border: '1px solid #cfe3d4', borderRadius: 10, padding: 14, margin: '0 0 14px' }}>{previa}</pre>
+                {previa.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11.5, color: '#6b6860', marginBottom: 6 }}>
+                      O dono recebe {previa.length} mensagem{previa.length === 1 ? '' : 's'}, uma depois da outra:
+                    </div>
+                    {previa.map((p, i) => (
+                      <pre key={i} style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 12.5, lineHeight: 1.55, color: '#1a1a1a', background: '#E7F1E9', border: '1px solid #cfe3d4', borderRadius: 10, padding: 14, margin: '0 0 8px' }}>{p}</pre>
+                    ))}
+                  </div>
                 )}
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
