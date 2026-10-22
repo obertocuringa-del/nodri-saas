@@ -28,6 +28,11 @@ export async function GET(req: NextRequest) {
   const conversaId = new URL(req.url).searchParams.get('conversa') || ''
   if (!conversaId) return NextResponse.json({ error: 'Conversa não informada' }, { status: 400 })
 
+  // Conversa do resumo do dono (sigilosa): nem sabendo o id a recepção a abre.
+  const { data: dela } = await supabaseAdmin.from('crm_conversas').select('origem')
+    .eq('id', conversaId).eq('salao_id', sess!.salaoId).maybeSingle()
+  if ((dela as any)?.origem === 'resumo_dono') return NextResponse.json({ error: 'Conversa não encontrada' }, { status: 404 })
+
   const { data, error } = await supabaseAdmin
     .from('crm_mensagens')
     .select('*')

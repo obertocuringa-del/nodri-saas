@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
     .from('crm_conversas')
     .select('id, estado, origem, motivo_perda, criado_em, fechada_em, aguardando_desde, importada, contato:crm_contatos(etiquetas)')
     .eq('salao_id', sess.salaoId)
+    .or('origem.is.null,origem.neq.resumo_dono')   // resumo do dono não é conversa de cliente
     .gte('criado_em', desde)
     .order('criado_em', { ascending: true })
     .range(de, ate))

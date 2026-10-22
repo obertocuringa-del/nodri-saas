@@ -51,6 +51,9 @@ export async function GET(req: NextRequest) {
     .from('crm_conversas')
     .select('*, contato:crm_contatos(id, nome, nome_agenda, telefone, telefone_bruto, cliente_nome, etiquetas, lid, observacao)')
     .eq('salao_id', sess!.salaoId)
+    // O resumo do dono (faturamento e meta) é sigiloso: nunca vai para a caixa
+    // de conversas da recepção. Ver src/lib/resumoDono.ts.
+    .or('origem.is.null,origem.neq.resumo_dono')
     .order('ultima_em', { ascending: false, nullsFirst: false })
 
   const todas: any[] = []

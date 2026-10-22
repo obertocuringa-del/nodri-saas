@@ -9,6 +9,7 @@ import RankingUnificado from '@/components/salon/RankingUnificado'
 import BotaoRecuperacao from '@/components/salon/BotaoRecuperacao'
 import RecuperadosReport from '@/components/salon/RecuperadosReport'
 import EnvioAutomatico from '@/components/salon/EnvioAutomatico'
+import NotificarDonos from '@/components/salon/NotificarDonos'
 import DiaSemanaReport from '@/components/salon/DiaSemanaReport'
 import DetalheClienteRelatorio from '@/components/salon/DetalheClienteRelatorio'
 import { useIsMobile } from '@/lib/useIsMobile'
@@ -317,7 +318,7 @@ export default function RelatoriosPage() {
   const [travando, setTravando] = useState(false)
   const [aba, setAba] = useState<'geral' | 'metas' | 'profissionais' | 'feedbacks' | 'meta_prof' | 'redistribuicao' | 'analise' | 'ranking'>('geral')
   const [dropdownAberto, setDropdownAberto] = useState(false)
-  const { pode: podePerm, carregado: permCarregado } = usePermissoes()
+  const { pode: podePerm, carregado: permCarregado, ehSub } = usePermissoes()
   const TAB_PERM: Record<string, string> = { geral: 'rel_aba_geral', metas: 'rel_aba_metas', meta_prof: 'rel_aba_metaprof', redistribuicao: 'rel_aba_redistribuicao', analise: 'rel_aba_mais', ranking: 'rel_aba_unificado' }
   const SUBS_REL = ['risco', 'perdidos', 'vip', 'regular', 'novo', 'crosssell', 'frequencia', 'diasemana', 'recuperados']
   const algumaAbaRel = ['geral', 'metas', 'meta_prof', 'redistribuicao', 'analise', 'ranking'].some(t => podePerm(TAB_PERM[t]))
@@ -1175,6 +1176,10 @@ export default function RelatoriosPage() {
           <MessageCircle size={14} /> Iniciar CRM
         </button>
         )}
+
+        {/* Resumo do dono por WhatsApp. Só o DONO: traz faturamento e meta, e o
+            sub-usuário nem vê o botão (a API também recusa). */}
+        {!isMobile && permCarregado && !ehSub && <NotificarDonos />}
       </div>
 
       {/* SEM DADOS */}
