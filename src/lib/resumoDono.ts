@@ -43,6 +43,8 @@ export const ITENS_RESUMO: ItemResumo[] = [
     descricao: 'Realizado contra a meta, quanto falta, a média por dia que ainda precisa entrar e a projeção no ritmo atual.' },
   { id: 'indicadores', titulo: 'Indicadores do mês contra o ano passado', padrao: true,
     descricao: 'Faturamento, ticket médio, clientes atendidas, clientes novas, serviços e produtos (os cartões da aba Geral), com a comparação justa: mesmo período do ano passado e o ritmo até o fim do mês.' },
+  { id: 'acoes', titulo: 'Vendas das ações comerciais', padrao: true,
+    descricao: 'Cada ação comercial publicada com quantas vendas teve, contadas nas comandas pelo nome do serviço, dentro das datas da ação. Inclui as encerradas nos últimos 60 dias.' },
   { id: 'agenda', titulo: 'Agenda dos próximos 7 dias', padrao: true,
     descricao: 'Agendamentos de cada dia contra o normal daquele dia da semana, para encher os dias fracos a tempo.' },
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
@@ -384,60 +386,86 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
 
   // ── Vendas das ações comerciais ──
   //
-  // Mesma conta da tela Ações Comerciais (api/salon/acoes-comerciais/vendidos):
-  // a ação tem o NOME de um serviço, e a venda é a quantidade desse serviço no
-  // relatório "Serviços mais vendidos" dos meses da campanha. Assim o número da
-  // mensagem é o mesmo que o dono vê na tela. Limite herdado dela: o relatório
-  // vem somado por mês, então a ação conta o mês inteiro em que está.
+  // A ação comercial tem o nome do serviço que a recepção lança na comanda
+  // ("COMBO ROUGE HAIR"). A venda é contada nas COMANDAS (atendimentos_raw),
+  // dentro das datas da própria ação, e não no relatório somado por mês: assim
+  // uma ação de 10 a 20 do mês não leva as vendas do mês inteiro.
+  //
+  // O nome da ação raramente é idêntico ao do serviço ("TRATAMENTO DAVINES +
+  // MODELAGEM" é lançado como "TRATAMENTO DAVINES BEAUTIFUL THINGS E
+  // MODELAGEM"). Por isso o casamento é por palavras: vale o serviço que
+  // contém TODAS as palavras da ação (sem o que está entre parênteses, sem "e",
+  // "de"...). Ação de uma palavra só exige nome igual, para "CORTE" não somar
+  // todo corte do salão.
   if (quer('acoes')) {
     const { data: cfgA } = await supabaseAdmin.from('salao_config').select('valor')
       .eq('salao_id', salaoId).eq('chave', 'acoes_comerciais').maybeSingle()
     const campanhas: Campanha[] = Array.isArray((cfgA as any)?.valor) ? (cfgA as any).valor : []
-    const conhecidos = new Set<string>()
-    for (const p of periodos || []) for (const it of (Array.isArray(p.prof_servicos) ? p.prof_servicos : [])) conhecidos.add(normalizaServico(it?.servico))
+    const SEM_PESO = new Set(['e', 'de', 'da', 'do', 'dos', 'das', 'a', 'o', 'as', 'os', 'com', 'para', 'no', 'na', 'em', 'um', 'uma'])
+    const palavras = (s: string, tirarParenteses: boolean) => normalizaServico(tirarParenteses ? String(s).replace(/\([^)]*\)/g, ' ') : String(s))
+      .split(/[^a-z0-9]+/).filter(t => t && !SEM_PESO.has(t))
     const diasEntre = (a: string, b: string) => Math.round((dtDe(a).getTime() - dtDe(b).getTime()) / 864e5)
-    const lista: Array<{ titulo: string; texto: string; qtd: number; encerrada: boolean }> = []
+
+    // Quais ações entram: publicadas, já começadas, e as que acabaram há até 60 dias.
+    const vivas: Array<{ c: Campanha; titulo: string; alvo: string[]; ini: string; fim: string; encerrada: boolean; ate: string }> = []
     for (const c of campanhas) {
       if (!c.ativa) continue
       const ini = c.dataInicio || '', fim = c.dataFim || ''
-      if (ini && ini > hoje.iso) continue                                  // ainda não começou
+      if (ini && ini > hoje.iso) continue
       const encerrada = !!fim && fim < hoje.iso
-      if (encerrada && fim < somarDias(hoje.iso, -30)) continue            // acabou há mais de 30 dias
-      const alvo = normalizaServico(c.titulo)
-      if (!alvo) continue
-      const titulo = String(c.titulo).trim().slice(0, 60)
+      if (encerrada && fim < somarDias(hoje.iso, -60)) continue
+      const alvo = palavras(c.titulo, true)
+      if (!alvo.length) continue
+      vivas.push({
+        c, titulo: String(c.titulo).replace(/\s+/g, ' ').trim().slice(0, 60), alvo, ini, fim, encerrada,
+        ate: encerrada ? fim : hoje.iso,
+      })
+    }
 
-      const de = ini || `${hoje.ano - 1}-${p2(hoje.mes)}-01`
-      const ate = encerrada ? fim : hoje.iso
-      const noPeriodo = (ano: number, mes: number) => {
-        const ym = ano * 12 + mes
-        return ym >= Number(de.slice(0, 4)) * 12 + Number(de.slice(5, 7)) && ym <= Number(ate.slice(0, 4)) * 12 + Number(ate.slice(5, 7))
-      }
-      let qtd = 0, valor = 0, qtdMes = 0
-      for (const p of periodos || []) {
-        if (!noPeriodo(p.ano, p.mes)) continue
-        for (const it of (Array.isArray(p.prof_servicos) ? p.prof_servicos : [])) {
-          if (normalizaServico(it?.servico) !== alvo) continue
-          qtd += num(it.quantidade); valor += num(it.valor)
-          if (p.ano === hoje.ano && p.mes === hoje.mes) qtdMes += num(it.quantidade)
-        }
-      }
-      if (!qtd && !conhecidos.has(alvo)) {
-        lista.push({ titulo, qtd: 0, encerrada, texto: `${titulo}: nenhuma venda encontrada (o nome da ação precisa ser igual ao do serviço lançado)` })
-        continue
-      }
-      const partes = [`${qtd} vendido${qtd === 1 ? '' : 's'}${valor > 0 ? ` (${moedaCurta(valor)})` : ''}`]
-      if (!encerrada && qtdMes > 0 && qtdMes !== qtd) partes.push(`${qtdMes} neste mês`)
-      if (encerrada) partes.push(`encerrada em ${fim.slice(8)}/${fim.slice(5, 7)}`)
-      else if (fim) partes.push(`termina em ${diasEntre(fim, hoje.iso)} dia${diasEntre(fim, hoje.iso) === 1 ? '' : 's'}`)
-      lista.push({ titulo, qtd, encerrada, texto: `${titulo}: ${partes.join(' | ')}` })
-      if (!encerrada && qtd === 0 && ini && diasEntre(hoje.iso, ini) >= 7) {
-        sinais.push(`Ação "${titulo}" está ativa há ${diasEntre(hoje.iso, ini)} dias e não teve nenhuma venda. Vale rever a divulgação ou encerrar.`)
+    // Uma leitura por mês, de todas as ações juntas.
+    const mesesPrecisos = new Set<string>()
+    for (const v of vivas) {
+      const de = v.ini || somarDias(hoje.iso, -30)
+      for (let ym = Number(de.slice(0, 4)) * 12 + Number(de.slice(5, 7)) - 1; ym <= Number(v.ate.slice(0, 4)) * 12 + Number(v.ate.slice(5, 7)) - 1; ym++) {
+        mesesPrecisos.add(`${Math.floor(ym / 12)}-${p2((ym % 12) + 1)}`)
       }
     }
+    const comandas: Array<{ iso: string; palavras: Set<string>; nomeNorm: string; qtd: number; total: number }> = []
+    for (const ym of mesesPrecisos) {
+      const r = await paginar<any>((de, ate) => supabaseAdmin.from('atendimentos_raw')
+        .select('servico, data_comanda, qtd, total')
+        .eq('salao_id', salaoId).eq('ano', Number(ym.slice(0, 4))).eq('mes', Number(ym.slice(5)))
+        .range(de, ate), 20000)
+      const cache = new Map<string, { palavras: Set<string>; nomeNorm: string }>()
+      for (const x of r.dados) {
+        const iso = paraIso(x.data_comanda)
+        if (!iso) continue
+        const nome = String(x.servico || '')
+        let k = cache.get(nome)
+        if (!k) { k = { palavras: new Set(palavras(nome, false)), nomeNorm: palavras(nome, true).join(' ') }; cache.set(nome, k) }
+        comandas.push({ iso, palavras: k.palavras, nomeNorm: k.nomeNorm, qtd: num(x.qtd) || 1, total: num(x.total) })
+      }
+    }
+
+    const lista = vivas.map(v => {
+      const de = v.ini || somarDias(hoje.iso, -30)
+      const exato = v.alvo.join(' ')
+      let qtd = 0, valor = 0
+      for (const x of comandas) {
+        if (x.iso < de || x.iso > v.ate) continue
+        const casa = v.alvo.length >= 2 ? v.alvo.every(t => x.palavras.has(t)) : x.nomeNorm === exato
+        if (casa) { qtd += x.qtd; valor += x.total }
+      }
+      const linhasAcao = [`*${v.titulo}*`, qtd > 0 ? `${qtd} vendido${qtd === 1 ? '' : 's'}${valor > 0 ? ` (${moedaCurta(valor)})` : ''}` : 'Nenhuma venda encontrada']
+      if (v.encerrada) linhasAcao.push(`Encerrada em ${v.fim.slice(8)}/${v.fim.slice(5, 7)}`)
+      else if (v.fim) { const d = diasEntre(v.fim, hoje.iso); linhasAcao.push(d === 0 ? 'Termina hoje' : `Termina em ${d} dia${d === 1 ? '' : 's'}`) }
+      return { qtd, encerrada: v.encerrada, linhas: linhasAcao }
+    })
     lista.sort((a, b) => Number(a.encerrada) - Number(b.encerrada) || b.qtd - a.qtd)
-    const l = lista.slice(0, 10).map(x => x.texto)
-    if (lista.length > 10) l.push(`e mais ${lista.length - 10} ações`)
+    const l: string[] = []
+    lista.slice(0, 12).forEach((x, i) => { if (i) l.push(''); l.push(...x.linhas) })
+    if (lista.length > 12) l.push('', `e mais ${lista.length - 12} ações`)
+    if (lista.some(x => x.qtd === 0)) l.push('', 'Nenhuma venda encontrada pode ser nome da ação diferente do serviço lançado na comanda.')
     linhas.acoes = l.length ? l : ['Nenhuma ação comercial ativa no momento.']
   }
 
