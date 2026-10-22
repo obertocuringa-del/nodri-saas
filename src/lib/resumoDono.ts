@@ -704,8 +704,10 @@ export async function montarResumo(salaoId: string, itens: string[], nomeEscolhi
     tem('acoes') ? bloco('Ações comerciais', n.linhas.acoes) : [],
     [...(tem('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []), ...(tem('agenda') && tem('espera') ? [''] : []), ...(tem('espera') ? bloco('Lista de espera', n.linhas.espera) : [])],
     tem('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : [],
-    tem('feedback_prof') ? bloco('Feedbacks dos profissionais no mês', n.linhas.feedback_prof_mes) : [],
-    tem('feedback_prof') ? bloco('Feedbacks dos profissionais hoje', n.linhas.feedback_prof_dia) : [],
+    // Uma mensagem só (pedido do dono): a contagem do mês em cima e, embaixo, o que foi registrado hoje.
+    tem('feedback_prof')
+      ? bloco('Feedbacks dos profissionais no mês', [...(n.linhas.feedback_prof_mes || []), '', '*Feedbacks do dia*', '', ...(n.linhas.feedback_prof_dia || [])])
+      : [],
     tem('qualidade') ? bloco('Qualidade', n.linhas.qualidade) : [],
   ].filter(p => p.length)
 
