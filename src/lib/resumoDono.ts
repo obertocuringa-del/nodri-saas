@@ -40,6 +40,8 @@ export const ITENS_RESUMO: ItemResumo[] = [
     descricao: 'Quanto entrou hoje, comparado à média das últimas quartas, sextas... (o mesmo dia da semana), com atendimentos, ticket e descontos.' },
   { id: 'meta', titulo: 'Meta do mês', padrao: true,
     descricao: 'Realizado contra a meta, quanto falta, a média por dia que ainda precisa entrar e a projeção no ritmo atual.' },
+  { id: 'indicadores', titulo: 'Indicadores do mês contra o ano passado', padrao: true,
+    descricao: 'Faturamento, ticket médio, clientes atendidas, clientes novas, serviços e produtos (os cartões da aba Geral), com a comparação justa: mesmo período do ano passado e o ritmo até o fim do mês.' },
   { id: 'agenda', titulo: 'Agenda dos próximos 7 dias', padrao: true,
     descricao: 'Agendamentos de cada dia contra o normal daquele dia da semana, para encher os dias fracos a tempo.' },
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
@@ -207,7 +209,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle(),
     supabaseAdmin.from('relatorio_periodos')
       .select('ano, mes, atualizado_em, resumo_mensal, faturamento_diario, prof_servicos, prof_ticket')
-      .eq('salao_id', salaoId).gte('ano', meses[meses.length - 1].ano),
+      .eq('salao_id', salaoId).gte('ano', hoje.ano - 1),
     supabaseAdmin.from('ia_metas_salao').select('meta_valor')
       .eq('salao_id', salaoId).eq('ano', hoje.ano).eq('mes', hoje.mes).maybeSingle(),
   ])
@@ -274,18 +276,22 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
   const resumo = Array.isArray(doMes?.resumo_mensal) ? doMes!.resumo_mensal[0] : null
   let realizado = num(resumo?.faturamento_total)
   if (!realizado) for (const [iso, v] of diario) if (iso.slice(0, 7) === hoje.iso.slice(0, 7) && iso <= hoje.iso) realizado += v
+  // Dias que ainda vão abrir: os do resto do mês cujo dia da semana costuma
+  // faturar. `esperado` é o que devem render no ritmo de agora; é a base da
+  // projeção da meta e do "no ritmo" dos indicadores.
+  let abertos = 0, esperado = 0
+  {
+    const fim = new Date(Date.UTC(hoje.ano, hoje.mes, 0)).getUTCDate()
+    for (let d = hoje.dia + 1; d <= fim; d++) {
+      const iso = `${hoje.ano}-${p2(hoje.mes)}-${p2(d)}`
+      const m = mediaDoDia(diario, iso, dowDe(iso), 4, 8).media
+      if (m > 0) { abertos++; esperado += m }
+    }
+  }
   if (quer('meta') || quer('alertas')) {
     const l: string[] = []
     if (meta > 0) {
       const restante = Math.max(meta - realizado, 0)
-      // Dias que ainda vão abrir: os do resto do mês cujo dia da semana costuma faturar.
-      const fim = new Date(Date.UTC(hoje.ano, hoje.mes, 0)).getUTCDate()
-      let abertos = 0, esperado = 0
-      for (let d = hoje.dia + 1; d <= fim; d++) {
-        const iso = `${hoje.ano}-${p2(hoje.mes)}-${p2(d)}`
-        const m = mediaDoDia(diario, iso, dowDe(iso), 4, 8).media
-        if (m > 0) { abertos++; esperado += m }
-      }
       l.push(`Realizado: ${moeda(realizado)} de ${moeda(meta)} (${pct((realizado / meta) * 100)})`)
       if (restante <= 0) l.push('Meta batida.')
       else {
@@ -302,6 +308,68 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
       l.push(`A meta de ${MES_NOME[hoje.mes]} não está definida. Defina em Relatórios > Metas para ver a projeção.`)
     }
     linhas.meta = l
+  }
+
+  // ── Indicadores do mês contra o ano passado ──
+  //
+  // Os seis cartões da aba Geral. O cartão compara o mês PARCIAL com o mês
+  // CHEIO do ano passado (o dono conhece e mandou não mexer na tela); aqui a
+  // comparação é a justa: para o faturamento, o MESMO período (dia 1 até
+  // hoje) do ano passado e do mês passado, tirado do diário; para o que só
+  // existe somado no mês (clientes, serviços, produtos), o ritmo até o fim do
+  // mês contra o mês cheio do ano passado. Ticket é média, então compara direto.
+  if (quer('indicadores') || quer('alertas')) {
+    const l: string[] = []
+    const atual = Array.isArray(doMes?.resumo_mensal) ? doMes!.resumo_mensal[0] : null
+    const antes = (periodos || []).find((p: any) => p.ano === hoje.ano - 1 && p.mes === hoje.mes)
+    const ant = Array.isArray(antes?.resumo_mensal) ? antes!.resumo_mensal[0] : null
+    const var_ = (a: number, b: number) => b > 0 ? (a / b - 1) * 100 : null
+    const sinal = (v: number | null) => v === null ? '' : ` (${v >= 0 ? '+' : ''}${pct(v)})`
+    const fator = realizado > 0 ? (realizado + esperado) / realizado : 1
+
+    const somaAte = (linhas: any[], prefixo?: string) => {
+      let s = 0
+      for (const r of linhas) {
+        const iso = paraIso(r?.data)
+        if (!iso || (prefixo && iso.slice(0, 7) !== prefixo)) continue
+        if (Number(iso.slice(8)) <= hoje.dia) s += num(r?.valor)
+      }
+      return s
+    }
+    const fatNoPeriodo = somaAte(Array.isArray(doMes?.faturamento_diario) ? doMes!.faturamento_diario : [])
+    const fatAnoPassado = somaAte(Array.isArray(antes?.faturamento_diario) ? antes!.faturamento_diario : [])
+    const dm = new Date(Date.UTC(hoje.ano, hoje.mes - 2, 15))
+    const mesPassado = (periodos || []).find((p: any) => p.ano === dm.getUTCFullYear() && p.mes === dm.getUTCMonth() + 1)
+    const fatMesPassado = somaAte(Array.isArray(mesPassado?.faturamento_diario) ? mesPassado!.faturamento_diario : [])
+    const fatBase = fatNoPeriodo || realizado
+    const ano = hoje.ano - 1
+
+    if (atual) {
+      const vAno = var_(fatBase, fatAnoPassado), vMes = var_(fatBase, fatMesPassado)
+      l.push(`Faturamento: ${moeda(num(atual.faturamento_total))}`)
+      if (fatAnoPassado > 0) l.push(`  mesmo período de ${ano}: ${moedaCurta(fatAnoPassado)}${sinal(vAno)}`)
+      if (fatMesPassado > 0) l.push(`  mesmo período do mês passado: ${moedaCurta(fatMesPassado)}${sinal(vMes)}`)
+      if (vAno !== null && vAno <= -10) sinais.push(`Faturamento ${pct(Math.abs(vAno))} abaixo do mesmo período de ${ano}. O mês está andando mais devagar que o do ano passado.`)
+      else if (vMes !== null && vMes <= -10) sinais.push(`Faturamento ${pct(Math.abs(vMes))} abaixo do mesmo período do mês passado.`)
+
+      const tk = num(atual.ticket_medio), tkAnt = num(ant?.ticket_medio)
+      l.push(`Ticket médio: ${moeda(tk)}${tkAnt > 0 ? ` | ${ano}: ${moeda(tkAnt)}${sinal(var_(tk, tkAnt))}` : ''}`)
+      const vt = tkAnt > 0 ? var_(tk, tkAnt) : null
+      if (vt !== null && vt <= -10) sinais.push(`Ticket médio ${pct(Math.abs(vt))} abaixo do de ${ano}: confira descontos e venda de serviços de maior valor.`)
+
+      const linha = (nome: string, a: number, b: number, dinheiro: boolean) => {
+        const f = (v: number) => dinheiro ? moedaCurta(v) : String(Math.round(v))
+        const rit = a * fator
+        return `${nome}: ${f(a)} até hoje | no ritmo fecha em ${dinheiro ? '' : '~'}${f(rit)}` +
+          (b > 0 ? ` | ${ano} (mês inteiro): ${f(b)}${sinal(var_(rit, b))}` : '')
+      }
+      l.push(linha('Clientes atendidas', num(atual.clientes_atendidos), num(ant?.clientes_atendidos), false))
+      l.push(linha('Clientes novas', num(atual.clientes_novos), num(ant?.clientes_novos), false))
+      l.push(linha('Serviços', num(atual.faturamento_servicos), num(ant?.faturamento_servicos), true))
+      l.push(linha('Produtos', num(atual.faturamento_produtos), num(ant?.faturamento_produtos), true))
+      if (!ant) l.push(`Sem relatório de ${MES_NOME[hoje.mes]}/${ano} no sistema para comparar.`)
+    } else l.push('Sem o resumo do mês importado.')
+    linhas.indicadores = l
   }
 
   // ── Agenda dos próximos 7 dias ──
@@ -451,6 +519,7 @@ export async function montarResumo(salaoId: string, itens: string[], quando = ne
     '',
     ...(itens.includes('dia') ? bloco('Hoje', n.linhas.dia) : []),
     ...(itens.includes('meta') ? bloco(`Meta de ${MES_NOME[hoje.mes]}`, n.linhas.meta) : []),
+    ...(itens.includes('indicadores') ? bloco(`Indicadores de ${MES_NOME[hoje.mes]} (1 a ${hoje.dia})`, n.linhas.indicadores) : []),
     ...(itens.includes('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []),
     ...(itens.includes('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : []),
     ...(itens.includes('qualidade') ? bloco('Qualidade', n.linhas.qualidade) : []),
