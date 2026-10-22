@@ -50,7 +50,7 @@ export const ITENS_RESUMO: ItemResumo[] = [
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
     descricao: 'Os maiores e os menores faturamentos do mês (mesma quantidade nas duas pontas), com ticket, dias trabalhados e ocupação, e quanto a receita depende dos três primeiros.' },
   { id: 'feedback_prof', titulo: 'Feedback dos profissionais do dia', padrao: true,
-    descricao: 'O que a recepção registrou hoje sobre cada profissional (quem, o que aconteceu e o detalhe), com quantos registros negativos a pessoa já tem no mês e quem mais acumula.' },
+    descricao: 'Quantos feedbacks positivos e negativos cada profissional teve no mês (até 20 pessoas) e, em seguida, o que a recepção registrou hoje, por escrito: quem, positivo ou negativo, o que aconteceu e o detalhe.' },
   { id: 'qualidade', titulo: 'Qualidade e feedback', padrao: true,
     descricao: 'Nota média da semana, notas baixas e profissionais com feedback negativo no mês.' },
   { id: 'espera', titulo: 'Lista de espera', padrao: false,
@@ -609,45 +609,51 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
   // ── Feedback dos profissionais (o que a recepção registra no dia) ──
   //
   // Mesma fonte da tela Feedback dos Profissionais: nome, o que aconteceu
-  // ("ATRASO", "AUSENCIA DO SALÃO") e a descrição. Lista o que foi registrado
-  // HOJE e, em cada registro, quantos negativos a pessoa já tem no mês.
+  // ("ATRASO", "AUSENCIA DO SALÃO"), a descrição e se foi positivo ou negativo.
+  // Saem duas mensagens: a CONTAGEM do mês de cada profissional (positivos e
+  // negativos, até 20 pessoas) e, embaixo, o que foi registrado HOJE, por escrito.
   if (quer('feedback_prof')) {
     const iniMes = `${hoje.ano}-${p2(hoje.mes)}-01T00:00:00-03:00`
     const r = await paginar<any>((de, ate) => supabaseAdmin.from('feedback_prof_respostas')
-      .select('profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
+      .select('profissional_id, profissional_nome, tipo, ocorrido_descricao, descricao, criado_em')
       .eq('salao_id', salaoId).gte('criado_em', iniMes).order('criado_em', { ascending: true }).range(de, ate), 5000)
     const negativo = (x: any) => String(x.tipo || '').toLowerCase().startsWith('neg')
-    const chave = (x: any) => semAcento(primeiroNome(String(x.profissional_nome || '')))
-    const doDia = r.dados.filter(x => agoraBR(new Date(x.criado_em)).iso === hoje.iso)
-    const negNoMes = new Map<string, number>()
-    for (const x of r.dados) if (negativo(x)) negNoMes.set(chave(x), (negNoMes.get(chave(x)) || 0) + 1)
+    // A pessoa é o id do cadastro; sem id, o primeiro nome.
+    const chave = (x: any) => String(x.profissional_id || semAcento(primeiroNome(String(x.profissional_nome || ''))))
+    const s = (n: number) => (n === 1 ? '' : 's')
 
-    const l: string[] = []
+    const contagem = new Map<string, { nome: string; neg: number; pos: number }>()
+    for (const x of r.dados) {
+      const k = chave(x)
+      const c = contagem.get(k) || { nome: '', neg: 0, pos: 0 }
+      c.nome = primeiroNome(String(x.profissional_nome || '')) || c.nome || 'Sem nome'
+      if (negativo(x)) c.neg++; else c.pos++
+      contagem.set(k, c)
+    }
+    const ordem = [...contagem.values()].sort((a, b) => b.neg - a.neg || b.pos - a.pos || a.nome.localeCompare(b.nome))
+    const mes: string[] = []
+    if (ordem.length) {
+      mes.push('Quantidade de registros de cada profissional neste mês:', '')
+      for (const c of ordem.slice(0, 20)) mes.push(`${c.nome}: ${c.neg} negativo${s(c.neg)}, ${c.pos} positivo${s(c.pos)}`)
+      if (ordem.length > 20) mes.push(`e mais ${ordem.length - 20} profissionais`)
+    } else mes.push('Nenhum registro neste mês.')
+    linhas.feedback_prof_mes = mes
+
+    const doDia = r.dados.filter(x => agoraBR(new Date(x.criado_em)).iso === hoje.iso)
+    const dia: string[] = []
     if (doDia.length) {
       const neg = doDia.filter(negativo).length
-      const s = (n: number) => (n === 1 ? '' : 's')
-      l.push(`${doDia.length} registro${s(doDia.length)} hoje (${neg} negativo${s(neg)}, ${doDia.length - neg} positivo${s(doDia.length - neg)})`)
-      for (const x of doDia.slice(0, 12)) {
+      dia.push(`${doDia.length} registro${s(doDia.length)} hoje: ${neg} negativo${s(neg)} e ${doDia.length - neg} positivo${s(doDia.length - neg)}`)
+      for (const x of doDia.slice(0, 25)) {
         const nome = primeiroNome(String(x.profissional_nome || '')) || 'Sem nome'
         const oc = String(x.ocorrido_descricao || '').trim()
         const desc = String(x.descricao || '').replace(/\s+/g, ' ').trim()
-        const noMes = negNoMes.get(chave(x)) || 0
-        l.push('', `*${nome}* - ${oc || (negativo(x) ? 'ocorrência negativa' : 'ocorrência positiva')}${negativo(x) ? '' : ' (positivo)'}`)
-        if (desc) l.push(desc.length > 220 ? desc.slice(0, 217).trimEnd() + '...' : desc)
-        if (negativo(x) && noMes >= 2) l.push(`Já são ${noMes} registros negativos no mês`)
+        dia.push('', `*${nome}* - ${negativo(x) ? 'negativo' : 'positivo'}${oc ? `: ${oc}` : ''}`)
+        if (desc) dia.push(desc.length > 300 ? desc.slice(0, 297).trimEnd() + '...' : desc)
       }
-      if (doDia.length > 12) l.push('', `e mais ${doDia.length - 12} registros`)
-    } else l.push('Nenhum registro hoje.')
-
-    // Quem mais acumula no mês. Fica como informação, não como alerta: num
-    // salão grande quase todo mundo passa de 3 e o aviso dispararia todo dia.
-    const topo = [...negNoMes.entries()].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    if (topo.length) {
-      const nomes = new Map<string, string>()
-      for (const x of r.dados) nomes.set(chave(x), primeiroNome(String(x.profissional_nome || '')))
-      l.push('', 'Mais registros negativos no mês:', ...topo.map(([k, n]) => `${nomes.get(k) || k}: ${n}`))
-    }
-    linhas.feedback_prof = l
+      if (doDia.length > 25) dia.push('', `e mais ${doDia.length - 25} registros`)
+    } else dia.push('Nenhum registro hoje.')
+    linhas.feedback_prof_dia = dia
   }
 
   // ── Lista de espera ──
@@ -698,7 +704,8 @@ export async function montarResumo(salaoId: string, itens: string[], nomeEscolhi
     tem('acoes') ? bloco('Ações comerciais', n.linhas.acoes) : [],
     [...(tem('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []), ...(tem('agenda') && tem('espera') ? [''] : []), ...(tem('espera') ? bloco('Lista de espera', n.linhas.espera) : [])],
     tem('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : [],
-    tem('feedback_prof') ? bloco('Feedback dos profissionais', n.linhas.feedback_prof) : [],
+    tem('feedback_prof') ? bloco('Feedbacks dos profissionais no mês', n.linhas.feedback_prof_mes) : [],
+    tem('feedback_prof') ? bloco('Feedbacks dos profissionais hoje', n.linhas.feedback_prof_dia) : [],
     tem('qualidade') ? bloco('Qualidade', n.linhas.qualidade) : [],
   ].filter(p => p.length)
 
