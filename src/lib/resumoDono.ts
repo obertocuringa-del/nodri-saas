@@ -44,7 +44,7 @@ export const ITENS_RESUMO: ItemResumo[] = [
   { id: 'indicadores', titulo: 'Indicadores do mês contra o ano passado', padrao: true,
     descricao: 'Faturamento, ticket médio, clientes atendidas, clientes novas, serviços e produtos (os cartões da aba Geral), com a comparação justa: mesmo período do ano passado e o ritmo até o fim do mês.' },
   { id: 'acoes', titulo: 'Vendas das ações comerciais', padrao: true,
-    descricao: 'Cada ação comercial publicada com quantas vendas teve, contadas nas comandas pelo nome do serviço, dentro das datas da ação. Inclui as encerradas nos últimos 60 dias.' },
+    descricao: 'Só as ações comerciais ativas e visíveis no portal, cada uma com quantas vendas teve, contadas nas comandas pelo nome do serviço, dentro das datas da ação.' },
   { id: 'agenda', titulo: 'Agenda dos próximos 7 dias', padrao: true,
     descricao: 'Agendamentos de cada dia contra o normal daquele dia da semana, para encher os dias fracos a tempo.' },
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
@@ -406,14 +406,17 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
       .split(/[^a-z0-9]+/).filter(t => t && !SEM_PESO.has(t))
     const diasEntre = (a: string, b: string) => Math.round((dtDe(a).getTime() - dtDe(b).getTime()) / 864e5)
 
-    // Quais ações entram: publicadas, já começadas, e as que acabaram há até 60 dias.
+    // Quais ações entram: as ativas e visíveis no portal, nada além disso.
     const vivas: Array<{ c: Campanha; titulo: string; alvo: string[]; ini: string; fim: string; encerrada: boolean; ate: string }> = []
     for (const c of campanhas) {
       if (!c.ativa) continue
       const ini = c.dataInicio || '', fim = c.dataFim || ''
       if (ini && ini > hoje.iso) continue
-      const encerrada = !!fim && fim < hoje.iso
-      if (encerrada && fim < somarDias(hoje.iso, -60)) continue
+      // Só as que estão VALENDO, a mesma regra do portal (statusCampanha ===
+      // 'ativa'): publicada, já começada e ainda dentro da data. Encerrada não
+      // entra: o dono só quer ver o que está em andamento.
+      if (fim && fim < hoje.iso) continue
+      const encerrada = false
       const alvo = palavras(c.titulo, true)
       if (!alvo.length) continue
       vivas.push({
