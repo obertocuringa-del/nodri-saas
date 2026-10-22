@@ -23,6 +23,8 @@ import { paginar } from '@/lib/paginar'
 import { normalizarTelefone, ETIQUETA_NAO_PERTURBE } from '@/lib/crm'
 import { acharOuCriarContato } from '@/lib/crmContatos'
 import { normalizaServico, type Campanha } from '@/lib/acoesComerciais'
+import { calcularRankings } from '@/lib/corridasCalculo'
+import { metricaInfo, formataValor, periodoLabel, resumoGrupo, type CorridaInterna, type LinhaRanking } from '@/lib/corridasInternas'
 
 const FUSO = 'America/Sao_Paulo'
 export const CHAVE_RESUMO_DONO = 'resumo_dono'
@@ -45,6 +47,8 @@ export const ITENS_RESUMO: ItemResumo[] = [
     descricao: 'Faturamento, ticket médio, clientes atendidas, clientes novas, serviços e produtos (os cartões da aba Geral), com a comparação justa: mesmo período do ano passado e o ritmo até o fim do mês.' },
   { id: 'acoes', titulo: 'Vendas das ações comerciais', padrao: true,
     descricao: 'Só as ações comerciais ativas e visíveis no portal, cada uma com quantas vendas teve, contadas nas comandas pelo nome do serviço, dentro das datas da ação.' },
+  { id: 'corridas', titulo: 'Corridas internas', padrao: true,
+    descricao: 'As corridas em andamento: a meta, como está o desempenho (do grupo ou de cada uma, conforme o modelo da corrida) e quem está na frente e mais atrás.' },
   { id: 'agenda', titulo: 'Agenda dos próximos 7 dias', padrao: true,
     descricao: 'Agendamentos de cada dia contra o normal daquele dia da semana, para encher os dias fracos a tempo.' },
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
@@ -474,6 +478,60 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
     linhas.acoes = l.length ? l : ['Nenhuma ação comercial ativa no momento.']
   }
 
+  // ── Corridas internas ──
+  //
+  // As corridas em andamento, com a meta e como está o desempenho. A conta é a
+  // MESMA da tela (calcularRankings), então cada modelo de meta já vem
+  // resolvido: em grupo (meta de cada uma e do conjunto), meta individual,
+  // meta única e "menos é melhor" (a meta é um limite).
+  if (quer('corridas')) {
+    const { data: cfgC } = await supabaseAdmin.from('salao_config').select('valor')
+      .eq('salao_id', salaoId).eq('chave', 'corridas_internas').maybeSingle()
+    const todas: CorridaInterna[] = Array.isArray((cfgC as any)?.valor) ? (cfgC as any).valor : []
+    const ym = `${hoje.ano}-${p2(hoje.mes)}`
+    const andamento = todas.filter(c => c.ativa && (!c.de || c.de <= ym) && (!c.ate || c.ate >= ym)).slice(0, 5)
+    const l: string[] = []
+    if (!andamento.length) l.push('Nenhuma corrida interna em andamento.')
+    else {
+      // `false`: o faturamento simulado e as doações de teste são ferramentas do
+      // dono para testar o gráfico; na mensagem só vale o número real.
+      const { rankings } = await calcularRankings(salaoId, andamento, false)
+      // O ranking já vem do melhor para o pior (na corrida de "menos é melhor",
+      // do menor para o maior). Mesma quantidade nas duas pontas, sem repetir ninguém.
+      const pontas = (linhas: LinhaRanking[], texto: (x: LinhaRanking) => string) => {
+        const quantos = Math.min(5, Math.floor(linhas.length / 2))
+        if (quantos < 1) return linhas.map(texto)
+        return ['Na frente:', ...linhas.slice(0, quantos).map(texto), '', 'Mais atrás:', ...linhas.slice(-quantos).reverse().map(texto)]
+      }
+      andamento.forEach((c, i) => {
+        const linhasC = rankings[c.id] || []
+        if (i) l.push('')
+        l.push(`*${String(c.titulo).replace(/\s+/g, ' ').trim().slice(0, 60)}*`, `Período: ${periodoLabel(c)}`)
+        if (c.premio) l.push(`Prêmio: ${String(c.premio).replace(/\s+/g, ' ').trim().slice(0, 80)}`)
+        if (!linhasC.length) { l.push('', 'Ainda sem dados de desempenho.'); return }
+
+        const info = metricaInfo(c.metrica)
+        const porPct = (x: LinhaRanking) => `${x.nome}: ${x.pctMeta ?? 0}%${x.bateuMeta ? ' (bateu)' : ''}`
+        if (c.modo === 'grupo') {
+          const r = resumoGrupo(linhasC)
+          const meta = r.metaTotal || 0, feito = r.produzido || 0
+          l.push('', `Meta do grupo: ${moeda(meta)}`, `Produzido: ${moeda(feito)}`, `Está em ${pct(r.pct)} da meta`, `Bateram a meta: ${r.bateram} de ${r.participantes}`)
+          if (meta > feito) l.push(`Falta: ${moeda(meta - feito)}`)
+          l.push('', ...pontas(linhasC, porPct))
+        } else if (c.metaIndividual && c.metrica === 'faturamento') {
+          l.push('', 'Cada uma corre contra a própria meta', `Bateram a meta: ${linhasC.filter(x => x.bateuMeta).length} de ${linhasC.length}`, '', ...pontas(linhasC, porPct))
+        } else {
+          const temMeta = typeof c.meta === 'number' && (info.inversa ? c.meta >= 0 : c.meta > 0)
+          l.push('', `Medida: ${info.label}${c.metrica === 'servico' && c.servico ? ` (${c.servico})` : ''}${c.metrica === 'feedback_neg' && c.ocorrido ? ` (${c.ocorrido})` : ''}`)
+          if (temMeta) l.push(info.inversa ? `Limite: ${formataValor(c.metrica, c.meta as number)} (menos é melhor)` : `Meta: ${formataValor(c.metrica, c.meta as number)}`, `Bateram a meta: ${linhasC.filter(x => x.bateuMeta).length} de ${linhasC.length}`)
+          else if (info.inversa) l.push('Menos é melhor')
+          l.push('', ...pontas(linhasC, x => `${x.pos}. ${x.nome}: ${formataValor(c.metrica, x.valor)}${x.pctMeta != null ? ` (${x.pctMeta}% da meta)` : ''}${x.bateuMeta ? ' - bateu' : ''}`))
+        }
+      })
+    }
+    linhas.corridas = l
+  }
+
   // ── Agenda dos próximos 7 dias ──
   if (quer('agenda') || quer('alertas')) {
     const datas = Array.from({ length: 7 }, (_, i) => somarDias(hoje.iso, i + 1))
@@ -702,6 +760,7 @@ export async function montarResumo(salaoId: string, itens: string[], nomeEscolhi
     [...(tem('dia') ? bloco('Hoje', n.linhas.dia) : []), ...(tem('dia') && tem('meta') ? [''] : []), ...(tem('meta') ? bloco(`Meta de ${mes}`, n.linhas.meta) : [])],
     tem('indicadores') ? bloco(`Indicadores de ${mes} (1 a ${hoje.dia})`, n.linhas.indicadores?.[0] === '' ? n.linhas.indicadores.slice(1) : n.linhas.indicadores) : [],
     tem('acoes') ? bloco('Ações comerciais', n.linhas.acoes) : [],
+    tem('corridas') ? bloco('Corridas internas', n.linhas.corridas) : [],
     [...(tem('agenda') ? bloco('Próximos 7 dias', n.linhas.agenda) : []), ...(tem('agenda') && tem('espera') ? [''] : []), ...(tem('espera') ? bloco('Lista de espera', n.linhas.espera) : [])],
     tem('profissionais') ? bloco('Profissionais no mês', n.linhas.profissionais) : [],
     // Uma mensagem só (pedido do dono): a contagem do mês em cima e, embaixo, o que foi registrado hoje.
