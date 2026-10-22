@@ -45,7 +45,7 @@ export const ITENS_RESUMO: ItemResumo[] = [
   { id: 'agenda', titulo: 'Agenda dos próximos 7 dias', padrao: true,
     descricao: 'Agendamentos de cada dia contra o normal daquele dia da semana, para encher os dias fracos a tempo.' },
   { id: 'profissionais', titulo: 'Profissionais no mês', padrao: true,
-    descricao: 'Faturamento e ticket de cada um até hoje e quanto a receita depende dos três primeiros.' },
+    descricao: 'Os maiores e os menores faturamentos do mês (mesma quantidade nas duas pontas), com ticket, dias trabalhados e ocupação, e quanto a receita depende dos três primeiros.' },
   { id: 'qualidade', titulo: 'Qualidade e feedback', padrao: true,
     descricao: 'Nota média da semana, notas baixas e profissionais com feedback negativo no mês.' },
   { id: 'espera', titulo: 'Lista de espera', padrao: false,
@@ -166,6 +166,7 @@ const moedaCurta = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
 const pct = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'
 const primeiroNome = (s: string) => {
   const p = String(s || '').trim().split(/\s+/)[0] || ''
+  if (p.length <= 2) return p.toUpperCase()          // sigla ("MP"), não nome
   return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''
 }
 
@@ -208,7 +209,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
   const [{ data: salao }, { data: periodos }, { data: metaRow }] = await Promise.all([
     supabaseAdmin.from('saloes').select('nome').eq('id', salaoId).maybeSingle(),
     supabaseAdmin.from('relatorio_periodos')
-      .select('ano, mes, atualizado_em, resumo_mensal, faturamento_diario, prof_servicos, prof_ticket')
+      .select('ano, mes, atualizado_em, resumo_mensal, faturamento_diario, prof_servicos, prof_ticket, prof_ocupacao')
       .eq('salao_id', salaoId).gte('ano', hoje.ano - 1),
     supabaseAdmin.from('ia_metas_salao').select('meta_valor')
       .eq('salao_id', salaoId).eq('ano', hoje.ano).eq('mes', hoje.mes).maybeSingle(),
@@ -425,10 +426,30 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[]): Promise<Nu
     const ordem = [...por.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
     const total = ordem.reduce((s, [, v]) => s + v, 0)
     const l: string[] = []
-    ordem.slice(0, 6).forEach(([n, v], i) => {
-      const t = ticket.get(semAcento(n))
-      l.push(`${i + 1}. ${primeiroNome(n)}: ${moedaCurta(v)}${t ? ` | ticket ${moedaCurta(t)}` : ''}`)
-    })
+
+    // Ocupação e dias trabalhados vêm com o nome curto ("CINTIA"); o faturamento,
+    // com o completo. Só se junta quando o primeiro nome é único na lista.
+    const ocup = new Map<string, { taxa: number; dias: number }[]>()
+    for (const r of (Array.isArray(doMes?.prof_ocupacao) ? doMes!.prof_ocupacao : [])) {
+      const k = semAcento(primeiroNome(String(r?.profissional || '')))
+      ocup.set(k, [...(ocup.get(k) || []), { taxa: num(r?.taxa_ocupacao), dias: num(r?.dias_trabalhados) }])
+    }
+    const doNome = (n: string) => { const o = ocup.get(semAcento(primeiroNome(n))); return o && o.length === 1 ? o[0] : null }
+    const maiorDias = Math.max(0, ...ordem.map(([n]) => doNome(n)?.dias || 0))
+    const linhaProf = ([n, v]: [string, number], i: number) => {
+      const t = ticket.get(semAcento(n)), o = doNome(n)
+      const partes = [moedaCurta(v)]
+      if (t) partes.push(`ticket ${moedaCurta(t)}`)
+      if (o && o.dias > 0) partes.push(`${o.dias} dias${maiorDias > 0 && o.dias < maiorDias * 0.5 ? ' (poucos dias no mês)' : ''}`)
+      if (o && o.taxa > 0) partes.push(`ocupação ${Math.round(o.taxa)}%`)
+      return `${i + 1}. ${primeiroNome(n)}: ${partes.join(' | ')}`
+    }
+    // Mesma quantidade nas duas pontas (até 5), sem repetir ninguém.
+    const quantos = Math.min(5, Math.floor(ordem.length / 2))
+    if (quantos >= 2) {
+      l.push('Maiores faturamentos:', ...ordem.slice(0, quantos).map(linhaProf))
+      l.push('Menores faturamentos:', ...ordem.slice(-quantos).reverse().map(linhaProf))
+    } else ordem.forEach((x, i) => l.push(linhaProf(x, i)))
     if (ordem.length >= 4 && total > 0) {
       const top3 = ordem.slice(0, 3).reduce((s, [, v]) => s + v, 0) / total * 100
       l.push(`Os 3 primeiros respondem por ${pct(top3)} do faturamento de serviços`)
