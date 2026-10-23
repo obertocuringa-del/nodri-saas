@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, ChevronRight, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff, Star, UserRound, Wallet, Repeat, CalendarDays, Hand, Eye, Sparkles, Palette, Brush, Copy } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
+import FaixaMarcarNoAvec from '@/components/salon/FaixaMarcarNoAvec'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
 // Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
@@ -2112,6 +2113,9 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
         </button>
       </div>
       )}
+
+      {/* "Confirmou" por clique no CRM não marca o Avec: avisa e oferece marcar. */}
+      <FaixaMarcarNoAvec conversaId={c.id} estado={c.estado} />
 
       {/* ── A faixa sai da configuração, não do código ──────────────────────
           O salão esconde, renomeia e cria os seus botões em Configurar. Os

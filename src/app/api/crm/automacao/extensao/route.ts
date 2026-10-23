@@ -459,7 +459,7 @@ async function concluirConfirmacao(
     return { marcado: true, pergunta: true }
   }
 
-  if (texto) {
+  if (texto && !p.sem_combinado) {
     await supabaseAdmin.from('crm_mensagens').insert({
       salao_id: salaoId, conversa_id: p.conversa_id,
       direcao: 'saida', texto, tipo: 'texto', situacao: 'na_fila',

@@ -57,6 +57,12 @@ export interface PedidoConfirmacao {
   data: string
   criado_em: string
   tentativas: number
+  /**
+   * Marca o Avec, mas NÃO manda o "Combinado". Vem do botão "Marcar no Avec
+   * agora" quando a recepção já respondeu à cliente depois do "Sim" dela:
+   * mandar o "Combinado" por cima seria uma resposta repetida.
+   */
+  sem_combinado?: boolean
 }
 
 const semAcento = (s: string) => String(s || '')
