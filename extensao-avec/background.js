@@ -187,9 +187,13 @@ async function guardarNoGrupo(abaId) {
     const alvo = grupos.length
       ? (await chrome.tabGroups.get(grupos[0]))
       : null
+    // `createProperties.windowId` é obrigatório aqui: sem ele o Chrome cria o
+    // grupo na JANELA ATUAL e MOVE a aba para lá. Foi o que desfez a janela
+    // própria da aba de trabalho (23/10/2026): movida, ela voltava para a
+    // janela da coleta logo depois, ao ser reagrupada.
     const gid = await chrome.tabs.group(alvo && alvo.windowId === aba.windowId
       ? { tabIds: [abaId], groupId: alvo.id }
-      : { tabIds: [abaId] })
+      : { tabIds: [abaId], createProperties: { windowId: aba.windowId } })
     await chrome.tabGroups.update(gid, { title: GRUPO, color: 'grey', collapsed: true })
   } catch { /* sem permissão de grupo (versão antiga): segue sem grupo */ }
 }
@@ -238,8 +242,50 @@ async function navegarEAnotar(abaId, url) {
   return ok
 }
 
-/** A aba de trabalho: a mesma de sempre, a do grupo, ou uma nova se sumiu. */
+/**
+ * A aba de trabalho mora SOZINHA numa janela própria.
+ *
+ * 23/10/2026: aba escondida fica MUDA. Medido ao vivo no servidor: escondida,
+ * a página nem respondia ao "onde-estou"; trazida para a frente, a extensão
+ * leu o relatório sem um erro em seis voltas seguidas. Só uma aba por janela é
+ * a da frente -- e a coleta do relatório, a cada hora, executa
+ * `switch_to.window` na aba DELA, que traz aquela para a frente e esconde a
+ * nossa. Daí a confirmação das 20:00 falhar, o "Combinado" não sair e o Avec
+ * não ficar azul.
+ *
+ * Cada janela tem a sua aba da frente. Com a nossa sozinha numa janela, ela
+ * fica sempre visível, e a aba da coleta continua onde estava. Move-se a aba
+ * que JÁ existe (nada é aberto nem fechado, a página não recarrega) e só se ela
+ * ainda dividir a janela com outras: depois disso a função não faz mais nada.
+ * Falhou, segue como era.
+ */
+async function janelaPropria(abaId) {
+  try {
+    // Só no Chrome do SERVIDOR, onde ninguém olha a tela. No computador do
+    // salão a recepção trabalha nesse Chrome: uma janela a mais, sozinha, no
+    // meio do dia, seria um susto.
+    const { origem } = await guardado()
+    if (origem !== 'servidor') return
+    const aba = await infoDaAba(abaId)
+    if (!aba) return
+    const naJanela = await chrome.tabs.query({ windowId: aba.windowId })
+    if (naJanela.length <= 1) return
+    await chrome.windows.create({ tabId: abaId, focused: false })
+    // Mudar de janela tira a aba do grupo (o grupo é por janela): põe de volta.
+    await guardarNoGrupo(abaId)
+    await saude({ janela_propria: { em: new Date().toISOString(), aba: abaId } })
+  } catch { /* sem a janela própria, tudo continua como estava */ }
+}
+
+/** A aba de trabalho (sempre na janela dela): a de sempre, a do grupo, ou uma nova. */
 async function abaDeTrabalho(url) {
+  const abaId = await abaDeTrabalhoBruta(url)
+  await janelaPropria(abaId)
+  return abaId
+}
+
+/** A aba de trabalho: a mesma de sempre, a do grupo, ou uma nova se sumiu. */
+async function abaDeTrabalhoBruta(url) {
   const { abaId } = await guardado()
   const grupos = await gruposNodri()
   if (abaId) {
@@ -552,16 +598,16 @@ async function ciclo() {
     const abaId = await abaDeTrabalho(urlRel)
     await esperarCarregar(abaId)
 
-    let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
-    if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
-    if (!onde) throw new Error('A aba do Avec não respondeu (página não carregou?)')
+    const achou = await saberOndeEstou(abaId, urlRel)
+    let onde = achou.onde
+    if (!onde) throw new Error('A aba do Avec não respondeu ' + resumoDiag(achou.diag))
     if (onde.login) onde = await chegarLogado(abaId, cfg, dados, urlRel)
 
     const lido = await lerComSegundaChance(abaId, cfg.hoje)
     if (!lido) throw new Error('O relatório não respondeu')
     if (!lido.ok) {
       await nodri('/api/crm/automacao/extensao', { method: 'POST', body: JSON.stringify({ linhas: [], erro: lido.erro }) }, dados.chave)
-      throw new Error(lido.erro || 'Não consegui ler o relatório')
+      throw new Error(lido.erro || 'Não consegui ler o relatório (a página respondeu sem dizer o motivo)')
     }
 
     const r = await nodri('/api/crm/automacao/extensao', {
@@ -645,12 +691,55 @@ chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage())
 // em que data e com quais status. Aqui só se executa e se devolve o resultado.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * "Onde estou?" -- e, se a aba estiver muda, recarrega a MESMA aba uma vez e
+ * pergunta de novo.
+ *
+ * 23/10/2026: a aba do relatório ficava calada (nem o "onde-estou", que a
+ * página responde na hora) e a volta dava "A aba do Avec não respondeu" para
+ * sempre: este caminho só levantava o erro, e o recarregamento da segunda
+ * chance mora na LEITURA, que nunca chegava a rodar. Recarregada na mão, a
+ * mesma aba respondeu em 2,7 s. Aqui a extensão faz isso sozinha.
+ *
+ * Devolve também `diag`: o que aconteceu, para o erro dizer ONDE parou. A
+ * extensão não escreve em console nenhum, e sem isso a causa é um palpite.
+ */
+async function saberOndeEstou(abaId, url) {
+  const t0 = Date.now()
+  const diag = { recarregou: false, antes: '', recarga_ok: false, recarga_ms: 0, ms: 0 }
+  let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' }, 3, 10000)
+  if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
+  if (!onde) {
+    const antes = await infoDaAba(abaId)
+    diag.antes = antes
+      ? [antes.status, antes.active ? 'na frente' : 'escondida', antes.discarded ? 'descartada' : ''].filter(Boolean).join(', ')
+      : 'aba sumiu'
+    diag.recarregou = true
+    await saude({ texto: 'A aba do Avec não respondeu — recarregando a aba e tentando de novo…' })
+    const t1 = Date.now()
+    diag.recarga_ok = !!(await navegarEAnotar(abaId, url))
+    diag.recarga_ms = Date.now() - t1
+    await sleep(2000)
+    onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' }, 4, 10000)
+    if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
+  }
+  diag.ms = Date.now() - t0
+  return { onde, diag }
+}
+
+/** O resumo do que a aba fez, curto (o NODRI guarda só ~200 letras do erro). */
+function resumoDiag(d) {
+  const seg = n => Math.round((n || 0) / 1000)
+  return '[' + (d.recarregou
+    ? `aba ${d.antes}; recarregou ${d.recarga_ok ? 'ok' : 'sem concluir'} em ${seg(d.recarga_ms)}s e continuou muda; `
+    : '') + `${seg(d.ms)}s no total]`
+}
+
 async function prepararAba(cfg, dados, url) {
   const abaId = await abaDeTrabalho(url)
   await esperarCarregar(abaId)
-  let onde = await perguntarComPaciencia(abaId, { tipo: 'onde-estou' })
-  if (!onde && await foraDoAdmin(abaId)) onde = { login: true, fora: true }
-  if (!onde) throw new Error('A aba do Avec não respondeu')
+  const { onde, diag } = await saberOndeEstou(abaId, url)
+  if (!onde) throw new Error('A aba do Avec não respondeu ' + resumoDiag(diag))
   if (onde.login) await chegarLogado(abaId, cfg, dados, url)
   return abaId
 }
@@ -691,7 +780,7 @@ async function executarTarefa(cfg, dados) {
       const tLer = Date.now()
       const lido = await lerComSegundaChance(abaId, t.data)
       const msLer = Date.now() - tLer
-      if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
+      if (!lido || !lido.ok) throw new Error(lido?.erro || (lido ? 'Não consegui ler o relatório (a página respondeu sem dizer o motivo)' : 'Não consegui ler o relatório (a aba não respondeu, nem depois de recarregar)'))
 
       const r = await nodri('/api/crm/automacao/extensao', {
         method: 'POST',
@@ -763,7 +852,7 @@ async function executarTarefa(cfg, dados) {
       const lerDia = async (data) => {
         if (porDia.has(data)) return porDia.get(data)
         const lido = await lerComSegundaChance(abaId, data)
-        if (!lido || !lido.ok) throw new Error(lido?.erro || 'Não consegui ler o relatório')
+        if (!lido || !lido.ok) throw new Error(lido?.erro || (lido ? 'Não consegui ler o relatório (a página respondeu sem dizer o motivo)' : 'Não consegui ler o relatório (a aba não respondeu, nem depois de recarregar)'))
         const linhas = lido.linhas || []
         porDia.set(data, linhas)
         return linhas
