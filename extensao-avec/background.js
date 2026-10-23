@@ -844,7 +844,15 @@ async function executarTarefa(cfg, dados) {
       // amanhã: "Não achei o agendamento dela em 19/09" (18/09/2026, 13:38).
       // Cancelado não conta: se o único agendamento dela está cancelado, não
       // há o que confirmar.
-      const so = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
+      const so = s => {
+        // DDD + número, sem país e sem o nono dígito. O DDD 55 existe (Rio Grande do
+        // Sul): só se tira o 55 da frente quando sobra DDD + número (12 ou 13
+        // dígitos). Tirar sempre apagava o DDD da Rafaela (23/10/2026) e a
+        // extensão "não achava" o agendamento dela.
+        let d = String(s || '').replace(/\D+/g, '')
+        if (d.length >= 12 && d.startsWith('55')) d = d.slice(2)
+        return d.replace(/^(\d{2})9(\d{8})$/, '$1$2')
+      }
       const datas = [...new Set([...pedidos.map(p => p.data), cfg.amanha, cfg.hoje].filter(Boolean))]
 
       // Cada dia é lido UMA vez e as linhas ficam na mão para todos os pedidos.

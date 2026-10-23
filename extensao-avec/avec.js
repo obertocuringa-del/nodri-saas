@@ -213,7 +213,13 @@
   // celular dentro do modal antes de salvar -- duas fontes concordando. Se o
   // telefone não bater, NÃO salva: confirmar o horário da pessoa errada é pior
   // do que não confirmar.
-  const soDigitos = s => String(s || '').replace(/\D+/g, '').replace(/^55/, '').replace(/^(\d{2})9(\d{8})$/, '$1$2')
+  const soDigitos = s => {
+    // Mesma conta do `so` do background.js: o 55 da frente só é país com 12+ dígitos
+    // (o DDD 55 existe). Ver o comentário lá.
+    let d = String(s || '').replace(/\D+/g, '')
+    if (d.length >= 12 && d.startsWith('55')) d = d.slice(2)
+    return d.replace(/^(\d{2})9(\d{8})$/, '$1$2')
+  }
 
   // ── A agenda de verdade (conferida em 18/09/2026) ─────────────────────────
   //
