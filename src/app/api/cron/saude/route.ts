@@ -59,6 +59,13 @@ export async function POST(req: Request) {
 
 /** Fecha as abas sobrando de cada salão que roda no servidor. */
 async function enxugarAbas() {
+  // O agendador guarda as coletas só na memória: se o servidor cai no meio de
+  // uma, a linha fica "rodando" para sempre e trava a limpeza das abas. A
+  // coleta é morta pelo agendador aos 90 min, então passar de 100 é fantasma.
+  await supabaseAdmin.from('robo_coletas')
+    .update({ situacao: 'erro', motivo: 'Coleta interrompida (servidor reiniciou ou caiu durante ela).', fim: new Date().toISOString() })
+    .eq('situacao', 'rodando')
+    .lt('inicio', new Date(Date.now() - 100 * 60 * 1000).toISOString())
   const { data: cfgs } = await supabaseAdmin.from('salao_config')
     .select('salao_id, chave, valor').in('chave', ['crm_robo_avec', 'crm_automacao_feedback'])
   const porSalao = new Map<string, any>()
