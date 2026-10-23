@@ -251,7 +251,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
   if (!doMes) sinais.push('Não há relatório do mês no sistema: os números abaixo podem estar vazios.')
   else if (atualizadoEm && new Date(atualizadoEm).getTime() < limiteFrescor && horaAtual >= 20 * 60) {
     const q = agoraBR(new Date(atualizadoEm))
-    sinais.push(`Dados desatualizados: o relatório do Avec foi atualizado pela última vez em ${p2(q.dia)}/${p2(q.mes)} às ${p2(Math.floor(q.minutos / 60))}:${p2(q.minutos % 60)}. Os números de hoje podem estar incompletos.`)
+    sinais.push(`Dados desatualizados: o relatório do sistema foi atualizado pela última vez em ${p2(q.dia)}/${p2(q.mes)} às ${p2(Math.floor(q.minutos / 60))}:${p2(q.minutos % 60)}. Os números de hoje podem estar incompletos.`)
   }
 
   // ── Dia ──
@@ -279,7 +279,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
         l.push('', `Descontos: ${moeda(desconto)}`, `São ${pct((desconto / bruto) * 100)} do bruto`)
         if (desconto / bruto > 0.1) sinais.push(`Descontos altos hoje: ${pct((desconto / bruto) * 100)} do bruto. Vale conferir quem concedeu e por quê.`)
       }
-      if (comandas >= 500) l.push('', 'Atenção: o Avec entrega no máximo 500 comandas por coleta; os números do dia podem estar incompletos.')
+      if (comandas >= 500) l.push('', 'Atenção: o sistema entrega no máximo 500 comandas por atualização; os números do dia podem estar incompletos.')
     } else {
       l.push('Nenhum faturamento lançado hoje.')
       if (base.n >= 2) sinais.push(`Sem faturamento lançado hoje (a média de ${DIA_PLURAL[hoje.dow]} é ${moedaCurta(base.media)}). Confira se o dia foi fechado ou se o relatório não chegou.`)
@@ -654,7 +654,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
       else if (t === 'NEGATIVO') { nega++; const n = primeiroNome(String((r as any).profissional || '')) || 'Sem profissional'; neg.set(n, (neg.get(n) || 0) + 1) }
     }
     if (pos + nega > 0) {
-      l.push('', 'Feedback do Avec no mês:', `${pos} positivos e ${nega} negativos`)
+      l.push('', 'Feedback registrado no mês:', `${pos} positivos e ${nega} negativos`)
       const piores = [...neg.entries()].sort((a, b) => b[1] - a[1]).filter(([, n]) => n >= 3).slice(0, 3)
       if (piores.length) {
         l.push('', 'Mais negativos:', ...piores.map(([n, c]) => `${n}: ${c}`))
@@ -731,7 +731,7 @@ async function reunir(salaoId: string, hoje: Agora, itens: string[], nomeEscolhi
       .eq('salao_id', salaoId).order('inicio', { ascending: false }).limit(1)
     const u: any = col?.[0]
     if (u?.situacao === 'erro' && new Date(u.inicio).getTime() > Date.now() - 24 * 3600_000) {
-      sinais.push('A última coleta do Avec deu erro: os números podem não refletir tudo o que aconteceu. Confira em Central do servidor.')
+      sinais.push('A última atualização dos dados deu erro: os números podem não refletir tudo o que aconteceu. Confira no painel de administração.')
     }
   }
 

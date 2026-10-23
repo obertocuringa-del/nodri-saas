@@ -6,7 +6,7 @@ import { datasDoSalao } from '@/lib/crmCampanhas'
 
 export const dynamic = 'force-dynamic'
 
-// "Marcar no Avec agora" (CRM).
+// "Confirmar no sistema agora" (CRM).
 //
 // A conversa vira "Confirmou" de dois jeitos que a tela mostrava IGUAL:
 //   - automático: a cliente diz "Sim", a extensão marca o agendamento no Avec
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
   const { data: ct } = await supabaseAdmin.from('crm_contatos').select('id, telefone, nome, cliente_nome')
     .eq('id', c.contato_id).maybeSingle()
-  if (!ct?.telefone) return NextResponse.json({ error: 'A conversa não tem telefone para achar a cliente no Avec.' }, { status: 400 })
+  if (!ct?.telefone) return NextResponse.json({ error: 'A conversa não tem telefone para localizar a cliente no sistema.' }, { status: 400 })
 
   // Se a recepção já respondeu depois da última fala da cliente, o "Combinado"
   // automático seria uma resposta repetida: marca o Avec e não manda.
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     salao_id: salaoId, conversa_id: c.id, tipo: 'mudou_estado',
     de_estado: 'confirmado', para_estado: 'confirmado',
     autor_id: (sess as any).usuarioId || null, autor_nome: (sess as any).nome || 'Salão',
-    detalhe: 'Pediu para marcar como Confirmado no Avec' + (semCombinado ? ' (sem mandar o Combinado: já houve resposta)' : ''),
+    detalhe: 'Pediu a confirmação no sistema' + (semCombinado ? ' (sem mandar o Combinado: já houve resposta)' : ''),
   })
   return NextResponse.json({ ok: true, sem_combinado: semCombinado, data })
 }

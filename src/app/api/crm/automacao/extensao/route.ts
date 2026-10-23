@@ -448,7 +448,7 @@ async function concluirConfirmacao(
   if (temPergunta) {
     await supabaseAdmin.from('crm_conversas').update({
       estado: 'acao_necessaria',
-      proxima_acao: 'Responder: ela confirmou (já está no Avec) e perguntou algo',
+      proxima_acao: 'Responder: ela confirmou (já está confirmado no sistema) e perguntou algo',
       nao_lidas: 1, atualizado_em: agora,
     }).eq('id', p.conversa_id).eq('salao_id', salaoId)
     await supabaseAdmin.from('crm_eventos').insert({

@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, ChevronRight, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff, Star, UserRound, Wallet, Repeat, CalendarDays, Hand, Eye, Sparkles, Palette, Brush, Copy } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
-import FaixaMarcarNoAvec from '@/components/salon/FaixaMarcarNoAvec'
+import FaixaConfirmacaoPendente from '@/components/salon/FaixaConfirmacaoPendente'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
 
 // Carinhas para a resposta -- e SÓ para a resposta. O sistema não usa emoji
@@ -1226,11 +1226,11 @@ export default function CrmPage() {
             <AlertTriangle size={16} style={{ color: '#9a6b12', flexShrink: 0, marginTop: 2 }} />
             <div className="text-[12.5px] flex-1" style={{ color: '#6e625c' }}>
               {saude.problemas.map((p: any, i: number) => (
-                <p key={i}><strong style={{ color: '#9a6b12' }}>{p.motivo.charAt(0).toUpperCase() + p.motivo.slice(1)}.</strong></p>
+                <p key={i}><strong style={{ color: '#9a6b12' }}>{(() => { const t = paraRecepcao(p.motivo); return t.charAt(0).toUpperCase() + t.slice(1) })()}.</strong></p>
               ))}
               <p>
                 {p_servicoTexto(saude.problemas)}
-                {' '}O servidor tenta religar sozinho a cada 5 minutos
+                {' '}O sistema tenta religar sozinho a cada 5 minutos
                 {(() => {
                   const hoje = (saude.reinicios || []).filter((r: any) => new Date(r.em).toDateString() === new Date().toDateString())
                   return hoje.length ? ` (já tentou ${hoje.length}x hoje, a última às ${new Date(hoje[hoje.length - 1].em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}).` : '.'
@@ -2114,8 +2114,8 @@ function CabecalhoConversa({ c, onEstado, onOrigem, onNaoLida, onVoltar, onFicha
       </div>
       )}
 
-      {/* "Confirmou" por clique no CRM não marca o Avec: avisa e oferece marcar. */}
-      <FaixaMarcarNoAvec conversaId={c.id} estado={c.estado} />
+      {/* "Confirmou" por clique no CRM não conclui a confirmação no sistema: avisa e oferece concluir. */}
+      <FaixaConfirmacaoPendente conversaId={c.id} estado={c.estado} />
 
       {/* ── A faixa sai da configuração, não do código ──────────────────────
           O salão esconde, renomeia e cria os seus botões em Configurar. Os
@@ -3661,4 +3661,22 @@ function FichaContato({ ct, onSalvo }: { ct: any; onSalvo?: () => void }) {
       </button>
     </div>
   )
+}
+
+/**
+ * A faixa de saúde é lida pela recepção: os motivos vêm com o nome das peças
+ * internas ("robô do Avec", "ponte"), úteis ao administrador mas que não devem
+ * aparecer aqui (decisão do dono, 23/10/2026: ninguém de fora precisa saber
+ * como a logística funciona). O painel técnico segue com os termos exatos.
+ */
+function paraRecepcao(t: string): string {
+  return String(t || '')
+    .replace(/, com a ponte conectada/gi, '')
+    .replace(/robô do Avec ligado, mas sem ler o Avec/gi, 'automação ligada, mas sem atualizar os dados')
+    .replace(/robô do Avec/gi, 'automação do sistema')
+    .replace(/ponte do WhatsApp/gi, 'conexão do WhatsApp')
+    .replace(/\bAvec\b/g, 'sistema')
+    .replace(/\bponte\b/gi, 'conexão')
+    .replace(/\brobô\b/gi, 'automação')
+    .replace(/\bextensão\b/gi, 'automação')
 }
