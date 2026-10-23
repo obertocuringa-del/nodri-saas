@@ -33,14 +33,19 @@ export async function GET(req: NextRequest) {
     .eq('id', conversaId).eq('salao_id', sess!.salaoId).maybeSingle()
   if ((dela as any)?.origem === 'resumo_dono') return NextResponse.json({ error: 'Conversa não encontrada' }, { status: 404 })
 
-  const { data, error } = await supabaseAdmin
+  // As 400 MAIS RECENTES. Pedir as 400 primeiras (ordem crescente + limite) cortava
+  // justamente o fim da conversa: com 566 mensagens a tela mostrava até a 400ª e
+  // sumiam as de hoje (23/10/2026: Adilson e Viegas avisando que não chegavam, na
+  // pasta Profissionais). Busca do fim para o começo e devolve na ordem de leitura.
+  const { data: recentes, error } = await supabaseAdmin
     .from('crm_mensagens')
     .select('*')
     .eq('salao_id', sess!.salaoId)
     .eq('conversa_id', conversaId)
-    .order('criado_em', { ascending: true })
+    .order('criado_em', { ascending: false })
     .limit(400)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const data = (recentes || []).slice().reverse()
 
   // Abrir a conversa zera o não lidas — a lista precisa refletir o que a
   // pessoa realmente viu, senão o contador vira enfeite.
