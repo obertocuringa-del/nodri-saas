@@ -291,6 +291,21 @@ export default function CrmPage() {
 
   // O que o vigia do servidor achou parado (robô do Avec, ponte do WhatsApp).
   const [saude, setSaude] = useState<any>(null)
+  // Faixa de aviso FECHÁVEL (pedido do dono, 23/10/2026): o X esconde aquele aviso
+  // neste navegador. Aviso de conferência ('avisar') fica escondido por 12 h; aviso de
+  // serviço parado volta em 30 min se ainda valer, para ninguém esconder uma queda de vez.
+  const [dispensados, setDispensados] = useState<Record<string, number>>({})
+  useEffect(() => {
+    try { setDispensados(JSON.parse(localStorage.getItem('crm_saude_dispensados') || '{}')) } catch { /* sem armazenamento: o aviso só não fica fechado */ }
+  }, [])
+  const dispensarAviso = (p: any) => {
+    const ate = Date.now() + (p.acao === 'avisar' ? 12 * 3600e3 : 30 * 60e3)
+    setDispensados(prev => {
+      const novo = { ...prev, [p.motivo]: ate }
+      try { localStorage.setItem('crm_saude_dispensados', JSON.stringify(novo)) } catch { /* ignora */ }
+      return novo
+    })
+  }
 
   async function puxarCanal() {
     try {
@@ -1220,25 +1235,43 @@ export default function CrmPage() {
             30/09/2026: o robô do Avec ficou o dia parado sem ninguém saber.
             O servidor tenta religar sozinho a cada 5 min; esta faixa diz o
             que está parado e quantas vezes ele já tentou. Some quando volta. */}
-        {saude?.problemas?.length > 0 && (
-          <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-start gap-3"
-            style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
-            <AlertTriangle size={16} style={{ color: '#9a6b12', flexShrink: 0, marginTop: 2 }} />
-            <div className="text-[12.5px] flex-1" style={{ color: '#6e625c' }}>
-              {saude.problemas.map((p: any, i: number) => (
-                <p key={i}><strong style={{ color: '#9a6b12' }}>{(() => { const t = paraRecepcao(p.motivo); return t.charAt(0).toUpperCase() + t.slice(1) })()}.</strong></p>
-              ))}
-              <p>
-                {p_servicoTexto(saude.problemas)}
-                {' '}O sistema tenta religar sozinho a cada 5 minutos
-                {(() => {
-                  const hoje = (saude.reinicios || []).filter((r: any) => new Date(r.em).toDateString() === new Date().toDateString())
-                  return hoje.length ? ` (já tentou ${hoje.length}x hoje, a última às ${new Date(hoje[hoje.length - 1].em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}).` : '.'
-                })()}
-              </p>
+        {(() => {
+          const avisos = (saude?.problemas || []).filter((p: any) => !((dispensados[p.motivo] || 0) > Date.now()))
+          if (!avisos.length) return null
+          // O texto "religa sozinho / não estão saindo" é de serviço PARADO; aviso de
+          // conferência ('avisar') só diz o que conferir, e nada está parado.
+          const paradas = avisos.filter((p: any) => p.acao !== 'avisar')
+          return (
+            <div className="mx-4 mb-2 px-3 py-2.5 rounded-xl flex items-start gap-3"
+              style={{ background: '#FBF2E0', border: '1px solid #e8d9b0' }}>
+              <AlertTriangle size={16} style={{ color: '#9a6b12', flexShrink: 0, marginTop: 2 }} />
+              <div className="text-[12.5px] flex-1 min-w-0" style={{ color: '#6e625c' }}>
+                {avisos.map((p: any, i: number) => {
+                  const t = paraRecepcao(p.motivo).replace(/[.\s]+$/, '')
+                  return (
+                    <p key={i} className="flex items-start gap-2">
+                      <strong className="flex-1 min-w-0" style={{ color: '#9a6b12' }}>{t.charAt(0).toUpperCase() + t.slice(1)}.</strong>
+                      <button onClick={() => dispensarAviso(p)} title="Fechar este aviso" aria-label="Fechar este aviso"
+                        className="flex-shrink-0 rounded-md p-0.5 transition duration-100 hover:bg-black/5" style={{ color: '#9a6b12' }}>
+                        <X size={15} />
+                      </button>
+                    </p>
+                  )
+                })}
+                {paradas.length > 0 && (
+                  <p>
+                    {p_servicoTexto(paradas)}
+                    {' '}O sistema tenta religar sozinho a cada 5 minutos
+                    {(() => {
+                      const hoje = (saude.reinicios || []).filter((r: any) => new Date(r.em).toDateString() === new Date().toDateString())
+                      return hoje.length ? ` (já tentou ${hoje.length}x hoje, a última às ${new Date(hoje[hoje.length - 1].em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}).` : '.'
+                    })()}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── O CRM ficou fora do ar e ninguém soube ─────────────────────────
             Mensagem que chegou nesse período está SÓ no celular: para o

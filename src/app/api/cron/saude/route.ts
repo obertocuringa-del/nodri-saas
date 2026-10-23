@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { conferirTudo } from '@/lib/saudeSistema'
 import { registrarServidor, consumirPedidos, anotarReinicio } from '@/lib/servidorCentral'
 import { fecharSobrando } from '@/lib/abasDoRobo'
+import { varrerConfirmacoesPendentes } from '@/lib/confirmacaoPendente'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +39,13 @@ async function responder(req: Request, info: any) {
     // andamento (ver src/lib/abasDoRobo.ts), e nunca deixa o Chrome sem aba
     // nenhuma -- sem aba ele se encerra e o robô teria de reabrir tudo.
     await enxugarAbas().catch(() => {})
+
+    // ── Confirmação que ficou só no CRM ─────────────────────────────────────
+    //
+    // Conversa marcada "Confirmou" à mão não marca o agendamento no sistema de
+    // agenda. O vigia pede a marcação sozinho (sem mandar mensagem a ninguém).
+    // Ver src/lib/confirmacaoPendente.ts.
+    await varrerConfirmacoesPendentes().catch(() => {})
 
     const pedidos = await consumirPedidos()
     const todos = [...new Set([...r.reiniciar, ...pedidos])]

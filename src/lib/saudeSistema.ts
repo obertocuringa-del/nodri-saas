@@ -23,6 +23,15 @@ const MIN = 60_000
 
 export type Servico = 'robo' | 'ponte'
 
+// Anotação do próprio vigia: desde quando a extensão só consegue ler COM ERRO.
+// É do vigia (e não do estado de cada campanha) porque esse estado guarda só o
+// ÚLTIMO ciclo, sem saber quando foi o último ciclo bom.
+export const CHAVE_ERRO_EXTENSAO = 'vigia_extensao_erro'
+// Erros que são da própria extensão (aba muda, relatório ilegível...), e não
+// de uma pausa ou desligamento decididos pelo servidor ("Pausado: ...").
+const FALHA_DA_EXTENSAO = /não respondeu|não consegui|aba do avec|relatório|login|agenda|extensão/i
+const MIN_COM_ERRO_PARA_RELIGAR = 10
+
 export interface Problema {
   servico: Servico
   motivo: string
@@ -97,7 +106,7 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
   const problemas: Problema[] = []
   const [{ data: cfgs }, { data: canal }] = await Promise.all([
     supabaseAdmin.from('salao_config').select('chave, valor').eq('salao_id', salaoId)
-      .in('chave', [CHAVE_ROBO, 'crm_automacao_feedback_estado', 'crm_campanhas_estado']),
+      .in('chave', [CHAVE_ROBO, 'crm_automacao_feedback_estado', 'crm_campanhas_estado', CHAVE_ERRO_EXTENSAO]),
     supabaseAdmin.from('crm_canais').select('situacao, visto_em').eq('salao_id', salaoId).maybeSingle(),
   ])
   const cfg = new Map((cfgs || []).map((c: any) => [c.chave, c.valor]))
@@ -117,6 +126,32 @@ async function conferirSalao(salaoId: string, agora: number): Promise<Problema[]
       problemas.push({ servico: 'robo', motivo: `robô do Avec sem sinal desde ${hhmm(fb?.visto_em)}`, desde: fb?.visto_em || null })
     } else if (!leu || agora - leu > 20 * MIN) {
       problemas.push({ servico: 'robo', motivo: `robô do Avec ligado, mas sem ler o Avec desde ${leu ? hhmm(new Date(leu).toISOString()) : '?'}`, desde: leu ? new Date(leu).toISOString() : null })
+    }
+
+    // ── Lendo, mas SÓ com erro ───────────────────────────────────────────────
+    //
+    // 22/10/2026: a aba de trabalho ficou muda e a extensão passou o dia
+    // tentando e falhando a cada 30 s. Os testes acima olham a HORA do último
+    // ciclo, e ciclo com erro também grava a hora: para o vigia ela estava
+    // "lendo", e ele nunca religou. Aqui conta o que o ciclo ENTREGOU: se só há
+    // ciclos recentes com erro da extensão e nenhum bom, anota desde quando; ao
+    // ver um ciclo bom, apaga a anotação. Passou de 10 min, religa o robô (o
+    // script limita a 1 vez a cada 20 min e 8 por dia).
+    const vivos = [fb?.ultimo, ...Object.values(camp).map((e: any) => e?.ultimo)]
+      .filter((u: any) => u?.em && agora - new Date(u.em).getTime() < 3 * MIN)
+    const falhando = vivos.some((u: any) => u.erro && FALHA_DA_EXTENSAO.test(String(u.erro)))
+      && !vivos.some((u: any) => !u.erro)
+    const desde: string | null = (cfg.get(CHAVE_ERRO_EXTENSAO) as any)?.desde || null
+    if (falhando && !desde) {
+      await supabaseAdmin.from('salao_config').upsert(
+        { salao_id: salaoId, chave: CHAVE_ERRO_EXTENSAO, valor: { desde: new Date(agora).toISOString() }, atualizado_em: new Date(agora).toISOString() },
+        { onConflict: 'salao_id,chave' },
+      )
+    } else if (!falhando && desde && vivos.length) {
+      await supabaseAdmin.from('salao_config').delete().eq('salao_id', salaoId).eq('chave', CHAVE_ERRO_EXTENSAO)
+    } else if (falhando && desde && agora - new Date(desde).getTime() > MIN_COM_ERRO_PARA_RELIGAR * MIN && !problemas.some(p => p.servico === 'robo')) {
+      const erro = String(vivos.find((u: any) => u.erro && FALHA_DA_EXTENSAO.test(String(u.erro)))?.erro || '').split(' [')[0].slice(0, 90)
+      problemas.push({ servico: 'robo', motivo: `robô do Avec lendo só com erro desde ${hhmm(desde)} (${erro})`, desde })
     }
   }
 
