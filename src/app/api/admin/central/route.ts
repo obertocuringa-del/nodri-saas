@@ -40,8 +40,10 @@ interface Bloco { cor: Cor; resumo: string; itens: Item[]; extra?: any }
 
 const MIN = 60_000
 const PESO: Record<Cor, number> = { cinza: 0, verde: 1, amarelo: 2, vermelho: 3 }
+// O valor inicial é o PRIMEIRO da lista, e não 'verde': com só itens cinza (fora do
+// horário), começar em 'verde' devolvia verde e o cartão dizia "tudo certo" de madrugada.
 const pior = (cores: Cor[], vazio: Cor = 'cinza'): Cor =>
-  cores.length ? cores.reduce((a, b) => (PESO[b] > PESO[a] ? b : a), 'verde' as Cor) : vazio
+  cores.length ? cores.reduce((a, b) => (PESO[b] > PESO[a] ? b : a), cores[0]) : vazio
 const horaSP = (d: Date | number | string) =>
   new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(d))
 const dataHoraSP = (d: Date | number | string) =>

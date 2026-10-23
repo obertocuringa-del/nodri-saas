@@ -8,6 +8,23 @@ set -e
 SERVIDOR="root@2.25.250.201"
 CHAVE="$HOME/.ssh/nodri_servidor"
 cd "$(dirname "$0")/.."
+
+# Trava de horário. A montagem leva uns 3 minutos e troca os arquivos com o site
+# no ar: quem abre uma tela nesse intervalo pode levar um erro 500 (aconteceu em
+# 23/10/2026 na tela do CRM). Em horário de movimento (07:30 às 21:30, Brasília)
+# pergunta antes; sem ninguém para responder, só segue com --forcar.
+HORA=$(TZ=America/Sao_Paulo date +%H%M)
+if [ "$HORA" -ge 730 ] && [ "$HORA" -le 2130 ] && [ "${1:-}" != "--forcar" ]; then
+  echo "ATENÇÃO: agora é horário de movimento (07:30 às 21:30)."
+  echo "Durante a montagem (uns 3 minutos) algumas telas podem dar erro 500."
+  if [ -t 0 ]; then
+    read -r -p "Publicar mesmo assim? (digite S) " R
+    [ "$R" = "S" ] || [ "$R" = "s" ] || { echo "Cancelado."; exit 1; }
+  else
+    echo "Para publicar agora mesmo assim: bash scripts/publicar-servidor.sh --forcar"
+    exit 1
+  fi
+fi
 [ -z "$(git status --porcelain -- src public package.json package-lock.json next.config.mjs)" ] \
   || { echo "Há mudança não commitada em src/public/config -- commite antes."; exit 1; }
 echo "Publicando $(git log --oneline -1)"

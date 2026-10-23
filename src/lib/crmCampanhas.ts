@@ -189,7 +189,7 @@ export function datasDoSalao(fuso = 'America/Sao_Paulo') {
     return { br: `${g('day')}/${g('month')}/${g('year')}`, iso: `${g('year')}-${g('month')}-${g('day')}` }
   }
   const agora = new Date()
-  return { hoje: fmt(agora), amanha: fmt(new Date(agora.getTime() + 864e5)) }
+  return { hoje: fmt(agora), amanha: fmt(new Date(agora.getTime() + 864e5)), ontem: fmt(new Date(agora.getTime() - 864e5)) }
 }
 
 /** 'HH:MM' agora, no fuso do salão. */
@@ -274,7 +274,7 @@ export async function conferirHorariosDoDia(
 ): Promise<HorarioPerdido[]> {
   const campanhas = await carregarCampanhas(salaoId)
   const estados = await carregarEstados(salaoId)
-  const { hoje } = datasDoSalao(fuso)
+  const { hoje, ontem } = datasDoSalao(fuso)
   const agora = horaAgora(fuso)
   const achados: HorarioPerdido[] = []
   let mexeu = false
@@ -323,6 +323,23 @@ export async function conferirHorariosDoDia(
           campanha_id: c.id, nome: c.nome, horario: h, resgatado: false,
           motivo: `${c.nome}: o horário de ${h} ainda não saiu (${minutosEntre(h, agora)} min atrasado); o robô continua tentando.`,
         })
+      }
+    }
+
+    // A virada do dia não pode apagar o problema. 23/10/2026: a confirmação das
+    // 20:00 falhou nas duas rodadas, o cartão ficou verde à meia-noite e as
+    // clientes seguiram sem confirmação. O que desistiu de novo ONTEM continua
+    // aparecendo até o meio-dia, antes da primeira rodada do dia.
+    if (agora < '12:00') {
+      const resgOntem = new Set<string>(((e as any).resgatados || {})[ontem.iso] || [])
+      const feitosOntem = new Set(e.horarios_feitos?.[ontem.iso] || [])
+      for (const h of c.quando.horarios || []) {
+        if (feitosOntem.has(h) && (tent[`${ontem.iso} ${h}`] || 0) >= 5 && resgOntem.has(h)) {
+          achados.push({
+            campanha_id: c.id, nome: c.nome, horario: h, resgatado: false,
+            motivo: `${c.nome}: o horário de ${h} de ontem falhou nas duas rodadas. Conferir à mão quem ficou sem confirmação.`,
+          })
+        }
       }
     }
   }

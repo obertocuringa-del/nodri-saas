@@ -3672,11 +3672,12 @@ function FichaContato({ ct, onSalvo }: { ct: any; onSalvo?: () => void }) {
 function paraRecepcao(t: string): string {
   return String(t || '')
     .replace(/, com a ponte conectada/gi, '')
+    .replace(/(?<!\p{L})o robô(?!\p{L})/giu, 'a automação')
     .replace(/robô do Avec ligado, mas sem ler o Avec/gi, 'automação ligada, mas sem atualizar os dados')
     .replace(/robô do Avec/gi, 'automação do sistema')
     .replace(/ponte do WhatsApp/gi, 'conexão do WhatsApp')
     .replace(/\bAvec\b/g, 'sistema')
     .replace(/\bponte\b/gi, 'conexão')
-    .replace(/\brobô\b/gi, 'automação')
+    .replace(/(?<!\p{L})robô(?!\p{L})/giu, 'automação')
     .replace(/\bextensão\b/gi, 'automação')
 }
