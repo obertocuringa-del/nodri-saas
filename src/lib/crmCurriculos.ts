@@ -200,9 +200,47 @@ const CHAVE_CONFIG = 'curriculos_config'
 const CHAVE_TRIAGEM = 'curriculos_triagem'
 const BUCKET = 'uploads'
 
+/**
+ * O ritmo de envio dos candidatos: a mesma sistemática do Envio automático
+ * (janela de horário, uma mensagem a cada X minutos, máximo por dia e dias da
+ * semana), para o WhatsApp do salão não ser bloqueado. Nomes dos campos iguais
+ * aos de crmDisparos.ts; dias_semana segue 0 = domingo ... 6 = sábado.
+ */
+export interface RitmoCurriculos {
+  janela_ini: string
+  janela_fim: string
+  intervalo_min: number
+  max_dia: number
+  dias_semana: number[]
+}
+export const RITMO_PADRAO: RitmoCurriculos = { janela_ini: '09:00', janela_fim: '20:00', intervalo_min: 20, max_dia: 20, dias_semana: [1, 2, 3, 4, 5, 6] }
+// Tetos de segurança: valem mesmo que a tela mande outra coisa.
+export const MIN_INTERVALO = 2
+export const MAX_DIA_TETO = 100
+export const MAX_POR_PEDIDO = 100
+
 export interface ConfigCurriculos {
   limpeza: { ligado: boolean; dias: number }
   modelos: string[]
+  ritmo: RitmoCurriculos
+}
+
+const hhmm = (v: any, padrao: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')) ? String(v) : padrao
+const inteiro = (v: any, padrao: number, min: number, max: number) => {
+  const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : padrao
+}
+export function limparRitmo(b: any): RitmoCurriculos {
+  const dias = Array.isArray(b?.dias_semana)
+    ? ([...new Set(b.dias_semana.map((d: any) => Math.round(Number(d))).filter((d: number) => d >= 0 && d <= 6))] as number[]).sort()
+    : []
+  let ini = hhmm(b?.janela_ini, RITMO_PADRAO.janela_ini), fim = hhmm(b?.janela_fim, RITMO_PADRAO.janela_fim)
+  if (fim <= ini) { ini = RITMO_PADRAO.janela_ini; fim = RITMO_PADRAO.janela_fim }
+  return {
+    janela_ini: ini, janela_fim: fim,
+    intervalo_min: inteiro(b?.intervalo_min, RITMO_PADRAO.intervalo_min, MIN_INTERVALO, 720),
+    max_dia: inteiro(b?.max_dia, RITMO_PADRAO.max_dia, 1, MAX_DIA_TETO),
+    dias_semana: dias.length ? dias : RITMO_PADRAO.dias_semana,
+  }
 }
 
 async function lerJson(salaoId: string, chave: string): Promise<any> {
@@ -223,6 +261,7 @@ export async function lerConfigCurriculos(salaoId: string): Promise<ConfigCurric
     // Desligada por padrão: apagar currículo é decisão do dono, não do sistema.
     limpeza: { ligado: v?.limpeza?.ligado === true, dias },
     modelos: Array.isArray(v?.modelos) ? v.modelos.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 40) : [],
+    ritmo: limparRitmo(v?.ritmo),
   }
 }
 
@@ -236,6 +275,7 @@ export async function salvarConfigCurriculos(salaoId: string, parcial: Partial<C
     modelos: parcial.modelos
       ? parcial.modelos.map(x => String(x || '').trim()).filter(Boolean).slice(0, 40)
       : atual.modelos,
+    ritmo: parcial.ritmo ? limparRitmo(parcial.ritmo) : atual.ritmo,
   }
   await gravarJson(salaoId, CHAVE_CONFIG, novo)
   return novo
@@ -448,3 +488,99 @@ export async function rotinaDiariaCurriculos() {
   }
   return resumo
 }
+
+// ── Agendar o lote no ritmo do salão ────────────────────────────────────────
+//
+// A ponte só pega mensagem `na_fila` cujo criado_em já venceu. Então o ritmo
+// vira DATA: cada mensagem nasce com o criado_em do instante em que deve sair,
+// respeitando dias da semana, janela de horário, intervalo (com ~20% de
+// variação, como no Envio automático) e o máximo por dia -- contando o que já
+// estava agendado ou foi enviado naquele dia na pasta Currículos.
+// Fuso de Brasília (UTC-3, sem horário de verão).
+
+const FUSO_MS = -3 * 3600e3
+const minutosDe = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+/** "2026-10-26" de um instante, em Brasília. */
+const diaBR = (t: number) => new Date(t + FUSO_MS).toISOString().slice(0, 10)
+/** Instante (ms) de um dia de Brasília às N minutos. */
+const instanteDe = (dia: string, minutos: number) => Date.parse(`${dia}T00:00:00Z`) - FUSO_MS + minutos * 60000
+const semanaBR = (dia: string) => new Date(`${dia}T12:00:00Z`).getUTCDay()
+
+/** Quantas saídas da pasta Currículos já há por dia (enviadas hoje ou agendadas), de hoje a 14 dias. */
+export async function saidasPorDia(salaoId: string): Promise<Record<string, number>> {
+  const { data: convs } = await supabaseAdmin.from('crm_conversas').select('id')
+    .eq('salao_id', salaoId).eq('estado', PASTA_CURRICULOS).limit(2000)
+  const ids = (convs || []).map((c: any) => c.id)
+  const mapa: Record<string, number> = {}
+  if (!ids.length) return mapa
+  const desde = new Date(instanteDe(diaBR(Date.now()), 0)).toISOString()
+  const ate = new Date(Date.now() + 15 * 86400e3).toISOString()
+  for (const lote of pedacos(ids, 150)) {
+    const { data } = await supabaseAdmin.from('crm_mensagens').select('criado_em')
+      .eq('salao_id', salaoId).eq('direcao', 'saida').gte('criado_em', desde).lte('criado_em', ate).in('conversa_id', lote)
+    for (const m of (data || []) as any[]) { const d = diaBR(Date.parse(m.criado_em)); mapa[d] = (mapa[d] || 0) + 1 }
+  }
+  return mapa
+}
+
+/**
+ * Os instantes (ms) em que cada uma das `quantidade` mensagens deve sair.
+ * Devolve null se não coube em 14 dias (ritmo apertado demais).
+ */
+export function agendarNoRitmo(quantidade: number, ritmo: RitmoCurriculos, jaPorDia: Record<string, number>, agora = Date.now()): number[] | null {
+  const r = limparRitmo(ritmo)
+  const ini = minutosDe(r.janela_ini), fim = minutosDe(r.janela_fim)
+  const saidas: number[] = []
+  let ultimo = 0
+  for (let d = 0; d < 15 && saidas.length < quantidade; d++) {
+    const dia = diaBR(agora + d * 86400e3)
+    if (!r.dias_semana.includes(semanaBR(dia))) continue
+    let usados = jaPorDia[dia] || 0
+    // Primeiro horário do dia: o começo da janela, ou "daqui a pouco" se já passou dele.
+    let t = Math.max(instanteDe(dia, ini), agora + 60e3, ultimo ? ultimo + r.intervalo_min * 60e3 * 0.85 : 0)
+    const limite = instanteDe(dia, fim)
+    while (saidas.length < quantidade && usados < r.max_dia && t <= limite) {
+      saidas.push(t); ultimo = t; usados++
+      t += r.intervalo_min * 60e3 * (0.85 + Math.random() * 0.3)   // variação de 15% para cada lado
+    }
+  }
+  return saidas.length === quantidade ? saidas : null
+}
+
+/** Quantas mensagens de candidatos estão agendadas para o futuro (ainda na fila). */
+export async function contarAgendadas(salaoId: string): Promise<number> {
+  const { data: convs } = await supabaseAdmin.from('crm_conversas').select('id')
+    .eq('salao_id', salaoId).eq('estado', PASTA_CURRICULOS).limit(2000)
+  const ids = (convs || []).map((c: any) => c.id)
+  let total = 0
+  for (const lote of pedacos(ids, 150)) {
+    const { count } = await supabaseAdmin.from('crm_mensagens').select('id', { count: 'exact', head: true })
+      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('situacao', 'na_fila')
+      .gt('criado_em', new Date().toISOString()).in('conversa_id', lote)
+    total += count || 0
+  }
+  return total
+}
+
+/** Cancela o que ainda não saiu: só mensagens na fila, no futuro, de conversas da pasta Currículos. */
+export async function cancelarAgendadas(salaoId: string): Promise<number> {
+  const { data: convs } = await supabaseAdmin.from('crm_conversas').select('id')
+    .eq('salao_id', salaoId).eq('estado', PASTA_CURRICULOS).limit(2000)
+  const ids = (convs || []).map((c: any) => c.id)
+  let total = 0
+  for (const lote of pedacos(ids, 150)) {
+    const { data } = await supabaseAdmin.from('crm_mensagens').delete()
+      .eq('salao_id', salaoId).eq('direcao', 'saida').eq('situacao', 'na_fila')
+      .gt('criado_em', new Date().toISOString()).in('conversa_id', lote).select('id')
+    total += (data || []).length
+  }
+  return total
+}
+
+/** "hoje às 09:00" / "amanhã às 09:00" / "28/10 às 14:20", em Brasília. */
+export function quandoBR(t: number, agora = Date.now()): string {
+  const dia = diaBR(t), hoje = diaBR(agora), amanha = diaBR(agora + 86400e3)
+  const h = new Date(t + FUSO_MS).toISOString().slice(11, 16)
+  return `${dia === hoje ? 'hoje' : dia === amanha ? 'amanhã' : `${dia.slice(8, 10)}/${dia.slice(5, 7)}`} às ${h}`
+}
+export const diasEntre = (a: number, b: number) => new Set([diaBR(a), diaBR(b)]).size === 1 ? 1 : Math.round((Date.parse(diaBR(b)) - Date.parse(diaBR(a))) / 86400e3) + 1

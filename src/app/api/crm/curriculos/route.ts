@@ -4,7 +4,8 @@ import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 import { MINUTOS_DONO } from '@/lib/crm'
 import {
   garantirPastaCurriculos, candidatosPorId, conversaDoCandidato, conversasDosCandidatos,
-  resumoPorTelefone, enviadasHoje, primeiroNome, MAX_POR_LOTE, MAX_POR_DIA,
+  resumoPorTelefone, primeiroNome, MAX_POR_PEDIDO, limparRitmo, saidasPorDia, agendarNoRitmo,
+  contarAgendadas, cancelarAgendadas, quandoBR, diasEntre,
   conversaDeCandidato, mensagensDoCandidato, PASTA_CURRICULOS,
   lerConfigCurriculos, salvarConfigCurriculos, conversasDoTelefonePrincipal, definirTriagem,
   arquivosDosCandidatos, excluirArquivos, distribuirModelos,
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
     por_telefone: resumoPorTelefone(conversas),
     principal: await conversasDoTelefonePrincipal(salaoId),
     config: await lerConfigCurriculos(salaoId),
+    agendadas: await contarAgendadas(salaoId),
   })
 }
 
@@ -136,6 +138,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ...r })
   }
 
+  // Cancela o que ainda não saiu (mensagens agendadas no futuro, só de candidatos).
+  if (body?.acao === 'cancelar_agendados') {
+    return NextResponse.json({ ok: true, canceladas: await cancelarAgendadas(salaoId) })
+  }
+
   if (body?.acao === 'enviar') {
     const ids: string[] = Array.isArray(body?.ids) ? body.ids.map(String) : []
     // Aceita uma lista de modelos (o sistema reveza) ou um texto só.
@@ -143,26 +150,32 @@ export async function POST(req: NextRequest) {
       .map((x: any) => String(x || '').trim()).filter(Boolean)
     if (!modelos.length) return NextResponse.json({ error: 'Escreva a mensagem.' }, { status: 400 })
     if (!ids.length) return NextResponse.json({ error: 'Escolha pelo menos um candidato.' }, { status: 400 })
-    if (ids.length > MAX_POR_LOTE) {
-      return NextResponse.json({ error: `No máximo ${MAX_POR_LOTE} pessoas por vez, para o WhatsApp não bloquear o número.` }, { status: 400 })
+    if (ids.length > MAX_POR_PEDIDO) {
+      return NextResponse.json({ error: `No máximo ${MAX_POR_PEDIDO} pessoas por pedido.` }, { status: 400 })
     }
 
-    const jaHoje = await enviadasHoje(salaoId)
-    if (jaHoje + ids.length > MAX_POR_DIA) {
-      return NextResponse.json({
-        error: `Limite do dia: ${MAX_POR_DIA} mensagens para candidatos (já saíram ${jaHoje}). Continue amanhã.`,
-      }, { status: 429 })
-    }
+    // O ritmo é o do pedido (se veio) ou o padrão do salão; limparRitmo aplica os tetos de segurança.
+    const cfg = await lerConfigCurriculos(salaoId)
+    const ritmo = limparRitmo(body?.ritmo || cfg.ritmo)
 
     await garantirPastaCurriculos(salaoId)
-    if (body?.guardar_modelos !== false) await salvarConfigCurriculos(salaoId, { modelos }).catch(() => {})
+    await salvarConfigCurriculos(salaoId, {
+      ...(body?.guardar_modelos !== false ? { modelos } : {}),
+      ritmo,
+    }).catch(() => {})
     const candidatos = await candidatosPorId(ids)
     const { textos, variados } = distribuirModelos(modelos, candidatos.length)
     const ate24h = new Date(Date.now() - 24 * 3600e3).toISOString()
 
-    // Uma mensagem a cada 25-45 s: a ponte só pega a que já venceu (criado_em),
-    // então elas saem espaçadas, como uma pessoa escrevendo.
-    let quando = Date.now()
+    // Cada mensagem nasce com o criado_em do instante em que deve SAIR: a ponte
+    // só pega a que já venceu. Dias da semana, janela, intervalo e máximo por dia
+    // vêm do ritmo, descontando o que já está agendado ou saiu em cada dia.
+    const horarios = agendarNoRitmo(candidatos.length, ritmo, await saidasPorDia(salaoId))
+    if (!horarios) {
+      return NextResponse.json({ error: 'Com este ritmo não cabe em 14 dias. Aumente o máximo por dia, a janela de horário ou os dias da semana.' }, { status: 400 })
+    }
+    let proximo = 0
+    const saidas: number[] = []
     const enviados: string[] = []
     const pulados: { nome: string; motivo: string }[] = []
 
@@ -180,12 +193,15 @@ export async function POST(req: NextRequest) {
           .eq('conversa_id', r.conversa).eq('direcao', 'saida').eq('texto', texto).gte('criado_em', ate24h)
         if (count) { pulados.push({ nome: c.nome, motivo: 'já recebeu esta mensagem hoje' }); continue }
 
+        // Quem foi pulado não gasta horário: o próximo da fila ocupa o lugar.
+        const quando = horarios[proximo]
         const { error: e1 } = await supabaseAdmin.from('crm_mensagens').insert({
           salao_id: salaoId, conversa_id: r.conversa, direcao: 'saida', texto, tipo: 'texto',
           situacao: 'na_fila', autor_id: sess!.usuarioId || null, autor_nome: quem,
           criado_em: new Date(quando).toISOString(),
         })
         if (e1) { pulados.push({ nome: c.nome, motivo: 'erro ao enfileirar' }); continue }
+        proximo++; saidas.push(quando)
 
         const agora = new Date().toISOString()
         await supabaseAdmin.from('crm_conversas').update({
@@ -200,15 +216,17 @@ export async function POST(req: NextRequest) {
           autor_id: sess!.usuarioId || null, autor_nome: quem, detalhe: 'Mensagem em lote (Currículos)',
         })
         enviados.push(c.nome)
-        quando += (25 + Math.floor(Math.random() * 21)) * 1000
       } catch {
         pulados.push({ nome: c.nome, motivo: 'erro inesperado' })
       }
     }
 
+    const primeira = saidas.length ? Math.min(...saidas) : 0
+    const ultima = saidas.length ? Math.max(...saidas) : 0
     return NextResponse.json({
       ok: true, enviados: enviados.length, pulados, variados,
-      minutos: Math.max(1, Math.ceil((quando - Date.now()) / 60000)),
+      primeira: primeira ? quandoBR(primeira) : '', ultima: ultima ? quandoBR(ultima) : '',
+      dias: primeira ? diasEntre(primeira, ultima) : 0,
     })
   }
 

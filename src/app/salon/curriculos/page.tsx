@@ -48,6 +48,8 @@ export default function CurriculosPage() {
   const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set())
   const [lote, setLote] = useState<null | 'mensagem' | 'pedir'>(null)
   const [arquivosAberto, setArquivosAberto] = useState(false)
+  const [agendadas, setAgendadas] = useState(0)        // mensagens de candidatos ainda na fila, para sair no horário
+  const [cancelando, setCancelando] = useState(false)
   const [abrindo, setAbrindo] = useState<string | null>(null)
   const [erroConversa, setErroConversa] = useState('')
   // Tela larga: lista à esquerda e a conversa à direita. Estreita: a conversa abre por cima.
@@ -64,7 +66,7 @@ export default function CurriculosPage() {
   const carregarResumo = () => {
     fetch('/api/crm/curriculos', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.por_telefone) setResumo(d.por_telefone); if (Array.isArray(d?.principal)) setPrincipal(d.principal) })
+      .then(d => { if (d?.por_telefone) setResumo(d.por_telefone); if (Array.isArray(d?.principal)) setPrincipal(d.principal); if (typeof d?.agendadas === 'number') setAgendadas(d.agendadas) })
       .catch(() => {})
   }
   useEffect(() => {
@@ -115,6 +117,19 @@ export default function CurriculosPage() {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ acao: 'triagem', conversa: p.conversa, vaga }),
     }).catch(() => {})
+  }
+
+  // Cancela o que ainda não saiu (só mensagens de candidatos agendadas para o futuro).
+  const cancelarAgendadas = async () => {
+    if (!confirm(`Cancelar as ${agendadas} mensagens agendadas que ainda não saíram? As que já foram enviadas não são afetadas.`)) return
+    setCancelando(true)
+    try {
+      await fetch('/api/crm/curriculos', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'cancelar_agendados' }),
+      })
+      carregarResumo()
+    } catch { /* o aviso some quando a próxima leitura confirmar */ } finally { setCancelando(false) }
   }
 
   const alternar = (id: string) => setEscolhidos(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -301,6 +316,12 @@ export default function CurriculosPage() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff' }}>
                 <Send size={14} /> Pedir currículo
               </button>
+              {agendadas > 0 && (
+                <span className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: '#fef3c7', color: '#92400e' }}>
+                  {agendadas} mensage{agendadas === 1 ? 'm agendada' : 'ns agendadas'}
+                  <button onClick={cancelarAgendadas} disabled={cancelando} className="underline disabled:opacity-50">{cancelando ? 'cancelando...' : 'cancelar'}</button>
+                </span>
+              )}
             </div>
 
             <div className="flex gap-1 border-b border-nodri-border">
