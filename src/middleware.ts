@@ -77,6 +77,8 @@ async function roteador(request: NextRequest) {
     // Rotina diária dos currículos (guarda os arquivos de candidatos e, se o
     // dono ligou, apaga os antigos): mesmo Bearer, conferido na rota.
     pathname === '/api/cron/curriculos' ||
+    // Arquivo de verificação do Google Search Console (dono do site).
+    pathname === '/googlee9990660c341c70b.html' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
