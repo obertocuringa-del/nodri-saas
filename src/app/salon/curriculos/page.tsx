@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings, Paperclip, Send, Phone } from 'lucide-react'
+import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings, Paperclip, Send, Phone, ExternalLink } from 'lucide-react'
 import { EXPERIENCIAS, ESTADOS_BR, type Curriculo } from '@/lib/curriculosShared'
 import { chaveTelefone, normalizarTelefone } from '@/lib/crm'
 import { voltar } from '@/lib/historicoNav'
@@ -218,6 +218,12 @@ export default function CurriculosPage() {
         <div className="w-px h-5 bg-nodri-border" />
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Currículos</h1>
         <div className="flex-1" />
+        {/* A página pública de vagas ("Trabalhe conosco"): é a que o Google lista e a que se divulga. */}
+        <a href="/vagas" target="_blank" rel="noopener noreferrer" title="Abrir a página pública de vagas (Trabalhe conosco)"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border"
+          style={{ borderColor: COR + '55', color: COR, background: '#fff', marginRight: (novasFormulario + novasPrincipal) > 0 ? 0 : 330 }}>
+          <ExternalLink size={14} /> Página de vagas
+        </a>
         {(novasFormulario + novasPrincipal) > 0 && (
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: '#fef3c7', color: '#92400e', marginRight: 330 }}>
             <MessageCircle size={14} /> {novasFormulario + novasPrincipal} resposta{(novasFormulario + novasPrincipal) > 1 ? 's' : ''} nova{(novasFormulario + novasPrincipal) > 1 ? 's' : ''}
