@@ -6,6 +6,8 @@ import { EXPERIENCIAS, ESTADOS_BR, type Curriculo } from '@/lib/curriculosShared
 import { chaveTelefone, normalizarTelefone } from '@/lib/crm'
 import { useRouter } from 'next/navigation'
 import { voltar } from '@/lib/historicoNav'
+import { useIsMobile } from '@/lib/useIsMobile'
+import ChatCurriculos from '@/components/salon/ChatCurriculos'
 
 const COR = '#5b4fcf'
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -43,6 +45,10 @@ export default function CurriculosPage() {
   const [resultadoLote, setResultadoLote] = useState<null | { enviados: number; minutos: number; pulados: { nome: string; motivo: string }[] }>(null)
   const [erroLote, setErroLote] = useState('')
   const [abrindo, setAbrindo] = useState<string | null>(null)
+  // Tela larga: lista de candidatos à esquerda e o CRM (só a conversa) à direita.
+  // Tela estreita: a conversa abre em tela cheia, como antes.
+  const estreita = useIsMobile(1100)
+  const [conversaAberta, setConversaAberta] = useState<{ id: string; nome: string; telefone: string; vaga: string } | null>(null)
   const [erroConversa, setErroConversa] = useState('')
 
   const carregar = () => {
@@ -83,7 +89,7 @@ export default function CurriculosPage() {
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok || !d?.conversa) { setErroConversa(d?.error || 'Não foi possível abrir a conversa.'); return }
-      router.push(`/salon/curriculos/conversas?conversa=${d.conversa}`)
+      setConversaAberta({ id: d.conversa, nome: c.nome, telefone: c.telefone, vaga: c.vaga }); carregarResumo()
     } catch { setErroConversa('Sem conexão com o servidor.') } finally { setAbrindo(null) }
   }
 
@@ -185,14 +191,16 @@ export default function CurriculosPage() {
         <div className="w-px h-5 bg-nodri-border" />
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Currículos</h1>
         <div className="flex-1" />
-        <a href="/salon/curriculos/conversas"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff', marginRight: 330 }}>
-          <MessageCircle size={14} /> Conversas
-          {novasTotal > 0 && <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: '#fff', color: COR }}>{novasTotal} nova{novasTotal > 1 ? 's' : ''}</span>}
-        </a>
+        {novasTotal > 0 && (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: '#fef3c7', color: '#92400e', marginRight: 330 }}>
+            <MessageCircle size={14} /> {novasTotal} resposta{novasTotal > 1 ? 's' : ''} nova{novasTotal > 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+      <div className="flex" style={!estreita ? { height: 'calc(100vh - 62px)' } : undefined}>
+      <div className={!estreita ? 'w-[540px] flex-shrink-0 overflow-y-auto border-r border-nodri-border' : 'flex-1'}>
+      <div className={estreita ? 'max-w-4xl mx-auto px-4 py-6 space-y-5' : 'px-4 py-5 space-y-5'}>
         {/* Link público */}
         <div className="nodri-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">Link do formulário (envie para os candidatos)</p>
@@ -350,7 +358,7 @@ export default function CurriculosPage() {
                                   )}
                                   <button onClick={() => conversar(c)} disabled={abrindo === c.id}
                                     className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: COR }}>
-                                    {abrindo === c.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} Conversar
+                                    {abrindo === c.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} {r && r.nao_lidas > 0 ? 'Responder' : 'Conversar'}
                                   </button>
                                   <button onClick={() => excluir(c.id)} className="p-1.5 rounded-lg text-nodri-t3 hover:text-red-400"><Trash2 size={14} /></button>
                                 </div>
@@ -369,6 +377,30 @@ export default function CurriculosPage() {
           </div>
         )}
       </div>
+      </div>
+      {!estreita && (
+        <div className="flex-1 min-w-0 h-full">
+          {conversaAberta ? (
+            <ChatCurriculos key={conversaAberta.id} conversaId={conversaAberta.id} nome={conversaAberta.nome}
+              telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)} />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center gap-2" style={{ background: '#fdfbf7' }}>
+              <MessageCircle size={30} style={{ color: '#c3b39a' }} />
+              <p className="text-[14px] font-bold" style={{ color: '#4a453f' }}>Escolha um candidato</p>
+              <p className="text-[12.5px] text-center px-6" style={{ color: '#9a8c85' }}>Clique em Conversar na lista ao lado.</p>
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+
+      {/* Tela estreita: a conversa abre por cima, em tela cheia */}
+      {estreita && conversaAberta && (
+        <div className="fixed inset-0 z-40">
+          <ChatCurriculos key={conversaAberta.id} conversaId={conversaAberta.id} nome={conversaAberta.nome}
+            telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)} />
+        </div>
+      )}
 
       {/* Barra de seleção: aparece quando há candidatos marcados */}
       {escolhidos.size > 0 && !loteAberto && (

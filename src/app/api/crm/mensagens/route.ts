@@ -112,9 +112,7 @@ export async function POST(req: NextRequest) {
   // Só essa pasta: Conversa Finalizada e as demais seguem a regra de sempre.
   // A chave nasce do nome ("Profissionais" -> extra_profissionais_xxx), então
   // o começo vale para qualquer salão que tenha criado essa pasta.
-  // A pasta CURRÍCULOS também segura a conversa: o candidato não é cliente e
-  // não pode cair em "Aguardando" misturado com o atendimento.
-  const pastaDeProfissional = /^extra_(profissiona|curriculos)/.test(String(conversa.estado || ''))
+  const pastaDeProfissional = /^extra_profissiona/.test(String(conversa.estado || ''))
   const tipoSaida = tipoDaMensagemDoSalao(texto)
   const novoEstado = pastaDeProfissional
     ? conversa.estado

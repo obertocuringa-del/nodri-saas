@@ -156,3 +156,35 @@ export function primeiroNome(nome: string): string {
   const p = String(nome || '').trim().split(/\s+/)[0] || ''
   return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''
 }
+
+// ── Chat enxuto dos candidatos ──────────────────────────────────────────────
+//
+// A tela de Currículos tem um chat próprio e simples (texto, foto e áudio que
+// chegam, texto que sai). Ele NÃO mexe no código do CRM principal: lê e grava
+// nas mesmas tabelas, e a mesma ponte entrega e recebe.
+
+/** A conversa só vale aqui se for de candidato: da pasta Currículos ou de telefone de currículo. */
+export async function conversaDeCandidato(salaoId: string, conversaId: string) {
+  const { data: conv } = await supabaseAdmin.from('crm_conversas')
+    .select('id, estado, assunto, nao_lidas, contato:crm_contatos(id, nome, telefone, cliente_nome)')
+    .eq('id', conversaId).eq('salao_id', salaoId).maybeSingle()
+  if (!conv) return null
+  if ((conv as any).estado === PASTA_CURRICULOS) return conv as any
+  const k = chaveTelefone((conv as any).contato?.telefone)
+  if (!k) return null
+  const doc = await getCurriculosDoc()
+  const eh = ((doc.itens || []) as Curriculo[]).some(c => chaveTelefone(normalizarTelefone(c.telefone)) === k)
+  return eh ? (conv as any) : null
+}
+
+const TIPOS_QUE_NAO_APARECEM = ['entrou', 'mudou_estado', 'reacao']
+
+export async function mensagensDoCandidato(salaoId: string, conversaId: string) {
+  const { data } = await supabaseAdmin.from('crm_mensagens')
+    .select('id, direcao, texto, tipo, midia_url, situacao, criado_em, autor_nome')
+    .eq('salao_id', salaoId).eq('conversa_id', conversaId)
+    .order('criado_em', { ascending: false }).limit(200)
+  return ((data || []) as any[])
+    .filter(m => !String(m.tipo || '').startsWith('acao_') && !TIPOS_QUE_NAO_APARECEM.includes(m.tipo))
+    .reverse()
+}

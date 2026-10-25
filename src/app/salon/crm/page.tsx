@@ -11,7 +11,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, RefreshCw, Send, Search, Link2, Power, Clock, User, X, Check, CheckCheck, Settings, Tag, Paperclip, FileText, BarChart3, Mic, Square, CornerUpLeft, AlertTriangle, Smile, ChevronDown, ChevronRight, Pencil, Trash2, SmilePlus, Forward, Instagram, Scissors, Pin, PinOff, Star, UserRound, Wallet, Repeat, CalendarDays, Hand, Eye, Sparkles, Palette, Brush, Copy } from 'lucide-react'
-import { usePathname } from 'next/navigation'
 import { enviarArquivo } from '@/lib/enviarArquivo'
 import FaixaConfirmacaoPendente from '@/components/salon/FaixaConfirmacaoPendente'
 import { ESTADOS_VAZIO, estadosVisiveis, estadoPorComExtras, type ConfigEstados } from '@/lib/crmEstados'
@@ -77,13 +76,6 @@ function nomeDoContato(ct: any): string {
 }
 
 export default function CrmPage() {
-  // ── Espelho para Currículos ───────────────────────────────────────────────
-  //
-  // /salon/curriculos/conversas renderiza ESTE mesmo componente, travado nas
-  // conversas de candidatos: sem pastas, sem painel, sem configuração. É um CRM
-  // só -- os dados, o envio e a ponte são os mesmos; muda apenas o que a tela
-  // pede ao servidor (`?somente=curriculos`) e o que ela mostra.
-  const modoCurr = (usePathname() || '').startsWith('/salon/curriculos')
   // `canalLido` separa "ainda não sei" de "sei que está desconectado".
   // Sem essa distinção, a tela abria mostrando o QR por uma fração de segundo
   // antes de a resposta chegar — e quem já tinha escaneado achava que ia ter
@@ -102,7 +94,7 @@ export default function CrmPage() {
   // 'fila' = precisa de resposta e e de agora. 'antigas' = a cliente falou por
   // ultimo e ficou para tras. As duas sao 'acao_necessaria' no banco: o que
   // separa e a idade, e isso e decisao de tela, nao de estado.
-  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'novas' | 'naoperturbe' | 'todas' | EstadoConversa>(modoCurr ? 'todas' : 'fila')
+  const [filtro, setFiltroCru] = useState<'fila' | 'antigas' | 'novas' | 'naoperturbe' | 'todas' | EstadoConversa>('fila')
   const setFiltro = (f: any) => { setFiltroCru(f); setMotivoFiltro('') }
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
@@ -202,7 +194,7 @@ export default function CrmPage() {
     (conectadoAgora && canal.erro) || foraDoAr ||
     (conectadoAgora && canal.numero && canal.numero_dados && canal.numero !== canal.numero_dados)
   )
-  const faixaRecolhe = !modoCurr && !noCelular && canalLido && conectadoAgora && !faixaFixa && !temAlerta
+  const faixaRecolhe = !noCelular && canalLido && conectadoAgora && !faixaFixa && !temAlerta
 
   // Abre e fecha pela POSIÇÃO do mouse, não por entrar/sair do elemento: o
   // conjunto Voltar/Início/Busca da barra global fica na mesma linha mas fora
@@ -335,7 +327,7 @@ export default function CrmPage() {
 
   async function puxarConversas() {
     try {
-      const r = await fetch(modoCurr ? '/api/crm/conversas?somente=curriculos' : '/api/crm/conversas')
+      const r = await fetch('/api/crm/conversas')
       if (!r.ok) return
       const d = await r.json()
       setConversas(d.conversas || [])
@@ -1155,9 +1147,9 @@ export default function CrmPage() {
             consegue clicar. */}
         <div className={`px-4 py-2 flex items-center ${noCelular ? 'gap-2 flex-wrap' : 'gap-3'}`}
           style={{ paddingRight: noCelular ? 12 : 340 }}>
-          <a href={modoCurr ? '/salon/curriculos' : '/salon'} className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#6e625c' }} title={modoCurr ? 'Voltar para Currículos' : 'Voltar'}><ArrowLeft size={17} /></a>
+          <a href="/salon" className="p-1.5 rounded-lg flex-shrink-0" style={{ color: '#6e625c' }} title="Voltar"><ArrowLeft size={17} /></a>
           <div className={noCelular ? 'min-w-0 flex-1' : 'min-w-0 flex-shrink-0'}>
-            <h1 className="font-bold text-[15px] leading-tight" style={{ color: '#2b2320' }}>{modoCurr ? 'Currículos · conversas' : 'CRM · WhatsApp'}</h1>
+            <h1 className="font-bold text-[15px] leading-tight" style={{ color: '#2b2320' }}>CRM · WhatsApp</h1>
             <p className="text-[11.5px]" style={{ color: '#9a8c85' }}>
               {conectado
                 ? <>Conectado{canal.numero ? ` · ${telefoneBonito(canal.numero)}` : ''}</>
@@ -1170,7 +1162,7 @@ export default function CrmPage() {
               onde não cabe linha nenhuma. Pedido do dono em 18/09/2026: a
               faixa escondida confundia -- na hora de trocar de pasta a
               recepção clicava no status da cliente. */}
-          {conectado && noCelular && !modoCurr && (
+          {conectado && noCelular && (
             <button onClick={() => setAbasAbertas(v => !v)}
               className="px-3 py-2 rounded-lg text-[13px] font-bold flex items-center gap-2 transition duration-100 hover:brightness-95 active:scale-[.98]"
               style={{ background: '#f3e3dc', color: '#a8624f', border: '1px solid #a8624f25', order: 10, width: '100%' }}>
@@ -1192,7 +1184,6 @@ export default function CrmPage() {
             {!noCelular && <SeloConexao canal={canal} />}
             {/* Com nome, nao so um icone: a engrenagem sozinha ninguem acha --
                 e nao achou mesmo. */}
-            {!modoCurr && (<>
             <a href="/salon/crm/painel" title="Painel: conversao, motivos de perda e tempo de resposta"
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition duration-100 hover:brightness-95 active:scale-[.94]"
               style={{ background: '#e6f1eb', color: '#2f6b4f' }}>
@@ -1203,7 +1194,6 @@ export default function CrmPage() {
               style={{ background: '#f3e3dc', color: '#a8624f' }}>
               <Settings size={noCelular ? 15 : 13} />{!noCelular && ' Configurar'}
             </a>
-            </>)}
             <button onClick={() => { puxarCanal(); puxarConversas() }} title="Atualizar"
               className="p-1.5 rounded-lg" style={{ color: '#6e625c' }}><RefreshCw size={15} /></button>
             {/* Alfinete: fixa a faixa (não recolhe) para quem preferir assim.
@@ -1341,7 +1331,7 @@ export default function CrmPage() {
             uma LISTA de cima para baixo em ordem alfabética -- antes eram
             pílulas quebrando de linha e viravam um amontoado (dono, 11/10).
             A lista em si é montada em `pastasDaFaixa`. */}
-        {conectado && !modoCurr && (noCelular ? abasAbertas : true) && (
+        {conectado && (noCelular ? abasAbertas : true) && (
           <div
             className={noCelular
               ? 'absolute left-0 right-0 z-40 mx-4 mb-2 p-1.5 rounded-xl flex flex-col gap-1'
@@ -1382,7 +1372,7 @@ export default function CrmPage() {
             <div className="p-3 border-b" style={{ borderColor: '#e9ddd6' }}>
               <div className="relative mb-2">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#9a8c85' }} />
-                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={modoCurr ? 'Buscar candidato...' : 'Buscar cliente...'}
+                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente..."
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[13px] focus:outline-none"
                   style={{ background: '#f6f1ee', border: '1px solid #e9ddd6', color: '#2b2320' }} />
               </div>
@@ -1438,8 +1428,7 @@ export default function CrmPage() {
                 </div>
               ) : !carregando && visiveis.length === 0 && (
                 <p className="p-4 text-[12.5px]" style={{ color: '#9a8c85' }}>
-                  {modoCurr ? 'Nenhum candidato com conversa ainda. Volte para Currículos e clique em Conversar.'
-                    : filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.'
+                  {filtro === 'fila' ? 'Nada esperando resposta. Fila limpa.'
                     : filtro === 'antigas' ? 'Nenhuma conversa parada para tras.'
                     : 'Nenhuma conversa aqui.'}
                 </p>

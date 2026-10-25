@@ -5,7 +5,9 @@ import { MINUTOS_DONO } from '@/lib/crm'
 import {
   garantirPastaCurriculos, candidatosPorId, conversaDoCandidato, conversasDosCandidatos,
   resumoPorTelefone, enviadasHoje, primeiroNome, MAX_POR_LOTE, MAX_POR_DIA,
+  conversaDeCandidato, mensagensDoCandidato, PASTA_CURRICULOS,
 } from '@/lib/crmCurriculos'
+import { ehEstadoDoSalao } from '@/lib/crmEstados'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,9 +29,21 @@ async function permitido() {
   return { sess }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { sess, erro } = await permitido()
   if (erro) return erro
+
+  // ?conversa=<id>: as mensagens de UM candidato (e marca como lida).
+  const conversaId = new URL(req.url).searchParams.get('conversa')
+  if (conversaId) {
+    const conv = await conversaDeCandidato(sess!.salaoId, conversaId)
+    if (!conv) return NextResponse.json({ error: 'Conversa não encontrada.' }, { status: 404 })
+    if ((conv.nao_lidas || 0) > 0) {
+      await supabaseAdmin.from('crm_conversas').update({ nao_lidas: 0 }).eq('id', conversaId)
+    }
+    return NextResponse.json({ mensagens: await mensagensDoCandidato(sess!.salaoId, conversaId) })
+  }
+
   const conversas = await conversasDosCandidatos(sess!.salaoId)
   return NextResponse.json({ por_telefone: resumoPorTelefone(conversas) })
 }
@@ -47,6 +61,35 @@ export async function POST(req: NextRequest) {
     const r = await conversaDoCandidato(salaoId, c)
     if (!r) return NextResponse.json({ error: 'Este currículo está sem telefone válido.' }, { status: 400 })
     return NextResponse.json({ ok: true, conversa: r.conversa })
+  }
+
+  if (body?.acao === 'responder') {
+    const texto = String(body?.texto || '').trim()
+    if (!texto) return NextResponse.json({ error: 'Escreva a mensagem.' }, { status: 400 })
+    const conv = await conversaDeCandidato(salaoId, String(body?.conversa || ''))
+    if (!conv) return NextResponse.json({ error: 'Conversa não encontrada.' }, { status: 404 })
+    const quem = sess!.nome || 'Salão'
+    const agora = new Date().toISOString()
+    const { error: e1 } = await supabaseAdmin.from('crm_mensagens').insert({
+      salao_id: salaoId, conversa_id: conv.id, direcao: 'saida', texto, tipo: 'texto',
+      situacao: 'na_fila', autor_id: sess!.usuarioId || null, autor_nome: quem,
+    })
+    if (e1) return NextResponse.json({ error: e1.message }, { status: 500 })
+    const patch: any = {
+      aguardando_desde: null, ultima_em: agora, ultima_de: 'salao', ultima_previa: texto.slice(0, 120),
+      nao_lidas: 0, atualizado_em: agora,
+    }
+    // Candidato que escreveu antes de ser chamado está solto em "Preciso agir":
+    // ao responder daqui ele vai para a pasta Currículos (cliente do salão não muda).
+    if (!conv.contato?.cliente_nome && !ehEstadoDoSalao(conv.estado)) {
+      patch.estado = PASTA_CURRICULOS; patch.proxima_acao = null; patch.fechada_em = null
+    }
+    await supabaseAdmin.from('crm_conversas').update(patch).eq('id', conv.id)
+    await supabaseAdmin.from('crm_eventos').insert({
+      salao_id: salaoId, conversa_id: conv.id, tipo: 'respondeu',
+      autor_id: sess!.usuarioId || null, autor_nome: quem, detalhe: 'Currículos',
+    })
+    return NextResponse.json({ ok: true })
   }
 
   if (body?.acao === 'enviar') {
