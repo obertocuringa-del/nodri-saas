@@ -20,6 +20,9 @@ async function roteador(request: NextRequest) {
     pathname.startsWith('/landing') ||
     // FAQ publico: vitrine, indexavel, sem dado de ninguem dentro.
     pathname.startsWith('/perguntas-frequentes') ||
+    // Trabalhe conosco (vagas dos saloes parceiros): vitrine publica para
+    // candidatos, indexavel, sem dado de ninguem dentro.
+    pathname === '/vagas' ||
     // Diagnostico publico: quiz sem cadastro, nada de dado de ninguem dentro.
     pathname.startsWith('/diagnostico') ||
     // Contato do diagnostico: quem responde ainda nao tem conta.

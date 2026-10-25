@@ -36,6 +36,7 @@ export default function CurriculosPage() {
   const [link, setLink] = useState('')
   const [loading, setLoading] = useState(true)
   const [copiado, setCopiado] = useState(false)
+  const [copiadoVagas, setCopiadoVagas] = useState(false)
   const [abertas, setAbertas] = useState<Set<string>>(new Set())
   // filtros por vaga: { vaga: { estados:Set, exps:Set, meses:Set } }
   const [filtros, setFiltros] = useState<Record<string, { estados: Set<string>; exps: Set<string>; meses: Set<string> }>>({})
@@ -247,6 +248,19 @@ export default function CurriculosPage() {
                       {link && <a href={link} target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-lg text-[12px] font-bold text-nodri-cyan border border-nodri-border">Abrir</a>}
                     </div>
                     <p className="text-[11px] text-nodri-t3 mt-2">Qualquer pessoa com o link pode preencher (nome, estado, idade, telefone, vaga e experiência).</p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">Página pública de vagas (Trabalhe conosco)</p>
+                    <div className="flex gap-2">
+                      <input readOnly value="https://www.nodri.com.br/vagas" className="flex-1 min-w-0 px-3 py-2 rounded-lg text-[12px] text-nodri-t1 bg-nodri-surface border border-nodri-border" />
+                      <button onClick={() => { navigator.clipboard?.writeText('https://www.nodri.com.br/vagas'); setCopiadoVagas(true); setTimeout(() => setCopiadoVagas(false), 1600) }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff' }}>
+                        {copiadoVagas ? <Check size={14} /> : <Copy size={14} />}{copiadoVagas ? 'Copiado!' : 'Copiar'}
+                      </button>
+                      <a href="/vagas" target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-lg text-[12px] font-bold text-nodri-cyan border border-nodri-border">Abrir</a>
+                    </div>
+                    <p className="text-[11px] text-nodri-t3 mt-2">Lista as vagas abaixo, com QR code e botão de compartilhar, e aparece no Google. Vaga nova ou removida aqui aparece lá sozinha.</p>
                   </div>
 
                   <div>

@@ -15,5 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/diagnostico`, lastModified: agora, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${base}/perguntas-frequentes`, lastModified: agora, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/trabalhe-conosco`, lastModified: agora, changeFrequency: 'monthly', priority: 0.5 },
+    // Vagas dos salões parceiros (para candidatos): a lista muda quando o dono abre ou fecha vaga.
+    { url: `${base}/vagas`, lastModified: agora, changeFrequency: 'weekly', priority: 0.7 },
   ]
 }
