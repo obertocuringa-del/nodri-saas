@@ -9,6 +9,7 @@ import {
   conversaDeCandidato, mensagensDoCandidato, PASTA_CURRICULOS,
   lerConfigCurriculos, salvarConfigCurriculos, conversasDoTelefonePrincipal, definirTriagem,
   arquivosDosCandidatos, excluirArquivos, distribuirModelos,
+  contatosPorTelefone, lerExtraContatos, ajustarContato, lerNotas, definirNota,
 } from '@/lib/crmCurriculos'
 import { ehEstadoDoSalao } from '@/lib/crmEstados'
 
@@ -30,6 +31,18 @@ async function permitido() {
 }
 
 const TIPOS_DE_MIDIA = ['imagem', 'video', 'audio', 'documento']
+
+// A tela pergunta a cada 15 s; a contagem de contatos varre as mensagens enviadas,
+// então fica guardada por meio minuto por salão e por regra de episódio.
+const CACHE_CONTATOS = new Map<string, { em: number; valor: Awaited<ReturnType<typeof contatosPorTelefone>> }>()
+async function contatosComCache(salaoId: string, conversas: any[], episodioDias: number) {
+  const chave = `${salaoId}|${episodioDias}`
+  const hit = CACHE_CONTATOS.get(chave)
+  if (hit && Date.now() - hit.em < 30000) return hit.valor
+  const valor = await contatosPorTelefone(salaoId, conversas, episodioDias)
+  CACHE_CONTATOS.set(chave, { em: Date.now(), valor })
+  return valor
+}
 
 export async function GET(req: NextRequest) {
   const { sess, erro } = await permitido()
@@ -54,11 +67,16 @@ export async function GET(req: NextRequest) {
   }
 
   const conversas = await conversasDosCandidatos(salaoId)
+  const config = await lerConfigCurriculos(salaoId)
   return NextResponse.json({
     por_telefone: resumoPorTelefone(conversas),
     principal: await conversasDoTelefonePrincipal(salaoId),
-    config: await lerConfigCurriculos(salaoId),
+    config,
     agendadas: await contarAgendadas(salaoId),
+    // Contatos (episódios) por telefone, ajuste manual por currículo e estrelas (globais).
+    contatos: await contatosComCache(salaoId, conversas, config.episodio_dias),
+    contatos_extra: await lerExtraContatos(salaoId),
+    notas: await lerNotas(),
   })
 }
 
@@ -123,10 +141,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // Estrelas (1 a 5; 0 limpa): a nota é do candidato e vale para todos os salões.
+  if (body?.acao === 'estrelas') {
+    const notas = await definirNota(String(body?.id || ''), Number(body?.estrelas), quem, salaoId)
+    if (!notas) return NextResponse.json({ error: 'Candidato não encontrado.' }, { status: 404 })
+    return NextResponse.json({ ok: true, notas })
+  }
+
+  // "+1 contato" / "-1": ajuste manual da contagem, só deste salão.
+  if (body?.acao === 'contato_extra') {
+    const id = String(body?.id || '')
+    const [c] = await candidatosPorId([id])
+    if (!c) return NextResponse.json({ error: 'Candidato não encontrado.' }, { status: 404 })
+    return NextResponse.json({ ok: true, contatos_extra: await ajustarContato(salaoId, id, Number(body?.delta) || 1) })
+  }
+
   if (body?.acao === 'config') {
     const novo = await salvarConfigCurriculos(salaoId, {
       ...(body?.limpeza ? { limpeza: body.limpeza } : {}),
       ...(Array.isArray(body?.modelos) ? { modelos: body.modelos } : {}),
+      ...(body?.episodio_dias != null ? { episodio_dias: Number(body.episodio_dias) } : {}),
     })
     return NextResponse.json({ ok: true, config: novo })
   }

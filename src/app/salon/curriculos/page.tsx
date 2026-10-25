@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings, Paperclip, Send, Phone, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings, Paperclip, Send, Phone, ExternalLink, Star } from 'lucide-react'
 import { EXPERIENCIAS, ESTADOS_BR, type Curriculo } from '@/lib/curriculosShared'
 import { chaveTelefone, normalizarTelefone } from '@/lib/crm'
 import { voltar } from '@/lib/historicoNav'
@@ -10,6 +10,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import ChatCurriculos from '@/components/salon/ChatCurriculos'
 import ArquivosCurriculos from '@/components/salon/ArquivosCurriculos'
 import LoteCurriculos from '@/components/salon/LoteCurriculos'
+import EstrelasCandidato from '@/components/salon/EstrelasCandidato'
 
 const COR = '#5b4fcf'
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -17,7 +18,8 @@ const nomeUF = (uf: string) => ESTADOS_BR.find(e => e.uf === uf)?.nome || uf
 
 type Resumo = { conversa: string; estado: string; nao_lidas: number; ultima_em: string | null; ultima_de: string | null }
 type DoPrincipal = { conversa: string; nome: string; telefone: string; vaga: string; nao_lidas: number; ultima_em: string | null; ultima_de: string | null; previa: string }
-type Conversa = { id: string; nome: string; telefone: string; vaga: string }
+type Conversa = { id: string; nome: string; telefone: string; vaga: string; candId?: string }
+type Nota = { estrelas: number; por: string; em: string }
 
 export default function CurriculosPage() {
   const router = useRouter()
@@ -56,6 +58,13 @@ export default function CurriculosPage() {
   // Tela larga: lista à esquerda e a conversa à direita. Estreita: a conversa abre por cima.
   const estreita = useIsMobile(1100)
   const [conversaAberta, setConversaAberta] = useState<Conversa | null>(null)
+  // Contatos (episódios de conversa, por telefone), ajuste manual (por currículo) e estrelas (globais).
+  const [contatos, setContatos] = useState<Record<string, { n: number; ultimo: string | null }>>({})
+  const [contatosExtra, setContatosExtra] = useState<Record<string, number>>({})
+  const [notas, setNotas] = useState<Record<string, Nota>>({})
+  const [episodioDias, setEpisodioDias] = useState(5)
+  const [ordem, setOrdem] = useState<Record<string, 'recentes' | 'estrelas'>>({})
+  const [rankingGeral, setRankingGeral] = useState(false)
 
   const carregar = () => {
     fetch('/api/salon/curriculos', { credentials: 'include' })
@@ -67,7 +76,9 @@ export default function CurriculosPage() {
   const carregarResumo = () => {
     fetch('/api/crm/curriculos', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.por_telefone) setResumo(d.por_telefone); if (Array.isArray(d?.principal)) setPrincipal(d.principal); if (typeof d?.agendadas === 'number') setAgendadas(d.agendadas) })
+      .then(d => { if (d?.por_telefone) setResumo(d.por_telefone); if (Array.isArray(d?.principal)) setPrincipal(d.principal); if (typeof d?.agendadas === 'number') setAgendadas(d.agendadas)
+        if (d?.contatos) setContatos(d.contatos); if (d?.contatos_extra) setContatosExtra(d.contatos_extra); if (d?.notas) setNotas(d.notas)
+        if (typeof d?.config?.episodio_dias === 'number') setEpisodioDias(d.config.episodio_dias) })
       .catch(() => {})
   }
   useEffect(() => {
@@ -87,6 +98,36 @@ export default function CurriculosPage() {
   }, [])
 
   const doCandidato = (c: Curriculo): Resumo | undefined => resumo[chaveTelefone(normalizarTelefone(c.telefone))]
+  // Quantas vezes já se entrou em contato: episódios da conversa + o ajuste manual.
+  const nContatos = (c: Curriculo) => Math.max(0, (contatos[chaveTelefone(normalizarTelefone(c.telefone))]?.n || 0) + (contatosExtra[c.id] || 0))
+  const estrelasDe = (c: Curriculo) => notas[c.id]?.estrelas || 0
+  const avaliar = async (c: Curriculo, n: number) => {
+    const antes = notas
+    setNotas(m => { const x = { ...m }; if (n >= 1) x[c.id] = { estrelas: n, por: '', em: new Date().toISOString() }; else delete x[c.id]; return x })
+    try {
+      const r = await fetch('/api/crm/curriculos', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'estrelas', id: c.id, estrelas: n }) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setNotas(antes); setErroConversa(d?.error || 'Não foi possível salvar a avaliação.'); return }
+      if (d?.notas) setNotas(d.notas)
+    } catch { setNotas(antes); setErroConversa('Sem conexão com o servidor.') }
+  }
+  const ajustarContato = async (c: Curriculo, delta: number) => {
+    setContatosExtra(m => { const x = { ...m }; const v = (x[c.id] || 0) + delta; if (v === 0) delete x[c.id]; else x[c.id] = v; return x })
+    try {
+      const r = await fetch('/api/crm/curriculos', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'contato_extra', id: c.id, delta }) })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d?.contatos_extra) setContatosExtra(d.contatos_extra)
+    } catch { carregarResumo() }
+  }
+  const salvarEpisodio = async (dias: number) => {
+    const v = Math.max(1, Math.min(60, Math.round(dias) || 5)); setEpisodioDias(v)
+    await fetch('/api/crm/curriculos', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'config', episodio_dias: v }) }).catch(() => {})
+    carregarResumo()
+  }
+  const textoContatos = (n: number) => n === 0 ? 'Nunca contatado' : `Contatado ${n} ${n === 1 ? 'vez' : 'vezes'}`
+  // Ranking: maior nota primeiro (sem nota por último), e a mais recente entre iguais.
+  const porEstrelas = (a: Curriculo, b: Curriculo) => (estrelasDe(b) - estrelasDe(a)) || b.criado_em.localeCompare(a.criado_em)
+  const ordenar = (vaga: string, l: Curriculo[]) => ordem[vaga] === 'estrelas' ? [...l].sort(porEstrelas) : l
   const novasFormulario = Object.values(resumo).reduce((t, r) => t + (r.nao_lidas || 0), 0)
   const novasPrincipal = principal.reduce((t, p) => t + (p.nao_lidas || 0), 0)
 
@@ -100,7 +141,7 @@ export default function CurriculosPage() {
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok || !d?.conversa) { setErroConversa(d?.error || 'Não foi possível abrir a conversa.'); return }
-      setConversaAberta({ id: d.conversa, nome: c.nome, telefone: c.telefone, vaga: c.vaga }); carregarResumo()
+      setConversaAberta({ id: d.conversa, nome: c.nome, telefone: c.telefone, vaga: c.vaga, candId: c.id }); carregarResumo()
     } catch { setErroConversa('Sem conexão com o servidor.') } finally { setAbrindo(null) }
   }
 
@@ -207,7 +248,57 @@ export default function CurriculosPage() {
   const mesesPresentes = (lista: Curriculo[]) => [...new Set(lista.map(c => new Date(c.criado_em).getMonth()))].sort((a, b) => a - b)
   const estadosPresentes = (lista: Curriculo[]) => [...new Set(lista.map(c => c.estado))].sort()
 
+  // O que o cabeçalho do chat mostra do candidato aberto (só quem veio do formulário tem perfil).
+  const perfilDaConversa = () => {
+    const c = conversaAberta?.candId ? itens.find(x => x.id === conversaAberta.candId) : undefined
+    if (!c) return undefined
+    return { estrelas: estrelasDe(c), contatos: nContatos(c), textoContatos: textoContatos(nContatos(c)),
+      onEstrelas: (n: number) => avaliar(c, n), onContato: (d: number) => ajustarContato(c, d), extra: contatosExtra[c.id] || 0 }
+  }
+
   const vagasDaLista = vagasExibir.length ? vagasExibir : vagas
+
+  // Uma linha de candidato (a mesma na lista de cada vaga e no ranking geral).
+  const linha = (c: Curriculo, comVaga = false) => {
+    const r = doCandidato(c)
+    const n = nContatos(c)
+    return (
+      <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <input type="checkbox" checked={escolhidos.has(c.id)} onChange={() => alternar(c.id)}
+            aria-label={`Selecionar ${c.nome}`} className="w-4 h-4 shrink-0 cursor-pointer" style={{ accentColor: COR }} />
+          <div className="min-w-0">
+            <p className="font-bold text-[14px] text-nodri-t1 truncate">{c.nome}</p>
+            <p className="text-[11.5px] text-nodri-t3">
+              {comVaga ? `${c.vaga} · ` : ''}{nomeUF(c.estado)} ({c.estado}) · {c.idade} anos · {c.experiencia} · {new Date(c.criado_em).toLocaleDateString('pt-BR')}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <EstrelasCandidato valor={estrelasDe(c)} onChange={v => avaliar(c, v)} />
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" title={`Cada contato é um episódio de conversa: mensagens com menos de ${episodioDias} dias entre si contam como um só.`}
+                style={{ background: n === 0 ? 'rgba(128,128,150,.15)' : '#5b4fcf20', color: n === 0 ? '#767069' : COR }}>{textoContatos(n)}</span>
+              <button onClick={() => ajustarContato(c, 1)} title="Marcar mais um contato (feito fora do sistema)" className="text-[11px] font-bold px-1.5 py-0.5 rounded border" style={{ borderColor: COR + '40', color: COR }}>+1</button>
+              {(contatosExtra[c.id] || 0) !== 0 && (
+                <button onClick={() => ajustarContato(c, -1)} title="Tirar um contato do ajuste manual" className="text-[11px] font-bold px-1.5 py-0.5 rounded border" style={{ borderColor: '#e6e3f2', color: '#767069' }}>-1</button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {r && r.nao_lidas > 0 && (
+            <span className="text-[11px] font-bold px-2 py-1 rounded-full animate-pulse" style={{ background: '#fef3c7', color: '#92400e' }}>respondeu</span>
+          )}
+          {r && r.nao_lidas === 0 && r.ultima_de === 'salao' && (
+            <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: '#5b4fcf20', color: COR }}>aguardando resposta</span>
+          )}
+          <button onClick={() => conversar(c)} disabled={abrindo === c.id}
+            className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: COR }}>
+            {abrindo === c.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} {r && r.nao_lidas > 0 ? 'Responder' : 'Conversar'}
+          </button>
+          <button onClick={() => excluir(c.id)} className="p-1.5 rounded-lg text-nodri-t3 hover:text-red-400"><Trash2 size={14} /></button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-nodri-dark text-nodri-t1">
@@ -267,6 +358,18 @@ export default function CurriculosPage() {
                       <a href="/vagas" target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-lg text-[12px] font-bold text-nodri-cyan border border-nodri-border">Abrir</a>
                     </div>
                     <p className="text-[11px] text-nodri-t3 mt-2">Lista as vagas abaixo, com QR code e botão de compartilhar, e aparece no Google. Vaga nova ou removida aqui aparece lá sozinha.</p>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-nodri-t3 mb-2">Contagem de contatos</p>
+                    <label className="flex items-center gap-2 text-[12.5px] text-nodri-t1">
+                      Um novo contato conta depois de
+                      <input type="number" min={1} max={60} value={episodioDias} onChange={e => setEpisodioDias(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+                        onBlur={e => salvarEpisodio(Number(e.target.value))}
+                        className="w-16 px-2 py-1.5 rounded-lg text-[13px] text-nodri-t1 bg-nodri-surface border border-nodri-border" />
+                      dias sem mensagem nossa
+                    </label>
+                    <p className="text-[11px] text-nodri-t3 mt-2">Mensagens enviadas ao candidato dentro desse prazo contam como um contato só (hoje, amanhã e depois = 1). Passado o prazo, a próxima mensagem conta como novo contato.</p>
                   </div>
 
                   <div>
@@ -336,6 +439,11 @@ export default function CurriculosPage() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff' }}>
                 <Send size={14} /> Pedir currículo
               </button>
+              <button onClick={() => setRankingGeral(v => !v)} title="Os candidatos avaliados de todas as vagas, do melhor para o pior"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold border"
+                style={{ borderColor: '#d4a01755', color: rankingGeral ? '#fff' : '#a07a0c', background: rankingGeral ? '#d4a017' : '#fff' }}>
+                <Star size={14} /> Melhores avaliados
+              </button>
               {agendadas > 0 && (
                 <span className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-bold" style={{ background: '#fef3c7', color: '#92400e' }}>
                   {agendadas} mensage{agendadas === 1 ? 'm agendada' : 'ns agendadas'}
@@ -396,6 +504,21 @@ export default function CurriculosPage() {
               <div className="flex justify-center py-10"><Loader2 size={26} className="animate-spin text-nodri-cyan" /></div>
             ) : (
               <div className="space-y-3">
+                {rankingGeral && (() => {
+                  const avaliados = itens.filter(c => estrelasDe(c) > 0).sort(porEstrelas)
+                  return (
+                    <div className="nodri-card overflow-hidden" style={{ borderColor: '#d4a01755' }}>
+                      <div className="px-4 py-3 flex items-center justify-between gap-3 border-b border-nodri-border">
+                        <span className="flex items-center gap-2 font-bold text-[14px] text-nodri-t1"><Star size={15} style={{ color: '#d4a017', fill: '#d4a017' }} /> Ranking dos melhores avaliados</span>
+                        <span className="text-[12px] font-bold px-2.5 py-1 rounded-full" style={{ background: '#d4a01720', color: '#a07a0c' }}>{avaliados.length} avaliado{avaliados.length === 1 ? '' : 's'}</span>
+                      </div>
+                      <div className="divide-y divide-nodri-border">
+                        {avaliados.map(c => linha(c, true))}
+                        {avaliados.length === 0 && <p className="px-4 py-6 text-center text-[13px] text-nodri-t3">Ninguém foi avaliado ainda. Clique nas estrelas de um candidato depois de ler o currículo.</p>}
+                      </div>
+                    </div>
+                  )
+                })()}
                 {vagasExibir.map(vaga => {
                   const todos = porVaga[vaga] || []
                   const lista = aplicarFiltro(vaga, todos)
@@ -433,6 +556,12 @@ export default function CurriculosPage() {
                                     className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: '#fff', color: COR, border: '1px solid ' + COR + '40' }}>
                                     {lista.length > 0 && lista.every(c => escolhidos.has(c.id)) ? 'Desmarcar todos' : 'Selecionar todos'}
                                   </button>
+                                  <button onClick={() => setOrdem(o => ({ ...o, [vaga]: o[vaga] === 'estrelas' ? 'recentes' : 'estrelas' }))}
+                                    title="Mostra o ranking desta vaga: maior nota primeiro"
+                                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg"
+                                    style={{ background: ordem[vaga] === 'estrelas' ? '#d4a017' : '#fff', color: ordem[vaga] === 'estrelas' ? '#fff' : '#a07a0c', border: '1px solid #d4a01755' }}>
+                                    <Star size={12} /> Melhores avaliados
+                                  </button>
                                   {lista.length > 0 && <span className="text-[11px] text-nodri-t3">· Idade média: <strong className="text-nodri-t1">{mediaIdade} anos</strong></span>}
                                   {filtrando && <button onClick={() => limparF(vaga)} className="text-[11px] text-nodri-t3 underline">limpar</button>}
                                 </div>
@@ -446,36 +575,7 @@ export default function CurriculosPage() {
                               </div>
 
                               <div className="divide-y divide-nodri-border">
-                                {lista.map(c => {
-                                  const r = doCandidato(c)
-                                  return (
-                                    <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                                      <div className="flex items-center gap-3 min-w-0">
-                                        <input type="checkbox" checked={escolhidos.has(c.id)} onChange={() => alternar(c.id)}
-                                          aria-label={`Selecionar ${c.nome}`} className="w-4 h-4 shrink-0 cursor-pointer" style={{ accentColor: COR }} />
-                                        <div className="min-w-0">
-                                          <p className="font-bold text-[14px] text-nodri-t1 truncate">{c.nome}</p>
-                                          <p className="text-[11.5px] text-nodri-t3">
-                                            {nomeUF(c.estado)} ({c.estado}) · {c.idade} anos · {c.experiencia} · {new Date(c.criado_em).toLocaleDateString('pt-BR')}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        {r && r.nao_lidas > 0 && (
-                                          <span className="text-[11px] font-bold px-2 py-1 rounded-full animate-pulse" style={{ background: '#fef3c7', color: '#92400e' }}>respondeu</span>
-                                        )}
-                                        {r && r.nao_lidas === 0 && r.ultima_de === 'salao' && (
-                                          <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: '#5b4fcf20', color: COR }}>aguardando resposta</span>
-                                        )}
-                                        <button onClick={() => conversar(c)} disabled={abrindo === c.id}
-                                          className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: COR }}>
-                                          {abrindo === c.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} {r && r.nao_lidas > 0 ? 'Responder' : 'Conversar'}
-                                        </button>
-                                        <button onClick={() => excluir(c.id)} className="p-1.5 rounded-lg text-nodri-t3 hover:text-red-400"><Trash2 size={14} /></button>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
+                                {ordenar(vaga, lista).map(c => linha(c))}
                                 {lista.length === 0 && <p className="px-4 py-6 text-center text-[13px] text-nodri-t3">Nenhum candidato com esses filtros.</p>}
                               </div>
                             </>
@@ -494,7 +594,8 @@ export default function CurriculosPage() {
           <div className="flex-1 min-w-0 h-full">
             {conversaAberta ? (
               <ChatCurriculos key={conversaAberta.id} conversaId={conversaAberta.id} nome={conversaAberta.nome}
-                telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)} />
+                telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)}
+                perfil={perfilDaConversa()} />
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-2" style={{ background: '#fdfbf7' }}>
                 <MessageCircle size={30} style={{ color: '#c3b39a' }} />
@@ -510,7 +611,8 @@ export default function CurriculosPage() {
       {estreita && conversaAberta && (
         <div className="fixed inset-0 z-40">
           <ChatCurriculos key={conversaAberta.id} conversaId={conversaAberta.id} nome={conversaAberta.nome}
-            telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)} />
+            telefone={conversaAberta.telefone} vaga={conversaAberta.vaga} onFechar={() => setConversaAberta(null)}
+                perfil={perfilDaConversa()} />
         </div>
       )}
 
@@ -525,7 +627,7 @@ export default function CurriculosPage() {
 
       {lote && (
         <LoteCurriculos pedirCurriculo={lote === 'pedir'} marcados={[...escolhidos]} candidatos={itens} vagas={vagasDaLista}
-          jaTemConversa={c => !!doCandidato(c)}
+          jaTemConversa={c => !!doCandidato(c)} contatosDe={nContatos} episodioDias={episodioDias}
           onEnviado={() => { setEscolhidos(new Set()); carregarResumo() }}
           onFechar={() => setLote(null)} />
       )}

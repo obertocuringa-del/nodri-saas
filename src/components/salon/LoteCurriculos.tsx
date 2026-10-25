@@ -41,7 +41,7 @@ function resumoDosDias(d: number[]): string {
   return ord.map(x => NOME_DIA[x]).join(', ')
 }
 
-export default function LoteCurriculos({ onFechar, onEnviado, candidatos, vagas, marcados, jaTemConversa, pedirCurriculo }: {
+export default function LoteCurriculos({ onFechar, onEnviado, candidatos, vagas, marcados, jaTemConversa, pedirCurriculo, contatosDe, episodioDias }: {
   onFechar: () => void
   onEnviado: () => void
   candidatos: Curriculo[]
@@ -49,9 +49,14 @@ export default function LoteCurriculos({ onFechar, onEnviado, candidatos, vagas,
   marcados: string[]
   jaTemConversa: (c: Curriculo) => boolean
   pedirCurriculo: boolean
+  /** Quantas vezes já se entrou em contato com o candidato (episódios de conversa). */
+  contatosDe: (c: Curriculo) => number
+  episodioDias: number
 }) {
   const [modo, setModo] = useState<'marcados' | 'vaga'>(marcados.length && !pedirCurriculo ? 'marcados' : 'vaga')
   const [vaga, setVaga] = useState(vagas[0] || '')
+  // Quem receber, pelo número de vezes que já foi contatado.
+  const [faixa, setFaixa] = useState<'todos' | 'nunca' | 'um' | 'dois' | 'tres'>('todos')
   const [modelos, setModelos] = useState<string[]>(MODELOS_PEDIDO)
   const [ritmo, setRitmo] = useState<Ritmo>(RITMO_INICIAL)
   const [enviando, setEnviando] = useState(false)
@@ -71,11 +76,17 @@ export default function LoteCurriculos({ onFechar, onEnviado, candidatos, vagas,
   }, [])
 
   // Quem recebe: os marcados, ou a vaga inteira (quem ainda não foi chamado vai primeiro).
-  const destinatarios = useMemo(() => {
+  const base = useMemo(() => {
     if (modo === 'marcados') return candidatos.filter(c => marcados.includes(c.id))
     const daVaga = candidatos.filter(c => c.vaga === vaga)
     return [...daVaga].sort((a, b) => Number(jaTemConversa(a)) - Number(jaTemConversa(b)))
   }, [modo, vaga, candidatos, marcados, jaTemConversa])
+  const naFaixa = (c: Curriculo, f: typeof faixa) => {
+    const n = contatosDe(c)
+    return f === 'todos' ? true : f === 'nunca' ? n === 0 : f === 'um' ? n === 1 : f === 'dois' ? n === 2 : n >= 3
+  }
+  const FAIXAS = [['todos', 'Todos'], ['nunca', 'Nunca contatados'], ['um', 'Contatados 1 vez'], ['dois', 'Contatados 2 vezes'], ['tres', 'Contatados 3 ou mais']] as const
+  const destinatarios = useMemo(() => base.filter(c => naFaixa(c, faixa)), [base, faixa, contatosDe])   // eslint-disable-line react-hooks/exhaustive-deps
 
   const vaiReceber = destinatarios.slice(0, LIMITE)
   const preenchidos = modelos.map(m => m.trim()).filter(Boolean)
@@ -155,6 +166,19 @@ export default function LoteCurriculos({ onFechar, onEnviado, candidatos, vagas,
                     </select>
                   )}
                 </div>
+                <p className="text-[11px] font-bold uppercase tracking-wide mt-3 mb-1.5" style={{ color: '#6e625c' }}>Quem receber</p>
+                <div className="flex gap-2 flex-wrap items-center">
+                  {FAIXAS.map(([k, nome]) => {
+                    const qtd = base.filter(c => naFaixa(c, k)).length
+                    return (
+                      <button key={k} onClick={() => setFaixa(k)} className="px-3 py-1.5 rounded-lg text-[12px] font-bold border"
+                        style={{ background: faixa === k ? COR : '#fff', color: faixa === k ? '#fff' : COR, borderColor: COR + '55' }}>{nome} ({qtd})</button>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] mt-1.5" style={{ color: '#6e625c' }}>
+                  Cada contato é um episódio de conversa: mensagens com menos de {episodioDias} dias entre si contam como um só.
+                </p>
                 <p className="text-[12px] mt-1.5" style={{ color: destinatarios.length > LIMITE ? '#b45309' : '#6e625c' }}>
                   {vaiReceber.length === 0 ? 'Nenhum candidato nesta escolha.'
                     : destinatarios.length > LIMITE

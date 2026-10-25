@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Send, X, Loader2, Check, CheckCheck, Clock, Paperclip, Mic, Square, FileText, Download } from 'lucide-react'
 import { enviarArquivo } from '@/lib/enviarArquivo'
+import EstrelasCandidato from '@/components/salon/EstrelasCandidato'
 
 // ── Chat enxuto de candidatos ───────────────────────────────────────────────
 //
@@ -70,8 +71,14 @@ function AudioComTexto({ m }: { m: Msg }) {
   )
 }
 
-export default function ChatCurriculos({ conversaId, nome, telefone, vaga, onFechar }: {
-  conversaId: string; nome: string; telefone: string; vaga: string; onFechar?: () => void
+/** Perfil do candidato (só de quem veio do formulário): estrelas e quantas vezes já foi contatado. */
+export interface PerfilCandidato {
+  estrelas: number; contatos: number; textoContatos: string; extra: number
+  onEstrelas: (n: number) => void; onContato: (delta: number) => void
+}
+
+export default function ChatCurriculos({ conversaId, nome, telefone, vaga, onFechar, perfil }: {
+  conversaId: string; nome: string; telefone: string; vaga: string; onFechar?: () => void; perfil?: PerfilCandidato
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -178,6 +185,19 @@ export default function ChatCurriculos({ conversaId, nome, telefone, vaga, onFec
         <div className="min-w-0 flex-1">
           <p className="font-bold text-[14px] truncate" style={{ color: '#2b2320' }}>{nome}</p>
           <p className="text-[11.5px] truncate" style={{ color: '#9a8c85' }}>{telefone}{vaga ? ` · vaga: ${vaga}` : ''}</p>
+          {perfil && (
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <EstrelasCandidato valor={perfil.estrelas} onChange={perfil.onEstrelas} tamanho={16} />
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: perfil.contatos === 0 ? 'rgba(128,128,150,.15)' : '#5b4fcf20', color: perfil.contatos === 0 ? '#767069' : COR }}>{perfil.textoContatos}</span>
+              <button onClick={() => perfil.onContato(1)} title="Marcar mais um contato (feito fora do sistema)"
+                className="text-[11px] font-bold px-1.5 py-0.5 rounded border" style={{ borderColor: COR + '40', color: COR }}>+1</button>
+              {perfil.extra !== 0 && (
+                <button onClick={() => perfil.onContato(-1)} title="Tirar um contato do ajuste manual"
+                  className="text-[11px] font-bold px-1.5 py-0.5 rounded border" style={{ borderColor: '#e6e3f2', color: '#767069' }}>-1</button>
+              )}
+            </div>
+          )}
         </div>
         {onFechar && (
           <button onClick={onFechar} aria-label="Fechar a conversa" className="p-2 rounded-lg" style={{ color: '#6e625c' }}><X size={18} /></button>

@@ -17,6 +17,7 @@ import type { Curriculo } from '@/lib/curriculosShared'
 import { normalizarTelefone, chaveTelefone } from '@/lib/crm'
 import { acharOuCriarContato, grafiasDoTelefone } from '@/lib/crmContatos'
 import { CHAVE_ESTADOS, ehEstadoDoSalao, lerConfigEstados } from '@/lib/crmEstados'
+import { paginar } from '@/lib/paginar'
 
 export const PASTA_CURRICULOS = 'extra_curriculos'
 
@@ -219,10 +220,14 @@ export const MIN_INTERVALO = 2
 export const MAX_DIA_TETO = 100
 export const MAX_POR_PEDIDO = 100
 
+/** Dias de silêncio que separam um contato do outro (padrão 5). Ver contatosPorTelefone. */
+export const EPISODIO_DIAS_PADRAO = 5
+
 export interface ConfigCurriculos {
   limpeza: { ligado: boolean; dias: number }
   modelos: string[]
   ritmo: RitmoCurriculos
+  episodio_dias: number
 }
 
 const hhmm = (v: any, padrao: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')) ? String(v) : padrao
@@ -262,6 +267,7 @@ export async function lerConfigCurriculos(salaoId: string): Promise<ConfigCurric
     limpeza: { ligado: v?.limpeza?.ligado === true, dias },
     modelos: Array.isArray(v?.modelos) ? v.modelos.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 40) : [],
     ritmo: limparRitmo(v?.ritmo),
+    episodio_dias: inteiro(v?.episodio_dias, EPISODIO_DIAS_PADRAO, 1, 60),
   }
 }
 
@@ -276,6 +282,7 @@ export async function salvarConfigCurriculos(salaoId: string, parcial: Partial<C
       ? parcial.modelos.map(x => String(x || '').trim()).filter(Boolean).slice(0, 40)
       : atual.modelos,
     ritmo: parcial.ritmo ? limparRitmo(parcial.ritmo) : atual.ritmo,
+    episodio_dias: parcial.episodio_dias != null ? inteiro(parcial.episodio_dias, atual.episodio_dias, 1, 60) : atual.episodio_dias,
   }
   await gravarJson(salaoId, CHAVE_CONFIG, novo)
   return novo
@@ -584,3 +591,91 @@ export function quandoBR(t: number, agora = Date.now()): string {
   return `${dia === hoje ? 'hoje' : dia === amanha ? 'amanhã' : `${dia.slice(8, 10)}/${dia.slice(5, 7)}`} às ${h}`
 }
 export const diasEntre = (a: number, b: number) => new Set([diaBR(a), diaBR(b)]).size === 1 ? 1 : Math.round((Date.parse(diaBR(b)) - Date.parse(diaBR(a))) / 86400e3) + 1
+
+// ── Quantas vezes se entrou em contato com cada candidato ───────────────────
+//
+// Um "contato" é um EPISÓDIO de conversa, não cada mensagem: mensagens de saída
+// enviadas dentro de uma janela de `episodio_dias` (padrão 5) contam como o
+// mesmo contato (hoje, amanhã e depois = 1). Só começa um contato novo quando a
+// saída vem `episodio_dias` ou mais depois da saída ANTERIOR (retomada da
+// conversa). Compara-se sempre com a última saída, nunca com a primeira do
+// episódio. Só contam mensagens que de fato saíram (enviada/entregue/lida): o
+// que está agendado ou falhou não é contato.
+
+const SITUACOES_ENVIADAS = ['enviada', 'entregue', 'lida']
+
+/** Quantos episódios há numa lista de instantes (ms). */
+export function contarEpisodios(instantes: number[], episodioDias: number): number {
+  const lacuna = Math.max(1, episodioDias) * 86400e3
+  const ord = [...instantes].sort((a, b) => a - b)
+  let n = 0, anterior = -Infinity
+  for (const t of ord) { if (t - anterior >= lacuna) n++; anterior = t }
+  return n
+}
+
+export interface ContatosPorTelefone { n: number; ultimo: string | null }
+
+/** Contatos por telefone (chave sem o nono dígito), somando as conversas de cada candidato. */
+export async function contatosPorTelefone(salaoId: string, conversas: any[], episodioDias: number): Promise<Record<string, ContatosPorTelefone>> {
+  const chavePorConversa = new Map<string, string>()
+  for (const c of conversas) { const k = chaveTelefone(c?.contato?.telefone); if (k) chavePorConversa.set(c.id, k) }
+  const instantes = new Map<string, number[]>()
+  for (const lote of pedacos([...chavePorConversa.keys()], 40)) {
+    const { dados } = await paginar<any>((de, ate) => supabaseAdmin.from('crm_mensagens')
+      .select('conversa_id, criado_em').eq('salao_id', salaoId).eq('direcao', 'saida')
+      .in('situacao', SITUACOES_ENVIADAS).in('conversa_id', lote).order('criado_em').range(de, ate))
+    for (const m of dados) {
+      const k = chavePorConversa.get(m.conversa_id); if (!k) continue
+      const l = instantes.get(k) || []; l.push(Date.parse(m.criado_em)); instantes.set(k, l)
+    }
+  }
+  const mapa: Record<string, ContatosPorTelefone> = {}
+  for (const [k, l] of instantes) mapa[k] = { n: contarEpisodios(l, episodioDias), ultimo: new Date(Math.max(...l)).toISOString() }
+  return mapa
+}
+
+// Ajuste manual ("+1 contato" / "-1"): contato feito fora do sistema, ou contagem a corrigir.
+// É por salão (as conversas são do salão): salao_config.curriculos_contatos { extra: { <id>: n } }
+const CHAVE_CONTATOS = 'curriculos_contatos'
+
+export async function lerExtraContatos(salaoId: string): Promise<Record<string, number>> {
+  const v = await lerJson(salaoId, CHAVE_CONTATOS)
+  return (v?.extra && typeof v.extra === 'object') ? v.extra : {}
+}
+export async function ajustarContato(salaoId: string, id: string, delta: number): Promise<Record<string, number>> {
+  const extra = await lerExtraContatos(salaoId)
+  const novo = Math.max(-50, Math.min(50, (Number(extra[id]) || 0) + (delta > 0 ? 1 : -1)))
+  if (novo === 0) delete extra[id]; else extra[id] = novo
+  await gravarJson(salaoId, CHAVE_CONTATOS, { extra })
+  return extra
+}
+
+// ── Estrelas: o perfil do candidato, GLOBAL ─────────────────────────────────
+//
+// A nota é do candidato, não do salão: todos os salões que enxergam o banco de
+// currículos veem a mesma. Fica numa linha PRÓPRIA de `configuracoes`
+// (curriculos_perfil), nunca dentro do documento `curriculos`: esse documento é
+// regravado inteiro quando chega um currículo novo, e uma nota gravada junto
+// poderia se perder (ou apagar o currículo novo) numa corrida entre os dois.
+
+const CHAVE_PERFIL = 'curriculos_perfil'
+
+export interface NotaCandidato { estrelas: number; por: string; salao: string; em: string }
+
+export async function lerNotas(): Promise<Record<string, NotaCandidato>> {
+  const { data } = await supabaseAdmin.from('configuracoes').select('valor').eq('chave', CHAVE_PERFIL).maybeSingle()
+  const n = (data?.valor as any)?.notas
+  return (n && typeof n === 'object') ? n : {}
+}
+
+/** Grava (1 a 5) ou limpa (0) a nota. Só de candidato que existe no banco de currículos. */
+export async function definirNota(id: string, estrelas: number, por: string, salaoId: string): Promise<Record<string, NotaCandidato> | null> {
+  const [c] = await candidatosPorId([id])
+  if (!c) return null
+  const notas = await lerNotas()
+  const e = Math.round(Number(estrelas))
+  if (!(e >= 1 && e <= 5)) delete notas[id]
+  else notas[id] = { estrelas: e, por: String(por || '').slice(0, 60), salao: salaoId, em: new Date().toISOString() }
+  await supabaseAdmin.from('configuracoes').upsert({ chave: CHAVE_PERFIL, valor: { notas } }, { onConflict: 'chave' })
+  return notas
+}
