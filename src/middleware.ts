@@ -70,6 +70,9 @@ async function roteador(request: NextRequest) {
     // Faltava aqui e o cron levava 307 para /login -- a rota nunca rodava, e o
     // credito da cliente so sairia quando a recepcao abrisse a tela.
     pathname === '/api/cron/cupons' ||
+    // Rotina diária dos currículos (guarda os arquivos de candidatos e, se o
+    // dono ligou, apaga os antigos): mesmo Bearer, conferido na rota.
+    pathname === '/api/cron/curriculos' ||
     pathname.startsWith('/funcionalidade/') ||
     // Textos da vitrine. Estava FORA da lista: a pagina publica pedia a
     // config, o middleware devolvia o HTML do login, e o fetch morria em
