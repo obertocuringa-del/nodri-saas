@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getSessao, crmBloqueado } from '@/lib/apiAuth'
 import { MINUTOS_DONO, proximaAcaoPadrao, type EstadoConversa } from '@/lib/crm'
 import { aprenderConfirmacao } from '@/lib/crmConfirmacao'
+import { conversasDosCandidatos } from '@/lib/crmCurriculos'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const estado = searchParams.get('estado') || ''
   const busca = (searchParams.get('busca') || '').trim().toLowerCase()
+
+  // Tela de Currículos: o MESMO CRM, mas só com as conversas de quem mandou
+  // currículo. Busca por telefone, sem varrer as conversas das clientes.
+  if (searchParams.get('somente') === 'curriculos') {
+    if (await crmBloqueado()) return NextResponse.json({ error: 'Este acesso não tem o CRM liberado.' }, { status: 403 })
+    return NextResponse.json({ conversas: await conversasDosCandidatos(sess!.salaoId) })
+  }
 
   // ── Tudo, não os 300 mais recentes ────────────────────────────────────────
   //

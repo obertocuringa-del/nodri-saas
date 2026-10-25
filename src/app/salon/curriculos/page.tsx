@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Home, Loader2, ChevronDown, ChevronUp, Copy, Check, Filter, Trash2, MessageCircle, Plus, Pencil, X, Settings } from 'lucide-react'
-import { EXPERIENCIAS, ESTADOS_BR, whatsappLink, type Curriculo } from '@/lib/curriculosShared'
+import { EXPERIENCIAS, ESTADOS_BR, type Curriculo } from '@/lib/curriculosShared'
+import { chaveTelefone, normalizarTelefone } from '@/lib/crm'
 import { useRouter } from 'next/navigation'
 import { voltar } from '@/lib/historicoNav'
 
@@ -31,6 +32,19 @@ export default function CurriculosPage() {
   const [filtros, setFiltros] = useState<Record<string, { estados: Set<string>; exps: Set<string>; meses: Set<string> }>>({})
   const [filtroAberto, setFiltroAberto] = useState<string | null>(null)
 
+  // Conversas: as mesmas do CRM. `resumo` diz, por telefone, se o candidato já
+  // tem conversa e se há mensagem nova. Nada é guardado aqui.
+  type Resumo = { conversa: string; estado: string; nao_lidas: number; ultima_em: string | null; ultima_de: string | null }
+  const [resumo, setResumo] = useState<Record<string, Resumo>>({})
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set())
+  const [loteAberto, setLoteAberto] = useState(false)
+  const [textoLote, setTextoLote] = useState('Olá, {nome}! Recebemos o seu currículo para a vaga de {vaga} e gostaríamos de conversar com você. Qual o melhor horário para falar?')
+  const [enviandoLote, setEnviandoLote] = useState(false)
+  const [resultadoLote, setResultadoLote] = useState<null | { enviados: number; minutos: number; pulados: { nome: string; motivo: string }[] }>(null)
+  const [erroLote, setErroLote] = useState('')
+  const [abrindo, setAbrindo] = useState<string | null>(null)
+  const [erroConversa, setErroConversa] = useState('')
+
   const carregar = () => {
     fetch('/api/salon/curriculos', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
@@ -38,11 +52,63 @@ export default function CurriculosPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }
+  const carregarResumo = () => {
+    fetch('/api/crm/curriculos', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.por_telefone) setResumo(d.por_telefone) })
+      .catch(() => {})
+  }
   useEffect(() => {
     carregar()
-    // marca como vistos (zera o badge da sidebar)
+    carregarResumo()
+    const t = setInterval(carregarResumo, 20000)
+    return () => clearInterval(t)
+  }, [])
+  useEffect(() => {
+    // Uma vez só: marca como vistos (zera o badge da sidebar)
     fetch('/api/salon/curriculos', { method: 'POST', credentials: 'include' }).catch(() => {})
   }, [])
+
+  const doCandidato = (c: Curriculo): Resumo | undefined => resumo[chaveTelefone(normalizarTelefone(c.telefone))]
+  const novasTotal = Object.values(resumo).reduce((t, r) => t + (r.nao_lidas || 0), 0)
+
+  // Abre a conversa dentro do espelho do CRM (cria o contato e a conversa se
+  // for a primeira vez, já na pasta Currículos).
+  const conversar = async (c: Curriculo) => {
+    setAbrindo(c.id); setErroConversa('')
+    try {
+      const r = await fetch('/api/crm/curriculos', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'abrir', id: c.id }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.conversa) { setErroConversa(d?.error || 'Não foi possível abrir a conversa.'); return }
+      router.push(`/salon/curriculos/conversas?conversa=${d.conversa}`)
+    } catch { setErroConversa('Sem conexão com o servidor.') } finally { setAbrindo(null) }
+  }
+
+  const alternar = (id: string) => setEscolhidos(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const alternarTodos = (lista: Curriculo[]) => setEscolhidos(s => {
+    const n = new Set(s)
+    const todos = lista.length > 0 && lista.every(c => n.has(c.id))
+    lista.forEach(c => todos ? n.delete(c.id) : n.add(c.id))
+    return n
+  })
+
+  const enviarLote = async () => {
+    setEnviandoLote(true); setErroLote('')
+    try {
+      const r = await fetch('/api/crm/curriculos', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'enviar', ids: [...escolhidos], texto: textoLote }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setErroLote(d?.error || 'Não foi possível enviar.'); return }
+      setResultadoLote({ enviados: d.enviados, minutos: d.minutos, pulados: d.pulados || [] })
+      setEscolhidos(new Set())
+      carregarResumo()
+    } catch { setErroLote('Sem conexão com o servidor.') } finally { setEnviandoLote(false) }
+  }
 
   const toggle = (v: string) => setAbertas(s => { const n = new Set(s); n.has(v) ? n.delete(v) : n.add(v); return n })
 
@@ -118,6 +184,12 @@ export default function CurriculosPage() {
         <a href="/salon" className="flex items-center gap-1.5 text-nodri-t3 hover:text-nodri-cyan text-[12px]"><Home size={14} /> Início</a>
         <div className="w-px h-5 bg-nodri-border" />
         <h1 className="font-syne font-bold text-[15px] uppercase tracking-wide">Currículos</h1>
+        <div className="flex-1" />
+        <a href="/salon/curriculos/conversas"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff', marginRight: 330 }}>
+          <MessageCircle size={14} /> Conversas
+          {novasTotal > 0 && <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: '#fff', color: COR }}>{novasTotal} nova{novasTotal > 1 ? 's' : ''}</span>}
+        </a>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
@@ -195,6 +267,10 @@ export default function CurriculosPage() {
           )}
         </div>
 
+        {!!erroConversa && (
+          <p className="text-[12px] font-bold px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>{erroConversa}</p>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 size={26} className="animate-spin text-nodri-cyan" /></div>
         ) : (
@@ -233,6 +309,10 @@ export default function CurriculosPage() {
                                 <Filter size={12} /> Filtros{filtrando ? ` (${f.estados.size + f.exps.size + f.meses.size})` : ''}
                               </button>
                               <span className="text-[11px] text-nodri-t3">Mostrando <strong className="text-nodri-t1">{lista.length}</strong> de {todos.length}</span>
+                              <button onClick={() => alternarTodos(lista)}
+                                className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: '#fff', color: COR, border: '1px solid ' + COR + '40' }}>
+                                {lista.length > 0 && lista.every(c => escolhidos.has(c.id)) ? 'Desmarcar todos' : 'Selecionar todos'}
+                              </button>
                               {lista.length > 0 && <span className="text-[11px] text-nodri-t3">· Idade média: <strong className="text-nodri-t1">{mediaIdade} anos</strong></span>}
                               {filtrando && <button onClick={() => limparF(vaga)} className="text-[11px] text-nodri-t3 underline">limpar</button>}
                             </div>
@@ -247,23 +327,36 @@ export default function CurriculosPage() {
 
                           {/* Candidatos */}
                           <div className="divide-y divide-nodri-border">
-                            {lista.map(c => (
+                            {lista.map(c => {
+                              const r = doCandidato(c)
+                              return (
                               <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="font-bold text-[14px] text-nodri-t1 truncate">{c.nome}</p>
-                                  <p className="text-[11.5px] text-nodri-t3">
-                                    {nomeUF(c.estado)} ({c.estado}) · {c.idade} anos · {c.experiencia} · {new Date(c.criado_em).toLocaleDateString('pt-BR')}
-                                  </p>
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <input type="checkbox" checked={escolhidos.has(c.id)} onChange={() => alternar(c.id)}
+                                    aria-label={`Selecionar ${c.nome}`} className="w-4 h-4 shrink-0 cursor-pointer" style={{ accentColor: COR }} />
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-[14px] text-nodri-t1 truncate">{c.nome}</p>
+                                    <p className="text-[11.5px] text-nodri-t3">
+                                      {nomeUF(c.estado)} ({c.estado}) · {c.idade} anos · {c.experiencia} · {new Date(c.criado_em).toLocaleDateString('pt-BR')}
+                                    </p>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <a href={whatsappLink(c.telefone)} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: '#25D366' }}>
-                                    <MessageCircle size={14} /> WhatsApp
-                                  </a>
+                                  {r && r.nao_lidas > 0 && (
+                                    <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: '#fef3c7', color: '#92400e' }}>respondeu</span>
+                                  )}
+                                  {r && r.nao_lidas === 0 && r.ultima_de === 'salao' && (
+                                    <span className="text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: '#5b4fcf20', color: COR }}>aguardando resposta</span>
+                                  )}
+                                  <button onClick={() => conversar(c)} disabled={abrindo === c.id}
+                                    className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: COR }}>
+                                    {abrindo === c.id ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />} Conversar
+                                  </button>
                                   <button onClick={() => excluir(c.id)} className="p-1.5 rounded-lg text-nodri-t3 hover:text-red-400"><Trash2 size={14} /></button>
                                 </div>
                               </div>
-                            ))}
+                              )
+                            })}
                             {lista.length === 0 && <p className="px-4 py-6 text-center text-[13px] text-nodri-t3">Nenhum candidato com esses filtros.</p>}
                           </div>
                         </>
@@ -276,6 +369,72 @@ export default function CurriculosPage() {
           </div>
         )}
       </div>
+
+      {/* Barra de seleção: aparece quando há candidatos marcados */}
+      {escolhidos.size > 0 && !loteAberto && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg"
+          style={{ background: '#2b2320', color: '#fff' }}>
+          <span className="text-[13px] font-bold">{escolhidos.size} selecionado{escolhidos.size > 1 ? 's' : ''}</span>
+          <button onClick={() => { setLoteAberto(true); setResultadoLote(null); setErroLote('') }}
+            className="px-3 py-1.5 rounded-lg text-[12px] font-bold" style={{ background: COR, color: '#fff' }}>Enviar mensagem</button>
+          <button onClick={() => setEscolhidos(new Set())} className="text-[12px] underline opacity-80">Limpar</button>
+        </div>
+      )}
+
+      {loteAberto && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: 'rgba(20,16,14,.55)' }}>
+          <div className="w-full max-w-lg rounded-2xl p-5 space-y-3" style={{ background: '#fff', color: '#2b2320' }}>
+            {resultadoLote ? (
+              <>
+                <h2 className="font-bold text-[16px]">Mensagens na fila</h2>
+                <p className="text-[13px]">
+                  {resultadoLote.enviados} mensagem{resultadoLote.enviados === 1 ? '' : 'ns'} {resultadoLote.enviados === 1 ? 'vai' : 'vão'} sair espaçadamente,
+                  em cerca de {resultadoLote.minutos} minuto{resultadoLote.minutos === 1 ? '' : 's'}, pelo WhatsApp do salão.
+                  As respostas aparecem em Conversas.
+                </p>
+                {resultadoLote.pulados.length > 0 && (
+                  <div className="text-[12px] rounded-lg p-3" style={{ background: '#fffbeb', color: '#78350f' }}>
+                    <p className="font-bold mb-1">Não enviadas:</p>
+                    {resultadoLote.pulados.map((p, i) => <p key={i}>{p.nome}: {p.motivo}</p>)}
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-1">
+                  <a href="/salon/curriculos/conversas" className="px-4 py-2 rounded-lg text-[13px] font-bold" style={{ background: COR, color: '#fff' }}>Ver conversas</a>
+                  <button onClick={() => { setLoteAberto(false); setResultadoLote(null) }} className="px-4 py-2 rounded-lg text-[13px] font-bold border" style={{ borderColor: '#e6e3f2' }}>Fechar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="font-bold text-[16px]">Mensagem para {escolhidos.size} candidato{escolhidos.size > 1 ? 's' : ''}</h2>
+                <p className="text-[12px]" style={{ color: '#6e625c' }}>
+                  Use <strong>{'{nome}'}</strong> (primeiro nome) e <strong>{'{vaga}'}</strong> (a vaga que a pessoa escolheu). Nada sai sem o seu clique.
+                  Para proteger o WhatsApp do salão, o envio é limitado e espaçado: no máximo 20 pessoas por vez e 40 por dia.
+                </p>
+                <textarea value={textoLote} onChange={e => setTextoLote(e.target.value)} rows={5}
+                  className="w-full px-3 py-2 rounded-lg text-[13px] border" style={{ borderColor: '#e6e3f2', background: '#faf9fe' }} />
+                <p className="text-[12px] rounded-lg p-2" style={{ background: '#f4f2fc', color: '#4a4760' }}>
+                  <strong>Prévia:</strong>{' '}
+                  {(() => {
+                    const c = itens.find(x => escolhidos.has(x.id))
+                    return textoLote
+                      .replace(/\{nome\}/gi, c ? c.nome.trim().split(/\s+/)[0] : '')
+                      .replace(/\{vaga\}/gi, c ? c.vaga : '')
+                  })()}
+                </p>
+                {!!erroLote && <p className="text-[12px] font-bold px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>{erroLote}</p>}
+                <div className="flex justify-end gap-2 pt-1">
+                  <button onClick={() => setLoteAberto(false)} disabled={enviandoLote} className="px-4 py-2 rounded-lg text-[13px] font-bold border" style={{ borderColor: '#e6e3f2' }}>Cancelar</button>
+                  <button onClick={enviarLote} disabled={enviandoLote || !textoLote.trim() || escolhidos.size > 20}
+                    className="px-4 py-2 rounded-lg text-[13px] font-bold disabled:opacity-50 flex items-center gap-2" style={{ background: COR, color: '#fff' }}>
+                    {enviandoLote && <Loader2 size={14} className="animate-spin" />} Enviar para {escolhidos.size}
+                  </button>
+                </div>
+                {escolhidos.size > 20 && <p className="text-[12px] font-bold" style={{ color: '#b91c1c' }}>Selecione no máximo 20 pessoas por vez.</p>}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

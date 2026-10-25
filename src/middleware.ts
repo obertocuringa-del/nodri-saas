@@ -249,6 +249,7 @@ async function roteador(request: NextRequest) {
       ['/salon/departamentos', 'profissionais'],
       ['/salon/profissionais', 'profissionais'],
       ['/salon/crm', 'crm'],
+      ['/salon/curriculos/conversas', 'crm'],
       ['/salon/relatorios', 'relatorios'],
       ['/salon/servicos', 'servicos'],
       ['/salon/lista-espera', 'lista_espera'],

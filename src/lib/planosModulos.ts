@@ -264,6 +264,8 @@ export function planoMinimoPara(chave: ChaveModulo): PlanoNodri | undefined {
 export const ROTAS_POR_MODULO: Array<{ prefixo: string; chave: ChaveModulo }> = [
   // IA e CRM: o cadeado do card nao basta, o link direto tem de barrar.
   { prefixo: '/salon/crm', chave: 'crm' },
+  // Espelho do CRM para candidatos: é o mesmo CRM, então vale o mesmo módulo.
+  { prefixo: '/salon/curriculos/conversas', chave: 'crm' },
   { prefixo: '/salon/consultoria', chave: 'ia' },
   { prefixo: '/salon/academia', chave: 'academia' },
   { prefixo: '/api/academia', chave: 'academia' },

@@ -44,7 +44,7 @@ export async function acharOuCriarContato(
   salaoId: string, telefoneBruto: string, nomeAgenda?: string, lid?: string | null,
 ) {
   const telefone = normalizarTelefone(telefoneBruto)
-  const lidLimpo = String(lid || '').trim() || null
+  const lidLimpo = lidComSufixo(lid)
   if (!telefone && !lidLimpo) return null
 
   // ── Procurar no BANCO, não na memória ─────────────────────────────────────
@@ -192,6 +192,38 @@ export async function juntarConversasAbertas(salaoId: string, contatoId: string)
   }).eq('id', fica.id)
 
   await supabaseAdmin.from('crm_conversas').delete().eq('salao_id', salaoId).in('id', saem)
+}
+
+/**
+ * O LID sempre termina em "@lid". A marca de "mensagem do celular que não
+ * abriu" chegava só com os números: virava uma ficha-fantasma (206 em
+ * 23/10/2026) e a mensagem caía numa conversa vazia, fora da pasta da pessoa
+ * (30 em Listas, 26 em Follow-up). Quem chega sem o final ganha o final aqui.
+ */
+export function lidComSufixo(lid: any): string | null {
+  const s = String(lid || '').trim()
+  if (!s) return null
+  return /^\d+$/.test(s) ? `${s}@lid` : s
+}
+
+/**
+ * Vigia: junta as fichas-fantasma (LID só com números) na ficha verdadeira da
+ * mesma pessoa. Com ficha verdadeira, as conversas vão para ela; sem, só ganha o
+ * "@lid" e vira a ficha. Poucas por volta, para nunca pesar no minuto.
+ */
+export async function juntarFichasSemSufixo(): Promise<number> {
+  const { data: fantasmas } = await supabaseAdmin.from('crm_contatos').select('*')
+    .not('lid', 'is', null).not('lid', 'like', '%@%').limit(15)
+  let feitas = 0
+  for (const f of fantasmas || []) {
+    const certo = `${f.lid}@lid`
+    const { data: real } = await supabaseAdmin.from('crm_contatos').select('*')
+      .eq('salao_id', f.salao_id).eq('lid', certo).limit(1)
+    if (real?.[0]) await fundirContatos(f.salao_id, real[0], f)
+    else await supabaseAdmin.from('crm_contatos').update({ lid: certo }).eq('id', f.id)
+    feitas++
+  }
+  return feitas
 }
 
 export async function fundirContatos(salaoId: string, manter: any, apagar: any) {

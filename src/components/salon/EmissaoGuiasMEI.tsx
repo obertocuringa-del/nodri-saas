@@ -155,6 +155,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
   const [rodando, setRodando] = useState(false)
   const [extStatus, setExtStatus] = useState<'checando' | 'ok' | 'ausente'>('checando')
   const [extVersao, setExtVersao] = useState('')
+  const [extCopias, setExtCopias] = useState(0)
   const [linkExtensao, setLinkExtensao] = useState('')
   const [dataPag, setDataPag] = useState('')
   const filaRef = useRef<ItemFila[]>([])
@@ -199,12 +200,16 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
   // ── Handshake com a extensão ──
   const pingar = useCallback(() => {
     setExtStatus('checando')
+    setExtCopias(0)
     let respondeu = false
+    let copias = 0
     const ouvir = (ev: MessageEvent) => {
       if (ev.source !== window) return
       const d = ev.data
       if (d?.fonte === 'nodri-guias-ext' && d?.tipo === 'pong') {
         respondeu = true
+        copias += 1
+        setExtCopias(copias)
         setExtVersao(String(d.versao || ''))
         setExtStatus('ok')
       }
@@ -320,6 +325,7 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
 
   function iniciar() {
     if (extStatus !== 'ok') { toast.error('Extensão do Chrome não encontrada.'); return }
+    if (extCopias > 1) { toast.error('Há mais de uma cópia da extensão instalada no Chrome. Remova as repetidas antes de emitir.'); return }
     if (dirty) { toast.error('Salve a configuração antes de emitir.'); return }
     if (dataPag && dataPag < hojeIso) {
       toast.error('A data de pagamento não pode ser anterior a hoje — a Receita recusa.')
@@ -617,7 +623,24 @@ export default function EmissaoGuiasMEI({ profissionais }: { profissionais: Prof
                 </p>
               </div>
             )}
-            {extStatus === 'ok' && !versaoAntiga(extVersao) && (
+            {/* Cada pasta carregada em chrome://extensions é uma extensão à parte.
+                Com duas cópias, as duas rodam a fila ao mesmo tempo: o CNPJ é
+                digitado em dobro e cada guia baixa duas vezes. */}
+            {extStatus === 'ok' && extCopias > 1 && (
+              <div style={{ margin: '0 0 12px', padding: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, fontSize: 12, color: '#7f1d1d', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 2 }}>
+                  Há {extCopias} cópias da extensão instaladas no Chrome
+                </div>
+                Elas rodam juntas e cada guia é baixada em duplicidade. Abra <code>chrome://extensions</code>,
+                deixe só uma cópia da extensão &quot;NODRI — Emissão de Guias do MEI&quot; e clique em Remover nas outras.
+                <div style={{ marginTop: 8 }}>
+                  <button onClick={pingar} style={{ ...btn('#fff'), color: '#7f1d1d', border: '1px solid #fca5a5' }}>
+                    Verificar de novo
+                  </button>
+                </div>
+              </div>
+            )}
+            {extStatus === 'ok' && extCopias <= 1 && !versaoAntiga(extVersao) && (
               <div style={{ margin: '0 0 10px', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
                 Extensão detectada{extVersao ? ` (v${extVersao})` : ''}
               </div>

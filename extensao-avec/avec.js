@@ -248,7 +248,9 @@
   async function porODiaNaAgenda(dia) {
     // "Hoje" primeiro: recarrega a agenda e volta para uma data conhecida.
     const hoje = Array.from(document.querySelectorAll('button, a')).find(b => /^\s*hoje\s*$/i.test(b.textContent || ''))
-    if (hoje) { hoje.click(); await sleep(1500) }
+    // Avec lento (23/10/2026: abrir a agenda levou 29 s): esperar a agenda
+    // assentar em vez de contar 1,5 s e clicar numa tela ainda carregando.
+    if (hoje) { hoje.click(); await sleep(1500); await esperarPor(() => dataNaTela() && document.querySelector('td.ag-titulo'), 20000, 300) }
     if (dataNaTela() === dia) return true
 
     const [d, m, a] = String(dia || '').split('/')
@@ -270,15 +272,19 @@
     }
 
     // Clica no dia, evitando os dias "de fora" do mês.
-    const celulas = Array.from(document.querySelectorAll('td.day, td'))
-      .filter(td => txt(td) === String(Number(d)) && !/old|new|disabled/.test(td.className))
-    const alvo = celulas.find(td => td.offsetParent !== null)
-    if (!alvo) return false
-    alvo.click()
-    // Espera a data da tela virar a pedida E os blocos assentarem.
-    const virou = await esperarPor(() => dataNaTela() === dia, 15000, 300)
-    await sleep(2000)
-    return !!virou || dataNaTela() === dia
+    // Duas tentativas de clique: com o Avec lento o primeiro clique às vezes
+    // se perde, e a data da tela fica em hoje ("ficou em 23/10/2026").
+    for (let tentativa = 0; tentativa < 2; tentativa++) {
+      const celulas = Array.from(document.querySelectorAll('td.day, td'))
+        .filter(td => txt(td) === String(Number(d)) && !/old|new|disabled/.test(td.className))
+      const alvo = celulas.find(td => td.offsetParent !== null)
+      if (!alvo) return false
+      alvo.click()
+      // Espera a data da tela virar a pedida E os blocos assentarem.
+      const virou = await esperarPor(() => dataNaTela() === dia, 25000, 300)
+      if (virou || dataNaTela() === dia) { await sleep(2000); return true }
+    }
+    return false
   }
 
   /** Vira as páginas de profissionais até a coluna de `nomeProf` aparecer. */

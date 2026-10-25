@@ -904,11 +904,17 @@ async function executarTarefa(cfg, dados) {
           }
 
           await irParaAgenda()
+          // Marcar leva mais de 10 s quando o Avec está lento (achar o dia, a
+          // coluna e abrir o agendamento). Com 10 s de prazo a pergunta voltava
+          // vazia ("A agenda não respondeu", 23/10/2026: 9 de ~25 pedidos) e a
+          // repetição rodava POR CIMA da primeira, ainda em andamento. Um prazo
+          // só, longo; a repetição fica para quando a página ainda não carregou
+          // (essa falha é imediata, não gasta o prazo).
           const marcou = await perguntarComPaciencia(abaId, {
             tipo: 'marcar-confirmado',
             data: linha.data, hora: linha.hora,
             profissional: linha.profissional, telefone: p.telefone,
-          }, 3)
+          }, 3, 120000)
 
           await nodri('/api/crm/automacao/extensao', {
             method: 'POST',

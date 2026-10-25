@@ -3,6 +3,7 @@ import { conferirTudo } from '@/lib/saudeSistema'
 import { registrarServidor, consumirPedidos, anotarReinicio } from '@/lib/servidorCentral'
 import { fecharSobrando } from '@/lib/abasDoRobo'
 import { varrerConfirmacoesPendentes } from '@/lib/confirmacaoPendente'
+import { juntarFichasSemSufixo } from '@/lib/crmContatos'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,10 @@ async function responder(req: Request, info: any) {
     // agenda. O vigia pede a marcação sozinho (sem mandar mensagem a ninguém).
     // Ver src/lib/confirmacaoPendente.ts.
     await varrerConfirmacoesPendentes().catch(() => {})
+
+    // ── Ficha-fantasma de LID sem o "@lid" ──────────────────────────────────
+    // A causa já é tratada na entrada (lidComSufixo); isto limpa o que sobrar.
+    if (new Date().getMinutes() % 10 === 0) await juntarFichasSemSufixo().catch(() => {})
 
     const pedidos = await consumirPedidos()
     const todos = [...new Set([...r.reiniciar, ...pedidos])]

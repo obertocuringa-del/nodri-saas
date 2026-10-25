@@ -340,20 +340,85 @@ const avisar = (salaoId, dados) =>
 /** '5561999998888@s.whatsapp.net' -> '5561999998888' */
 const soNumero = jid => String(jid || '').split('@')[0].split(':')[0].replace(/\D+/g, '')
 
+/**
+ * O conteudo de verdade, tirado de dentro dos embrulhos. Conversa com
+ * mensagens temporarias e foto de "ver uma vez" chegam como
+ * ephemeralMessage/viewOnceMessage{.message}; sem desembrulhar, o texto
+ * parecia vazio e a mensagem era descartada.
+ */
+function conteudoDaMensagem(m) {
+  let c = m?.message
+  for (let i = 0; i < 5 && c; i++) {
+    const w = c.ephemeralMessage || c.viewOnceMessage || c.viewOnceMessageV2
+      || c.viewOnceMessageV2Extension || c.documentWithCaptionMessage || c.deviceSentMessage
+    if (!w?.message) break
+    c = w.message
+  }
+  return c || null
+}
+
+// Chaves que nao sao fala de ninguem: protocolo do WhatsApp, reacao (tratada
+// a parte) e metadados. So estas podem ser descartadas em silencio.
+const SEM_CONTEUDO = new Set([
+  'messageContextInfo', 'senderKeyDistributionMessage', 'protocolMessage',
+  'reactionMessage', 'encReactionMessage', 'pollUpdateMessage',
+  'keepInChatMessage', 'pinInChatMessage', 'albumMessage', 'peerDataOperationRequestMessage',
+])
+
+/** Nome e telefone de dentro do cartao (vCard) que o profissional ou a cliente mandou. */
+function descreverCartao(c) {
+  const nome = c?.displayName || (/FN[^:]*:(.+)/i.exec(c?.vcard || '') || [])[1] || 'sem nome'
+  const fones = [...String(c?.vcard || '').matchAll(/TEL[^:]*:([^\r\n]+)/gi)].map(x => x[1].trim())
+  return String(nome).trim() + (fones.length ? ' - ' + fones.join(', ') : '')
+}
+
 /** O texto da mensagem, seja qual for o formato em que ele veio. */
 function textoDaMensagem(m) {
-  const c = m?.message
+  const c = conteudoDaMensagem(m)
   if (!c) return ''
-  return c.conversation
+  const texto = c.conversation
     || c.extendedTextMessage?.text
     || c.imageMessage?.caption
     || c.videoMessage?.caption
     || c.documentMessage?.caption
-    || ''
+    || c.buttonsResponseMessage?.selectedDisplayText
+    || c.listResponseMessage?.title
+    || c.templateButtonReplyMessage?.selectedDisplayText
+  if (texto) return texto
+
+  // Tipos que nao tem texto proprio. Antes eram descartados como "evento
+  // vazio" e a mensagem simplesmente nao existia no CRM (24/10/2026: o
+  // profissional mandou um contato e a conversa ficou com um buraco).
+  if (c.contactMessage) return '[Contato compartilhado] ' + descreverCartao(c.contactMessage)
+  if (c.contactsArrayMessage) {
+    const lista = (c.contactsArrayMessage.contacts || []).map(descreverCartao).join(' | ')
+    return '[Contatos compartilhados] ' + (lista || c.contactsArrayMessage.displayName || '')
+  }
+  const loc = c.locationMessage || c.liveLocationMessage
+  if (loc) {
+    const onde = [loc.name, loc.address].filter(Boolean).join(', ')
+    const mapa = (loc.degreesLatitude != null && loc.degreesLongitude != null)
+      ? ` https://maps.google.com/?q=${loc.degreesLatitude},${loc.degreesLongitude}` : ''
+    return '[Localizacao] ' + (onde || 'sem nome') + mapa
+  }
+  const enquete = c.pollCreationMessage || c.pollCreationMessageV2 || c.pollCreationMessageV3
+  if (enquete) return '[Enquete] ' + (enquete.name || '')
+  if (c.groupInviteMessage) return '[Convite de grupo] ' + (c.groupInviteMessage.groupName || '')
+  if (c.productMessage || c.orderMessage) return '[Pedido ou produto do catalogo]'
+
+  // Qualquer outro formato que ainda nao conhecemos: avisa que EXISTE, em vez
+  // de sumir. Quem le sabe que precisa abrir o celular.
+  const chaves = Object.keys(c).filter(k => !SEM_CONTEUDO.has(k))
+  const mediaConhecida = c.imageMessage || c.videoMessage || c.audioMessage || c.pttMessage
+    || c.documentMessage || c.stickerMessage
+  if (chaves.length && !mediaConhecida) {
+    return '[Mensagem de tipo "' + chaves[0].replace(/Message$/, '') + '" que o CRM ainda nao exibe - abra no celular]'
+  }
+  return ''
 }
 
 function tipoDaMensagem(m) {
-  const c = m?.message || {}
+  const c = conteudoDaMensagem(m) || {}
   if (c.imageMessage) return 'imagem'
   if (c.audioMessage || c.pttMessage) return 'audio'
   if (c.videoMessage) return 'video'
