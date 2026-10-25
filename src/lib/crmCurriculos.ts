@@ -188,3 +188,263 @@ export async function mensagensDoCandidato(salaoId: string, conversaId: string) 
     .filter(m => !String(m.tipo || '').startsWith('acao_') && !TIPOS_QUE_NAO_APARECEM.includes(m.tipo))
     .reverse()
 }
+
+// ── Configuração, triagem e arquivos ────────────────────────────────────────
+//
+// Tudo em salao_config (chave/valor), sem tabela nova: mudança de esquema neste
+// banco exige SQL à mão. Duas chaves, só da tela de Currículos:
+//   curriculos_config   { limpeza: { ligado, dias }, modelos: string[] }
+//   curriculos_triagem  { porConversa: { <conversa_id>: <vaga> } }
+
+const CHAVE_CONFIG = 'curriculos_config'
+const CHAVE_TRIAGEM = 'curriculos_triagem'
+const BUCKET = 'uploads'
+
+export interface ConfigCurriculos {
+  limpeza: { ligado: boolean; dias: number }
+  modelos: string[]
+}
+
+async function lerJson(salaoId: string, chave: string): Promise<any> {
+  const { data } = await supabaseAdmin.from('salao_config').select('valor')
+    .eq('salao_id', salaoId).eq('chave', chave).maybeSingle()
+  return (data as any)?.valor || {}
+}
+async function gravarJson(salaoId: string, chave: string, valor: any) {
+  await supabaseAdmin.from('salao_config').upsert(
+    { salao_id: salaoId, chave, valor, atualizado_em: new Date().toISOString() },
+    { onConflict: 'salao_id,chave' })
+}
+
+export async function lerConfigCurriculos(salaoId: string): Promise<ConfigCurriculos> {
+  const v = await lerJson(salaoId, CHAVE_CONFIG)
+  const dias = Math.max(7, Math.min(365, Number(v?.limpeza?.dias) || 60))
+  return {
+    // Desligada por padrão: apagar currículo é decisão do dono, não do sistema.
+    limpeza: { ligado: v?.limpeza?.ligado === true, dias },
+    modelos: Array.isArray(v?.modelos) ? v.modelos.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 40) : [],
+  }
+}
+
+export async function salvarConfigCurriculos(salaoId: string, parcial: Partial<ConfigCurriculos>) {
+  const atual = await lerConfigCurriculos(salaoId)
+  const novo: ConfigCurriculos = {
+    limpeza: parcial.limpeza ? {
+      ligado: parcial.limpeza.ligado === true,
+      dias: Math.max(7, Math.min(365, Number(parcial.limpeza.dias) || atual.limpeza.dias)),
+    } : atual.limpeza,
+    modelos: parcial.modelos
+      ? parcial.modelos.map(x => String(x || '').trim()).filter(Boolean).slice(0, 40)
+      : atual.modelos,
+  }
+  await gravarJson(salaoId, CHAVE_CONFIG, novo)
+  return novo
+}
+
+export async function lerTriagem(salaoId: string): Promise<Record<string, string>> {
+  const v = await lerJson(salaoId, CHAVE_TRIAGEM)
+  return (v?.porConversa && typeof v.porConversa === 'object') ? v.porConversa : {}
+}
+export async function definirTriagem(salaoId: string, conversaId: string, vaga: string) {
+  const mapa = await lerTriagem(salaoId)
+  if (vaga) mapa[conversaId] = vaga; else delete mapa[conversaId]
+  await gravarJson(salaoId, CHAVE_TRIAGEM, { porConversa: mapa })
+}
+
+/** Conversas da pasta Currículos de quem NÃO preencheu o formulário (escreveu para o telefone principal). */
+export async function conversasDoTelefonePrincipal(salaoId: string) {
+  const doc = await getCurriculosDoc()
+  const chaves = new Set<string>()
+  for (const c of (doc.itens || []) as Curriculo[]) {
+    const k = chaveTelefone(normalizarTelefone(c.telefone)); if (k) chaves.add(k)
+  }
+  const { data } = await supabaseAdmin.from('crm_conversas').select(SELECT_CONVERSA)
+    .eq('salao_id', salaoId).eq('estado', PASTA_CURRICULOS)
+  const triagem = await lerTriagem(salaoId)
+  return ((data || []) as any[])
+    .filter(c => { const k = chaveTelefone(c?.contato?.telefone); return !k || !chaves.has(k) })
+    .map(c => ({
+      conversa: c.id as string,
+      nome: c.contato?.nome || c.contato?.nome_agenda || c.contato?.telefone || 'Sem nome',
+      telefone: c.contato?.telefone || '',
+      vaga: triagem[c.id] || '',
+      nao_lidas: c.nao_lidas || 0,
+      ultima_em: c.ultima_em || null,
+      ultima_de: c.ultima_de || null,
+      previa: c.ultima_previa || '',
+    }))
+    .sort((a, b) => new Date(b.ultima_em || 0).getTime() - new Date(a.ultima_em || 0).getTime())
+}
+
+// ── Arquivos recebidos: lista, peso e exclusão ──────────────────────────────
+
+export interface ItemArquivo {
+  mensagem: string; conversa: string; candidato: string; vaga: string
+  tipo: string; nome: string; url: string; bytes: number; criado_em: string
+}
+
+/** O caminho dentro do bucket, só se o arquivo for DESTE salão. Nunca apaga o que não reconhece. */
+export function caminhoDaUrl(url: string | null, salaoId: string): string | null {
+  const m = /\/object\/(?:public|sign)\/uploads\/([^?]+)/.exec(String(url || ''))
+  if (!m) return null
+  let p = m[1]
+  try { p = decodeURIComponent(p) } catch { /* mantém */ }
+  return (p.startsWith(`crm/${salaoId}/`) || p.startsWith(`arquivos/${salaoId}/`) || p.startsWith(`curriculos/${salaoId}/`)) ? p : null
+}
+
+async function tamanhosDoSalao(salaoId: string): Promise<Map<string, number>> {
+  const mapa = new Map<string, number>()
+  for (const prefixo of [`crm/${salaoId}`, `arquivos/${salaoId}`, `curriculos/${salaoId}`]) {
+    for (let de = 0; de < 20000; de += 1000) {
+      const { data, error } = await supabaseAdmin.storage.from(BUCKET).list(prefixo, { limit: 1000, offset: de })
+      if (error || !data?.length) break
+      for (const o of data as any[]) if (o?.metadata?.size != null) mapa.set(`${prefixo}/${o.name}`, Number(o.metadata.size) || 0)
+      if (data.length < 1000) break
+    }
+  }
+  return mapa
+}
+
+const nomeDoArquivo = (url: string) => {
+  let bruto = url.split('?')[0].split('/').pop() || 'arquivo'
+  try { bruto = decodeURIComponent(bruto) } catch { /* mantém */ }
+  return bruto.replace(/^\d{10,}_/, '')
+}
+
+export async function arquivosDosCandidatos(salaoId: string): Promise<{ itens: ItemArquivo[]; bytes: number }> {
+  const [conversas, doc, triagem] = await Promise.all([
+    conversasDosCandidatos(salaoId), getCurriculosDoc(), lerTriagem(salaoId),
+  ])
+  const vagaPorFone = new Map<string, string>()
+  for (const c of (doc.itens || []) as Curriculo[]) {
+    const k = chaveTelefone(normalizarTelefone(c.telefone)); if (k && !vagaPorFone.has(k)) vagaPorFone.set(k, c.vaga)
+  }
+  const info = new Map<string, { candidato: string; vaga: string }>()
+  for (const c of conversas) {
+    const k = chaveTelefone(c?.contato?.telefone)
+    info.set(c.id, {
+      candidato: c.contato?.nome || c.contato?.nome_agenda || c.contato?.telefone || 'Sem nome',
+      vaga: (k && vagaPorFone.get(k)) || triagem[c.id] || 'Sem vaga definida',
+    })
+  }
+  const ids = [...info.keys()]
+  const msgs: any[] = []
+  for (const lote of pedacos(ids, 100)) {
+    const { data } = await supabaseAdmin.from('crm_mensagens')
+      .select('id, conversa_id, tipo, midia_url, criado_em')
+      .eq('salao_id', salaoId).in('conversa_id', lote).not('midia_url', 'is', null)
+    msgs.push(...(data || []))
+  }
+  const tamanhos = msgs.length ? await tamanhosDoSalao(salaoId) : new Map<string, number>()
+  const itens: ItemArquivo[] = msgs.map(m => {
+    const caminho = caminhoDaUrl(m.midia_url, salaoId)
+    const i = info.get(m.conversa_id)!
+    return {
+      mensagem: m.id, conversa: m.conversa_id, candidato: i.candidato, vaga: i.vaga,
+      tipo: m.tipo, nome: nomeDoArquivo(m.midia_url), url: m.midia_url,
+      bytes: caminho ? (tamanhos.get(caminho) || 0) : 0, criado_em: m.criado_em,
+    }
+  }).sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em)))
+  return { itens, bytes: itens.reduce((t, x) => t + x.bytes, 0) }
+}
+
+/**
+ * Apaga o arquivo do armazenamento e deixa a mensagem como "arquivo removido".
+ * Só de candidatos. Sem critério (lista de mensagens ou idade), não apaga nada.
+ */
+export async function excluirArquivos(salaoId: string, mensagens: string[], antesDeDias?: number, todos = false) {
+  if (!mensagens.length && !antesDeDias && !todos) return { removidos: 0, bytes: 0 }
+  const { itens } = await arquivosDosCandidatos(salaoId)
+  const corte = antesDeDias ? new Date(Date.now() - antesDeDias * 86400e3).toISOString() : null
+  const quer = new Set(mensagens)
+  const alvo = itens.filter(x => (quer.size ? quer.has(x.mensagem) : true) && (!corte || x.criado_em < corte))
+  if (!alvo.length) return { removidos: 0, bytes: 0 }
+  const caminhos = alvo.map(x => caminhoDaUrl(x.url, salaoId)).filter(Boolean) as string[]
+  for (const lote of pedacos(caminhos, 100)) await supabaseAdmin.storage.from(BUCKET).remove(lote)
+  for (const lote of pedacos(alvo.map(x => x.mensagem), 100)) {
+    await supabaseAdmin.from('crm_mensagens')
+      .update({ midia_url: null, texto: '[arquivo removido]', tipo: 'texto', transcricao: null })
+      .eq('salao_id', salaoId).in('id', lote)
+  }
+  return { removidos: alvo.length, bytes: alvo.reduce((t, x) => t + x.bytes, 0) }
+}
+
+// ── Mensagens variadas para o lote ──────────────────────────────────────────
+//
+// Reveza os modelos sem repetir o mesmo texto em duas pessoas seguidas. Se há
+// menos modelos que pessoas, o modelo que se repete ganha uma abertura e um
+// fecho diferentes -- o WhatsApp bloqueia quem manda texto idêntico em série.
+
+const ABERTURAS = ['Olá', 'Oi']
+const FECHOS = ['', ' Obrigada!', ' Fico no aguardo.', ' Um abraço.', ' Aguardo o seu retorno.']
+const escolhe = <T,>(l: T[]) => l[Math.floor(Math.random() * l.length)]
+
+export function distribuirModelos(modelos: string[], quantidade: number): { textos: string[]; variados: boolean } {
+  const limpos = modelos.map(m => m.trim()).filter(Boolean)
+  if (!limpos.length) return { textos: [], variados: false }
+  const usos = new Map<number, number>()
+  const textos: string[] = []
+  let anterior = -1
+  let fila: number[] = []
+  for (let i = 0; i < quantidade; i++) {
+    if (!fila.length) {
+      fila = limpos.map((_, k) => k).sort(() => Math.random() - 0.5)
+      if (fila.length > 1 && fila[0] === anterior) fila.push(fila.shift()!)   // nunca repete em seguida
+    }
+    const k = fila.shift()!
+    anterior = k
+    const vez = usos.get(k) || 0
+    usos.set(k, vez + 1)
+    let t = limpos[k]
+    if (vez > 0) {
+      t = t.replace(/^(ol[aá]|oi)\b/i, () => escolhe(ABERTURAS))
+      t = t.trimEnd() + escolhe(FECHOS)
+    }
+    textos.push(t)
+  }
+  return { textos, variados: limpos.length < quantidade }
+}
+
+// ── O arquivo do candidato não some em 30 dias ──────────────────────────────
+//
+// A limpeza geral do CRM (api/cron/limpar-midia) apaga, todo dia, qualquer
+// arquivo de `crm/<salao>/` com mais de 30 dias. Currículo que o candidato
+// manda pelo WhatsApp cairia nela. Então, antes dela rodar, a rotina daqui
+// MOVE os arquivos de candidatos para `curriculos/<salao>/`, que a limpeza
+// geral não olha, e aponta a mensagem para o novo endereço. Quem decide quando
+// o currículo sai é o dono: na mão, ou pelo botão de exclusão automática.
+export async function arquivarMidiaDeCandidatos(salaoId: string): Promise<number> {
+  const conversas = await conversasDosCandidatos(salaoId)
+  const ids = conversas.map((c: any) => c.id)
+  let movidos = 0
+  for (const lote of pedacos(ids, 100)) {
+    const { data } = await supabaseAdmin.from('crm_mensagens').select('id, midia_url')
+      .eq('salao_id', salaoId).in('conversa_id', lote).like('midia_url', `%/uploads/crm/${salaoId}/%`)
+    for (const m of (data || []) as any[]) {
+      const de = caminhoDaUrl(m.midia_url, salaoId)
+      if (!de || !de.startsWith(`crm/${salaoId}/`)) continue
+      const para = de.replace(`crm/${salaoId}/`, `curriculos/${salaoId}/`)
+      const { error } = await supabaseAdmin.storage.from(BUCKET).move(de, para)
+      if (error) continue
+      const novaUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(para).data.publicUrl
+      await supabaseAdmin.from('crm_mensagens').update({ midia_url: novaUrl }).eq('id', m.id)
+      movidos++
+    }
+  }
+  return movidos
+}
+
+/** Rotina diária de todos os salões: guarda o que é de candidato e, se o dono ligou, apaga o antigo. */
+export async function rotinaDiariaCurriculos() {
+  const { data: saloes } = await supabaseAdmin.from('saloes').select('id')
+  const resumo: { salao: string; movidos: number; apagados: number }[] = []
+  for (const s of (saloes || []) as any[]) {
+    try {
+      const movidos = await arquivarMidiaDeCandidatos(s.id)
+      const cfg = await lerConfigCurriculos(s.id)
+      const apagados = cfg.limpeza.ligado ? (await excluirArquivos(s.id, [], cfg.limpeza.dias)).removidos : 0
+      if (movidos || apagados) resumo.push({ salao: s.id, movidos, apagados })
+    } catch { /* um salão com problema não pára os outros */ }
+  }
+  return resumo
+}

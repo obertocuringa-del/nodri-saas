@@ -1274,6 +1274,8 @@ export default function AdminDashboard({ saloes: initialSaloes, modulos: initial
     { id: 'modelo', icon: <Building size={14} />, label: 'Salão modelo', rota: '/admin/modelo' },
     // Página própria: horários e agenda do robô que coleta o relatório no servidor
     { id: 'robo', icon: <Bot size={14} />, label: 'Robô do relatório', rota: '/admin/robo' },
+    // Página própria: peso dos arquivos de candidatos (currículos) em todos os salões
+    { id: 'curriculos-arq', icon: <Wrench size={14} />, label: 'Currículos (arquivos)', rota: '/admin/curriculos' },
     { id: 'contatos', icon: <Mail size={14} />, label: 'Contatos do site' },
     { id: 'funcionalidades', icon: <Zap size={14} />, label: 'Funcionalidades' },
     { id: 'planos', icon: <CreditCard size={14} />, label: 'Planos', badge: planos.length },
